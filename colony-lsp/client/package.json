@@ -1,0 +1,120 @@
+{
+	"name": "colony-extension-client",
+	"description": "VSCode part of a language server",
+	"author": "Microsoft Corporation",
+	"license": "MIT",
+	"version": "0.0.1",
+	"publisher": "vscode",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Microsoft/vscode-extension-samples"
+	},
+	"engines": {
+		"vscode": "^1.55.0"
+	},
+	"categories": [
+		"Other"
+	  ],
+	  "activationEvents": [
+		"onLanguage:colony"
+	  ],
+	  "contributes": {
+		"commands": [
+		  {
+			"command": "countDownBlocking",
+			"title": "Count down 10 seconds [Blocking]"
+		  },
+		  {
+			"command": "countDownNonBlocking",
+			"title": "Count down 10 seconds [Non Blocking]"
+		  },
+		  {
+			"command": "registerCompletions",
+			"title": "Register completions"
+		  },
+		  {
+			"command": "showConfigurationAsync",
+			"title": "Show Json Example Configuration [Async]"
+		  },
+		  {
+			"command": "showConfigurationCallback",
+			"title": "Show Json Example Configuration [Callback]"
+		  },
+		  {
+			"command": "showConfigurationThread",
+			"title": "Show Json Example Configuration [Thread]"
+		  },
+		  {
+			"command": "unregisterCompletions",
+			"title": "Unregister completions"
+		  }
+		],
+		"configuration": {
+		  "type": "object",
+		  "title": "Colony Server Configuration",
+		  "properties": {
+			"colonyServer.exampleConfiguration": {
+			  "scope": "resource",
+			  "type": "string",
+			  "default": "You can override this message."
+			},
+			"colony.files.associations": {
+				"scope": "resource",
+				"type": "object",
+				"description": "colony default files associations",
+				"default": {
+					"**/blueprints/*.yaml": "colony",
+					"**/applications/**/*.yaml": "colony",
+					"**/services/**/*.yaml": "colony"
+				}
+			}
+		  }
+		},
+		"languages": [
+			{
+				"id": "colony",
+				"aliases": [
+				  "Colony",
+				  "colony"
+				],
+				"filenamePatterns": [
+					"**/blueprints/*.yaml",
+					"**/applications/**/*.yaml",
+					"**/services/**/*.yaml"
+				]
+			  }
+		],
+		"grammars": [
+			{
+			  "language": "colony",
+			  "scopeName": "source.yaml",
+			  "path": "./syntaxes/yaml.tmLanguage"
+			}
+		]
+		
+	  },
+	  "extensionDependencies": [
+			"redhat.vscode-yaml"
+		],
+	"main": "./out/extension",
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"webpack": "webpack --mode development",
+		"postinstall": "echo npm install"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^7.0.0"
+	},
+	"devDependencies": {
+		"@types/node": "^12.12.21",
+		"@types/uuid": "^3.4.6",
+		"@types/vscode": "^1.55.0",
+		"ts-loader": "^6.2.1",
+		"typescript": "^4.2.4",
+		"vscode-test": "^1.3.0",
+		"webpack": "^5.37.1",
+		"webpack-cli": "^4.7.0"
+	}
+}
