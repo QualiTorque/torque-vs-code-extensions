@@ -19,12 +19,10 @@ import json
 import time
 import uuid
 import os
+import glob
+import pathlib
 from json import JSONDecodeError
-from typing import Optional
-from pathlib import Path
-import os.path as ospath
-import yaml
-
+from typing import Optional, Tuple
 
 from pygls.lsp.methods import (COMPLETION, COMPLETION_ITEM_RESOLVE, TEXT_DOCUMENT_DID_CHANGE,
                                TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER)
@@ -35,9 +33,9 @@ from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              DidCloseTextDocumentParams, Hover, TextDocumentPositionParams,
                              DidOpenTextDocumentParams, MessageType, Position,
                              Range, Registration, RegistrationParams,
-                             Unregistration, UnregistrationParams)
-from pygls.lsp.types.language_features.completion import CompletionItemKind
+                             Unregistration, UnregistrationParams, workspace)
 from pygls.server import LanguageServer
+from pygls.workspace import Document, position_from_utf16
 
 COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
@@ -59,6 +57,31 @@ class ColonyLanguageServer(LanguageServer):
 
 
 colony_server = ColonyLanguageServer()
+
+def _preceding_words(document: Document, position: Position) -> Optional[Tuple[str, str]]:
+    """
+    Get the word under the cursor returning the start and end positions.
+    """
+    lines = document.lines
+    if position.line >= len(lines):
+        return None
+
+    row, col = position_from_utf16(lines, position)
+    line = lines[row]
+    try:
+        word = line[:col].strip().split()[-2:]
+        return word
+    except (ValueError):
+        return None
+
+def _get_app_scripts(app_dir_path: str):
+    scripts = []
+    files = pathlib.Path(app_dir_path.replace("file://", "")).parent.glob("./*")
+    for file in files:
+        if not file.name.endswith('.yaml'):
+            scripts.append(pathlib.Path(file).name)
+
+    return scripts
 
 
 def _validate(ls, params):
@@ -117,6 +140,9 @@ def completion_item_resolve(server: ColonyLanguageServer, params: CompletionItem
 @colony_server.feature(COMPLETION, CompletionOptions(resolve_provider=True))
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
+    doc = colony_server.workspace.get_document(params.text_document.uri)
+    fdrs = colony_server.workspace.folders
+    root = colony_server.workspace.root_path
     print('completion')
     print(params)
     print('--------')
@@ -153,6 +179,18 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             items=items
         )
     elif '/applications/' in params.text_document.uri:
+        words = _preceding_words(
+            colony_server.workspace.get_document(params.text_document.uri),
+            params.position)
+        # debug("words", words)
+        if words[0].startswith("script"):
+            scripts = _get_app_scripts(params.text_document.uri)
+            return CompletionList(
+                is_incomplete=False,
+                items=[CompletionItem(label=script) for script in scripts],
+            )
+
+
         return CompletionList(
             is_incomplete=False,
             items=[
