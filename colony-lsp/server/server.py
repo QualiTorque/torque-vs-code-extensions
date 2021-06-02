@@ -15,7 +15,8 @@
 # limitations under the License.                                           #
 ############################################################################
 import asyncio
-import json
+from pygls.lsp import types
+import yaml
 import time
 import uuid
 import os
@@ -25,7 +26,7 @@ from json import JSONDecodeError
 from typing import Optional, Tuple, List
 
 from pygls.lsp.methods import (CODE_LENS, COMPLETION, COMPLETION_ITEM_RESOLVE, DOCUMENT_LINK, TEXT_DOCUMENT_DID_CHANGE,
-                               TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES)
+                               TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES, DEFINITION)
 from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              CompletionParams, ConfigurationItem,
                              ConfigurationParams, Diagnostic, Location,
@@ -36,7 +37,7 @@ from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              Unregistration, UnregistrationParams, 
                              DocumentLink, DocumentLinkParams,
                              CodeLens, CodeLensOptions, CodeLensParams,
-                             workspace)
+                             workspace, CompletionItemKind)
 from pygls.server import LanguageServer
 from pygls.workspace import Document, position_from_utf16
 
@@ -98,6 +99,28 @@ def _validate(ls, params):
     source = text_doc.source
     diagnostics = _validate_yaml(source) if source else []
 
+    if not diagnostics: 
+        yaml_obj = yaml.load(source) # todo: refactor
+        doc_type = yaml_obj.get('kind', '')
+        doc_lines = text_doc.lines
+        if doc_type == "application":
+            scripts = _get_app_scripts(params.text_document.uri)
+
+            for k, v in yaml_obj.get('configuration', []).items():
+                script_ref = v.get('script', None)
+                if script_ref and script_ref not in scripts:
+                    for i in range(len(doc_lines)):
+                        col_pos = doc_lines[i].find(script_ref)
+                        if col_pos == -1:
+                            continue
+                        d = Diagnostic(
+                            range=Range(
+                                start=Position(line=i, character=col_pos),
+                                end=Position(line=i, character=col_pos + 1 +len(script_ref))
+                            ),
+                            message=f"File {script_ref} doesn't exist"
+                        )
+                        diagnostics.append(d)
     ls.publish_diagnostics(text_doc.uri, diagnostics)
 
 
@@ -160,14 +183,14 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                 CompletionItem(label='ingress'),
                 CompletionItem(label='availability'),
             ]
-        apps_path = ospath.join(str(Path(params.text_document.uri).parents[1]).replace('file:',''), 'applications')
+        apps_path = os.path.join(str(pathlib.Path(params.text_document.uri).parents[1]).replace('file:',''), 'applications')
         for dir in os.listdir(apps_path):
-            app_dir = ospath.join(apps_path, dir)
-            if ospath.isdir(app_dir):
+            app_dir = os.path.join(apps_path, dir)
+            if os.path.isdir(app_dir):
                 files = os.listdir(app_dir)
                 if f'{dir}.yaml' in files:
                     output = f"  - {dir}:\n"
-                    with open(ospath.join(app_dir, f'{dir}.yaml')) as file:
+                    with open(os.path.join(app_dir, f'{dir}.yaml')) as file:
                         app_file = yaml.load(file, Loader=yaml.FullLoader)
                         inputs = app_file['inputs'] if 'inputs' in app_file else None
                         if inputs:
@@ -226,6 +249,21 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         )
     else:
         return CompletionList(is_incomplete=True, items=[])
+
+
+# @colony_server.feature(DEFINITION)
+# def goto_definition(server: ColonyLanguageServer, params: types.DeclarationParams):
+#     uri = params.text_document.uri
+#     doc = colony_server.workspace.get_document(uri)
+#     words = _preceding_words(doc, params.position)
+#         # debug("words", words)
+#     if words[0].startswith("script"):
+#         scripts = _get_app_scripts(params.text_document.uri)
+#         return None
+#         # return NoneCompletionList(
+#         #     is_incomplete=False,
+#         #     items=[CompletionItem(label=script) for script in scripts],
+#         # )
 
 
 @colony_server.feature(CODE_LENS, CodeLensOptions(resolve_provider=False),)
