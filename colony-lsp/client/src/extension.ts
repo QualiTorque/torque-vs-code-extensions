@@ -33,13 +33,13 @@ function getClientOptions(): LanguageClientOptions {
     return {
         // Register the server for plain text documents
         documentSelector: [
-            { scheme: "file", language: "colony" },
-            { scheme: "untitled", language: "colony" },
+            { scheme: "file", language: "yaml" },
+            { scheme: "untitled", language: "yaml" },
         ],
         outputChannelName: "ColonyLanguageServer",
         synchronize: {
-            // Notify the server about file changes to '.clientrc files contain in the workspace
-            fileEvents: workspace.createFileSystemWatcher("**/.clientrc"),
+            // Notify the server about file changes to '.yaml files contain in the workspace
+            fileEvents: workspace.createFileSystemWatcher("**/*.?yaml"),
         },
     };
 }

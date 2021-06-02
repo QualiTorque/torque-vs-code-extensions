@@ -14,88 +14,80 @@
 	},
 	"categories": [
 		"Other"
-	  ],
-	  "activationEvents": [
-		"onLanguage:colony"
-	  ],
-	  "contributes": {
+	],
+	"activationEvents": [
+		"onLanguage:yaml"
+	],
+	"contributes": {
 		"commands": [
-		  {
-			"command": "countDownBlocking",
-			"title": "Count down 10 seconds [Blocking]"
-		  },
-		  {
-			"command": "countDownNonBlocking",
-			"title": "Count down 10 seconds [Non Blocking]"
-		  },
-		  {
-			"command": "registerCompletions",
-			"title": "Register completions"
-		  },
-		  {
-			"command": "showConfigurationAsync",
-			"title": "Show Json Example Configuration [Async]"
-		  },
-		  {
-			"command": "showConfigurationCallback",
-			"title": "Show Json Example Configuration [Callback]"
-		  },
-		  {
-			"command": "showConfigurationThread",
-			"title": "Show Json Example Configuration [Thread]"
-		  },
-		  {
-			"command": "unregisterCompletions",
-			"title": "Unregister completions"
-		  }
+			{
+				"command": "countDownBlocking",
+				"title": "Count down 10 seconds [Blocking]"
+			},
+			{
+				"command": "countDownNonBlocking",
+				"title": "Count down 10 seconds [Non Blocking]"
+			},
+			{
+				"command": "registerCompletions",
+				"title": "Register completions"
+			},
+			{
+				"command": "showConfigurationAsync",
+				"title": "Show Json Example Configuration [Async]"
+			},
+			{
+				"command": "showConfigurationCallback",
+				"title": "Show Json Example Configuration [Callback]"
+			},
+			{
+				"command": "showConfigurationThread",
+				"title": "Show Json Example Configuration [Thread]"
+			},
+			{
+				"command": "unregisterCompletions",
+				"title": "Unregister completions"
+			}
 		],
 		"configuration": {
-		  "type": "object",
-		  "title": "Colony Server Configuration",
-		  "properties": {
-			"colonyServer.exampleConfiguration": {
-			  "scope": "resource",
-			  "type": "string",
-			  "default": "You can override this message."
-			},
-			"colony.files.associations": {
-				"scope": "resource",
-				"type": "object",
-				"description": "colony default files associations",
-				"default": {
-					"**/blueprints/*.yaml": "colony",
-					"**/applications/**/*.yaml": "colony",
-					"**/services/**/*.yaml": "colony"
+			"type": "object",
+			"title": "Colony Server Configuration",
+			"properties": {
+				"colonyServer.exampleConfiguration": {
+					"scope": "resource",
+					"type": "string",
+					"default": "You can override this message."
 				}
 			}
-		  }
 		},
-		"languages": [
-			{
-				"id": "colony",
-				"aliases": [
-				  "Colony",
-				  "colony"
-				],
-				"filenamePatterns": [
-					"**/blueprints/*.yaml",
-					"**/applications/**/*.yaml",
-					"**/services/**/*.yaml"
-				]
-			  }
-		],
-		"grammars": [
-			{
-			  "language": "colony",
-			  "scopeName": "source.yaml",
-			  "path": "./syntaxes/yaml.tmLanguage"
-			}
-		]
-		
-	  },
-	  "extensionDependencies": [
-			"redhat.vscode-yaml"
-		],
+		"comment": {
+			"languages": [
+				{
+					"id": "colony",
+					"configuration": "./syntaxes/language-configuration.json",
+					"aliases": [
+						"Colony",
+						"colony"
+					],
+					"filenamePatterns": [
+						"**/blueprints/*.yaml",
+						"**/applications/**/*.yaml",
+						"**/services/**/*.yaml"
+					]
+				}
+			],
+			"grammars": [
+				{
+					"language": "colony",
+					"scopeName": "source.yaml",
+					"path": "./syntaxes/yaml.tmLanguage"
+				}
+			]
+		}
+	},
+	"extensionDependencies": [
+		"redhat.vscode-yaml"
+	],
 	"main": "./out/extension",
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

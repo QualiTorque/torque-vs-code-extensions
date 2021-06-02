@@ -22,20 +22,26 @@ import os
 import glob
 import pathlib
 from json import JSONDecodeError
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
-from pygls.lsp.methods import (COMPLETION, COMPLETION_ITEM_RESOLVE, TEXT_DOCUMENT_DID_CHANGE,
-                               TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER)
+from pygls.lsp.methods import (CODE_LENS, COMPLETION, COMPLETION_ITEM_RESOLVE, DOCUMENT_LINK, TEXT_DOCUMENT_DID_CHANGE,
+                               TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES)
 from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              CompletionParams, ConfigurationItem,
-                             ConfigurationParams, Diagnostic,
-                             DidChangeTextDocumentParams, 
+                             ConfigurationParams, Diagnostic, Location,
+                             DidChangeTextDocumentParams, Command,
                              DidCloseTextDocumentParams, Hover, TextDocumentPositionParams,
                              DidOpenTextDocumentParams, MessageType, Position,
                              Range, Registration, RegistrationParams,
-                             Unregistration, UnregistrationParams, workspace)
+                             Unregistration, UnregistrationParams, 
+                             DocumentLink, DocumentLinkParams,
+                             CodeLens, CodeLensOptions, CodeLensParams,
+                             workspace)
 from pygls.server import LanguageServer
 from pygls.workspace import Document, position_from_utf16
+
+DEBOUNCE_DELAY = 0.3
+
 
 COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
@@ -194,14 +200,14 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         return CompletionList(
             is_incomplete=False,
             items=[
-                CompletionItem(label='configuration'),
-                CompletionItem(label='healthcheck'),
-                CompletionItem(label='debugging'),
-                CompletionItem(label='infrastructure'),
-                CompletionItem(label='inputs'),
-                CompletionItem(label='source'),
-                CompletionItem(label='kind'),
-                CompletionItem(label='spec_version'),
+                #CompletionItem(label='configuration'),
+                #CompletionItem(label='healthcheck'),
+                #CompletionItem(label='debugging'),
+                #CompletionItem(label='infrastructure'),
+                #CompletionItem(label='inputs'),
+                #CompletionItem(label='source'),
+                #CompletionItem(label='kind'),
+                #CompletionItem(label='spec_version'),
             ]
         )
     elif '/services/' in params.text_document.uri:
@@ -220,6 +226,97 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         )
     else:
         return CompletionList(is_incomplete=True, items=[])
+
+
+@colony_server.feature(CODE_LENS, CodeLensOptions(resolve_provider=False),)
+def code_lens(server: ColonyLanguageServer, params: Optional[CodeLensParams] = None) -> Optional[List[CodeLens]]:
+    print('------- code lens -----')
+    print(locals())
+    if '/applications/' in params.text_document.uri:
+        return [
+                    CodeLens(
+                        range=Range(
+                            start=Position(line=0, character=0),
+                            end=Position(line=1, character=1),
+                        ),
+                        command=Command(
+                            title='cmd1',
+                            command=ColonyLanguageServer.CMD_COUNT_DOWN_BLOCKING,
+                        ),
+                        data='some data 1',
+                    ),
+                    CodeLens(
+                        range=Range(
+                            start=Position(line=0, character=0),
+                            end=Position(line=1, character=1),
+                        ),
+                        command=Command(
+                            title='cmd2',
+                            command='',
+                        ),
+                        data='some data 2',
+                    ),
+                ]
+    else:
+        return None
+
+
+@colony_server.feature(REFERENCES)
+async def lsp_references(server: ColonyLanguageServer, params: TextDocumentPositionParams,) -> List[Location]:
+    print('---- references ----')
+    print(locals())
+    references: List[Location] = []
+    l = Location(uri='file:///Users/yanivk/Projects/github/kalsky/samples/applications/empty-app/empty-app.yaml', 
+                 range=Range(
+                            start=Position(line=0, character=0),
+                            end=Position(line=1, character=1),
+                        ))
+    references.append(l)
+    l = Location(uri='file:///Users/yanivk/Projects/github/kalsky/samples/applications/mysql/mysql.yaml', 
+                 range=Range(
+                            start=Position(line=0, character=0),
+                            end=Position(line=1, character=1),
+                        ))
+    references.append(l)                          
+    return references
+
+
+@colony_server.feature(DOCUMENT_LINK)
+async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkParams,) -> List[DocumentLink]:
+    print('---- document_link ----')
+    print(locals())
+    await asyncio.sleep(DEBOUNCE_DELAY)
+    links: List[DocumentLink] = []
+    
+    links.append(DocumentLink(range=Range(
+                            start=Position(line=0, character=0),
+                            end=Position(line=1, character=1),
+                        ), target='file:///Users/yanivk/Projects/github/kalsky/samples/applications/mysql/mysql.sh'))
+    return links
+
+
+@colony_server.feature(HOVER)
+def hover(server: ColonyLanguageServer, params: TextDocumentPositionParams) -> Optional[Hover]:
+    print('---- hover ----')
+    print(locals())
+    document = server.workspace.get_document(params.text_document.uri)
+    # jedi_script = jedi_utils.script(server.project, document)
+    # jedi_lines = jedi_utils.line_column(jedi_script, params.position)
+    # markup_kind = _choose_markup(server)
+    # for name in jedi_script.help(**jedi_lines):
+    #     docstring = name.docstring()
+    #     if not docstring:
+    #         continue
+    #     docstring_clean = jedi_utils.convert_docstring(docstring, markup_kind)
+    #     contents = MarkupContent(kind=markup_kind, value=docstring_clean)
+    #     document = server.workspace.get_document(params.text_document.uri)
+    #     _range = pygls_utils.current_word_range(document, params.position)
+    #     return Hover(contents=contents, range=_range)
+    return Hover(contents="some content", range=Range(
+                start=Position(line=31, character=1),
+                end=Position(line=31, character=4),
+            ))
+    return None
 
 
 @colony_server.command(ColonyLanguageServer.CMD_COUNT_DOWN_BLOCKING)
@@ -351,24 +448,3 @@ async def unregister_completions(ls: ColonyLanguageServer, *args):
                         MessageType.Error)
 
 
-@colony_server.feature(HOVER)
-def hover(server: ColonyLanguageServer, params: TextDocumentPositionParams) -> Optional[Hover]:
-    """Support Hover."""
-    document = server.workspace.get_document(params.text_document.uri)
-    # jedi_script = jedi_utils.script(server.project, document)
-    # jedi_lines = jedi_utils.line_column(jedi_script, params.position)
-    # markup_kind = _choose_markup(server)
-    # for name in jedi_script.help(**jedi_lines):
-    #     docstring = name.docstring()
-    #     if not docstring:
-    #         continue
-    #     docstring_clean = jedi_utils.convert_docstring(docstring, markup_kind)
-    #     contents = MarkupContent(kind=markup_kind, value=docstring_clean)
-    #     document = server.workspace.get_document(params.text_document.uri)
-    #     _range = pygls_utils.current_word_range(document, params.position)
-    #     return Hover(contents=contents, range=_range)
-    return Hover(contents="some content", range=Range(
-                start=Position(line=31, character=1),
-                end=Position(line=31, character=4),
-            ))
-    return None
