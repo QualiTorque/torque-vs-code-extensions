@@ -22,6 +22,7 @@ import uuid
 import os
 import glob
 import pathlib
+import re
 from json import JSONDecodeError
 from typing import Optional, Tuple, List
 
@@ -65,6 +66,7 @@ class ColonyLanguageServer(LanguageServer):
 
 colony_server = ColonyLanguageServer()
 
+
 def _preceding_words(document: Document, position: Position) -> Optional[Tuple[str, str]]:
     """
     Get the word under the cursor returning the start and end positions.
@@ -81,6 +83,7 @@ def _preceding_words(document: Document, position: Position) -> Optional[Tuple[s
     except (ValueError):
         return None
 
+
 def _get_app_scripts(app_dir_path: str):
     scripts = []
     files = pathlib.Path(app_dir_path.replace("file://", "")).parent.glob("./*")
@@ -89,6 +92,51 @@ def _get_app_scripts(app_dir_path: str):
             scripts.append(pathlib.Path(file).name)
 
     return scripts
+
+
+def _get_vars_from_tfvars(file_path: str):
+    vars = []
+    with open(file_path, "r") as f:
+        content = f.read()
+        vars = re.findall(r"(^.+?)\s+=", content, re.MULTILINE)
+        
+    return vars
+
+def _get_service_vars(service_dir_path: str):
+    with open(service_dir_path.replace("file://", ""), 'r') as stream:
+        try:
+            yaml_obj = yaml.load(stream, Loader=yaml.FullLoader) # todo: refactor
+            doc_type = yaml_obj.get('kind', '')
+        except yaml.YAMLError as exc:
+            return []
+    
+    if doc_type == "TerraForm":
+        tfvars = []
+        files = pathlib.Path(service_dir_path.replace("file://", "")).parent.glob("./*")
+        for file in files:
+            if file.name.endswith('.tfvars'):
+                item = {
+                    "file": pathlib.Path(file).name,
+                    "variables": _get_vars_from_tfvars(file)
+                }
+                tfvars.append(item)
+
+        return tfvars
+    
+    return []
+
+
+def _get_file_inputs(source):
+    yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
+    doc_type = yaml_obj.get('kind', '')
+    # if doc_type == "application":
+    inputs_obj = yaml_obj.get('inputs')
+    inputs = []
+    for input in inputs_obj:
+        inputs.append(f"${list(input.keys())[0]}")
+    return inputs
+    # else:
+    #     return []
 
 
 def _validate(ls, params):
@@ -100,7 +148,7 @@ def _validate(ls, params):
     diagnostics = _validate_yaml(source) if source else []
 
     if not diagnostics: 
-        yaml_obj = yaml.load(source) # todo: refactor
+        yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
         doc_type = yaml_obj.get('kind', '')
         doc_lines = text_doc.lines
         if doc_type == "application":
@@ -119,6 +167,24 @@ def _validate(ls, params):
                                 end=Position(line=i, character=col_pos + 1 +len(script_ref))
                             ),
                             message=f"File {script_ref} doesn't exist"
+                        )
+                        diagnostics.append(d)
+        elif doc_type == "TerraForm":
+            vars = _get_service_vars(params.text_document.uri)
+            vars_files = [var["file"] for var in vars]
+
+            for k, v in yaml_obj.get('variables', []).items():
+                if k == "var_file" and v not in vars_files:
+                    for i in range(len(doc_lines)):
+                        col_pos = doc_lines[i].find(v)
+                        if col_pos == -1:
+                            continue
+                        d = Diagnostic(
+                            range=Range(
+                                start=Position(line=i, character=col_pos),
+                                end=Position(line=i, character=col_pos + 1 +len(v))
+                            ),
+                            message=f"File {v} doesn't exist"
                         )
                         diagnostics.append(d)
     ls.publish_diagnostics(text_doc.uri, diagnostics)
@@ -177,11 +243,11 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     print('--------')
     if '/blueprints/' in params.text_document.uri:        
         items=[
-                CompletionItem(label='applications'),
-                CompletionItem(label='clouds'),
-                CompletionItem(label='debugging'),
-                CompletionItem(label='ingress'),
-                CompletionItem(label='availability'),
+                # CompletionItem(label='applications'),
+                # CompletionItem(label='clouds'),
+                # CompletionItem(label='debugging'),
+                # CompletionItem(label='ingress'),
+                # CompletionItem(label='availability'),
             ]
         apps_path = os.path.join(str(pathlib.Path(params.text_document.uri).parents[1]).replace('file:',''), 'applications')
         for dir in os.listdir(apps_path):
@@ -189,19 +255,19 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             if os.path.isdir(app_dir):
                 files = os.listdir(app_dir)
                 if f'{dir}.yaml' in files:
-                    output = f"  - {dir}:\n"
+                    output = f"- {dir}:\n"
                     with open(os.path.join(app_dir, f'{dir}.yaml')) as file:
                         app_file = yaml.load(file, Loader=yaml.FullLoader)
                         inputs = app_file['inputs'] if 'inputs' in app_file else None
                         if inputs:
-                            output += "      instances: 1\n"
-                            output += "      inputs_value:\n"
+                            output += "  instances: 1\n"
+                            output += "  inputs_value:\n"
                             for input in inputs:
                                 if isinstance(input, str):
                                     output += f"      - {input}: \n"
                                 elif isinstance(input, dict):
                                     for k,v in input.items():
-                                        output += f"      - {k}: {v}\n"
+                                        output += f"  - {k}: {v}\n"
                     items.append(CompletionItem(label=dir, kind=CompletionItemKind.Reference, insert_text=output))
         return CompletionList(
             is_incomplete=False,
@@ -212,12 +278,20 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             colony_server.workspace.get_document(params.text_document.uri),
             params.position)
         # debug("words", words)
-        if words[0].startswith("script"):
-            scripts = _get_app_scripts(params.text_document.uri)
-            return CompletionList(
-                is_incomplete=False,
-                items=[CompletionItem(label=script) for script in scripts],
-            )
+        if words:
+            if words[0] == "script:":
+                scripts = _get_app_scripts(params.text_document.uri)
+                return CompletionList(
+                    is_incomplete=False,
+                    items=[CompletionItem(label=script) for script in scripts],
+                )
+            elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
+                available_inputs = _get_file_inputs(doc.source)
+                return CompletionList(
+                    is_incomplete=False,
+                    items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
+                )
+        
 
 
         return CompletionList(
@@ -234,17 +308,39 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             ]
         )
     elif '/services/' in params.text_document.uri:
+        words = _preceding_words(
+            colony_server.workspace.get_document(params.text_document.uri),
+            params.position)
+        # debug("words", words)
+        if words:
+            if words[0] == "var_file:":
+                var_files = _get_service_vars(params.text_document.uri)
+                return CompletionList(
+                    is_incomplete=False,
+                    items=[CompletionItem(label=var["file"],
+                                          insert_text=f"{var['file']}\r\nvalues:\r\n" + 
+                                                       "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
+                                          kind=CompletionItemKind.File
+                )
+            elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
+                available_inputs = _get_file_inputs(doc.source)
+                return CompletionList(
+                    is_incomplete=False,
+                    items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
+                )
+
+        # we don't need the below if we use a schema file 
         return CompletionList(
             is_incomplete=False,
             items=[
-                CompletionItem(label='permissions'),
-                CompletionItem(label='outputs'),
-                CompletionItem(label='variables'),
-                CompletionItem(label='module'),
-                CompletionItem(label='inputs'),
-                CompletionItem(label='source'),
-                CompletionItem(label='kind'),
-                CompletionItem(label='spec_version'),
+                # CompletionItem(label='permissions'),
+                # CompletionItem(label='outputs'),
+                # CompletionItem(label='variables'),
+                # CompletionItem(label='module'),
+                # CompletionItem(label='inputs'),
+                # CompletionItem(label='source'),
+                # CompletionItem(label='kind'),
+                # CompletionItem(label='spec_version'),
             ]
         )
     else:
