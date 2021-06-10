@@ -98,12 +98,18 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "allow_direct_access": {
+                    "type": "boolean"
+                },
                 "connection_protocol": {
                     "type": "string",
-                    "enum": ["SSH", "RDP", "RDP,SSH"]                    
-                }
+                    "enum": ["SSH", "RDP", "RDP,SSH"]
+                }                
             },
-            "required": [
+            "required":[
+                "allow_direct_access"
+            ],
+            "optional": [
                 "connection_protocol"
             ],
             "title": "Debugging"
@@ -228,7 +234,8 @@
                     "$ref": "#/definitions/Image"
                 },
                 "os_type": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": ["linux", "windows"]
                 }
             },
             "required": [
