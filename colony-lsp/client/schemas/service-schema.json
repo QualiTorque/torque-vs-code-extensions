@@ -1,0 +1,132 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Colony-Service",
+    "definitions": {
+        "Colony-Service": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "spec_version": {
+                    "type": "integer",
+                    "enum": [1]
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": ["TerraForm"]
+                },
+                "inputs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "module": {
+                    "$ref": "#/definitions/Module"
+                },
+                "terraform_version": {
+                    "type": "string"
+                },
+                "variables": {
+                    "$ref": "#/definitions/Variables"
+                },
+                "outputs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "permissions": {
+                    "$ref": "#/definitions/Permissions"
+                }
+            },
+            "optional": [
+                "outputs",
+            ],
+            "required": [
+                "inputs",
+                "kind",
+                "module",
+                "permissions",
+                "spec_version",
+                "terraform_version",
+                "variables"
+            ],
+            "title": "Colony-Service"
+        },
+        "Module": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "source": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "source"
+            ],
+            "title": "Module"
+        },
+        "Permissions": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "azure": {
+                    "$ref": "#/definitions/Azure"
+                }
+            },
+            "required": [
+                "azure"
+            ],
+            "title": "Permissions"
+        },
+        "Azure": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "managed_identity_id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "managed_identity_id"
+            ],
+            "title": "Azure"
+        },
+        "Variables": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "values": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Value"
+                    }
+                }
+            },
+            "required": [
+                "values"
+            ],
+            "title": "Variables"
+        },
+        "Value": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "db_name": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "sandbox_id": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "Value"
+        }
+    }
+}
