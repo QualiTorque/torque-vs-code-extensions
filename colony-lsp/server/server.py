@@ -48,6 +48,9 @@ DEBOUNCE_DELAY = 0.3
 COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
 
+APPLICATIONS = {}
+SERVICES = {}
+
 
 class ColonyLanguageServer(LanguageServer):
     CMD_COUNT_DOWN_BLOCKING = 'countDownBlocking'
@@ -82,6 +85,69 @@ def _preceding_words(document: Document, position: Position) -> Optional[Tuple[s
         return word
     except (ValueError):
         return None
+
+
+def _load_app_details(app_name: str, file_path: str):
+    output = f"- {app_name}:\n"
+    output += "  instances: 1\n"                        
+    with open(file_path.replace("file://", ""), "r") as file:
+        app_file = yaml.load(file, Loader=yaml.FullLoader)
+        inputs = app_file['inputs'] if 'inputs' in app_file else None
+        if inputs:
+            output += "  inputs_value:\n"
+            for input in inputs:
+                if isinstance(input, str):
+                    output += f"      - {input}: \n"
+                elif isinstance(input, dict):
+                    for k,v in input.items():
+                        output += f"  - {k}: {v}\n"
+    APPLICATIONS[app_name] = output
+
+
+def _get_available_applications(root_folder: str):
+    if APPLICATIONS:
+        return APPLICATIONS
+    else:
+        apps_path = os.path.join(root_folder, 'applications')
+        for dir in os.listdir(apps_path):
+            app_dir = os.path.join(apps_path, dir)
+            if os.path.isdir(app_dir):
+                files = os.listdir(app_dir)
+                if f'{dir}.yaml' in files:
+                    _load_app_details(app_name=dir, file_path=os.path.join(app_dir, f'{dir}.yaml'))
+                    
+        return APPLICATIONS
+
+
+def _load_service_details(srv_name: str, file_path: str):
+    output = f"- {srv_name}:\n"
+    with open(file_path.replace("file://", ""), "r") as file:
+        app_file = yaml.load(file, Loader=yaml.FullLoader)
+        inputs = app_file['inputs'] if 'inputs' in app_file else None
+        if inputs:
+            output += "  inputs_value:\n"
+            for input in inputs:
+                if isinstance(input, str):
+                    output += f"      - {input}: \n"
+                elif isinstance(input, dict):
+                    for k,v in input.items():
+                        output += f"  - {k}: {v}\n"
+    SERVICES[srv_name] = output
+
+
+def _get_available_services(root_folder: str):
+    if SERVICES:
+        return SERVICES
+    else:
+        srv_path = os.path.join(root_folder, 'services')
+        for dir in os.listdir(srv_path):
+            srv_dir = os.path.join(srv_path, dir)
+            if os.path.isdir(srv_dir):
+                files = os.listdir(srv_dir)
+                if f'{dir}.yaml' in files:
+                    _load_service_details(srv_name=dir, file_path=os.path.join(srv_dir, f'{dir}.yaml'))
+
+        return SERVICES
 
 
 def _get_app_scripts(app_dir_path: str):
@@ -127,7 +193,7 @@ def _get_service_vars(service_dir_path: str):
 
 
 def _get_file_variables(source):
-    vars = re.findall(r"(\$[\w\.]+)", source, re.MULTILINE)
+    vars = re.findall(r"(\$[\w\.\-]+)", source, re.MULTILINE)
     return vars  
 
 
@@ -135,11 +201,12 @@ def _get_file_inputs(source):
     yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
     inputs_obj = yaml_obj.get('inputs')
     inputs = []
-    for input in inputs_obj:
-        if isinstance(input, str):
-            inputs.append(f"${input}")
-        elif isinstance(input, dict):
-            inputs.append(f"${list(input.keys())[0]}")
+    if inputs_obj:
+        for input in inputs_obj:
+            if isinstance(input, str):
+                inputs.append(f"${input}")
+            elif isinstance(input, dict):
+                inputs.append(f"${list(input.keys())[0]}")
     
     return inputs
 
@@ -148,6 +215,7 @@ def _validate(ls, params):
     ls.show_message_log('Validating yaml...')
 
     text_doc = ls.workspace.get_document(params.text_document.uri)
+    root = ls.workspace.root_path
     
     source = text_doc.source
     diagnostics = _validate_yaml(source) if source else []
@@ -160,7 +228,9 @@ def _validate(ls, params):
         file_vars = _get_file_variables(source)
         # validate vars exist
         for var in file_vars:
-            if var not in file_inputs or (not doc_type == "blueprint" and var.startswith('$colony')):
+            if var not in file_inputs:
+                if (doc_type == "blueprint" and var.startswith('$colony')):
+                    continue
                 for i in range(len(doc_lines)):
                     col_pos = doc_lines[i].find(var)
                     if col_pos == -1:
@@ -178,12 +248,43 @@ def _validate(ls, params):
                     )
                     diagnostics.append(d)
 
-        # if doc_type == "blueprint":
-        #     pass
+        if doc_type == "blueprint":
+            apps = _get_available_applications(root)
+            for app in yaml_obj.get('applications', []):
+                app = list(app.keys())[0]
+                if app not in apps.keys():
+                    for i in range(len(doc_lines)):
+                        col_pos = doc_lines[i].find(app)
+                        if col_pos == -1:
+                            continue
+                        d = Diagnostic(
+                            range=Range(
+                                start=Position(line=i, character=col_pos),
+                                end=Position(line=i, character=col_pos + 1 +len(app))
+                            ),
+                            message=f"Application '{app}' doesn't exist"
+                        )
+                        diagnostics.append(d)
+            srvs = _get_available_services(root)
+            for srv in yaml_obj.get('services', []):
+                srv = list(srv.keys())[0]
+                if srv not in srvs.keys():
+                    for i in range(len(doc_lines)):
+                        col_pos = doc_lines[i].find(srv)
+                        if col_pos == -1:
+                            continue
+                        d = Diagnostic(
+                            range=Range(
+                                start=Position(line=i, character=col_pos),
+                                end=Position(line=i, character=col_pos + 1 +len(srv))
+                            ),
+                            message=f"Service '{srv}' doesn't exist"
+                        )
+                        diagnostics.append(d)
 
         if doc_type == "application":
             scripts = _get_app_scripts(params.text_document.uri)
-
+                
             for k, v in yaml_obj.get('configuration', []).items():
                 script_ref = v.get('script', None)
                 if script_ref and script_ref not in scripts:
@@ -199,7 +300,7 @@ def _validate(ls, params):
                             message=f"File {script_ref} doesn't exist"
                         )
                         diagnostics.append(d)
-        elif doc_type == "TerraForm":
+        elif doc_type == "TerraForm":            
             vars = _get_service_vars(params.text_document.uri)
             vars_files = [var["file"] for var in vars]
 
@@ -279,26 +380,16 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                 # CompletionItem(label='ingress'),
                 # CompletionItem(label='availability'),
             ]
-        apps_path = os.path.join(str(pathlib.Path(params.text_document.uri).parents[1]).replace('file:',''), 'applications')
-        for dir in os.listdir(apps_path):
-            app_dir = os.path.join(apps_path, dir)
-            if os.path.isdir(app_dir):
-                files = os.listdir(app_dir)
-                if f'{dir}.yaml' in files:
-                    output = f"- {dir}:\n"
-                    with open(os.path.join(app_dir, f'{dir}.yaml')) as file:
-                        app_file = yaml.load(file, Loader=yaml.FullLoader)
-                        inputs = app_file['inputs'] if 'inputs' in app_file else None
-                        if inputs:
-                            output += "  instances: 1\n"
-                            output += "  inputs_value:\n"
-                            for input in inputs:
-                                if isinstance(input, str):
-                                    output += f"      - {input}: \n"
-                                elif isinstance(input, dict):
-                                    for k,v in input.items():
-                                        output += f"  - {k}: {v}\n"
-                    items.append(CompletionItem(label=dir, kind=CompletionItemKind.Reference, insert_text=output))
+        # TODO: check if we're under the applications section
+        apps = _get_available_applications(root)
+        for app in apps:
+            items.append(CompletionItem(label=app, kind=CompletionItemKind.Reference, insert_text=apps[app]))
+        
+        # TODO: check if we're under the services section
+        srvs = _get_available_services(root)
+        for srv in srvs:
+            items.append(CompletionItem(label=srv, kind=CompletionItemKind.Reference, insert_text=srvs[srv]))
+        
         return CompletionList(
             is_incomplete=False,
             items=items
@@ -508,7 +599,23 @@ async def count_down_10_seconds_non_blocking(ls, *args):
 @colony_server.feature(TEXT_DOCUMENT_DID_CHANGE)
 def did_change(ls, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
+    print('------did change-------')
     _validate(ls, params)
+    text_doc = ls.workspace.get_document(params.text_document.uri)
+    root = ls.workspace.root_path
+    
+    source = text_doc.source
+    yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
+    doc_type = yaml_obj.get('kind', '')
+    
+    if doc_type == "application":
+        app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
+        if APPLICATIONS and app_name not in APPLICATIONS: # if there is already a cache, add this file
+            _load_app_details(app_name, params.text_document.uri)
+    elif doc_type == "TerraForm":
+        srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
+        if SERVICES and srv_name not in SERVICES: # if there is already a cache, add this file
+            _load_service_details(srv_name, params.text_document.uri)
 
 
 @colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
