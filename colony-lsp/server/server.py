@@ -98,7 +98,7 @@ def _get_vars_from_tfvars(file_path: str):
     vars = []
     with open(file_path, "r") as f:
         content = f.read()
-        vars = re.findall(r"(^.+?)\s+=", content, re.MULTILINE)
+        vars = re.findall(r"(^.+?)\s*=", content, re.MULTILINE)
         
     return vars
 
@@ -126,24 +126,29 @@ def _get_service_vars(service_dir_path: str):
     return []
 
 
+def _get_file_variables(source):
+    vars = re.findall(r"(\$[\w\.]+)", source, re.MULTILINE)
+    return vars  
+
+
 def _get_file_inputs(source):
     yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
-    doc_type = yaml_obj.get('kind', '')
-    # if doc_type == "application":
     inputs_obj = yaml_obj.get('inputs')
     inputs = []
     for input in inputs_obj:
-        inputs.append(f"${list(input.keys())[0]}")
+        if isinstance(input, str):
+            inputs.append(f"${input}")
+        elif isinstance(input, dict):
+            inputs.append(f"${list(input.keys())[0]}")
+    
     return inputs
-    # else:
-    #     return []
 
 
 def _validate(ls, params):
     ls.show_message_log('Validating yaml...')
 
     text_doc = ls.workspace.get_document(params.text_document.uri)
-
+    
     source = text_doc.source
     diagnostics = _validate_yaml(source) if source else []
 
@@ -151,6 +156,31 @@ def _validate(ls, params):
         yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
         doc_type = yaml_obj.get('kind', '')
         doc_lines = text_doc.lines
+        file_inputs = _get_file_inputs(source)
+        file_vars = _get_file_variables(source)
+        # validate vars exist
+        for var in file_vars:
+            if var not in file_inputs or (not doc_type == "blueprint" and var.startswith('$colony')):
+                for i in range(len(doc_lines)):
+                    col_pos = doc_lines[i].find(var)
+                    if col_pos == -1:
+                        continue
+                    if var.startswith('$colony'):
+                        msg = f"'{var}' is not an allowed variable in this file"
+                    else:
+                        msg = f"'{var}' is not defined"
+                    d = Diagnostic(
+                        range=Range(
+                            start=Position(line=i, character=col_pos),
+                            end=Position(line=i, character=col_pos + 1 +len(var))
+                        ),
+                        message=msg
+                    )
+                    diagnostics.append(d)
+
+        # if doc_type == "blueprint":
+        #     pass
+
         if doc_type == "application":
             scripts = _get_app_scripts(params.text_document.uri)
 
