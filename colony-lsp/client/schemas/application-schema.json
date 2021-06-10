@@ -1,0 +1,274 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Colony-Application",
+    "definitions": {
+        "Colony-Application": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "configuration": {
+                    "$ref": "#/definitions/Configuration"
+                },
+                "debugging": {
+                    "$ref": "#/definitions/Debugging"
+                },
+                "infrastructure": {
+                    "$ref": "#/definitions/Infrastructure"
+                },
+                "inputs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Input"
+                    }
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "source": {
+                    "$ref": "#/definitions/Source"
+                },
+                "spec_version": {
+                    "type": "integer",
+                    "enum": [1]
+                }
+            },
+            "required": [
+                "configuration",
+                "debugging",
+                "infrastructure",
+                "inputs",
+                "kind",
+                "source",
+                "spec_version"
+            ],
+            "title": "Colony-Application"
+        },
+        "Configuration": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "healthcheck": {
+                    "$ref": "#/definitions/Healthcheck"
+                },
+                "initialization": {
+                    "$ref": "#/definitions/Initialization"
+                },
+                "start": {
+                    "$ref": "#/definitions/Initialization"
+                }
+            },
+            "required": [
+                "healthcheck",
+                "initialization",
+                "start"
+            ],
+            "title": "Configuration"
+        },
+        "Healthcheck": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "timeout": {
+                    "type": "integer"
+                },
+                "wait_for_ports": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "timeout",
+                "wait_for_ports"
+            ],
+            "title": "Healthcheck"
+        },
+        "Initialization": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "script": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "script"
+            ],
+            "title": "Initialization"
+        },
+        "Debugging": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "connection_protocol": {
+                    "type": "string",
+                    "enum": ["SSH", "RDP", "RDP,SSH"]                    
+                }
+            },
+            "required": [
+                "connection_protocol"
+            ],
+            "title": "Debugging"
+        },
+        "Infrastructure": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "compute": {
+                    "$ref": "#/definitions/Compute"
+                },
+                "connectivity": {
+                    "$ref": "#/definitions/Connectivity"
+                }
+            },
+            "required": [
+                "compute",
+                "connectivity"
+            ],
+            "title": "Infrastructure"
+        },
+        "Compute": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "spec": {
+                    "$ref": "#/definitions/Spec"
+                }
+            },
+            "required": [
+                "spec"
+            ],
+            "title": "Compute"
+        },
+        "Spec": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "azure": {
+                    "$ref": "#/definitions/Azure"
+                }
+            },
+            "required": [
+                "azure"
+            ],
+            "title": "Spec"
+        },
+        "Azure": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "vm_size": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "vm_size"
+            ],
+            "title": "Azure"
+        },
+        "Connectivity": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "external": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/External"
+                    }
+                }
+            },
+            "required": [
+                "external"
+            ],
+            "title": "Connectivity"
+        },
+        "External": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "web": {
+                    "$ref": "#/definitions/Web"
+                }
+            },
+            "required": [
+                "web"
+            ],
+            "title": "External"
+        },
+        "Web": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "port": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "port"
+            ],
+            "title": "Web"
+        },
+        "Input": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "PORT": {
+                    "type": "integer"
+                },
+                "AZURE_VM_SIZE": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "Input"
+        },
+        "Source": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "image": {
+                    "$ref": "#/definitions/Image"
+                },
+                "os_type": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "image",
+                "os_type"
+            ],
+            "title": "Source"
+        },
+        "Image": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "azure_image": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AzureImage"
+                    }
+                }
+            },
+            "required": [
+                "azure_image"
+            ],
+            "title": "Image"
+        },
+        "AzureImage": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "urn": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "urn",
+                "username"
+            ],
+            "title": "AzureImage"
+        }
+    }
+}
