@@ -51,6 +51,12 @@ COUNT_DOWN_SLEEP_IN_SECONDS = 1
 APPLICATIONS = {}
 SERVICES = {}
 
+PREDEFINED_COLONY_INPUTS = [
+    "$colony.environment.id",
+    "$colony.environment.virtual_network_id",
+    "$colony.environment.public_address"
+]
+
 
 class ColonyLanguageServer(LanguageServer):
     CMD_COUNT_DOWN_BLOCKING = 'countDownBlocking'
@@ -69,6 +75,30 @@ class ColonyLanguageServer(LanguageServer):
 
 colony_server = ColonyLanguageServer()
 
+
+def _get_parent_word(document: Document, position: Position):
+    lines = document.lines
+    if position.line >= len(lines) or position.line == 0:
+        return None
+
+    row, col = position_from_utf16(lines, position)    
+    
+    cur_word = document.word_at_position(position=Position(line=row, character=col))
+    line = lines[row]
+    index = line.find(cur_word)
+    if index >= 2:
+        col = index - 2
+    
+    row -= 1
+    word = None
+    while row >= 0:
+        word = document.word_at_position(position=Position(line=row, character=col))
+        row -= 1
+        if word:
+            break
+    
+    return word
+    
 
 def _preceding_words(document: Document, position: Position) -> Optional[Tuple[str, str]]:
     """
@@ -94,7 +124,7 @@ def _load_app_details(app_name: str, file_path: str):
         app_file = yaml.load(file, Loader=yaml.FullLoader)
         inputs = app_file['inputs'] if 'inputs' in app_file else None
         if inputs:
-            output += "  inputs_value:\n"
+            output += "  input_values:\n"
             for input in inputs:
                 if isinstance(input, str):
                     output += f"      - {input}: \n"
@@ -363,6 +393,7 @@ def completion_item_resolve(server: ColonyLanguageServer, params: CompletionItem
     #     params, markup_kind=markup_kind
     # )
 
+
 @colony_server.feature(COMPLETION, CompletionOptions(resolve_provider=True))
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
@@ -372,7 +403,9 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     print('completion')
     print(params)
     print('--------')
-    if '/blueprints/' in params.text_document.uri:        
+    
+    if '/blueprints/' in params.text_document.uri:
+        parent = _get_parent_word(colony_server.workspace.get_document(params.text_document.uri), params.position)
         items=[
                 # CompletionItem(label='applications'),
                 # CompletionItem(label='clouds'),
@@ -380,15 +413,24 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                 # CompletionItem(label='ingress'),
                 # CompletionItem(label='availability'),
             ]
-        # TODO: check if we're under the applications section
-        apps = _get_available_applications(root)
-        for app in apps:
-            items.append(CompletionItem(label=app, kind=CompletionItemKind.Reference, insert_text=apps[app]))
         
-        # TODO: check if we're under the services section
-        srvs = _get_available_services(root)
-        for srv in srvs:
-            items.append(CompletionItem(label=srv, kind=CompletionItemKind.Reference, insert_text=srvs[srv]))
+        if parent == "applications":
+            apps = _get_available_applications(root)
+            for app in apps:
+                items.append(CompletionItem(label=app, kind=CompletionItemKind.Reference, insert_text=apps[app]))
+        
+        if parent == "services":
+            srvs = _get_available_services(root)
+            for srv in srvs:
+                items.append(CompletionItem(label=srv, kind=CompletionItemKind.Reference, insert_text=srvs[srv]))
+        
+        if parent == "input_values":
+            available_inputs = _get_file_inputs(doc.source)
+            inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs]
+            items.extend(inputs)
+            inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in PREDEFINED_COLONY_INPUTS]
+            items.extend(inputs)
+            # TODO: add output generated variables of apps/services in this blueprint ($colony.applications.app_name.outputs.output_name, $colony.services.service_name.outputs.output_name)
         
         return CompletionList(
             is_incomplete=False,
@@ -412,9 +454,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                     is_incomplete=False,
                     items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
                 )
-        
-
-
+                
         return CompletionList(
             is_incomplete=False,
             items=[
@@ -443,13 +483,14 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                                                        "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
                                           kind=CompletionItemKind.File
                 )
+            # TODO: when services should use inputs?
             elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
                 available_inputs = _get_file_inputs(doc.source)
                 return CompletionList(
                     is_incomplete=False,
                     items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
                 )
-
+                
         # we don't need the below if we use a schema file 
         return CompletionList(
             is_incomplete=False,
