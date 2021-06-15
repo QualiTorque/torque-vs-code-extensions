@@ -60,30 +60,12 @@
 				}
 			}
 		},
-		"comment": {
-			"languages": [
-				{
-					"id": "colony",
-					"configuration": "./syntaxes/language-configuration.json",
-					"aliases": [
-						"Colony",
-						"colony"
-					],
-					"filenamePatterns": [
-						"**/blueprints/*.yaml",
-						"**/applications/**/*.yaml",
-						"**/services/**/*.yaml"
-					]
-				}
-			],
-			"grammars": [
-				{
-					"language": "colony",
-					"scopeName": "source.yaml",
-					"path": "./syntaxes/yaml.tmLanguage"
-				}
-			]
-		}
+		"grammars": [
+			{
+			  "path": "./syntaxes/colony.tmLanguage.json",
+			  "scopeName": "source.yaml"
+			}
+		]
 	},
 	"extensionDependencies": [
 		"redhat.vscode-yaml"
