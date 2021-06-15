@@ -16,6 +16,8 @@
 ############################################################################
 import asyncio
 from pygls.lsp import types
+from pygls.lsp.types.basic_structures import VersionedTextDocumentIdentifier
+from pygls.lsp import types, InitializeResult
 import yaml
 import time
 import uuid
@@ -24,7 +26,10 @@ import glob
 import pathlib
 import re
 from json import JSONDecodeError
-from typing import Optional, Tuple, List
+from typing import Any, Dict, Optional, Tuple, List, Union, cast
+
+from .utils import services, applications, common
+from pygls.protocol import LanguageServerProtocol
 
 from pygls.lsp.methods import (CODE_LENS, COMPLETION, COMPLETION_ITEM_RESOLVE, DOCUMENT_LINK, TEXT_DOCUMENT_DID_CHANGE,
                                TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES, DEFINITION)
@@ -40,7 +45,7 @@ from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              CodeLens, CodeLensOptions, CodeLensParams,
                              workspace, CompletionItemKind)
 from pygls.server import LanguageServer
-from pygls.workspace import Document, position_from_utf16
+from pygls.workspace import Document, Workspace, position_from_utf16
 
 DEBOUNCE_DELAY = 0.3
 
@@ -57,6 +62,48 @@ PREDEFINED_COLONY_INPUTS = [
     "$colony.environment.public_address"
 ]
 
+class ColonyWorkspace(Workspace):
+    """
+    Add colony-specific properties
+    """
+
+    def __init__(self, root_uri, sync_kind, workspace_folders):
+        self._colony_objs = {}
+
+        super().__init__(root_uri, sync_kind=sync_kind, workspace_folders=workspace_folders)
+
+    @property
+    def colony_objs(self) -> dict:
+        return self._colony_objs
+
+    def _update_document(self, text_document: Union[types.TextDocumentItem, types.VersionedTextDocumentIdentifier]) -> None:
+        self.logger.debug("updating document '%s'", text_document.uri)
+        uri = text_document.uri
+        colony_obj = yaml.load(self.get_document(uri).source, Loader=yaml.FullLoader)
+        self._colony_objs[uri] = colony_obj
+
+    def update_document(self, text_doc: VersionedTextDocumentIdentifier, change: workspace.TextDocumentContentChangeEvent):
+        return super().update_document(text_doc, change)
+        self._update_document(text_document)
+
+
+class ColonyLspProtocol(LanguageServerProtocol):
+    """Custom protocol that replaces the workspace with a ColonyWorkspace
+    instance.
+    """
+
+    workspace: ColonyWorkspace
+
+    def bf_initialize(self, *args, **kwargs) -> InitializeResult:
+        res = super().bf_initialize(*args, **kwargs)
+        ws = self.workspace
+        self.workspace = ColonyWorkspace(
+            ws.root_uri,
+            self._server.sync_kind,
+            ws.folders.values(),
+        )
+        return res
+
 
 class ColonyLanguageServer(LanguageServer):
     CMD_COUNT_DOWN_BLOCKING = 'countDownBlocking'
@@ -70,156 +117,14 @@ class ColonyLanguageServer(LanguageServer):
     CONFIGURATION_SECTION = 'colonyServer'
 
     def __init__(self):
-        super().__init__()
+        super().__init__(protocol_cls=ColonyLspProtocol)
+    
+    @property
+    def workspace(self) -> ColonyWorkspace:
+        return cast(ColonyWorkspace, super().workspace)
 
 
 colony_server = ColonyLanguageServer()
-
-
-def _get_parent_word(document: Document, position: Position):
-    lines = document.lines
-    if position.line >= len(lines) or position.line == 0:
-        return None
-
-    row, col = position_from_utf16(lines, position)    
-    
-    cur_word = document.word_at_position(position=Position(line=row, character=col))
-    line = lines[row]
-    index = line.find(cur_word)
-    if index >= 2:
-        col = index - 2
-    
-    row -= 1
-    word = None
-    while row >= 0:
-        word = document.word_at_position(position=Position(line=row, character=col))
-        row -= 1
-        if word:
-            break
-    
-    return word
-    
-
-def _preceding_words(document: Document, position: Position) -> Optional[Tuple[str, str]]:
-    """
-    Get the word under the cursor returning the start and end positions.
-    """
-    lines = document.lines
-    if position.line >= len(lines):
-        return None
-
-    row, col = position_from_utf16(lines, position)
-    line = lines[row]
-    try:
-        word = line[:col].strip().split()[-2:]
-        return word
-    except (ValueError):
-        return None
-
-
-def _load_app_details(app_name: str, file_path: str):
-    output = f"- {app_name}:\n"
-    output += "  instances: 1\n"                        
-    with open(file_path.replace("file://", ""), "r") as file:
-        app_file = yaml.load(file, Loader=yaml.FullLoader)
-        inputs = app_file['inputs'] if 'inputs' in app_file else None
-        if inputs:
-            output += "  input_values:\n"
-            for input in inputs:
-                if isinstance(input, str):
-                    output += f"      - {input}: \n"
-                elif isinstance(input, dict):
-                    for k,v in input.items():
-                        output += f"  - {k}: {v}\n"
-    APPLICATIONS[app_name] = output
-
-
-def _get_available_applications(root_folder: str):
-    if APPLICATIONS:
-        return APPLICATIONS
-    else:
-        apps_path = os.path.join(root_folder, 'applications')
-        for dir in os.listdir(apps_path):
-            app_dir = os.path.join(apps_path, dir)
-            if os.path.isdir(app_dir):
-                files = os.listdir(app_dir)
-                if f'{dir}.yaml' in files:
-                    _load_app_details(app_name=dir, file_path=os.path.join(app_dir, f'{dir}.yaml'))
-                    
-        return APPLICATIONS
-
-
-def _load_service_details(srv_name: str, file_path: str):
-    output = f"- {srv_name}:\n"
-    with open(file_path.replace("file://", ""), "r") as file:
-        app_file = yaml.load(file, Loader=yaml.FullLoader)
-        inputs = app_file['inputs'] if 'inputs' in app_file else None
-        if inputs:
-            output += "  inputs_value:\n"
-            for input in inputs:
-                if isinstance(input, str):
-                    output += f"  - {input}: \n"
-                elif isinstance(input, dict):
-                    for k,v in input.items():
-                        output += f"  - {k}: {v}\n"
-    SERVICES[srv_name] = output
-
-
-def _get_available_services(root_folder: str):
-    if SERVICES:
-        return SERVICES
-    else:
-        srv_path = os.path.join(root_folder, 'services')
-        for dir in os.listdir(srv_path):
-            srv_dir = os.path.join(srv_path, dir)
-            if os.path.isdir(srv_dir):
-                files = os.listdir(srv_dir)
-                if f'{dir}.yaml' in files:
-                    _load_service_details(srv_name=dir, file_path=os.path.join(srv_dir, f'{dir}.yaml'))
-
-        return SERVICES
-
-
-def _get_app_scripts(app_dir_path: str):
-    scripts = []
-    files = pathlib.Path(app_dir_path.replace("file://", "")).parent.glob("./*")
-    for file in files:
-        if not file.name.endswith('.yaml'):
-            scripts.append(pathlib.Path(file).name)
-
-    return scripts
-
-
-def _get_vars_from_tfvars(file_path: str):
-    vars = []
-    with open(file_path, "r") as f:
-        content = f.read()
-        vars = re.findall(r"(^.+?)\s*=", content, re.MULTILINE)
-        
-    return vars
-
-def _get_service_vars(service_dir_path: str):
-    with open(service_dir_path.replace("file://", ""), 'r') as stream:
-        try:
-            yaml_obj = yaml.load(stream, Loader=yaml.FullLoader) # todo: refactor
-            doc_type = yaml_obj.get('kind', '')
-        except yaml.YAMLError as exc:
-            return []
-    
-    if doc_type == "TerraForm":
-        tfvars = []
-        files = pathlib.Path(service_dir_path.replace("file://", "")).parent.glob("./*")
-        for file in files:
-            if file.name.endswith('.tfvars'):
-                item = {
-                    "file": pathlib.Path(file).name,
-                    "variables": _get_vars_from_tfvars(file)
-                }
-                tfvars.append(item)
-
-        return tfvars
-    
-    return []
 
 
 def _get_file_variables(source):
@@ -279,7 +184,8 @@ def _validate(ls, params):
                     diagnostics.append(d)
 
         if doc_type == "blueprint":
-            apps = _get_available_applications(root)
+            print(ls.workspace.colony_objs)
+            apps = applications.get_available_applications(root, APPLICATIONS)
             for app in yaml_obj.get('applications', []):
                 app = list(app.keys())[0]
                 if app not in apps.keys():
@@ -295,7 +201,7 @@ def _validate(ls, params):
                             message=f"Application '{app}' doesn't exist"
                         )
                         diagnostics.append(d)
-            srvs = _get_available_services(root)
+            srvs = services.get_available_services(root, SERVICES)
             for srv in yaml_obj.get('services', []):
                 srv = list(srv.keys())[0]
                 if srv not in srvs.keys():
@@ -313,7 +219,7 @@ def _validate(ls, params):
                         diagnostics.append(d)
 
         if doc_type == "application":
-            scripts = _get_app_scripts(params.text_document.uri)
+            scripts = applications.get_app_scripts(params.text_document.uri)
                 
             for k, v in yaml_obj.get('configuration', []).items():
                 script_ref = v.get('script', None)
@@ -331,7 +237,7 @@ def _validate(ls, params):
                         )
                         diagnostics.append(d)
         elif doc_type == "TerraForm":            
-            vars = _get_service_vars(params.text_document.uri)
+            vars = services.get_service_vars(params.text_document.uri)
             vars_files = [var["file"] for var in vars]
 
             for k, v in yaml_obj.get('variables', []).items():
@@ -615,11 +521,11 @@ def did_change(ls, params: DidChangeTextDocumentParams):
     if doc_type == "application":
         app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
         if APPLICATIONS and app_name not in APPLICATIONS: # if there is already a cache, add this file
-            _load_app_details(app_name, params.text_document.uri)
+            applications.load_app_details(app_name, params.text_document.uri, APPLICATIONS)
     elif doc_type == "TerraForm":
         srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
         if SERVICES and srv_name not in SERVICES: # if there is already a cache, add this file
-            _load_service_details(srv_name, params.text_document.uri)
+            services.load_service_details(srv_name, params.text_document.uri, SERVICES)
 
 
 @colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
