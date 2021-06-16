@@ -155,6 +155,9 @@
                 },
                 "connectivity": {
                     "$ref": "#/definitions/Connectivity"
+                },
+                "permissions": {
+                    "$ref": "#/definitions/InfraPermissions"
                 }
             },
             "required": [
@@ -176,6 +179,48 @@
                 "spec"
             ],
             "title": "Compute"
+        },
+        "InfraPermissions": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Specify permissions to your infrastructure instances to perform actions using the cloud provider's services",
+            "properties": {
+                "aws": {
+                    "$ref": "#/definitions/InfraPermissionsAws"
+                },
+                "azure": {
+                    "$ref": "#/definitions/InfraPermissionsAzure"
+                }
+            },
+            "anyOf": [
+                {"required": ["aws"]},
+                {"required": ["azure"]}
+            ]
+        },
+        "InfraPermissionsAws": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Specify permissions to your AWS infrastructure instances.",
+            "properties": {
+                "iam_instance_profile": {
+                    "type": "string",
+                    "description": "Name of the EC2 instance profile (not the full ARN)."
+                }                
+            },
+            "required": ["iam_instance_profile"]
+        },
+        "InfraPermissionsAzure": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Specify permissions to your Azure infrastructure instances.",
+            "properties": {
+                "managed_identity_id": {
+                    "type": "string",
+                    "description": "User-assigned managed identity. Value in the format of 'resource_group_name/identity_name'",
+                    "pattern": "^[\\w-_]+/[\\w-_]+$"
+                }
+            },
+            "required": ["managed_identity_id"]
         },
         "Spec": {
             "type": "object",
