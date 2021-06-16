@@ -112,6 +112,9 @@
             "properties": {
                 "role_arn": {
                     "type": "string"
+                },
+                "external_id": {
+                    "type": "string"
                 }
             },
             "required": [
