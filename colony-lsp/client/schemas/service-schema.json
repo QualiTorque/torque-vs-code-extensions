@@ -96,7 +96,9 @@
             "additionalProperties": false,
             "properties": {
                 "managed_identity_id": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "User-assigned managed identity. Value in the format of 'resource_group_name/identity_name'",
+                    "pattern": "^[\\w-_]+/[\\w-_]+$"
                 }
             },
             "required": [
