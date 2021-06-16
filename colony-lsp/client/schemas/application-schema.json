@@ -253,10 +253,10 @@
             "additionalProperties": false,
             "properties": {
                 "external": {
-                    "$ref": "#/definitions/IntExt"
+                    "$ref": "#/definitions/External"
                 },
                 "internal": {
-                    "$ref": "#/definitions/IntExt"
+                    "$ref": "#/definitions/Internal"
                 }
             },
             "anyOf": [
@@ -266,27 +266,57 @@
             "title": "Connectivity",
             "description": "This section defines the ports for communication with the application and the ingress-healhcheck."
         },
-        "IntExt": {
+        "External": {
             "type": "array",
             "items": {
-                "$ref": "#/definitions/PortInfo"
+                "$ref": "#/definitions/PortInfoExternal"
             },
             "minItems": 1,
-            "maxItems": 1,
             "title": "Internal/External"
         },
-        "PortInfo": {
+        "Internal": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/PortInfoInternal"
+            },
+            "minItems": 1,
+            "title": "Internal/External"
+        },
+        "PortInfoExternal": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
                 "port_info": {
-                    "$ref": "#/definitions/PortInfoProps"
+                    "$ref": "#/definitions/PortInfoPropsExternal"
                 }
             },
             "required": ["port_info"],
             "title": "Port Information"
         },
-        "PortInfoProps": {
+        "PortInfoInternal": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "port_info": {
+                    "$ref": "#/definitions/PortInfoPropsInternal"
+                }
+            },
+            "required": ["port_info"],
+            "title": "Port Information"
+        },
+        "PortInfoPropsExternal": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "port": {
+                    "$ref": "#/definitions/Port"
+                }
+            },
+            "required" : ["port"],
+            "title": "Port Info",
+            "description": "Port Info description"
+        },
+        "PortInfoPropsInternal": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
@@ -295,12 +325,15 @@
                 },
                 "port-range": {
                     "$ref": "#/definitions/PortRange"
+                },
+                "ingress-healthcheck": {
+                    "$ref": "#/definitions/IngressHealthcheck"
                 }
             },
-            "anyOf": [
+            "oneOf": [
                 {"required" : ["port"]},
                 {"required" : ["port-range"]}
-            ],
+            ],            
             "title": "Port Info",
             "description": "Port Info description"
         },
@@ -310,9 +343,55 @@
             "description": "Internal port number that should be opened on the VM."
         },
         "PortRange": {
-            "type": "string",
+            "type": ["string", "integer"],
             "title": "Port Range",
             "description": "Internal port numbers and/or ranges that should be opened on the VM."
+        },
+        "IngressHealthcheck": {
+            "type": "object",
+            "description": "Verifies that the applications that are supposed to be accessible from outside the environment are indeed accessible.",
+            "properties": {
+                "healthy-threshold": {
+                    "type": "integer",
+                    "description": "Number of consecutive checks that need to pass before considering the instance of the application healthy.",
+                    "default": 5
+                },
+                "interval": {
+                    "type": "integer",
+                    "description": "Polling interval, in seconds.",
+                    "default": 30
+                },
+                "path": {
+                    "type": "string",
+                    "description": "Path of the URL to use for the test. In other words, /api/health means the load balancer will access this path in the URL and compare the status code it gets in the response with the status codes that appear in the status-codes element to determine if this is a healthy or unhealthy response.",
+                    "default": "/"
+                },
+                "status-codes": {
+                    "type": ["string", "integer"],
+                    "description": "Accepted http responses.",
+                    "default": "200-299"
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "The amount of time in seconds to wait for a respond before considering it unhealthy.",
+                    "default": 5
+                },
+                "unhealthy-threshold": {
+                    "type": "integer",
+                    "description": "Number of consecutive checks that need to fail before considering the instance of the application unhealthy.",
+                    "default": 2
+                }
+            },
+            "anyOf": [
+                {"required": ["healthy-threshold"]},
+                {"required": ["interval"]},
+                {"required": ["path"]},
+                {"required": ["status-codes"]},
+                {"required": ["timeout"]},
+                {"required": ["unhealthy-threshold"]}
+            ],
+            "additionalProperties": false,
+            "title": "Ingress Healthcheck"
         },
         "Input": {
             "type": ["string", "object"],
