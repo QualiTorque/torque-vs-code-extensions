@@ -21,27 +21,37 @@
                         "$ref": "#/definitions/Input"
                     }
                 },
-                "kind": {
-                    "type": "string"
+                "outputs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Output"
+                    }
                 },
-                "source": {
-                    "$ref": "#/definitions/Source"
+                "kind": {
+                    "type": "string",
+                    "enum": ["application"]
                 },
                 "spec_version": {
                     "type": "integer",
                     "enum": [1]
+                },
+                "source": {
+                    "$ref": "#/definitions/Source"
                 }
             },
+            "optional": [
+                "inputs",
+                "outputs",
+                "infrastructure",
+                "debugging"
+            ],
             "required": [
                 "configuration",
-                "debugging",
-                "infrastructure",
-                "inputs",
                 "kind",
                 "source",
                 "spec_version"
             ],
-            "title": "Colony-Application"
+            "title": "Colony Application"
         },
         "Configuration": {
             "type": "object",
@@ -54,13 +64,11 @@
                     "$ref": "#/definitions/Initialization"
                 },
                 "start": {
-                    "$ref": "#/definitions/Initialization"
+                    "$ref": "#/definitions/ConfigStart"
                 }
             },
             "required": [
-                "healthcheck",
-                "initialization",
-                "start"
+                "healthcheck"                
             ],
             "title": "Configuration"
         },
@@ -69,15 +77,22 @@
             "additionalProperties": false,
             "properties": {
                 "timeout": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "(Optional) Specifies the time to wait (in seconds) for the health check to succeed.",
+                    "default": 60
                 },
                 "wait_for_ports": {
+                    "type": "string",
+                    "default": "ALL",
+                    "description": "(Optional if a script is specified) CloudShell Colony already implements some basic checks which make sure that the application's internal ports, which are declared in the 'connectivity' section of the application YAML, are ready."
+                },
+                "script": {
                     "type": "string"
                 }
             },
-            "required": [
-                "timeout",
-                "wait_for_ports"
+            "anyOf": [
+                {"required": ["wait_for_ports", "timeout"]},
+                {"required": ["script"]}
             ],
             "title": "Healthcheck"
         },
@@ -87,12 +102,29 @@
             "properties": {
                 "script": {
                     "type": "string"
+                }                
+            },
+            "required": ["script"],
+            "title": "Initialization configuration",
+            "description": "This script's main function is to configure everything needed to run the application, including installing dependencies and downloading packages."
+        },
+        "ConfigStart": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "script": {
+                    "type": "string"
+                },
+                "command": {
+                    "type": "string"
                 }
             },
-            "required": [
-                "script"
+            "anyOf": [
+                {"required": ["command"]},
+                {"required": ["script"]}
             ],
-            "title": "Initialization"
+            "title": "Start application",
+            "description": "This is the actual command that will run the application."
         },
         "Debugging": {
             "type": "object",
@@ -129,7 +161,8 @@
                 "compute",
                 "connectivity"
             ],
-            "title": "Infrastructure"
+            "title": "Infrastructure",
+            "description": "In this section you define the infrastructure on which the application will run on. You can choose the compute, define ports to open for external or internal communication and configure custom permissions. The exact compute specifications are different per cloud provider. The whole infrastructure section is optional, and if not defined defaults will be used."
         },
         "Compute": {
             "type": "object",
@@ -150,10 +183,18 @@
             "properties": {
                 "azure": {
                     "$ref": "#/definitions/Azure"
+                },
+                "aws": {
+                    "$ref": "#/definitions/Aws"
+                },
+                "kubernetes": {
+                    "$ref": "#/definitions/Kubernetes"
                 }
             },
-            "required": [
-                "azure"
+            "anyOf": [
+                {"required" : ["azure"]},
+                {"required" : ["aws"]},
+                {"required" : ["kubernetes"]}
             ],
             "title": "Spec"
         },
@@ -162,69 +203,126 @@
             "additionalProperties": false,
             "properties": {
                 "vm_size": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "The name of a Vm size on Azure, e.g. Standard_D2_v3"
                 }
             },
             "required": [
                 "vm_size"
             ],
-            "title": "Azure"
+            "title": "Azure",
+            "description": "Specifications for an Azure compute"
+        },
+        "Aws": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "instance_type": {
+                    "type": "string",
+                    "description": "The name of an AWS instance type, e.g. c5.large, can also contain CSV of types to pick the first available one"
+                }
+            },
+            "required": [
+                "instance_type"
+            ],
+            "title": "AWS",
+            "description": "Specifications for an AWS compute"
+        },
+        "Kubernetes": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "cpu": {
+                    "type": "string",
+                    "description": "CPU limitation for Kubernetes VM"
+                },
+                "ram": {
+                    "type": "string",
+                    "description": "RAM limitation for Kubernetes VM"
+                }
+            },
+            "required": [
+                "cpu", 
+                "ram"
+            ],
+            "title": "Kubernetes",
+            "description": "Specifications for a K8S compute"
         },
         "Connectivity": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
                 "external": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/External"
-                    }
+                    "$ref": "#/definitions/IntExt"
+                },
+                "internal": {
+                    "$ref": "#/definitions/IntExt"
                 }
             },
-            "required": [
-                "external"
+            "anyOf": [
+                {"required" : ["internal"]},
+                {"required" : ["external"]}
             ],
-            "title": "Connectivity"
+            "title": "Connectivity",
+            "description": "This section defines the ports for communication with the application and the ingress-healhcheck."
         },
-        "External": {
+        "IntExt": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/PortInfo"
+            },
+            "minItems": 1,
+            "maxItems": 1,
+            "title": "Internal/External"
+        },
+        "PortInfo": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
-                "web": {
-                    "$ref": "#/definitions/Web"
+                "port_info": {
+                    "$ref": "#/definitions/PortInfoProps"
                 }
             },
-            "required": [
-                "web"
-            ],
-            "title": "External"
+            "required": ["port_info"],
+            "title": "Port Information"
         },
-        "Web": {
+        "PortInfoProps": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
                 "port": {
-                    "type": "string"
+                    "$ref": "#/definitions/Port"
+                },
+                "port-range": {
+                    "$ref": "#/definitions/PortRange"
                 }
             },
-            "required": [
-                "port"
+            "anyOf": [
+                {"required" : ["port"]},
+                {"required" : ["port-range"]}
             ],
-            "title": "Web"
+            "title": "Port Info",
+            "description": "Port Info description"
+        },
+        "Port": {
+            "type": "integer",
+            "title": "Port",
+            "description": "Internal port number that should be opened on the VM."
+        },
+        "PortRange": {
+            "type": "string",
+            "title": "Port Range",
+            "description": "Internal port numbers and/or ranges that should be opened on the VM."
         },
         "Input": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-                "PORT": {
-                    "type": "integer"
-                },
-                "AZURE_VM_SIZE": {
-                    "type": "string"
-                }
-            },
-            "required": [],
+            "type": ["string", "object"],
+            "additionalProperties": true,
             "title": "Input"
+        },
+        "Output": {
+            "type": "string",
+            "additionalProperties": true,
+            "title": "Output"
         },
         "Source": {
             "type": "object",
@@ -249,33 +347,186 @@
             "additionalProperties": false,
             "properties": {
                 "azure_image": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/AzureImage"
-                    }
+                    "$ref": "#/definitions/AzureImage"
+                },
+                "ami": {
+                    "$ref": "#/definitions/Ami"
+                },
+                "docker_image": {
+                    "$ref": "#/definitions/DockerImage"
                 }
             },
-            "required": [
-                "azure_image"
+            "anyOf": [
+                {"required": ["azure_image"]},
+                {"required": ["ami"]},
+                {"required": ["docker_image"]}
             ],
             "title": "Image"
         },
         "AzureImage": {
+            "type": "array",
+            "additionalItems": false,
+            "minItems": 1,
+            "maxItems": 1,
+            "items": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "urn": {
+                                "type": "string",
+                                "description": "Image urn, for example: Canonical:UbuntuServer:16.04-LTS:latest. Version number (or 'latest'). Omit this argument to use the latest version."
+                            },
+                            "username": {
+                                "type": "string",
+                                "description": "(Optional) Username to set on the application's VM, to allow SSH/RDP access to the VM."
+                            },
+                            "custom_image": {
+                                "$ref": "#/definitions/AzureCustomImage"
+                            },
+                            "gallery": {
+                                "$ref": "#/definitions/AzureGalleryImage"
+                            },
+                            "custom": {
+                                "type": "string",
+                                "description": "A concatenated string of the Custom Image details or the Gallery image details."
+                            }
+                        },
+                        "additionalProperties": false,
+                        "oneOf": [
+                            {"required": ["urn"]},
+                            {"required": ["custom_image"]},
+                            {"required": ["gallery"]},
+                            {"required": ["custom"]}
+                        ]
+                    }
+                ]
+            },
+            "title": "Azure Image Details"
+        },
+        "Ami": {
+            "type": "array",
+            "additionalItems": false,
+            "minItems": 1,
+            "maxItems": 1,
+            "items": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "region": {
+                                "type": "string",
+                                "description": "Id of an AWS region e.g. eu-west-1"
+                            },
+                            "username": {
+                                "type": "string",
+                                "description": "(Optional) Username to set on the application's instance, to allow direct access to the instance. \r\nFor SSH/RDP connection to the instance, make sure the username is defined both in the AMI image and application YAML. \r\nPassword is not needed."
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": [
+                            "id",
+                            "region"
+                        ]
+                    }
+                ]                
+            },
+            "title": "AMI Details"
+        },
+        "DockerImage": {
+            "type": "array",
+            "additionalItems": false,
+            "minItems": 1,
+            "maxItems": 1,
+            "items": {
+                "anyOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Name of the docker image. By default, Colony will search for the image on Docker Hub."
+                            },
+                            "pull_secret": {
+                                "type": "string",
+                                "description": "Name of the secret. Used to specify a private image repository."
+                            },
+                            "tag": {
+                                "type": "string",
+                                "description": "Tag defining image version to use."
+                            },
+                            "username": {
+                                "type": "string",
+                                "description": "(Optional) Username to set on the application's VM, to allow direct access to the VM."
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": [
+                            "name",
+                            "tag"
+                        ]
+                    }
+                ]
+            },
+            "title": "Kubernetes Docker Image Details"
+        },
+        "AzureCustomImage": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
-                "urn": {
-                    "type": "string"
+                "subscription_id": {
+                    "type": "string",
+                    "description": "(Optional) Azure subscription id. Omit this argument if you want Colony to use the Subcription ID of the cloud account."
                 },
-                "username": {
-                    "type": "string"
+                "resource_group": {
+                    "type": "string",
+                    "description": "Resource group name."
+                },
+                "image": {
+                    "type": "string",
+                    "description": "Image name."
+                }                
+            },
+            "required": [
+                "image",
+                "resource_group"
+            ],
+            "title": "Azure Custom Image Details"
+        },
+        "AzureGalleryImage": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "subscription_id": {
+                    "type": "string",
+                    "description": "(Optional) Azure subscription id. Omit this argument if you want Colony to use the Subcription ID of the cloud account."
+                },
+                "resource_group": {
+                    "type": "string",
+                    "description": "Resource group name."
+                },
+                "shared_image_gallery": {
+                    "type": "string",
+                    "description": "Shared image gallery name."
+                },
+                "image_definition": {
+                    "type": "string",
+                    "description": "The name of the image in the gallery."
+                },
+                "image_version": {
+                    "type": "string",
+                    "description": "(Optional) The version number of the gallery image (or 'latest'). Omit this argument to use the latest version."
                 }
             },
             "required": [
-                "urn",
-                "username"
+                "shared_image_gallery",
+                "image_definition",
+                "resource_group"
             ],
-            "title": "AzureImage"
+            "title": "Azure Gallery Image Details"
         }
     }
 }
