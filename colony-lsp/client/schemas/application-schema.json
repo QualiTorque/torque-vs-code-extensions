@@ -412,7 +412,8 @@
                 },
                 "os_type": {
                     "type": "string",
-                    "enum": ["linux", "windows"]
+                    "enum": ["linux", "windows"],
+                    "description": "Operating system for the application's VM."
                 }
             },
             "required": [
