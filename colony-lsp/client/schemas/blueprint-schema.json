@@ -16,7 +16,8 @@
                 },
                 "environmentType": {
                     "type": "string",
-                    "enum": ["sandbox", "production"]
+                    "enum": ["sandbox", "production"],
+                    "default": "sandbox"
                 },
                 "metadata": {
                     "$ref": "#/definitions/Metadata"
@@ -33,26 +34,34 @@
                 "artifacts": {
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    }
+                        "$ref": "#/definitions/ArtifactElement"
+                    },
+                    "minItems": 1,
+                    "description": "Colony pulls these artifacts from your storage provider into your artifacts folder on the application’s compute instance(s)."
                 },
                 "applications": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/Application"
-                    }
+                    },
+                    "minItems": 1
                 },
                 "services": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/Service"
-                    }
+                    },
+                    "minItems": 1
                 },
                 "inputs": {
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    }
+                        "$ref": "#/definitions/BlueprintInputElement"
+                    },
+                    "minItems": 1
+                },
+                "ingress": {
+                    "$ref": "#/definitions/Ingress"
                 },
                 "debugging": {
                     "$ref": "#/definitions/Debugging"
@@ -74,30 +83,89 @@
             ],
             "title": "Colony Blueprint"
         },
-        "Application": {
+        "BlueprintInputElement": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/BlueprintInputFullClass"
+                },
+                {
+                    "$ref": "#/definitions/BlueprintInputSimpleClass"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "Blueprint Input"
+        },
+        "BlueprintInputFullClass": {
+            "type": "object",
+            "patternProperties": {
+                "^[\\w\\-]+$": { 
+                    "$ref": "#/definitions/BlueprintInput"
+                }
+            },
+            "title": "Blueprint Input"
+        },
+        "BlueprintInputSimpleClass": {
+            "type": "object",
+            "patternProperties": {
+                "^[\\w\\-]+$": { 
+                    "type": ["string", "integer"]
+                }
+            },
+            "title": "Blueprint Input"
+        },
+        "BlueprintInput": {
+            "title": "Blueprint Input",
             "type": "object",
             "additionalProperties": false,
             "properties": {
-                "java-spring-website": {
-                    "$ref": "#/definitions/JavaSpringWebsite"
+                "display_style": {
+                    "type": "string",
+                    "enum": ["", "masked"],
+                    "description": "To display the password in plain text in the UI, do not assign a value. To hide the password behind bullets, enter the value 'masked'."
+                },
+                "description": {
+                    "type": "string",
+                    "description": "In the relevant UI field, enter a description to be displayed to the user."
+                },
+                "default_value": {
+                    "type": ["integer", "string"],
+                    "description": "When the sandbox is created, Colony automatically populates the default value. The end-user can choose to edit the value or leave it as-is."
+                },
+                "optional": {
+                    "type": "boolean",
+                    "description": "When optional is set to true, the user can leave the parameter empty. When optional is set to false, empty value(s) will result in validation error(s)."
+                }
+            }            
+        },
+        "Application": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                "^[\\w\\-]+$": { 
+                    "$ref": "#/definitions/ApplicationElement" 
                 }
             },
-            "required": [
-                "java-spring-website"
-            ],
             "title": "Application"
         },
-        "JavaSpringWebsite": {
+        "ApplicationElement": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
                 "instances": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "(Optional) If you want the application to be deployed on its own, specify the number of instances (one or more)."
+                },
+                "target": {
+                    "type": "string",
+                    "description": "(Optional) Provide an alias for the instance on which you want the application to be deployed. Use the same alias for other applications that will share the same instance."
                 },
                 "input_values": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/JavaSpringWebsiteInputValue"
+                        "$ref": "#/definitions/InputValuesElement"
                     }
                 },
                 "depends_on": {
@@ -107,48 +175,54 @@
                     }
                 }
             },
-            "required": [
-                "depends_on",
-                "input_values",
-                "instances"
-            ],
-            "title": "JavaSpringWebsite"
+            "title": "Application"
         },
-        "JavaSpringWebsiteInputValue": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-                "DB_USER": {
-                    "type": "string"
+        "InputValuesElement": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/InputValues"
                 },
-                "DB_PASS": {
-                    "type": "string"
-                },
-                "DB_NAME": {
-                    "type": "string"
-                },
-                "DB_HOSTNAME": {
+                {
                     "type": "string"
                 }
+            ],
+            "title": "Input value"
+        },
+        "InputValues": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                "^[\\w\\-]+$": { 
+                    "type": ["string", "integer"]
+                }
             },
-            "required": [],
-            "title": "JavaSpringWebsiteInputValue"
+            "title": "Input Values"
+        },
+        "ArtifactElement": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/Artifact"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "Artifact"            
+        },
+        "Artifact": {
+            "type": "object",
+            "patternProperties": {
+                "^[\\w\\-]+$": { "type": "string" }
+            },
+            "additionalProperties": false,
+            "title": "Artifact"            
         },
         "Cloud": {
             "type": "object",
             "additionalProperties": false,
-            "properties": {
-                "AWS": {
-                    "type": "string"
-                },
-                "Azure": {
-                    "type": "string"
-                }
+            "patternProperties": {
+                "^[\\w\\-]+$": { "type": "string" }
             },
-            "oneOf": [
-                {"required": ["AWS"]},
-                {"required": ["Azure"]}
-            ],
             "title": "Cloud"
         },
         "Debugging": {
@@ -183,61 +257,128 @@
         },
         "Service": {
             "type": "object",
-            "additionalProperties": false,
-            "properties": {
-                "rds-mysql-aurora-cluster": {
-                    "$ref": "#/definitions/RDSMysqlAuroraCluster"
+            "patternProperties": {
+                "^[\\w\\-]+$": { 
+                    "$ref": "#/definitions/ServiceElement" 
                 }
             },
-            "required": [
-                "rds-mysql-aurora-cluster"
-            ],
             "title": "Service"
         },
-        "RDSMysqlAuroraCluster": {
+        "ServiceElement": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
                 "input_values": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/RDSMysqlAuroraClusterInputValue"
+                        "$ref": "#/definitions/InputValuesElement"
+                    }
+                },
+                "depends_on": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 }
             },
-            "required": [
-                "input_values"
-            ],
-            "title": "RDSMysqlAuroraCluster"
+            "title": "Application"
         },
-        "RDSMysqlAuroraClusterInputValue": {
+        "Ingress": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
-                "DB_NAME": {
-                    "type": "string"
+                "listeners": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Listener"
+                    }
                 },
-                "DB_USER": {
-                    "type": "string"
-                },
-                "DB_PASS": {
-                    "type": "string"
-                },
-                "CLUSTER_MIN_CAPACITY": {
-                    "type": "integer"
-                },
-                "CLUSTER_MAX_CAPACITY": {
-                    "type": "integer"
-                },
-                "SANDBOX_ID": {
-                    "type": "string"
-                },
-                "VPC_ID": {
-                    "type": "string"
+                "enabled": {
+                    "type": "boolean",
+                    "enum": [false],
+                    "description": "To disable the creation of an ALB/AG in the environment as the entry point to the sandbox, to reduce deployment time, especially on private environments, and to reduce the cost of the environment."
                 }
             },
-            "required": [],
-            "title": "RDSMysqlAuroraClusterInputValue"
+            "oneOf": [
+                {"required": ["enabled"]},
+                {"required": ["listeners"]}
+            ],
+            "title": "Ingress"
+        },
+        "Listener": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "http": {
+                    "type": "integer",
+                    "description": "Listener type"
+                },
+                "redirect_to_listener": {
+                    "type": "integer",
+                    "description": "(Optional) Enables redirecting inbound traffic to another listener."
+                },
+                "https": {
+                    "type": "integer",
+                    "description": "Listener type. When defining an https listener, you must also specify a certificate."
+                },
+                "certificate": {
+                    "type": "string",
+                    "description": "Must be present when the listener is of type HTTPS. In AWS, this value is the certificate’s ARN. In Azure, this value is the certificate’s Secret Identifier."
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Rule"
+                    }
+                }
+            },
+            "anyOf": [
+                {"required": ["http"]},
+                {"required": ["https", "certificate"]}
+            ],
+            "title": "Listener"
+        },
+        "Rule": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "Optional) The path rule indicates that only requests for a URL that has the defined path will be routed to the specified application. A rule can include both a host and a path."
+                },
+                "host": {
+                    "type": "string",
+                    "description": "(Optional) The host rule indicates that only requests with the defined host header will be routed to the specified application. A rule can include both a host and a path."
+                },
+                "application": {
+                    "type": "string",
+                    "default": "",
+                    "description": "(Optional) The name of the application that the traffic should be forwarded to."
+                },
+                "port": {
+                    "type": "integer",
+                    "description": "(Optional) The application port to which traffic should be forwarded."
+                },
+                "color": {
+                    "type": "string",
+                    "enum": ["green", "blue"],
+                    "description": "(Applies to production environments) Determines which flavor of the application to access. Note that green rules will result in error if the green instances are not powered on."
+                },
+                "shortcut": {
+                    "type": "string",
+                    "description": "(Optional) The shortcut rule to customize the application link’s display text in the Summary page of the sandbox or production environment."
+                },
+                "default": {
+                    "type": "boolean",
+                    "description": "(Optional) If true, this rule will be used for default routing to define on the ALB when no other rules apply."
+                }
+            },
+            "anyOf": [
+                {"required": ["application", "default"]},
+                {"required": ["application", "host"]},
+                {"required": ["application", "path"]}
+            ],
+            "title": "Rule"
         }
     }
 }
