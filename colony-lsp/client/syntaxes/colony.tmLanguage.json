@@ -581,7 +581,7 @@
         "variables": {
 			"patterns": [
 				{
-					"match": "\\$[\\w\\.]+",
+					"match": "(\\$\\{?[\\w\\.]+\\}?.*)+",
 					"name": "variable.other.yaml"
 				}
 			]
