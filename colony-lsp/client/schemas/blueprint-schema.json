@@ -1,0 +1,243 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Colony-Blueprint",
+    "definitions": {
+        "Colony-Blueprint": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "spec_version": {
+                    "type": "integer",
+                    "enum": [1]
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": ["blueprint"]
+                },
+                "environmentType": {
+                    "type": "string",
+                    "enum": ["sandbox", "production"]
+                },
+                "metadata": {
+                    "$ref": "#/definitions/Metadata"
+                },
+                "clouds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/Cloud"
+                    },
+                    "description": "Define the cloud account or Kubernetes compute service in which the environment will be deployed."
+                },
+                "artifacts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "applications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Application"
+                    }
+                },
+                "services": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Service"
+                    }
+                },
+                "inputs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "debugging": {
+                    "$ref": "#/definitions/Debugging"
+                }
+            },
+            "optional": [
+                "environmentType",
+                "inputs",
+                "applications",
+                "services",
+                "artifacts",
+                "debugging",
+                "metadata"
+            ],
+            "required": [
+                "kind",
+                "spec_version",
+                "clouds"                
+            ],
+            "title": "Colony Blueprint"
+        },
+        "Application": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "java-spring-website": {
+                    "$ref": "#/definitions/JavaSpringWebsite"
+                }
+            },
+            "required": [
+                "java-spring-website"
+            ],
+            "title": "Application"
+        },
+        "JavaSpringWebsite": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "instances": {
+                    "type": "integer"
+                },
+                "input_values": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/JavaSpringWebsiteInputValue"
+                    }
+                },
+                "depends_on": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "depends_on",
+                "input_values",
+                "instances"
+            ],
+            "title": "JavaSpringWebsite"
+        },
+        "JavaSpringWebsiteInputValue": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "DB_USER": {
+                    "type": "string"
+                },
+                "DB_PASS": {
+                    "type": "string"
+                },
+                "DB_NAME": {
+                    "type": "string"
+                },
+                "DB_HOSTNAME": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "JavaSpringWebsiteInputValue"
+        },
+        "Cloud": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "AWS": {
+                    "type": "string"
+                },
+                "Azure": {
+                    "type": "string"
+                }
+            },
+            "oneOf": [
+                {"required": ["AWS"]},
+                {"required": ["Azure"]}
+            ],
+            "title": "Cloud"
+        },
+        "Debugging": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "bastion_availability": {
+                    "type": "string",
+                    "enum": ["enabled-on", "enabled-off", "disabled"],
+                    "description": "Bastion's default state in the sandbox: enabled-on: Bastion will be deployed and remain powered on. enabled-off: Bastion will be deployed and then powered off. Can be powered on easily by the user. disabled: Bastion will not be deployed, and debugging links will not be available for this blueprint."
+                }
+            },
+            "required": [
+                "bastion_availability"
+            ],
+            "title": "Debugging"
+        },
+        "Metadata": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "description": "This description is displayed to users when they launch a sandbox and select the blueprint from the catalog."
+                }
+            },
+            "required": [
+                "description"
+            ],
+            "title": "Metadata",
+            "description": "Here you can define the blueprint's description. The description is visible to users when they launch a sandbox and select the blueprint from the catalog."
+        },
+        "Service": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "rds-mysql-aurora-cluster": {
+                    "$ref": "#/definitions/RDSMysqlAuroraCluster"
+                }
+            },
+            "required": [
+                "rds-mysql-aurora-cluster"
+            ],
+            "title": "Service"
+        },
+        "RDSMysqlAuroraCluster": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "input_values": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/RDSMysqlAuroraClusterInputValue"
+                    }
+                }
+            },
+            "required": [
+                "input_values"
+            ],
+            "title": "RDSMysqlAuroraCluster"
+        },
+        "RDSMysqlAuroraClusterInputValue": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "DB_NAME": {
+                    "type": "string"
+                },
+                "DB_USER": {
+                    "type": "string"
+                },
+                "DB_PASS": {
+                    "type": "string"
+                },
+                "CLUSTER_MIN_CAPACITY": {
+                    "type": "integer"
+                },
+                "CLUSTER_MAX_CAPACITY": {
+                    "type": "integer"
+                },
+                "SANDBOX_ID": {
+                    "type": "string"
+                },
+                "VPC_ID": {
+                    "type": "string"
+                }
+            },
+            "required": [],
+            "title": "RDSMysqlAuroraClusterInputValue"
+        }
+    }
+}
