@@ -348,7 +348,7 @@ def _validate_yaml(source):
     diagnostics = []
 
     try:
-        yaml.load(source, Loader=yaml.SafeLoader)
+        yaml.load(source, Loader=yaml.FullLoader)
     except yaml.MarkedYAMLError as ex:
         mark = ex.problem_mark
         print(mark)
