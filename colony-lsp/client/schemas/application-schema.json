@@ -217,7 +217,7 @@
                 "managed_identity_id": {
                     "type": "string",
                     "description": "User-assigned managed identity. Value in the format of 'resource_group_name/identity_name'",
-                    "pattern": "^[\\w-_]+/[\\w-_]+$"
+                    "pattern": "^[\\w\\-_]+\\/[\\w\\-_]+$"
                 }
             },
             "required": ["managed_identity_id"]
@@ -383,7 +383,8 @@
             "description": "Port Info description"
         },
         "Port": {
-            "type": "integer",
+            "type": ["integer", "string"],
+            "pattern": "^(\\d+|\\$[\\w\\.\\-]+)$",
             "title": "Port",
             "description": "Internal port number that should be opened on the VM."
         },
