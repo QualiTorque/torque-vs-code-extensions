@@ -15,6 +15,7 @@
 # limitations under the License.                                           #
 ############################################################################
 import asyncio
+from dataclasses import dataclass
 from pygls.lsp import types
 from pygls.lsp.types.basic_structures import VersionedTextDocumentIdentifier
 from pygls.lsp import types, InitializeResult
@@ -27,6 +28,8 @@ import pathlib
 import re
 from json import JSONDecodeError
 from typing import Any, Dict, Optional, Tuple, List, Union, cast
+
+from .parser import BlueprintParser, BlueprintTree
 
 from .utils import services, applications, common
 from pygls.protocol import LanguageServerProtocol
@@ -74,7 +77,7 @@ class ColonyWorkspace(Workspace):
         super().__init__(root_uri, sync_kind=sync_kind, workspace_folders=workspace_folders)
 
     @property
-    def colony_objs(self) -> dict:
+    def colony_objs(self):
         return self._colony_objs
 
     def _update_document(self, text_document: Union[types.TextDocumentItem, types.VersionedTextDocumentIdentifier]) -> None:
@@ -84,7 +87,11 @@ class ColonyWorkspace(Workspace):
         self._colony_objs[uri] = colony_obj
 
     def update_document(self, text_doc: VersionedTextDocumentIdentifier, change: workspace.TextDocumentContentChangeEvent):
-        return super().update_document(text_doc, change)
+        super().update_document(text_doc, change)
+        self._update_document(text_doc)
+
+    def put_document(self, text_document: types.TextDocumentItem) -> None:
+        super().put_document(text_document)
         self._update_document(text_document)
 
 
@@ -109,12 +116,12 @@ class ColonyLspProtocol(LanguageServerProtocol):
 class ColonyLanguageServer(LanguageServer):
     CONFIGURATION_SECTION = 'colonyServer'
 
-    def __init__(self):
-        super().__init__(protocol_cls=ColonyLspProtocol)
+    # def __init__(self):
+    #     super().__init__(protocol_cls=ColonyLspProtocol)
     
-    @property
-    def workspace(self) -> ColonyWorkspace:
-        return cast(ColonyWorkspace, super().workspace)
+    # @property
+    # def workspace(self) -> ColonyWorkspace:
+    #     return cast(ColonyWorkspace, super().workspace)
 
 
 colony_server = ColonyLanguageServer()
@@ -177,7 +184,7 @@ def _validate(ls, params):
                     diagnostics.append(d)
 
         if doc_type == "blueprint":
-            print(ls.workspace.colony_objs)
+            # print(ls.workspace.colony_objs)
             apps = applications.get_available_applications(root, APPLICATIONS)
             for app in yaml_obj.get('applications', []):
                 app = list(app.keys())[0]
@@ -530,6 +537,13 @@ def did_close(server: ColonyLanguageServer, params: DidCloseTextDocumentParams):
 @colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
-    ls.show_message('Text Document Did Open')
-    _validate(ls, params)
+    bp_file = "/Users/ddovbii/colony-demo-space-my/blueprints/Dev Environment.yaml"
 
+    with open(bp_file, 'r') as doc:
+        parser = BlueprintParser(doc)
+        parser.parse()
+
+
+    ls.show_message('Text Document Did Open')
+    ls.workspace.put_document(params.text_document)
+    _validate(ls, params)
