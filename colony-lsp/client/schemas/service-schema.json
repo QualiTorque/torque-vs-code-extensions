@@ -87,7 +87,7 @@
             },
             "anyOf": [
                 {"required": ["azure"]},
-                {"required": ["aws"]},
+                {"required": ["aws"]}
             ],
             "title": "Permissions"
         },
