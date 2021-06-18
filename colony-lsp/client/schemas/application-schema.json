@@ -82,7 +82,7 @@
                     "default": 60
                 },
                 "wait_for_ports": {
-                    "type": "string",
+                    "type": ["string", "number"],
                     "default": "ALL",
                     "description": "(Optional if a script is specified) CloudShell Colony already implements some basic checks which make sure that the application's internal ports, which are declared in the 'connectivity' section of the application YAML, are ready."
                 },
@@ -135,7 +135,7 @@
                 },
                 "connection_protocol": {
                     "type": "string",
-                    "enum": ["SSH", "RDP", "RDP,SSH"]
+                    "enum": ["RDP", "SSH", "RDP,SSH", "rdp", "ssh", "rdp,ssh"]                    
                 }                
             },
             "required":[
@@ -160,10 +160,6 @@
                     "$ref": "#/definitions/InfraPermissions"
                 }
             },
-            "required": [
-                "compute",
-                "connectivity"
-            ],
             "title": "Infrastructure",
             "description": "In this section you define the infrastructure on which the application will run on. You can choose the compute, define ports to open for external or internal communication and configure custom permissions. The exact compute specifications are different per cloud provider. The whole infrastructure section is optional, and if not defined defaults will be used."
         },

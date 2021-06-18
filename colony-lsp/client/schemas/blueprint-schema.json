@@ -110,7 +110,7 @@
             "type": "object",
             "patternProperties": {
                 "^[\\w\\-]+$": { 
-                    "type": ["string", "integer"]
+                    "type": ["string", "integer", "boolean"]
                 }
             },
             "title": "Blueprint Input"
@@ -193,7 +193,7 @@
             "additionalProperties": false,
             "patternProperties": {
                 "^[\\w\\-]+$": { 
-                    "type": ["string", "integer"]
+                    "type": ["string", "integer", "null"]
                 }
             },
             "title": "Input Values"
