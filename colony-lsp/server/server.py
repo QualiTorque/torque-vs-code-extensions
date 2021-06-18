@@ -65,6 +65,45 @@ PREDEFINED_COLONY_INPUTS = [
     "$colony.environment.public_address"
 ]
 
+class BlueprintValidationHandler:
+    def __init__(self, tree: BlueprintTree):
+        self._tree = tree
+        self._diagnostics = []
+    
+    def validate_unused_bluerprint_inputs(self, yaml_doc: dict): # TODO: must work with tree only
+        message = "Unused variable {}"
+        
+        diagnostics: List[Diagnostic] = []
+        app_vars = self._get_used_vars(yaml_doc=yaml_doc)
+
+        for input in self._tree.inputs_node.inputs:
+            if input.name not in app_vars:
+                diagnostics.append(Diagnostic(
+                    range=Range(
+                        start=Position(line=input.start[0], character=input.start[1]),
+                        end=Position(line=input.start[0], character=input.start[1] + len(input.name))
+                    ),
+                    message=message.format(input.name)
+                ))
+        return diagnostics
+
+    def validate_var_being_used_is_defined(self):
+        pass
+
+    # TODO: must work with tree
+    def _get_used_vars(self, yaml_doc: dict) -> set:
+
+        used_vars = set()
+
+        for app in yaml_doc.get('applications', []):
+            app_name = list(app.keys()).pop()
+            inputs = app[app_name].get("input_values", [])
+
+            for items in inputs:
+                used_vars.add(list(items.values()).pop().replace("$", ""))
+
+        return used_vars
+
 class ColonyWorkspace(Workspace):
     """
     Add colony-specific properties
@@ -191,6 +230,11 @@ def _validate(ls, params):
                     diagnostics.append(d)
 
         if doc_type == "blueprint":
+            bp_tree = BlueprintParser(source).parse()
+            validator = BlueprintValidationHandler(bp_tree)
+
+            diagnostics += validator.validate_unused_bluerprint_inputs(yaml_obj)
+
             # print(ls.workspace.colony_objs)
             apps = applications.get_available_applications(root, APPLICATIONS)
             for app in yaml_obj.get('applications', []):
@@ -544,13 +588,6 @@ def did_close(server: ColonyLanguageServer, params: DidCloseTextDocumentParams):
 @colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
-    bp_file = "/Users/ddovbii/colony-demo-space-my/blueprints/Dev Environment.yaml"
-
-    with open(bp_file, 'r') as doc:
-        parser = BlueprintParser(doc)
-        parser.parse()
-
-
     ls.show_message('Text Document Did Open')
     ls.workspace.put_document(params.text_document)
     _validate(ls, params)
