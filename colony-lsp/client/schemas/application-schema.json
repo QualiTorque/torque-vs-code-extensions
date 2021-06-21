@@ -135,7 +135,7 @@
                 },
                 "connection_protocol": {
                     "type": "string",
-                    "enum": ["RDP", "SSH", "RDP,SSH", "rdp", "ssh", "rdp,ssh"]                    
+                    "enum": ["RDP", "SSH", "RDP,SSH"]
                 }                
             },
             "required":[
