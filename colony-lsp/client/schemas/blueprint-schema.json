@@ -143,7 +143,7 @@
             "type": "object",
             "additionalProperties": false,
             "patternProperties": {
-                "^[\\w\\-]+$": { 
+                "^[\\w\\-]{3,45}$": { 
                     "$ref": "#/definitions/ApplicationElement" 
                 }
             },
