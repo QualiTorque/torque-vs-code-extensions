@@ -155,6 +155,7 @@
             "properties": {
                 "instances": {
                     "type": "integer",
+                    "default": 1,                    
                     "minimum": 1,
                     "description": "(Optional) If you want the application to be deployed on its own, specify the number of instances (one or more)."
                 },
