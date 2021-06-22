@@ -92,7 +92,6 @@ async function activateYamlFeatures(context: ExtensionContext) {
 }
 
 export function activate(context: ExtensionContext): void {
-    console.log('in activate')
     if (isStartedInDebugMode()) {
         // Development - Run the server manually
         client = startLangServerTCP(2087);

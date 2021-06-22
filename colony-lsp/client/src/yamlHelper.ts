@@ -60,7 +60,6 @@ function addSchemaToConfigAtScope(
 // Find redhat.vscode-yaml extension and try to activate it
 export async function activateYamlExtension() {
     const ext: Extension<any> | undefined = extensions.getExtension(VSCODE_YAML_EXTENSION_ID);
-    console.log('in activate yaml ext')
     if (!ext) {
         window
             .showWarningMessage(
