@@ -520,17 +520,17 @@ def _validate_yaml(source):
 #     print(locals())
 #     if '/applications/' in params.text_document.uri:
 #         return [
-#                     CodeLens(
-#                         range=Range(
-#                             start=Position(line=0, character=0),
-#                             end=Position(line=1, character=1),
-#                         ),
-#                         command=Command(
-#                             title='cmd1',
-#                             command=ColonyLanguageServer.CMD_COUNT_DOWN_BLOCKING,
-#                         ),
-#                         data='some data 1',
-#                     ),
+#                     # CodeLens(
+#                     #     range=Range(
+#                     #         start=Position(line=0, character=0),
+#                     #         end=Position(line=1, character=1),
+#                     #     ),
+#                     #     command=Command(
+#                     #         title='cmd1',
+#                     #         command=ColonyLanguageServer.CMD_COUNT_DOWN_BLOCKING,
+#                     #     ),
+#                     #     data='some data 1',
+#                     # ),
 #                     CodeLens(
 #                         range=Range(
 #                             start=Position(line=0, character=0),
