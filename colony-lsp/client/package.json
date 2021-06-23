@@ -1,17 +1,24 @@
 {
 	"name": "colony-extension-client",
-	"description": "VSCode part of a language server",
-	"author": "Microsoft Corporation",
+	"description": "A VS Code extension for the Colony yaml syntax. Provides YAML schema verification, auto-complete, highlight problems and much more.",
+	"author": "Quali",
 	"license": "MIT",
 	"version": "0.0.1",
-	"publisher": "vscode",
+	"publisher": "Quali",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-extension-samples"
+		"url": "https://github.com/qualisystemslab/colony-vs-code-extensions"
 	},
 	"engines": {
 		"vscode": "^1.55.0"
 	},
+	"icon": "icon/icon216.png",
+	"keywords": [
+		"colony",
+		"yaml",
+		"autocompletion",
+		"validation"	
+	],
 	"categories": [
 		"Other"
 	],
