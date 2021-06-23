@@ -16,7 +16,7 @@
                 },
                 "environmentType": {
                     "type": "string",
-                    "enum": ["sandbox", "production"],
+                    "enum": ["sandbox", "production-blue", "production-green"],
                     "default": "sandbox"
                 },
                 "metadata": {
@@ -27,7 +27,13 @@
                     "minItems": 1,
                     "maxItems": 1,
                     "items": {
-                        "$ref": "#/definitions/Cloud"
+                        "anyOf": [
+                            {"$ref": "#/definitions/Cloud"},
+                            {
+                                "type": "string",
+                                "pattern": "^[\\w\\-\\s]+\\/{0,1}[\\w\\-]+$"
+                            }
+                        ]                        
                     },
                     "description": "Define the cloud account or Kubernetes compute service in which the environment will be deployed."
                 },
@@ -41,15 +47,29 @@
                 },
                 "applications": {
                     "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/Application"
+                    "items": { 
+                        "anyOf": [
+                            {"$ref": "#/definitions/Application" },
+                            {
+                                "type": "string",
+                                "minLength": 3,
+                                "maxLength": 45
+                            }
+                        ]                        
                     },
                     "minItems": 1
                 },
                 "services": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Service"
+                        "anyOf": [
+                            {"$ref": "#/definitions/Service" },
+                            {
+                                "type": "string",
+                                "minLength": 3,
+                                "maxLength": 45
+                            }
+                        ]                        
                     },
                     "minItems": 1
                 },
@@ -63,19 +83,17 @@
                 "ingress": {
                     "$ref": "#/definitions/Ingress"
                 },
+                "infrastructure": {
+                    "$ref": "#/definitions/Infrastructure"
+                },
                 "debugging": {
                     "$ref": "#/definitions/Debugging"
+                },
+                "internetFacing": {
+                    "type": "boolean",
+                    "description": "Allow or block internet access to this sandbox"
                 }
             },
-            "optional": [
-                "environmentType",
-                "inputs",
-                "applications",
-                "services",
-                "artifacts",
-                "debugging",
-                "metadata"
-            ],
             "required": [
                 "kind",
                 "spec_version",
@@ -122,7 +140,8 @@
             "properties": {
                 "display_style": {
                     "type": "string",
-                    "enum": ["", "masked"],
+                    "enum": ["masked", "normal"],
+                    "default": "normal",
                     "description": "To display the password in plain text in the UI, do not assign a value. To hide the password behind bullets, enter the value 'masked'."
                 },
                 "description": {
@@ -143,8 +162,13 @@
             "type": "object",
             "additionalProperties": false,
             "patternProperties": {
-                "^[\\w\\-]{3,45}$": { 
-                    "$ref": "#/definitions/ApplicationElement" 
+                "^[a-zA-Z0-9-_]{3,45}$": { 
+                    "oneOf": [
+                        {"$ref": "#/definitions/ApplicationElement"},
+                        {
+                            "type": "null"
+                        }                        
+                    ]                    
                 }
             },
             "title": "Application"
@@ -222,7 +246,7 @@
             "type": "object",
             "additionalProperties": false,
             "patternProperties": {
-                "^[\\w\\-]+$": { "type": "string" }
+                "^[\\w\\-\\/]+$": { "type": "string" }
             },
             "title": "Cloud"
         },
@@ -234,10 +258,21 @@
                     "type": "string",
                     "enum": ["enabled-on", "enabled-off", "disabled"],
                     "description": "Bastion's default state in the sandbox: enabled-on: Bastion will be deployed and remain powered on. enabled-off: Bastion will be deployed and then powered off. Can be powered on easily by the user. disabled: Bastion will not be deployed, and debugging links will not be available for this blueprint."
+                },
+                "availability": {
+                    "type": "string",
+                    "enum": ["on", "off"],
+                    "description": "(Deprecated, use bastion_availability) Bastion's default state in the sandbox: enabled-on: Bastion will be deployed and remain powered on. enabled-off: Bastion will be deployed and then powered off. Can be powered on easily by the user. disabled: Bastion will not be deployed, and debugging links will not be available for this blueprint."
+                },
+                "direct_access": {
+                    "type": "string",
+                    "enum": ["on", "off"]
                 }
             },
-            "required": [
-                "bastion_availability"
+            "anyOf": [
+                {"required": ["availability"]},
+                {"required": ["bastion_availability"]},
+                {"required": ["direct_access"]}
             ],
             "title": "Debugging"
         },
@@ -248,19 +283,40 @@
                 "description": {
                     "type": "string",
                     "description": "This description is displayed to users when they launch a sandbox and select the blueprint from the catalog."
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Tag"
+                    },
+                    "maxItems": 40
                 }
             },
-            "required": [
-                "description"
-            ],
             "title": "Metadata",
             "description": "Here you can define the blueprint's description. The description is visible to users when they launch a sandbox and select the blueprint from the catalog."
+        },
+        "Tag": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                "^[a-zA-Z0-9-_+=./:]{3,128}$": {
+                    "type": "string",
+                    "maxLength": 256
+                }
+            },
+            "required": [],
+            "title": "Tag"
         },
         "Service": {
             "type": "object",
             "patternProperties": {
-                "^[\\w\\-]+$": { 
-                    "$ref": "#/definitions/ServiceElement" 
+                "^[a-zA-Z0-9-_]{3,45}$": { 
+                    "oneOf": [
+                        {"$ref": "#/definitions/ServiceElement" },
+                        {
+                            "type": "null"
+                        }                        
+                    ]                    
                 }
             },
             "title": "Service"
@@ -369,6 +425,9 @@
                     "type": "string",
                     "description": "(Optional) The shortcut rule to customize the application link’s display text in the Summary page of the sandbox or production environment."
                 },
+                "ignore_exposure": {
+                    "type": "boolean"
+                },
                 "default": {
                     "type": "boolean",
                     "description": "(Optional) If true, this rule will be used for default routing to define on the ALB when no other rules apply."
@@ -380,6 +439,94 @@
                 {"required": ["application", "path"]}
             ],
             "title": "Rule"
+        },
+        "Infrastructure": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "stack": {
+                    "type": "string"
+                },
+                "connectivity": {
+                    "$ref": "#/definitions/Connectivity"
+                }
+            },
+            "required": [
+                "connectivity"
+            ],
+            "title": "Infrastructure",
+            "description": "(Mandatory for production blueprints) Colony supports two deployment modes for an environment – dedicated and shared. In dedicated mode, Colony creates all the cloud infrastructure such as virtual network (VPC or VNET), subnets, security groups etc. specifically for the sandbox, and when the sandbox duration ends all of this cloud infrastructure is deleted. In shared mode, the administrator specifies, at the space level, the details of an existing virtual network and subnets as well as the cloud region to use, and Colony will deploy the sandbox's infrastructure in accordance. The above is true for sandbox (pre-production) environments. For production environments, Colony supports only the shared mode, in which all the infrastructure already exists in the cloud account and is provided to Colony in the production blueprint YAML."
+        },
+        "Connectivity": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "green_host": {
+                    "type": "string",
+                    "title": "Green Host",
+                    "description": "Mandatory for production blueprints"
+                },
+                "virtual_network": {
+                    "$ref": "#/definitions/VirtualNetwork"
+                }
+            },
+            "title": "Connectivity"
+        },
+        "VirtualNetwork": {
+            "type": "object",
+            "description": "Mandatory for production blueprints",
+            "additionalProperties": false,
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "AWS – VPC Id, Azure – VNET name"
+                },
+                "subnets": {
+                    "$ref": "#/definitions/Subnets"
+                }
+            },
+            "required": [
+                "id"
+            ],
+            "title": "VirtualNetwork"
+        },
+        "Subnets": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "gateway": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 1,
+                    "items": {
+                        "type": "string",
+                        "description": "ID of the subnet in which the application gateway is installed."
+                    }
+                },
+                "management": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 1,
+                    "items": {
+                        "type": "string",
+                        "description": "ID of the subnet in which the sandbox's management infrastructure is installed."
+                    }
+                },
+                "application": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string",
+                        "description": "ID of the subnet(s) in which the sandbox's applications are deployed."
+                    }
+                }
+            },
+            "anyOf": [
+                {"required": ["gateway"]},
+                {"required": ["management"]},
+                {"required": ["application"]}
+            ],
+            "title": "Subnets"
         }
     }
 }
