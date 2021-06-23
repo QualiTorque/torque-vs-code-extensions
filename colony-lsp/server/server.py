@@ -67,11 +67,46 @@ PREDEFINED_COLONY_INPUTS = [
 ]
 
 class BlueprintValidationHandler:
+    # TODO: reffactor to have a single validate function 
     def __init__(self, tree: BlueprintTree):
         self._tree = tree
         self._diagnostics = []
+
+    def _validate_dependency_exists(self):
+        message = "This app is not declared: {}"
+        apps = [app.name for app in self._tree.apps_node.apps]
+
+        for app in self._tree.apps_node.apps:
+            for name, node in app.depends_on.items():
+                if name not in apps:
+                    self._diagnostics.append(Diagnostic(
+                        range=Range(
+                            start=Position(line=node.start[0], character=node.start[1]),
+                            end=Position(line=node.end[0], character=node.end[1]),
+                        ),
+                        message=message.format(name)
+                    ))
     
-    def validate_unused_bluerprint_inputs(self, yaml_doc: dict): # TODO: must work with tree only
+    def validate_non_existing_app_is_declared(self, root_path: str):
+        message = "This app does not exist in blueprint repo: {}"
+        
+        diagnostics: List[Diagnostic] = []
+
+        for app in self._tree.apps_node.apps:
+            app_path = os.path.join(root_path, "applications", app.name, "{}.yaml".format(app.name))
+
+            if not os.path.isfile(app_path):
+                diagnostics.append(Diagnostic(
+                    range=Range(
+                        start=Position(line=app.key.start[0], character=app.key.start[1]),
+                        end=Position(line=app.key.end[0], character=app.key.end[1]),
+                    ),
+                    message=message.format(app.name)
+                ))
+        
+        return diagnostics
+
+    def _validate_unused_bluerprint_inputs(self, yaml_doc: dict): # TODO: must work with tree only
         message = "Unused variable {}"
         
         diagnostics: List[Diagnostic] = []
@@ -87,6 +122,10 @@ class BlueprintValidationHandler:
                     message=message.format(input.name)
                 ))
         return diagnostics
+
+    def validate(self):
+        self._validate_dependency_exists()
+        return self._diagnostics
 
     def validate_var_being_used_is_defined(self):
         pass
@@ -226,6 +265,8 @@ def _validate(ls, params):
             bp_tree = BlueprintParser(source).parse()
             validator = BlueprintValidationHandler(bp_tree)
 
+            diagnostics += validator.validate()
+            diagnostics += validator.validate_non_existing_app_is_declared(root)
             diagnostics += validator.validate_unused_bluerprint_inputs(yaml_obj)
 
             # print(ls.workspace.colony_objs)
