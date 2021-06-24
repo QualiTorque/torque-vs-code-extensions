@@ -29,7 +29,7 @@ import re
 from json import JSONDecodeError
 from typing import Any, Dict, Optional, Tuple, List, Union, cast
 
-from .parser import BlueprintParser, BlueprintTree
+from .ats.parser import BlueprintParser, BlueprintTree
 
 from .utils import services, applications, common
 from pygls.protocol import LanguageServerProtocol
@@ -98,37 +98,57 @@ class BlueprintValidationHandler:
             if not os.path.isfile(app_path):
                 diagnostics.append(Diagnostic(
                     range=Range(
-                        start=Position(line=app.key.start[0], character=app.key.start[1]),
-                        end=Position(line=app.key.end[0], character=app.key.end[1]),
+                        start=Position(line=app.start[0], character=app.start[1]),
+                        end=Position(line=app.end[0], character=app.end[1]),
                     ),
                     message=message.format(app.name)
                 ))
         
         return diagnostics
 
-    def _validate_unused_bluerprint_inputs(self, yaml_doc: dict): # TODO: must work with tree only
-        message = "Unused variable {}"
+    def _validate_unused_bluerprint_inputs(self): # TODO: must work with tree only
+        # bp_inputs = {input.name for input in self._tree.inputs_node.inputs}
         
-        diagnostics: List[Diagnostic] = []
-        app_vars = self._get_used_vars(yaml_doc=yaml_doc)
+        used_vars = set()
+        for app in self._tree.apps_node.apps:
+            used_vars.update({var.value.replace("$", "") for var in app.inputs_node.inputs})
+
+        message = "Unused variable {}"
 
         for input in self._tree.inputs_node.inputs:
-            if input.name not in app_vars:
-                diagnostics.append(Diagnostic(
+            if input.name not in used_vars:
+                self._diagnostics.append(Diagnostic(
                     range=Range(
                         start=Position(line=input.start[0], character=input.start[1]),
                         end=Position(line=input.start[0], character=input.start[1] + len(input.name))
                     ),
                     message=message.format(input.name)
                 ))
-        return diagnostics
+
+    def _validate_var_being_used_is_defined(self):
+        bp_inputs = {input.name for input in self._tree.inputs_node.inputs}
+        message = "Variable '{}' is not defined"
+        for app in self._tree.apps_node.apps:
+            for input in app.inputs_node.inputs:
+                # we need to check values starting with '$' 
+                # and they shouldnt be colony related
+                if input.value.startswith("$") and "." not in input.value:
+                    var = input.value.replace("$", "")
+                    if var not in bp_inputs:
+                        self._diagnostics.append(Diagnostic(
+                            range=Range(
+                                start=Position(line=input.start[0], character=input.start[1]),
+                                end=Position(line=input.end[0], character=input.end[1])
+                            ),
+                            message=message.format(input.value)
+                        ))
 
     def validate(self):
         self._validate_dependency_exists()
+        self._validate_unused_bluerprint_inputs()
+        self._validate_var_being_used_is_defined()
         return self._diagnostics
 
-    def validate_var_being_used_is_defined(self):
-        pass
 
     # TODO: must work with tree
     def _get_used_vars(self, yaml_doc: dict) -> set:
@@ -252,14 +272,14 @@ def _validate(ls, params):
                         msg = f"'{var}' is not an allowed variable in this file"
                     else:
                         msg = f"'{var}' is not defined"
-                    d = Diagnostic(
-                        range=Range(
-                            start=Position(line=i, character=col_pos),
-                            end=Position(line=i, character=col_pos + 1 +len(var))
-                        ),
-                        message=msg
-                    )
-                    diagnostics.append(d)
+                    # d = Diagnostic(
+                    #     range=Range(
+                    #         start=Position(line=i, character=col_pos),
+                    #         end=Position(line=i, character=col_pos + 1 +len(var))
+                    #     ),
+                    #     message=msg
+                    # )
+                    # diagnostics.append(d)
 
         if doc_type == "blueprint":
             bp_tree = BlueprintParser(source).parse()
@@ -267,7 +287,6 @@ def _validate(ls, params):
 
             diagnostics += validator.validate()
             diagnostics += validator.validate_non_existing_app_is_declared(root)
-            diagnostics += validator.validate_unused_bluerprint_inputs(yaml_obj)
 
             # print(ls.workspace.colony_objs)
             apps = applications.get_available_applications(root, APPLICATIONS)
