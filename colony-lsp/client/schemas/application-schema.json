@@ -137,13 +137,7 @@
                     "type": "string",
                     "enum": ["RDP", "SSH", "RDP,SSH"]
                 }                
-            },
-            "required":[
-                "allow_direct_access"
-            ],
-            "optional": [
-                "connection_protocol"
-            ],
+            },            
             "title": "Debugging"
         },
         "Infrastructure": {
@@ -213,7 +207,7 @@
                 "managed_identity_id": {
                     "type": "string",
                     "description": "User-assigned managed identity. Value in the format of 'resource_group_name/identity_name'",
-                    "pattern": "^[\\w\\-_]+\\/[\\w\\-_]+$"
+                    "pattern": "^([\\w\\-_]+\\/[\\w\\-_]+|\\$[\\w\\-_]+)$"
                 }
             },
             "required": ["managed_identity_id"]
@@ -326,23 +320,21 @@
         "PortInfoExternal": {
             "type": "object",
             "additionalProperties": false,
-            "properties": {
-                "port_info": {
-                    "$ref": "#/definitions/PortInfoPropsExternal"
+            "patternProperties": {
+                "^[\\w\\-]+$": {
+                    "$ref": "#/definitions/PortInfoPropsExternal"                  
                 }
-            },
-            "required": ["port_info"],
+            },            
             "title": "Port Information"
         },
         "PortInfoInternal": {
             "type": "object",
             "additionalProperties": false,
-            "properties": {
-                "port_info": {
-                    "$ref": "#/definitions/PortInfoPropsInternal"
+            "patternProperties": {
+                "^[\\w\\-]+$": {
+                    "$ref": "#/definitions/PortInfoPropsInternal"                  
                 }
             },
-            "required": ["port_info"],
             "title": "Port Information"
         },
         "PortInfoPropsExternal": {
@@ -351,6 +343,9 @@
             "properties": {
                 "port": {
                     "$ref": "#/definitions/Port"
+                },
+                "path": {
+                    "type": "string"
                 }
             },
             "required" : ["port"],
@@ -369,6 +364,9 @@
                 },
                 "ingress-healthcheck": {
                     "$ref": "#/definitions/IngressHealthcheck"
+                },
+                "path": {
+                    "type": "string"
                 }
             },
             "oneOf": [
@@ -489,7 +487,6 @@
             "type": "array",
             "additionalItems": false,
             "minItems": 1,
-            "maxItems": 1,
             "items": {
                 "anyOf": [
                     {
@@ -530,7 +527,6 @@
             "type": "array",
             "additionalItems": false,
             "minItems": 1,
-            "maxItems": 1,
             "items": {
                 "anyOf": [
                     {
@@ -562,7 +558,6 @@
             "type": "array",
             "additionalItems": false,
             "minItems": 1,
-            "maxItems": 1,
             "items": {
                 "anyOf": [
                     {
@@ -577,7 +572,7 @@
                                 "description": "Name of the secret. Used to specify a private image repository."
                             },
                             "tag": {
-                                "type": "string",
+                                "type": ["string", "number"],
                                 "description": "Tag defining image version to use."
                             },
                             "username": {
