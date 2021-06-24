@@ -12,7 +12,7 @@
 	"engines": {
 		"vscode": "^1.55.0"
 	},
-	"icon": "icon/icon216.png",
+	"icon": "icon/icon_q_square.png",
 	"keywords": [
 		"colony",
 		"yaml",
