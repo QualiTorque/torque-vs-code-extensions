@@ -21,20 +21,27 @@ class Parser:
         starting_token = next(data)
         tokens_stack = []
         extended_declare = False
-
+        inputs_without_ident = False
+        
         if isinstance(starting_token, BlockSequenceStartToken):
+            tokens_stack.append(starting_token)
+
+        # a special case when inputs are listed without indention
+        elif isinstance(starting_token, BlockEntryToken):
+            inputs_without_ident = True
             tokens_stack.append(starting_token)
 
         else:
             raise ValueError("Starting token is not correct")
 
-        while tokens_stack:
+        while tokens_stack or inputs_without_ident:
             token = next(data)
             token_start = (token.start_mark.line, token.start_mark.column)
             token_end = (token.end_mark.line, token.end_mark.column)
 
             if isinstance(token, BlockEntryToken): # dash ("-") symbol
                 tokens_stack.append(token)
+                continue
 
             # input without default value at all:
             if isinstance(token, ScalarToken) and isinstance(tokens_stack[-1], BlockEntryToken):
@@ -55,8 +62,15 @@ class Parser:
 
                 tokens_stack.append(token)
 
-            if (isinstance(token, KeyToken) or isinstance(token, ValueToken)) and not extended_declare:
+            # stack is empty. in case inputs do not have intention
+            # it means list has ended 
+            if isinstance(token, KeyToken) and not tokens_stack:
+                inputs_without_ident = False
+                continue
+
+            if isinstance(token, (KeyToken, ValueToken)) and not extended_declare:
                 tokens_stack.append(token)
+                continue
 
             if isinstance(token, ScalarToken):
                 if not extended_declare:

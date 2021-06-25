@@ -29,9 +29,9 @@ import re
 from json import JSONDecodeError
 from typing import Any, Dict, Optional, Tuple, List, Union, cast
 
-from .ats.parser import BlueprintParser, BlueprintTree
+from server.ats.parser import BlueprintParser, BlueprintTree
 
-from .utils import services, applications, common
+from server.utils import services, applications, common
 from pygls.protocol import LanguageServerProtocol
 
 from pygls.lsp.methods import (CODE_LENS, COMPLETION, COMPLETION_ITEM_RESOLVE, DOCUMENT_LINK, TEXT_DOCUMENT_DID_CHANGE,

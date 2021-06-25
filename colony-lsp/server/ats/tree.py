@@ -29,12 +29,15 @@ class InputsNode(YamlNode):
 class ApplicationNode(YamlNode):
     name: str = None
     key: YamlNode = YamlNode() # store key position
-    inputs_node: Optional[InputsNode] = None
+    inputs_node: Optional[InputsNode] = field(init=False)
     depends_on: Dict[str, YamlNode] = field(default_factory=dict) # TODO: ideally depends_on must be a node
 
     def add_input(self, input: InputNode):
         self.inputs_node.add(input)
         return self.inputs_node.inputs[-1]
+
+    def __post_init__(self):
+        self.inputs_node = InputsNode(parent=self)
 
 @dataclass
 class ApplicationsNode(YamlNode):
