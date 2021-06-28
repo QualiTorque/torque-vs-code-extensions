@@ -73,7 +73,7 @@ class BlueprintValidationHandler:
         self._diagnostics = []
 
     def _validate_dependency_exists(self):
-        message = "This app is not declared: {}"
+        message = "The app '{}' is not part of the blueprint applications section"
         apps = [app.name for app in self._tree.apps_node.apps]
 
         for app in self._tree.apps_node.apps:
@@ -88,7 +88,7 @@ class BlueprintValidationHandler:
                     ))
     
     def validate_non_existing_app_is_declared(self, root_path: str):
-        message = "This app does not exist in blueprint repo: {}"
+        message = "The app '{}' could not be found in the /applications folder"
         
         diagnostics: List[Diagnostic] = []
 
