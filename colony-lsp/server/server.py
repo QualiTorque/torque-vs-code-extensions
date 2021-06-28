@@ -289,22 +289,22 @@ def _validate(ls, params):
             diagnostics += validator.validate_non_existing_app_is_declared(root)
 
             # print(ls.workspace.colony_objs)
-            apps = applications.get_available_applications(root, APPLICATIONS)
-            for app in yaml_obj.get('applications', []):
-                app = list(app.keys())[0]
-                if app not in apps.keys():
-                    for i in range(len(doc_lines)):
-                        col_pos = doc_lines[i].find(app)
-                        if col_pos == -1:
-                            continue
-                        d = Diagnostic(
-                            range=Range(
-                                start=Position(line=i, character=col_pos),
-                                end=Position(line=i, character=col_pos + 1 +len(app))
-                            ),
-                            message=f"Application '{app}' doesn't exist"
-                        )
-                        diagnostics.append(d)
+            # apps = applications.get_available_applications(root, APPLICATIONS)
+            # for app in yaml_obj.get('applications', []):
+            #     app = list(app.keys())[0]
+            #     if app not in apps.keys():
+            #         for i in range(len(doc_lines)):
+            #             col_pos = doc_lines[i].find(app)
+            #             if col_pos == -1:
+            #                 continue
+            #             d = Diagnostic(
+            #                 range=Range(
+            #                     start=Position(line=i, character=col_pos),
+            #                     end=Position(line=i, character=col_pos + 1 +len(app))
+            #                 ),
+            #                 message=f"Application '{app}' doesn't exist"
+            #             )
+            #             diagnostics.append(d)
             srvs = services.get_available_services(root, SERVICES)
             for srv in yaml_obj.get('services', []):
                 srv = list(srv.keys())[0]
