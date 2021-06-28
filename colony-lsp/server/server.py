@@ -99,7 +99,7 @@ class BlueprintValidationHandler:
                 diagnostics.append(Diagnostic(
                     range=Range(
                         start=Position(line=app.start[0], character=app.start[1]),
-                        end=Position(line=app.end[0], character=app.end[1]),
+                        end=Position(line=app.start[0], character=app.start[1] + len(app.name)),
                     ),
                     message=message.format(app.name)
                 ))
