@@ -16,8 +16,9 @@
                 },
                 "inputs": {
                     "type": "array",
+                    "minItems": 1,
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/ServiceInput"
                     }
                 },
                 "module": {
@@ -40,18 +41,23 @@
                 }
             },
             "optional": [
-                "outputs",
-            ],
-            "required": [
-                "inputs",
-                "kind",
-                "module",
                 "permissions",
-                "spec_version",
-                "terraform_version",
+                "inputs",
+                "outputs",
                 "variables"
             ],
-            "title": "Colony-Service"
+            "required": [
+                "kind",
+                "spec_version",
+                "module",
+                "terraform_version"
+            ],
+            "title": "Colony Service"
+        },
+        "ServiceInput": {
+            "type": ["string", "object"],
+            "additionalProperties": true,
+            "title": "Input"
         },
         "Module": {
             "type": "object",
@@ -59,6 +65,14 @@
             "properties": {
                 "source": {
                     "type": "string"
+                },
+                "exclude_from_tagging": {
+                    "type": "array",
+                    "description": "If you must use a Terraform module containing resources that use these 'tag' definitions, you will need to explicitly tell Colony NOT to tag those resource types.",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
@@ -71,44 +85,87 @@
             "additionalProperties": false,
             "properties": {
                 "azure": {
-                    "$ref": "#/definitions/Azure"
+                    "$ref": "#/definitions/AzurePermissions"
+                },
+                "aws": {
+                    "$ref": "#/definitions/AwsPermissions"
                 }
             },
-            "required": [
-                "azure"
+            "anyOf": [
+                {"required": ["azure"]},
+                {"required": ["aws"]}
             ],
             "title": "Permissions"
         },
-        "Azure": {
+        "AzurePermissions": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
                 "managed_identity_id": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "User-assigned managed identity. Value in the format of 'resource_group_name/identity_name'",
+                    "pattern": "^([\\w\\-_]+\\/[\\w\\-_]+|\\$[\\w\\-_]+)$"
                 }
             },
             "required": [
                 "managed_identity_id"
             ],
-            "title": "Azure"
+            "title": "Azure permissions"
+        },
+        "AwsPermissions": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "role_arn": {
+                    "type": "string"
+                },
+                "external_id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "role_arn"
+            ],
+            "title": "Aws permissions"
         },
         "Variables": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "var_file": {
+                    "type": "string",
+                    "default": "terraform.tfvars"
+                },
                 "values": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Value"
+                        "$ref": "#/definitions/ValueElement"
                     }
                 }
             },
-            "required": [
-                "values"
+            "anyOf": [
+                {"required": ["values"]},
+                {"required": ["var_file"]}
             ],
             "title": "Variables"
         },
-        "Value": {
+        "ValueElement": {
+            "oneOf": [
+                {"type": "string", "title": "Value"},
+                {"$ref": "#/definitions/ValueFull"},
+                {"$ref": "#/definitions/ValueSimple"}
+            ]
+        },
+        "ValueSimple": {
+            "type": "object",
+            "patternProperties": {
+                "^[\\w\\-]+$": { 
+                    "type": ["string", "integer", "boolean"]
+                }
+            },
+            "title": "Value"
+        },
+        "ValueFull": {
             "type": "object",
             "additionalProperties": false,
             "properties": {

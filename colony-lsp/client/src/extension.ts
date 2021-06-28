@@ -20,12 +20,16 @@
 
 import * as net from "net";
 import * as path from "path";
-import { ExtensionContext, workspace } from "vscode";
+import { ExtensionContext, workspace, languages } from "vscode";
 import {
     LanguageClient,
     LanguageClientOptions,
     ServerOptions,
 } from "vscode-languageclient/node";
+import {
+    activateYamlExtension,
+    addSchemasToYamlConfig
+} from './yamlHelper';
 
 let client: LanguageClient;
 
@@ -82,8 +86,12 @@ function startLangServer(
     return new LanguageClient(command, serverOptions, getClientOptions());
 }
 
+async function activateYamlFeatures(context: ExtensionContext) {
+    await addSchemasToYamlConfig(context.extensionPath);
+    await activateYamlExtension();
+}
+
 export function activate(context: ExtensionContext): void {
-    console.log('in activate')
     if (isStartedInDebugMode()) {
         // Development - Run the server manually
         client = startLangServerTCP(2087);
@@ -101,6 +109,7 @@ export function activate(context: ExtensionContext): void {
         client = startLangServer(pythonPath, ["-m", "server"], cwd);
     }
 
+    activateYamlFeatures(context);    
     context.subscriptions.push(client.start());
 }
 

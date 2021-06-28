@@ -63,6 +63,7 @@ PREDEFINED_COLONY_INPUTS = [
     "$colony.environment.id",
     "$colony.environment.virtual_network_id",
     "$colony.environment.public_address"
+    "$colony.repos.branch.current"
 ]
 
 class BlueprintValidationHandler:
@@ -152,14 +153,6 @@ class ColonyLspProtocol(LanguageServerProtocol):
 
 
 class ColonyLanguageServer(LanguageServer):
-    CMD_COUNT_DOWN_BLOCKING = 'countDownBlocking'
-    CMD_COUNT_DOWN_NON_BLOCKING = 'countDownNonBlocking'
-    CMD_REGISTER_COMPLETIONS = 'registerCompletions'
-    CMD_SHOW_CONFIGURATION_ASYNC = 'showConfigurationAsync'
-    CMD_SHOW_CONFIGURATION_CALLBACK = 'showConfigurationCallback'
-    CMD_SHOW_CONFIGURATION_THREAD = 'showConfigurationThread'
-    CMD_UNREGISTER_COMPLETIONS = 'unregisterCompletions'
-
     CONFIGURATION_SECTION = 'colonyServer'
 
     # def __init__(self):
@@ -313,7 +306,7 @@ def _validate_yaml(source):
     diagnostics = []
 
     try:
-        yaml.load(source, Loader=yaml.SafeLoader)
+        yaml.load(source, Loader=yaml.FullLoader)
     except yaml.MarkedYAMLError as ex:
         mark = ex.problem_mark
         print(mark)
@@ -484,17 +477,17 @@ def _validate_yaml(source):
 #     print(locals())
 #     if '/applications/' in params.text_document.uri:
 #         return [
-#                     CodeLens(
-#                         range=Range(
-#                             start=Position(line=0, character=0),
-#                             end=Position(line=1, character=1),
-#                         ),
-#                         command=Command(
-#                             title='cmd1',
-#                             command=ColonyLanguageServer.CMD_COUNT_DOWN_BLOCKING,
-#                         ),
-#                         data='some data 1',
-#                     ),
+#                     # CodeLens(
+#                     #     range=Range(
+#                     #         start=Position(line=0, character=0),
+#                     #         end=Position(line=1, character=1),
+#                     #     ),
+#                     #     command=Command(
+#                     #         title='cmd1',
+#                     #         command=ColonyLanguageServer.CMD_COUNT_DOWN_BLOCKING,
+#                     #     ),
+#                     #     data='some data 1',
+#                     # ),
 #                     CodeLens(
 #                         range=Range(
 #                             start=Position(line=0, character=0),
