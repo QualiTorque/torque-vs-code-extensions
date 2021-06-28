@@ -152,9 +152,6 @@ class BlueprintValidationHandler:
     # TODO: must work with tree
     def _get_used_vars(self, yaml_doc: dict) -> set:
 
-    # TODO: must work with tree
-    def _get_used_vars(self, yaml_doc: dict) -> set:
-
         used_vars = set()
 
         for app in yaml_doc.get('applications', []):
