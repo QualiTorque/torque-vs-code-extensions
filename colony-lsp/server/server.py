@@ -17,7 +17,7 @@
 import asyncio
 from dataclasses import dataclass
 from pygls.lsp import types
-from pygls.lsp.types.basic_structures import VersionedTextDocumentIdentifier
+from pygls.lsp.types.basic_structures import DiagnosticSeverity, VersionedTextDocumentIdentifier
 from pygls.lsp import types, InitializeResult
 import yaml
 import time
@@ -122,7 +122,8 @@ class BlueprintValidationHandler:
                         start=Position(line=input.start[0], character=input.start[1]),
                         end=Position(line=input.start[0], character=input.start[1] + len(input.name))
                     ),
-                    message=message.format(input.name)
+                    message=message.format(input.name),
+                    severity=DiagnosticSeverity.Warning
                 ))
 
     def _validate_var_being_used_is_defined(self):
