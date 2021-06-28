@@ -106,8 +106,7 @@ class BlueprintValidationHandler:
         
         return diagnostics
 
-    def _validate_unused_bluerprint_inputs(self): # TODO: must work with tree only
-        # bp_inputs = {input.name for input in self._tree.inputs_node.inputs}
+    def _check_for_unused_bluerprint_inputs(self): 
         
         used_vars = set()
         for app in self._tree.apps_node.apps:
@@ -145,24 +144,26 @@ class BlueprintValidationHandler:
                         ))
 
     def validate(self):
+        # warnings
+        self._check_for_unused_bluerprint_inputs()
+        # errors
         self._validate_dependency_exists()
-        self._validate_unused_bluerprint_inputs()
         self._validate_var_being_used_is_defined()
         return self._diagnostics
 
-    # TODO: must work with tree
-    def _get_used_vars(self, yaml_doc: dict) -> set:
+    # # TODO: must work with tree
+    # def _get_used_vars(self, yaml_doc: dict) -> set:
 
-        used_vars = set()
+    #     used_vars = set()
 
-        for app in yaml_doc.get('applications', []):
-            app_name = list(app.keys()).pop()
-            inputs = app[app_name].get("input_values", [])
+    #     for app in yaml_doc.get('applications', []):
+    #         app_name = list(app.keys()).pop()
+    #         inputs = app[app_name].get("input_values", [])
 
-            for items in inputs:
-                used_vars.add(list(items.values()).pop().replace("$", ""))
+    #         for items in inputs:
+    #             used_vars.add(list(items.values()).pop().replace("$", ""))
 
-        return used_vars
+    #     return used_vars
 
 class ColonyWorkspace(Workspace):
     """
