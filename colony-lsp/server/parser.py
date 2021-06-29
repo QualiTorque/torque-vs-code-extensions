@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Any, Generator, List, Optional, Tuple
+from typing import Any, Generator, List, Optional
 import yaml
 from yaml.parser import Parser
 from yaml.tokens import BlockEndToken, BlockEntryToken, BlockMappingStartToken, BlockSequenceStartToken, KeyToken, ScalarToken, ValueToken

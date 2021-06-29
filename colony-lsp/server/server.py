@@ -60,12 +60,6 @@ COUNT_DOWN_SLEEP_IN_SECONDS = 1
 APPLICATIONS = {}
 SERVICES = {}
 
-PREDEFINED_COLONY_INPUTS = [
-    "$colony.environment.id",
-    "$colony.environment.virtual_network_id",
-    "$colony.environment.public_address"
-    "$colony.repos.branch.current"
-]
 
 class ColonyWorkspace(Workspace):
     """
@@ -186,11 +180,9 @@ def _validate(ls, params):
 
         if doc_type == "blueprint":
             bp_tree = BlueprintParser(source).parse()
-            validator = BlueprintValidationHandler(bp_tree)
+            validator = BlueprintValidationHandler(bp_tree, root)
 
             diagnostics += validator.validate()
-            diagnostics += validator.validate_non_existing_app_is_declared(root)
-
             # print(ls.workspace.colony_objs)
             # apps = applications.get_available_applications(root, APPLICATIONS)
             # for app in yaml_obj.get('applications', []):

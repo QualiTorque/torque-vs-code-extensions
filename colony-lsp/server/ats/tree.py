@@ -12,7 +12,6 @@ class YamlNode(ABC):
 @dataclass
 class MappingNode(YamlNode):
     key: YamlNode = None
-    
 
 @dataclass
 class InputNode(YamlNode):

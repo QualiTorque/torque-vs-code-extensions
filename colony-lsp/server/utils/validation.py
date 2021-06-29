@@ -4,15 +4,37 @@ from typing import List
 from pygls.lsp.types import diagnostics
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
 from server.ats.tree import BlueprintTree
-from server.server import PREDEFINED_COLONY_INPUTS
+from server.constants import PREDEFINED_COLONY_INPUTS
 
 
-class BlueprintValidationHandler:
-    # TODO: refactor to have a single validate function 
-    def __init__(self, tree: BlueprintTree):
+class VaidationHandler:
+    def __init__(self, tree: BlueprintTree, root_path: str):
         self._tree = tree
         self._diagnostics = []
+        self._root_path = root_path
 
+    def _add_diagnostic(
+        self,
+        start_position: Position,
+        end_position: Position,
+        message: str = "",
+        diag_severity: DiagnosticSeverity = None):
+
+        self._diagnostics.append(
+            Diagnostic(
+                range=Range(
+                    start=start_position,
+                    end=end_position),
+            ),
+            message=message,
+            severity=diag_severity
+        )
+
+    def validate(self):
+        pass
+
+
+class BlueprintValidationHandler(VaidationHandler):
     def _validate_dependency_exists(self):
         message = "The app '{}' is not part of the blueprint applications section"
         apps = [app.name for app in self._tree.apps_node.apps]
@@ -20,32 +42,27 @@ class BlueprintValidationHandler:
         for app in self._tree.apps_node.apps:
             for name, node in app.depends_on.items():
                 if name not in apps:
-                    self._diagnostics.append(Diagnostic(
-                        range=Range(
-                            start=Position(line=node.start[0], character=node.start[1]),
-                            end=Position(line=node.end[0], character=node.end[1]),
-                        ),
+                    self._add_diagnostic(
+                        Position(line=node.start[0], character=node.start[1]),
+                        Position(line=node.end[0], character=node.end[1]),
                         message=message.format(name)
-                    ))
+                    )
     
-    def validate_non_existing_app_is_declared(self, root_path: str):
+    def _validate_non_existing_app_is_declared(self):
         message = "The app '{}' could not be found in the /applications folder"
         
         diagnostics: List[Diagnostic] = []
 
         for app in self._tree.apps_node.apps:
-            app_path = os.path.join(root_path, "applications", app.name, "{}.yaml".format(app.name))
+            app_path = os.path.join(self._root_path, "applications", app.name, "{}.yaml".format(app.name))
 
             if not os.path.isfile(app_path):
-                diagnostics.append(Diagnostic(
-                    range=Range(
-                        start=Position(line=app.start[0], character=app.start[1]),
-                        end=Position(line=app.start[0], character=app.start[1] + len(app.name)),
-                    ),
+                self._add_diagnostic(
+                    Position(line=app.start[0], character=app.start[1]),
+                    Position(line=app.start[0], character=app.start[1] + len(app.name)),
                     message=message.format(app.name)
-                ))
-        
-        return diagnostics
+                )
+
 
     def _check_for_unused_bluerprint_inputs(self): 
         
@@ -57,14 +74,12 @@ class BlueprintValidationHandler:
 
         for input in self._tree.inputs_node.inputs:
             if input.name not in used_vars:
-                self._diagnostics.append(Diagnostic(
-                    range=Range(
-                        start=Position(line=input.start[0], character=input.start[1]),
-                        end=Position(line=input.start[0], character=input.start[1] + len(input.name))
-                    ),
+                self._add_diagnostic(
+                    Position(line=input.start[0], character=input.start[1]),
+                    Position(line=input.start[0], character=input.start[1] + len(input.name)),
                     message=message.format(input.name),
                     severity=DiagnosticSeverity.Warning
-                ))
+                )
 
     def _is_valid_auto_var(self, var_name):
         if var_name.lower() in PREDEFINED_COLONY_INPUTS:
@@ -103,7 +118,6 @@ class BlueprintValidationHandler:
         
         return True, ""
         
-        
     def _validate_var_being_used_is_defined(self):
         bp_inputs = {input.name for input in self._tree.inputs_node.inputs}
         message = "Variable '{}' is not defined"
@@ -126,30 +140,26 @@ class BlueprintValidationHandler:
                     if cur_var.startswith("$") and "." not in cur_var:
                         var = cur_var.replace("$", "")
                         if var not in bp_inputs:
-                            self._diagnostics.append(Diagnostic(
-                                range=Range(
-                                    start=Position(line=input.start[0], character=input.start[1]+pos[0]),
-                                    end=Position(line=input.start[0], character=input.start[1]+pos[1])
-                                ),
+                            self._add_diagnostic(
+                                Position(line=input.start[0], character=input.start[1]+pos[0]),
+                                Position(line=input.start[0], character=input.start[1]+pos[1]),
                                 message=message.format(input.value)
-                            ))
+                            )
                     elif cur_var.lower().startswith("$colony"):
                         print("colony var")
                         valid_var, error_message = self._is_valid_auto_var(cur_var)
                         if not valid_var:
-                            self._diagnostics.append(Diagnostic(
-                                range=Range(
-                                    start=Position(line=input.start[0], character=input.start[1]+pos[0]),
-                                    end=Position(line=input.start[0], character=input.start[1]+pos[1])
-                                ),
-                                message=error_message
-                            ))
+                            self._add_diagnostic(
+                                    Position(line=input.start[0], character=input.start[1]+pos[0]),
+                                    Position(line=input.start[0], character=input.start[1]+pos[1]),
+                                    message=error_message
+                            )
                     
-
     def validate(self):
         # warnings
         self._check_for_unused_bluerprint_inputs()
         # errors
         self._validate_dependency_exists()
         self._validate_var_being_used_is_defined()
+        self._validate_non_existing_app_is_declared()
         return self._diagnostics
