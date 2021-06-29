@@ -30,7 +30,7 @@ import re
 from json import JSONDecodeError
 from typing import Any, Dict, Optional, Tuple, List, Union, cast
 
-from server.ats.parser import BlueprintParser, BlueprintTree
+from server.ats.parser import AppParser, BlueprintParser, BlueprintTree
 
 from server.utils import services, applications, common
 from pygls.protocol import LanguageServerProtocol
@@ -279,6 +279,45 @@ def _validate_yaml(source):
 
     return diagnostics
 
+@colony_server.feature(TEXT_DOCUMENT_DID_CHANGE)
+def did_change(ls, params: DidChangeTextDocumentParams):
+    """Text document did change notification."""
+    print('------did change-------')
+    _validate(ls, params)
+    text_doc = ls.workspace.get_document(params.text_document.uri)
+    root = ls.workspace.root_path
+    
+    source = text_doc.source
+    yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
+    doc_type = yaml_obj.get('kind', '')
+    
+    if doc_type == "application":
+        # app_tree = AppParser(source).parse()
+        app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
+
+        if APPLICATIONS and app_name not in APPLICATIONS: # if there is already a cache, add this file
+            # APPLICATIONS[app_name] = app_tree
+            applications.load_app_details(app_name, params.text_document.uri, APPLICATIONS)
+    elif doc_type == "TerraForm":
+        srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
+        if SERVICES and srv_name not in SERVICES: # if there is already a cache, add this file
+            services.load_service_details(srv_name, params.text_document.uri, SERVICES)
+
+
+@colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
+def did_close(server: ColonyLanguageServer, params: DidCloseTextDocumentParams):
+    """Text document did close notification."""
+    server.show_message('Text Document Did Close')
+
+
+@colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
+async def did_open(ls, params: DidOpenTextDocumentParams):
+    """Text document did open notification."""
+    ls.show_message('Text Document Did Open')
+    ls.workspace.put_document(params.text_document)
+    _validate(ls, params)
+
+
 
 # @colony_server.feature(COMPLETION_ITEM_RESOLVE, CompletionOptions())
 # def completion_item_resolve(server: ColonyLanguageServer, params: CompletionItem) -> CompletionItem:
@@ -503,39 +542,3 @@ def _validate_yaml(source):
 #                 end=Position(line=31, character=4),
 #             ))
 #     return None
-
-
-@colony_server.feature(TEXT_DOCUMENT_DID_CHANGE)
-def did_change(ls, params: DidChangeTextDocumentParams):
-    """Text document did change notification."""
-    print('------did change-------')
-    _validate(ls, params)
-    text_doc = ls.workspace.get_document(params.text_document.uri)
-    root = ls.workspace.root_path
-    
-    source = text_doc.source
-    yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
-    doc_type = yaml_obj.get('kind', '')
-    
-    if doc_type == "application":
-        app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-        if APPLICATIONS and app_name not in APPLICATIONS: # if there is already a cache, add this file
-            applications.load_app_details(app_name, params.text_document.uri, APPLICATIONS)
-    elif doc_type == "TerraForm":
-        srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-        if SERVICES and srv_name not in SERVICES: # if there is already a cache, add this file
-            services.load_service_details(srv_name, params.text_document.uri, SERVICES)
-
-
-@colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
-def did_close(server: ColonyLanguageServer, params: DidCloseTextDocumentParams):
-    """Text document did close notification."""
-    server.show_message('Text Document Did Close')
-
-
-@colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls, params: DidOpenTextDocumentParams):
-    """Text document did open notification."""
-    ls.show_message('Text Document Did Open')
-    ls.workspace.put_document(params.text_document)
-    _validate(ls, params)
