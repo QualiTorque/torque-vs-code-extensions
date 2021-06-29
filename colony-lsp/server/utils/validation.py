@@ -142,8 +142,8 @@ class BlueprintValidationHandler(VaidationHandler):
                         if var not in bp_inputs:
                             self._add_diagnostic(
                                 Position(line=input.value.start[0], character=input.value.start[1]+pos[0]),
-                                Position(line=input.value.end[0], character=input.value.end[1]+pos[1]),
-                                message=message.format(input.value.text)
+                                Position(line=input.value.end[0], character=input.value.start[1]+pos[1]),
+                                message=message.format(cur_var)
                             )
                     elif cur_var.lower().startswith("$colony"):
                         print("colony var")
@@ -151,7 +151,7 @@ class BlueprintValidationHandler(VaidationHandler):
                         if not valid_var:
                             self._add_diagnostic(
                                     Position(line=input.value.start[0], character=input.value.start[1]+pos[0]),
-                                    Position(line=input.value.end[0], character=input.value.end[1]+pos[1]),
+                                    Position(line=input.value.end[0], character=input.value.start[1]+pos[1]),
                                     message=error_message
                             )
                     
