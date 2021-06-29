@@ -68,16 +68,16 @@ class BlueprintValidationHandler(VaidationHandler):
         
         used_vars = set()
         for app in self._tree.apps_node.apps:
-            used_vars.update({var.value.replace("$", "") for var in app.inputs_node.inputs})
+            used_vars.update({var.value.text.replace("$", "") for var in app.inputs_node.inputs})
 
         message = "Unused variable {}"
 
         for input in self._tree.inputs_node.inputs:
-            if input.name not in used_vars:
+            if input.key.text not in used_vars:
                 self._add_diagnostic(
-                    Position(line=input.start[0], character=input.start[1]),
-                    Position(line=input.start[0], character=input.start[1] + len(input.name)),
-                    message=message.format(input.name),
+                    Position(line=input.key.start[0], character=input.key.start[1]),
+                    Position(line=input.key.end[0], character=input.key.end[1]),
+                    message=message.format(input.key.text),
                     diag_severity=DiagnosticSeverity.Warning
                 )
 
@@ -119,7 +119,7 @@ class BlueprintValidationHandler(VaidationHandler):
         return True, ""
         
     def _validate_var_being_used_is_defined(self):
-        bp_inputs = {input.name for input in self._tree.inputs_node.inputs}
+        bp_inputs = {input.key.text for input in self._tree.inputs_node.inputs}
         message = "Variable '{}' is not defined"
         regex = re.compile('(^\$.+?$|\$\{.+?\})')
         for app in self._tree.apps_node.apps:
@@ -130,7 +130,7 @@ class BlueprintValidationHandler(VaidationHandler):
                 # need to break value to parts to handle variables in {} like: 
                 # abcd/${some_var}/asfsd/${var2}
                 # and highlight these portions      
-                iterator = regex.finditer(input.value)
+                iterator = regex.finditer(input.value.text)
                 for match in iterator:
                     cur_var = match.group()
                     pos = match.span()
@@ -141,17 +141,17 @@ class BlueprintValidationHandler(VaidationHandler):
                         var = cur_var.replace("$", "")
                         if var not in bp_inputs:
                             self._add_diagnostic(
-                                Position(line=input.start[0], character=input.start[1]+pos[0]),
-                                Position(line=input.start[0], character=input.start[1]+pos[1]),
-                                message=message.format(input.value)
+                                Position(line=input.value.start[0], character=input.value.start[1]+pos[0]),
+                                Position(line=input.value.end[0], character=input.value.end[1]+pos[1]),
+                                message=message.format(input.value.text)
                             )
                     elif cur_var.lower().startswith("$colony"):
                         print("colony var")
                         valid_var, error_message = self._is_valid_auto_var(cur_var)
                         if not valid_var:
                             self._add_diagnostic(
-                                    Position(line=input.start[0], character=input.start[1]+pos[0]),
-                                    Position(line=input.start[0], character=input.start[1]+pos[1]),
+                                    Position(line=input.value.start[0], character=input.value.start[1]+pos[0]),
+                                    Position(line=input.value.end[0], character=input.value.end[1]+pos[1]),
                                     message=error_message
                             )
                     

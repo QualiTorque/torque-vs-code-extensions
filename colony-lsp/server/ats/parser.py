@@ -44,9 +44,10 @@ class Parser:
 
             # input without default value at all:
             if isinstance(token, ScalarToken) and isinstance(tokens_stack[-1], BlockEntryToken):
-                inputs_node.add(
-                    InputNode(start=token_start, end=token_end, parent=inputs_node, name=token.value)
-                )
+                input_node = InputNode(start=token_start, end=token_end, parent=inputs_node)
+                input_node.key = TextNode(start=token_start, end=token_end, parent=input_node, text=token.value)
+
+                inputs_node.add(input_node)
                 tokens_stack.pop()
 
             if isinstance(token, BlockMappingStartToken):
@@ -76,20 +77,36 @@ class Parser:
                     top = tokens_stack.pop()
                     # it's an input name
                     if isinstance(top, KeyToken):
+                        inputs_node.inputs[-1].key = TextNode(
+                            start=token_start,
+                            end=token_end,
+                            parent=inputs_node.inputs[-1],
+                            text=token.value
+                        )
                         inputs_node.inputs[-1].start = token_start
-                        inputs_node.inputs[-1].name = token.value
 
                     # it's a default value
                     if isinstance(top, ValueToken):
-                        inputs_node.inputs[-1].value = token.value
+                        inputs_node.inputs[-1].value = TextNode(
+                            start=token_start,
+                            end=token_end,
+                            parent=inputs_node.inputs[-1],
+                            text=token.value
+                        )
  
                 else:
+                    # for now ignore all input properties except 'default_value'
                     if not isinstance(tokens_stack[-1], ScalarToken):
                         tokens_stack.append(token)
                     else:
                         scalar = tokens_stack.pop()
                         if scalar.value == "default_value":
-                            inputs_node.inputs[-1].value = token.value
+                            inputs_node.inputs[-1].value = TextNode(
+                                start=token_start,
+                                end=token_end,
+                                parent=inputs_node.inputs[-1],
+                                text=token.value
+                            )
 
             if isinstance(token, BlockEndToken):
                 # on the top of a stack we always must have BlockMappingStartToken 

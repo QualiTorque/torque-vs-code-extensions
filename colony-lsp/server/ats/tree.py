@@ -8,18 +8,21 @@ class YamlNode(ABC):
     end: tuple = None
     parent: Optional[Any] = None # TODO: must be Node, not any
 
+@dataclass
+# Could be extended by VariableNote (for $VAR), PathNode(for artifacts), DoubleQuoted, SingleQuoted etc
+class TextNode(YamlNode): 
+    text: str = ""
 
 @dataclass
-class MappingNode(YamlNode):
+class MappingNode(YamlNode): # TODO: actually all colony nodes must inherit this
     key: YamlNode = None
-
-@dataclass
-class InputNode(YamlNode):
-    name: str = None
-    # value: Union[Var, String]
-    value: Optional[str] = None
+    value: YamlNode = None
     allow_variable: bool = False
 
+@dataclass
+class InputNode(MappingNode):
+    allow_variable = True
+    
 @dataclass
 class InputsNode(YamlNode):
     """
