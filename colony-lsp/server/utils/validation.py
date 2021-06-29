@@ -24,11 +24,11 @@ class VaidationHandler:
             Diagnostic(
                 range=Range(
                     start=start_position,
-                    end=end_position),
-            ),
-            message=message,
-            severity=diag_severity
-        )
+                    end=end_position
+                ),
+                message=message,
+                severity=diag_severity
+            ))
 
     def validate(self):
         pass
@@ -78,7 +78,7 @@ class BlueprintValidationHandler(VaidationHandler):
                     Position(line=input.start[0], character=input.start[1]),
                     Position(line=input.start[0], character=input.start[1] + len(input.name)),
                     message=message.format(input.name),
-                    severity=DiagnosticSeverity.Warning
+                    diag_severity=DiagnosticSeverity.Warning
                 )
 
     def _is_valid_auto_var(self, var_name):
