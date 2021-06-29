@@ -11,7 +11,6 @@ from yaml.tokens import BlockEndToken, BlockEntryToken, BlockMappingStartToken, 
 class Parser:
     def __init__(self, document) -> None:
         self.document = document
-        self._tree = BlueprintTree()
 
     def parse(self):
         pass
@@ -26,7 +25,7 @@ class Parser:
         if isinstance(starting_token, BlockSequenceStartToken):
             tokens_stack.append(starting_token)
 
-        # a special case when inputs are listed without indention
+        # a special case when inputs are listed without indentation
         elif isinstance(starting_token, BlockEntryToken):
             inputs_without_ident = True
             tokens_stack.append(starting_token)
@@ -62,7 +61,7 @@ class Parser:
 
                 tokens_stack.append(token)
 
-            # stack is empty. in case inputs do not have intention
+            # stack is empty. in case inputs do not have indentation
             # it means list has ended 
             if isinstance(token, KeyToken) and not tokens_stack:
                 inputs_without_ident = False
@@ -110,7 +109,45 @@ class Parser:
                     raise ValueError("Wrong structure of input block")
 
 
+class AppParser(Parser):
+    def __init__(self, document):
+        self._tree = AppTree()
+        super().__init__(document=document)
+
+    def parse(self):
+        tokens = yaml.scan(self.document)
+        token = None
+        
+        for token in tokens:
+            token_start = (token.start_mark.line, token.start_mark.column)
+            token_end = (token.end_mark.line, token.end_mark.column)
+
+            if isinstance(token, yaml.StreamStartToken):
+                self._tree.start = token_start
+            if isinstance(token, yaml.StreamEndToken):
+                self._tree.end = token_end
+            
+            if isinstance(token, ScalarToken) and token.value == "inputs":
+                inputs = InputsNode(start=token_start, parent=self._tree)
+                try:
+                    # first we need to skip ValueToken
+                    next(tokens)
+
+                    self._process_inputs(tokens, inputs)
+                except ValueError:
+                    print("error during inputs processing")
+                    pass
+
+                self._tree.inputs_node = inputs
+
+        return self._tree
+
+
 class BlueprintParser(Parser):
+    def __init__(self, document):
+        self._tree = BlueprintTree()
+        super().__init__(document=document)
+
     # TODO: processing of all sub-nodes must me merged to single method    
     def _process_apps(self, data: Generator, apps_node: ApplicationNode) -> None:
         starting_token = next(data)
