@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 @dataclass
 class YamlNode(ABC):
@@ -9,10 +9,20 @@ class YamlNode(ABC):
     parent: Optional[Any] = None # TODO: must be Node, not any
 
 @dataclass
-class InputNode(YamlNode):
-    name: str = None
-    value: Optional[str] = None
+# Could be extended by VariableNote (for $VAR), PathNode(for artifacts), DoubleQuoted, SingleQuoted etc
+class TextNode(YamlNode): 
+    text: str = ""
 
+@dataclass
+class MappingNode(YamlNode): # TODO: actually all colony nodes must inherit this
+    key: YamlNode = None
+    value: YamlNode = None
+    allow_variable: bool = False
+
+@dataclass
+class InputNode(MappingNode):
+    allow_variable = True
+    
 @dataclass
 class InputsNode(YamlNode):
     """
@@ -51,6 +61,16 @@ class ApplicationsNode(YamlNode):
         return self.apps[-1]
 
 @dataclass
-class BlueprintTree:
+class ColonyTree:
+    inputs_node: Optional[InputsNode] = field(init=False)
+
+    def __post_init__(self):
+        self.inputs_node = InputsNode(parent=self)
+
+@dataclass
+class BlueprintTree(ColonyTree):
     apps_node: Optional[ApplicationsNode] = None
-    inputs_node: Optional[InputsNode] = None
+
+@dataclass
+class AppTree(ColonyTree):
+    pass

@@ -16,8 +16,9 @@
 ############################################################################
 import asyncio
 from dataclasses import dataclass
+from server.utils.validation import BlueprintValidationHandler
 from pygls.lsp import types
-from pygls.lsp.types.basic_structures import DiagnosticSeverity, VersionedTextDocumentIdentifier
+from pygls.lsp.types.basic_structures import VersionedTextDocumentIdentifier
 from pygls.lsp import types, InitializeResult
 import yaml
 import time
@@ -29,7 +30,7 @@ import re
 from json import JSONDecodeError
 from typing import Any, Dict, Optional, Tuple, List, Union, cast
 
-from server.ats.parser import BlueprintParser, BlueprintTree
+from server.ats.parser import AppParser, BlueprintParser, BlueprintTree
 
 from server.utils import services, applications, common
 from pygls.protocol import LanguageServerProtocol
@@ -59,173 +60,6 @@ COUNT_DOWN_SLEEP_IN_SECONDS = 1
 APPLICATIONS = {}
 SERVICES = {}
 
-PREDEFINED_COLONY_INPUTS = [
-    "$colony.environment.id",
-    "$colony.environment.virtual_network_id",
-    "$colony.environment.public_address"
-    "$colony.repos.branch.current"
-]
-
-class BlueprintValidationHandler:
-    # TODO: reffactor to have a single validate function 
-    def __init__(self, tree: BlueprintTree):
-        self._tree = tree
-        self._diagnostics = []
-
-    def _validate_dependency_exists(self):
-        message = "The app '{}' is not part of the blueprint applications section"
-        apps = [app.name for app in self._tree.apps_node.apps]
-
-        for app in self._tree.apps_node.apps:
-            for name, node in app.depends_on.items():
-                if name not in apps:
-                    self._diagnostics.append(Diagnostic(
-                        range=Range(
-                            start=Position(line=node.start[0], character=node.start[1]),
-                            end=Position(line=node.end[0], character=node.end[1]),
-                        ),
-                        message=message.format(name)
-                    ))
-    
-    def validate_non_existing_app_is_declared(self, root_path: str):
-        message = "The app '{}' could not be found in the /applications folder"
-        
-        diagnostics: List[Diagnostic] = []
-
-        for app in self._tree.apps_node.apps:
-            app_path = os.path.join(root_path, "applications", app.name, "{}.yaml".format(app.name))
-
-            if not os.path.isfile(app_path):
-                diagnostics.append(Diagnostic(
-                    range=Range(
-                        start=Position(line=app.start[0], character=app.start[1]),
-                        end=Position(line=app.start[0], character=app.start[1] + len(app.name)),
-                    ),
-                    message=message.format(app.name)
-                ))
-        
-        return diagnostics
-
-    def _check_for_unused_bluerprint_inputs(self): 
-        
-        used_vars = set()
-        for app in self._tree.apps_node.apps:
-            used_vars.update({var.value.replace("$", "") for var in app.inputs_node.inputs})
-
-        message = "Unused variable {}"
-
-        for input in self._tree.inputs_node.inputs:
-            if input.name not in used_vars:
-                self._diagnostics.append(Diagnostic(
-                    range=Range(
-                        start=Position(line=input.start[0], character=input.start[1]),
-                        end=Position(line=input.start[0], character=input.start[1] + len(input.name))
-                    ),
-                    message=message.format(input.name),
-                    severity=DiagnosticSeverity.Warning
-                ))
-
-    def _is_valid_auto_var(self, var_name):
-        if var_name.lower() in PREDEFINED_COLONY_INPUTS:
-            return True, ""
-        
-        parts = var_name.split('.')
-        if not parts[0].lower() == "$colony":
-            return False, f"{var_name} is not a valid colony-generated variable"
-        
-        if not parts[1].lower() == "applications" and not parts[1].lower() == "services":
-            return False, f"{var_name} is not a valid colony-generated variable"
-        
-        if len(parts) == 4: 
-            if not parts[3] == "dns":
-                return False, f"{var_name} is not a valid colony-generated variable"
-            else:
-                return True, ""
-        
-        if len(parts) == 5:
-            if parts[1].lower() == "applications" and (not parts[3].lower() == "outputs" and 
-                                                       not parts[3].lower() == "dns"):
-                return False, f"{var_name} is not a valid colony-generated variable"
-            
-            if parts[1].lower() == "services" and not parts[3].lower() == "outputs":
-                return False, f"{var_name} is not a valid colony-generated variable"
-            
-            if parts[1] == "applications":
-                apps = [app.name for app in self._tree.apps_node.apps]
-                if not parts[2] in apps:
-                    return False, f"{var_name} is not a valid colony-generated variable (no such app in the blueprint)"
-                #TODO: check that the app has this output
-            
-            #TODO: check that services exist in the blueprint, and has the output
-        else:
-            return False, f"{var_name} is not a valid colony-generated variable (too many parts)"
-        
-        return True, ""
-        
-        
-    def _validate_var_being_used_is_defined(self):
-        bp_inputs = {input.name for input in self._tree.inputs_node.inputs}
-        message = "Variable '{}' is not defined"
-        regex = re.compile('(^\$.+?$|\$\{.+?\})')
-        for app in self._tree.apps_node.apps:
-            for input in app.inputs_node.inputs:
-                # we need to check values starting with '$' 
-                # and they shouldnt be colony related
-                
-                # need to break value to parts to handle variables in {} like: 
-                # abcd/${some_var}/asfsd/${var2}
-                # and highlight these portions      
-                iterator = regex.finditer(input.value)
-                for match in iterator:
-                    cur_var = match.group()
-                    pos = match.span()
-                    if cur_var.startswith("${") and cur_var.endswith("}"):
-                        cur_var = "$" + cur_var[2:-1]
-            
-                    if cur_var.startswith("$") and "." not in cur_var:
-                        var = cur_var.replace("$", "")
-                        if var not in bp_inputs:
-                            self._diagnostics.append(Diagnostic(
-                                range=Range(
-                                    start=Position(line=input.start[0], character=input.start[1]+pos[0]),
-                                    end=Position(line=input.start[0], character=input.start[1]+pos[1])
-                                ),
-                                message=message.format(input.value)
-                            ))
-                    elif cur_var.lower().startswith("$colony"):
-                        print("colony var")
-                        valid_var, error_message = self._is_valid_auto_var(cur_var)
-                        if not valid_var:
-                            self._diagnostics.append(Diagnostic(
-                                range=Range(
-                                    start=Position(line=input.start[0], character=input.start[1]+pos[0]),
-                                    end=Position(line=input.start[0], character=input.start[1]+pos[1])
-                                ),
-                                message=error_message
-                            ))
-                    
-
-    def validate(self):
-        # warnings
-        self._check_for_unused_bluerprint_inputs()
-        # errors
-        self._validate_dependency_exists()
-        self._validate_var_being_used_is_defined()
-        return self._diagnostics
-
-    # # TODO: must work with tree
-    # def _get_used_vars(self, yaml_doc: dict) -> set:
-
-    #     used_vars = set()
-
-    #     for app in yaml_doc.get('applications', []):
-    #         app_name = list(app.keys()).pop()
-    #         inputs = app[app_name].get("input_values", [])
-
-    #         for items in inputs:
-    #             used_vars.add(list(items.values()).pop().replace("$", ""))
-
-    #     return used_vars
 
 class ColonyWorkspace(Workspace):
     """
@@ -346,11 +180,9 @@ def _validate(ls, params):
 
         if doc_type == "blueprint":
             bp_tree = BlueprintParser(source).parse()
-            validator = BlueprintValidationHandler(bp_tree)
+            validator = BlueprintValidationHandler(bp_tree, root)
 
             diagnostics += validator.validate()
-            diagnostics += validator.validate_non_existing_app_is_declared(root)
-
             # print(ls.workspace.colony_objs)
             # apps = applications.get_available_applications(root, APPLICATIONS)
             # for app in yaml_obj.get('applications', []):
@@ -446,6 +278,45 @@ def _validate_yaml(source):
         diagnostics.append(d)
 
     return diagnostics
+
+@colony_server.feature(TEXT_DOCUMENT_DID_CHANGE)
+def did_change(ls, params: DidChangeTextDocumentParams):
+    """Text document did change notification."""
+    print('------did change-------')
+    _validate(ls, params)
+    text_doc = ls.workspace.get_document(params.text_document.uri)
+    root = ls.workspace.root_path
+    
+    source = text_doc.source
+    yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
+    doc_type = yaml_obj.get('kind', '')
+    
+    if doc_type == "application":
+        # app_tree = AppParser(source).parse()
+        app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
+
+        if APPLICATIONS and app_name not in APPLICATIONS: # if there is already a cache, add this file
+            # APPLICATIONS[app_name] = app_tree
+            applications.load_app_details(app_name, params.text_document.uri, APPLICATIONS)
+    elif doc_type == "TerraForm":
+        srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
+        if SERVICES and srv_name not in SERVICES: # if there is already a cache, add this file
+            services.load_service_details(srv_name, params.text_document.uri, SERVICES)
+
+
+@colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
+def did_close(server: ColonyLanguageServer, params: DidCloseTextDocumentParams):
+    """Text document did close notification."""
+    server.show_message('Text Document Did Close')
+
+
+@colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
+async def did_open(ls, params: DidOpenTextDocumentParams):
+    """Text document did open notification."""
+    ls.show_message('Text Document Did Open')
+    ls.workspace.put_document(params.text_document)
+    _validate(ls, params)
+
 
 
 # @colony_server.feature(COMPLETION_ITEM_RESOLVE, CompletionOptions())
@@ -671,39 +542,3 @@ def _validate_yaml(source):
 #                 end=Position(line=31, character=4),
 #             ))
 #     return None
-
-
-@colony_server.feature(TEXT_DOCUMENT_DID_CHANGE)
-def did_change(ls, params: DidChangeTextDocumentParams):
-    """Text document did change notification."""
-    print('------did change-------')
-    _validate(ls, params)
-    text_doc = ls.workspace.get_document(params.text_document.uri)
-    root = ls.workspace.root_path
-    
-    source = text_doc.source
-    yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
-    doc_type = yaml_obj.get('kind', '')
-    
-    if doc_type == "application":
-        app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-        if APPLICATIONS and app_name not in APPLICATIONS: # if there is already a cache, add this file
-            applications.load_app_details(app_name, params.text_document.uri, APPLICATIONS)
-    elif doc_type == "TerraForm":
-        srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-        if SERVICES and srv_name not in SERVICES: # if there is already a cache, add this file
-            services.load_service_details(srv_name, params.text_document.uri, SERVICES)
-
-
-@colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
-def did_close(server: ColonyLanguageServer, params: DidCloseTextDocumentParams):
-    """Text document did close notification."""
-    server.show_message('Text Document Did Close')
-
-
-@colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls, params: DidOpenTextDocumentParams):
-    """Text document did open notification."""
-    ls.show_message('Text Document Did Open')
-    ls.workspace.put_document(params.text_document)
-    _validate(ls, params)
