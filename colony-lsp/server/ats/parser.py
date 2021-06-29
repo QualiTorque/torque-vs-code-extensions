@@ -111,8 +111,8 @@ class Parser:
 
 class AppParser(Parser):
     def __init__(self, document):
-        self._tree = AppTree()
         super().__init__(document=document)
+        self._tree = AppTree()
 
     def parse(self):
         tokens = yaml.scan(self.document)
@@ -145,8 +145,9 @@ class AppParser(Parser):
 
 class BlueprintParser(Parser):
     def __init__(self, document):
-        self._tree = BlueprintTree()
         super().__init__(document=document)
+        self._tree = BlueprintTree()
+        
 
     # TODO: processing of all sub-nodes must me merged to single method    
     def _process_apps(self, data: Generator, apps_node: ApplicationNode) -> None:
