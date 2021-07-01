@@ -24,20 +24,20 @@ class Parser:
         starting_token = next(data)
         tokens_stack = []
         extended_declare = False
-        inputs_without_ident = False
+        no_indent = False
         
         if isinstance(starting_token, BlockSequenceStartToken):
             tokens_stack.append(starting_token)
 
         # a special case when inputs are listed without indentation
         elif isinstance(starting_token, BlockEntryToken):
-            inputs_without_ident = True
+            no_indent = True
             tokens_stack.append(starting_token)
 
         else:
             raise ValueError("Starting token is not correct")
 
-        while tokens_stack or inputs_without_ident:
+        while tokens_stack or no_indent:
             token = next(data)
             token_start = (token.start_mark.line, token.start_mark.column)
             token_end = (token.end_mark.line, token.end_mark.column)
@@ -69,7 +69,6 @@ class Parser:
             # stack is empty. in case inputs do not have indentation
             # it means list has ended 
             if not tokens_stack and not isinstance(token, BlockEntryToken):
-                inputs_without_ident = False
                 # but last token taken from generator is not a part of inputs block
                 # so return it back to calling code
                 return token
@@ -129,7 +128,7 @@ class Parser:
                         inputs_node.inputs[-1].end = token_start
 
                 else:
-                    raise ValueError("Wrong structure of input block")
+                    raise ValueError("Wrong structure of inputs block")
 
 
 class AppParser(Parser):
@@ -177,15 +176,21 @@ class BlueprintParser(Parser):
         starting_token = next(data)
         tokens_stack = []
         inside_app_declaration = False
+        no_indent = False
         last_token = None
 
         if isinstance(starting_token, BlockSequenceStartToken):
             tokens_stack.append(starting_token)
 
+         # a special case when artifacts are listed without indentation
+        elif isinstance(starting_token, BlockEntryToken):
+            no_indent = True
+            tokens_stack.append(starting_token)
+
         else:
             raise ValueError("Starting token is not correct")
 
-        while tokens_stack:
+        while tokens_stack or no_indent:
             token = last_token or next(data)
 
             if last_token:
@@ -194,6 +199,10 @@ class BlueprintParser(Parser):
             token_start = (token.start_mark.line, token.start_mark.column)
             token_end = (token.end_mark.line, token.end_mark.column)
 
+            if not tokens_stack and not isinstance(token, BlockEntryToken):
+                # but last token taken from generator is not a part of inputs block
+                # so return it back to calling code
+                return token
 
             if isinstance(token, BlockEntryToken): # dash ("-") symbol
                 tokens_stack.append(token)
