@@ -15,6 +15,23 @@ class Parser:
     def parse(self):
         pass
 
+    @staticmethod
+    def process_simple_array(data: Generator, container: List[TextNode], parent_node: YamlNode = None):
+        token = next(data)
+        if not isinstance(token, (BlockSequenceStartToken, BlockEntryToken)):
+            raise ValueError("Wrong beginning of list block")
+
+        while isinstance(token, (BlockSequenceStartToken, ScalarToken, BlockEntryToken)):
+            token_start = (token.start_mark.line, token.start_mark.column)
+            token_end = (token.end_mark.line, token.end_mark.column)
+
+            if isinstance(token, ScalarToken):
+                node = TextNode(start=token_start, end=token_end, parent=parent_node, text=token.value)
+                container.append(node)
+            token = next(data)
+
+        return None if isinstance(token, BlockEndToken) else token
+
     #inputs processing is the same for apps and blueprints
     def _process_inputs(self, data: Generator, inputs_node: InputsNode) -> Token:
         """
@@ -139,6 +156,7 @@ class AppParser(Parser):
     def parse(self):
         tokens = yaml.scan(self.document)
         token = None
+
         
         for token in tokens:
             token_start = (token.start_mark.line, token.start_mark.column)
@@ -148,19 +166,27 @@ class AppParser(Parser):
                 self._tree.start = token_start
             if isinstance(token, yaml.StreamEndToken):
                 self._tree.end = token_end
-            
-            if isinstance(token, ScalarToken) and token.value == "inputs":
-                inputs = InputsNode(start=token_start, parent=self._tree)
-                try:
+    
+            if isinstance(token, ScalarToken):
+                if token.value == "inputs":
+                    inputs = InputsNode(start=token_start, parent=self._tree)
+                    try:
+                        # first we need to skip ValueToken
+                        next(tokens)
+
+                        self._process_inputs(tokens, inputs)
+                    except ValueError:
+                        print("error during inputs processing")
+                        pass
+
+                    self._tree.inputs_node = inputs
+                
+                if token.value == "outputs":
+                    outputs_list: List[TextNode] = []
                     # first we need to skip ValueToken
                     next(tokens)
-
-                    self._process_inputs(tokens, inputs)
-                except ValueError:
-                    print("error during inputs processing")
-                    pass
-
-                self._tree.inputs_node = inputs
+                    Parser.process_simple_array(tokens, outputs_list, self._tree)
+                    self._tree.outputs = outputs_list
 
         return self._tree
 
@@ -251,14 +277,11 @@ class BlueprintParser(Parser):
                         next(data)
 
                     if token.value == "depends_on":
-                        
-                        while not isinstance(token, BlockEndToken):
-                            token = next(data)
-                            if isinstance(token, ScalarToken):
-                                apps_node.apps[-1].depends_on[token.value] = YamlNode(
-                                    start=(token.start_mark.line, token.start_mark.column),
-                                    end=(token.end_mark.line, token.end_mark.column)
-                                )
+                        deps: List[TextNode] = []
+                        next(data)
+                        last_token = Parser.process_simple_array(data, deps, apps_node.apps[-1])
+                        apps_node.apps[-1].depends_on = deps
+
                         continue        
                      
             if isinstance(token, BlockEndToken):
@@ -272,7 +295,6 @@ class BlueprintParser(Parser):
                         inside_app_declaration = False
                     else:                       
                         apps_node.apps[-1].end = token_start
-
                 else:
                     raise ValueError("Wrong structure of applications block")
             

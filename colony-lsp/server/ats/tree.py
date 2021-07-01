@@ -40,7 +40,7 @@ class ApplicationNode(YamlNode):
     name: str = None
     key: YamlNode = YamlNode() # store key position
     inputs_node: Optional[InputsNode] = field(init=False)
-    depends_on: Dict[str, YamlNode] = field(default_factory=dict) # TODO: ideally depends_on must be a node
+    depends_on: List[YamlNode] = field(default_factory=dict) # TODO: ideally depends_on must be a node
 
     def add_input(self, input: InputNode):
         self.inputs_node.add(input)
@@ -61,16 +61,24 @@ class ApplicationsNode(YamlNode):
         return self.apps[-1]
 
 @dataclass
-class ColonyTree:
+class BaseTree:
     inputs_node: Optional[InputsNode] = field(init=False)
 
     def __post_init__(self):
         self.inputs_node = InputsNode(parent=self)
 
 @dataclass
-class BlueprintTree(ColonyTree):
+class BlueprintTree(BaseTree):
     apps_node: Optional[ApplicationsNode] = None
 
 @dataclass
-class AppTree(ColonyTree):
+class TreeWithOutputs(ABC):
+    outputs: List[YamlNode] = field(init=False)
+
+@dataclass
+class AppTree(BaseTree, TreeWithOutputs):
+    pass
+
+@dataclass
+class ServiceTree(BaseTree):
     pass

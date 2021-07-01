@@ -16,7 +16,7 @@
 ############################################################################
 import asyncio
 from dataclasses import dataclass
-from server.utils.validation import BlueprintValidationHandler
+from server.utils.validation import AppValidationHandler, BlueprintValidationHandler
 from pygls.lsp import types
 from pygls.lsp.types.basic_structures import VersionedTextDocumentIdentifier
 from pygls.lsp import types, InitializeResult
@@ -218,6 +218,8 @@ def _validate(ls, params):
                         diagnostics.append(d)
 
         if doc_type == "application":
+            app_tree = AppParser(source).parse()
+            validator = AppValidationHandler(app_tree, root)
             scripts = applications.get_app_scripts(params.text_document.uri)
                 
             for k, v in yaml_obj.get('configuration', []).items():

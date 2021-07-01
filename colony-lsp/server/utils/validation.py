@@ -34,18 +34,21 @@ class VaidationHandler:
         pass
 
 
+class AppValidationHandler(VaidationHandler):
+    pass
+
 class BlueprintValidationHandler(VaidationHandler):
     def _validate_dependency_exists(self):
         message = "The app '{}' is not part of the blueprint applications section"
         apps = [app.name for app in self._tree.apps_node.apps]
 
         for app in self._tree.apps_node.apps:
-            for name, node in app.depends_on.items():
-                if name not in apps:
+            for dep in app.depends_on:
+                if dep.text not in apps:
                     self._add_diagnostic(
-                        Position(line=node.start[0], character=node.start[1]),
-                        Position(line=node.end[0], character=node.end[1]),
-                        message=message.format(name)
+                        Position(line=dep.start[0], character=dep.start[1]),
+                        Position(line=dep.end[0], character=dep.end[1]),
+                        message=message.format(dep.text)
                     )
     
     def _validate_non_existing_app_is_declared(self):
