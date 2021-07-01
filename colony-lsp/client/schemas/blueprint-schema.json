@@ -14,11 +14,6 @@
                     "type": "string",
                     "enum": ["blueprint"]
                 },
-                "environmentType": {
-                    "type": "string",
-                    "enum": ["sandbox", "production-blue", "production-green"],
-                    "default": "sandbox"
-                },
                 "metadata": {
                     "$ref": "#/definitions/Metadata"
                 },
@@ -88,11 +83,7 @@
                 },
                 "debugging": {
                     "$ref": "#/definitions/Debugging"
-                },
-                "internetFacing": {
-                    "type": "boolean",
-                    "description": "Allow or block internet access to this sandbox"
-                }
+                }                
             },
             "required": [
                 "kind",
@@ -424,9 +415,6 @@
                 "shortcut": {
                     "type": "string",
                     "description": "(Optional) The shortcut rule to customize the application link’s display text in the Summary page of the sandbox or production environment."
-                },
-                "ignore_exposure": {
-                    "type": "boolean"
                 },
                 "default": {
                     "type": "boolean",
