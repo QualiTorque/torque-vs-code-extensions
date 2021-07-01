@@ -5,7 +5,7 @@ from typing import Any, Dict, Generator, List, Optional, Tuple
 import yaml
 from yaml import nodes
 from yaml.parser import Parser
-from yaml.tokens import BlockEndToken, BlockEntryToken, BlockMappingStartToken, BlockSequenceStartToken, KeyToken, ScalarToken, ValueToken
+from yaml.tokens import BlockEndToken, BlockEntryToken, BlockMappingStartToken, BlockSequenceStartToken, KeyToken, ScalarToken, Token, ValueToken
 
 
 class Parser:
@@ -16,7 +16,11 @@ class Parser:
         pass
 
     #inputs processing is the same for apps and blueprints
-    def _process_inputs(self, data: Generator, inputs_node: InputsNode) -> None:
+    def _process_inputs(self, data: Generator, inputs_node: InputsNode) -> Token:
+        """
+        Return None if inputs block has normal indentation
+        or last processed token if there is no indent
+        """
         starting_token = next(data)
         tokens_stack = []
         extended_declare = False
@@ -64,9 +68,11 @@ class Parser:
 
             # stack is empty. in case inputs do not have indentation
             # it means list has ended 
-            if isinstance(token, KeyToken) and not tokens_stack:
+            if not tokens_stack and not isinstance(token, BlockEntryToken):
                 inputs_without_ident = False
-                continue
+                # but last token taken from generator is not a part of inputs block
+                # so return it back to calling code
+                return token
 
             if isinstance(token, (KeyToken, ValueToken)) and not extended_declare:
                 tokens_stack.append(token)
@@ -171,6 +177,7 @@ class BlueprintParser(Parser):
         starting_token = next(data)
         tokens_stack = []
         inside_app_declaration = False
+        last_token = None
 
         if isinstance(starting_token, BlockSequenceStartToken):
             tokens_stack.append(starting_token)
@@ -179,7 +186,10 @@ class BlueprintParser(Parser):
             raise ValueError("Starting token is not correct")
 
         while tokens_stack:
-            token = next(data)
+            token = last_token or next(data)
+
+            if last_token:
+                last_token = None
 
             token_start = (token.start_mark.line, token.start_mark.column)
             token_end = (token.end_mark.line, token.end_mark.column)
@@ -222,7 +232,7 @@ class BlueprintParser(Parser):
 
                         # ignore next "valueToken"
                         next(data)
-                        self._process_inputs(data=data, inputs_node=inputs)
+                        last_token = self._process_inputs(data=data, inputs_node=inputs)
                         apps_node.apps[-1].inputs_node = inputs
 
                     # TODO: dirty handling. refactor
@@ -240,7 +250,7 @@ class BlueprintParser(Parser):
                                     start=(token.start_mark.line, token.start_mark.column),
                                     end=(token.end_mark.line, token.end_mark.column)
                                 )
-                        continue
+                        continue        
                      
             if isinstance(token, BlockEndToken):
                 top = tokens_stack.pop() 
@@ -276,7 +286,6 @@ class BlueprintParser(Parser):
                 try:
                     # first we need to skip ValueToken
                     next(tokens)
-
                     self._process_apps(tokens, apps)
                 except ValueError:
                     print("error during apps processing")
