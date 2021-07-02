@@ -257,8 +257,12 @@ class BlueprintParser(Parser):
             if isinstance(token, ScalarToken):
                 if not inside_app_declaration:
                 # we are at the beginning of app declaration
-                    apps_node.apps[-1].name = token.value
-                    apps_node.apps[-1].key = YamlNode(start=token_start, end=token_end)
+                    apps_node.apps[-1].app_id = TextNode(
+                        start=token_start,
+                        end=token_end,
+                        parent=apps_node.apps[-1],
+                        text=token.value
+                    )
 
                 else:
                     top = tokens_stack.pop()

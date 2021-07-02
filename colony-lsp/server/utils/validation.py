@@ -40,7 +40,7 @@ class AppValidationHandler(VaidationHandler):
 class BlueprintValidationHandler(VaidationHandler):
     def _validate_dependency_exists(self):
         message = "The app '{}' is not part of the blueprint applications section"
-        apps = [app.name for app in self._tree.apps_node.apps]
+        apps = [app.app_id.text for app in self._tree.apps_node.apps]
 
         for app in self._tree.apps_node.apps:
             for dep in app.depends_on:
@@ -57,13 +57,13 @@ class BlueprintValidationHandler(VaidationHandler):
         diagnostics: List[Diagnostic] = []
 
         for app in self._tree.apps_node.apps:
-            app_path = os.path.join(self._root_path, "applications", app.name, "{}.yaml".format(app.name))
+            app_path = os.path.join(self._root_path, "applications", app.app_id.text, "{}.yaml".format(app.app_id.text))
 
             if not os.path.isfile(app_path):
                 self._add_diagnostic(
-                    Position(line=app.start[0], character=app.start[1]),
-                    Position(line=app.start[0], character=app.start[1] + len(app.name)),
-                    message=message.format(app.name)
+                    Position(line=app.app_id.start[0], character=app.start[1]),
+                    Position(line=app.app_id.end[0], character=app.app_id.end[1]),
+                    message=message.format(app.app_id.text)
                 )
 
 
@@ -110,7 +110,7 @@ class BlueprintValidationHandler(VaidationHandler):
                 return False, f"{var_name} is not a valid colony-generated variable"
             
             if parts[1] == "applications":
-                apps = [app.name for app in self._tree.apps_node.apps]
+                apps = [app.app_id.text for app in self._tree.apps_node.apps]
                 if not parts[2] in apps:
                     return False, f"{var_name} is not a valid colony-generated variable (no such app in the blueprint)"
                 #TODO: check that the app has this output

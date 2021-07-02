@@ -28,7 +28,6 @@ class InputsNode(YamlNode):
     """
     Node representing the list of inputs
     """
-
     inputs: List[InputNode] = field(default_factory=list)
 
     def add(self, input: InputNode):
@@ -37,8 +36,7 @@ class InputsNode(YamlNode):
 
 @dataclass
 class ApplicationNode(YamlNode):
-    name: str = None
-    key: YamlNode = YamlNode() # store key position
+    app_id: TextNode = None # store key position
     inputs_node: Optional[InputsNode] = field(init=False)
     depends_on: List[YamlNode] = field(default_factory=dict) # TODO: ideally depends_on must be a node
 
