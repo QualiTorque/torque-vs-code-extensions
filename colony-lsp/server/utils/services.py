@@ -5,9 +5,12 @@ import pathlib
 import yaml
 
 
-def get_available_services(root_folder: str, cached_srv: list):
-    if cached_srv:
-        return cached_srv
+SERVICES = {}
+
+
+def get_available_services(root_folder: str):
+    if SERVICES:
+        return SERVICES
     else:
         srv_path = os.path.join(root_folder, 'services')
         for dir in os.listdir(srv_path):
@@ -15,26 +18,45 @@ def get_available_services(root_folder: str, cached_srv: list):
             if os.path.isdir(srv_dir):
                 files = os.listdir(srv_dir)
                 if f'{dir}.yaml' in files:
-                    load_service_details(srv_name=dir, file_path=os.path.join(srv_dir, f'{dir}.yaml'), cached_srv=cached_srv)
+                    f = open(os.path.join(srv_dir, f'{dir}.yaml'), "r")
+                    source = f.read() 
+                    load_service_details(srv_name=dir, srv_source=source)
 
-        return cached_srv
+        return SERVICES
 
 
-def load_service_details(srv_name: str, file_path: str, cached_srv: list):
-    output = f"- {srv_name}:\n"
-    with open(file_path.replace("file://", ""), "r") as file:
-        app_file = yaml.load(file, Loader=yaml.FullLoader)
-        inputs = app_file['inputs'] if 'inputs' in app_file else None
-        if inputs:
-            output += "  inputs_value:\n"
-            for input in inputs:
-                if isinstance(input, str):
-                    output += f"  - {input}: \n"
-                elif isinstance(input, dict):
-                    for k,v in input.items():
-                        output += f"  - {k}: {v}\n"
-    cached_srv[srv_name] = output
+def get_available_services_names():
+    if SERVICES:
+        return list(SERVICES.keys())
+    else:
+        return []
 
+
+def load_service_details(srv_name: str, srv_source):
+    output = f"{srv_name}:\n"
+    srv_file = yaml.load(srv_source, Loader=yaml.FullLoader)
+    inputs = srv_file['inputs'] if 'inputs' in srv_file else None
+    if inputs:
+        output += "  inputs_value:\n"
+        for input in inputs:
+            if isinstance(input, str):
+                output += f"    - {input}: \n"
+            elif isinstance(input, dict):
+                for k,v in input.items():
+                    output += f"    - {k}: {v}\n"
+    
+    subtree = yaml.load(output, Loader=yaml.FullLoader)
+    output = yaml.dump(subtree)
+    
+    SERVICES[srv_name] = {
+        "srv_tree": None,
+        "srv_completion": "- " + output.replace(": null", ": ")
+    }
+
+
+def reload_app_details(srv_name, srv_source):
+    if SERVICES: # if there is already a cache, add this file
+        load_service_details(srv_name, srv_source)
 
 
 def get_vars_from_tfvars(file_path: str):
