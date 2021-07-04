@@ -83,7 +83,7 @@
                 },
                 "debugging": {
                     "$ref": "#/definitions/Debugging"
-                }                
+                }
             },
             "required": [
                 "kind",
