@@ -48,6 +48,8 @@ class BlueprintValidationHandler(VaidationHandler):
         message = "The app '{}' is not part of the blueprint applications section"
         apps = self.blueprint_apps
 
+        # TODO: add checks for services - an app can be dependent on a service and vice versa
+        
         for app in self._tree.apps_node.apps:
             for dep in app.depends_on:
                 if dep.text not in apps:
@@ -62,6 +64,8 @@ class BlueprintValidationHandler(VaidationHandler):
                         Position(line=dep.end[0], character=dep.end[1]),
                         message=f"The app '{app.app_id.text}' cannot be dependent of itself"
                     )
+        
+        
     
     
     def _validate_non_existing_app_is_used(self):
