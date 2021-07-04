@@ -57,7 +57,6 @@ DEBOUNCE_DELAY = 0.3
 COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
 
-SERVICES = {}
 
 
 # class ColonyWorkspace(Workspace):
@@ -141,7 +140,7 @@ colony_server = ColonyLanguageServer()
 
 
 def _validate(ls, params):
-    ls.show_message_log('Validating yaml...')
+    #ls.show_message_log('Validating yaml...')
 
     text_doc = ls.workspace.get_document(params.text_document.uri)
     root = ls.workspace.root_path
@@ -153,33 +152,9 @@ def _validate(ls, params):
         yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
         doc_type = yaml_obj.get('kind', '')
         doc_lines = text_doc.lines
-        # file_inputs = _get_file_inputs(source)
-        # file_vars = _get_file_variables(source)
-        # # validate vars exist
-        # for var in file_vars:
-        #     if var not in file_inputs:
-        #         if (doc_type == "blueprint" and var.startswith('$colony')):
-        #             continue
-        #         for i in range(len(doc_lines)):
-        #             col_pos = doc_lines[i].find(var)
-        #             if col_pos == -1:
-        #                 continue
-        #             if var.startswith('$colony'):
-        #                 msg = f"'{var}' is not an allowed variable in this file"
-        #             else:
-        #                 msg = f"'{var}' is not defined"
-        #             # d = Diagnostic(
-        #             #     range=Range(
-        #             #         start=Position(line=i, character=col_pos),
-        #             #         end=Position(line=i, character=col_pos + 1 +len(var))
-        #             #     ),
-        #             #     message=msg
-        #             # )
-        #             # diagnostics.append(d)
+        
 
         if doc_type == "blueprint":
-            apps = applications.get_available_applications(root)
-            
             try:
                 bp_tree = BlueprintParser(source).parse()
             except Exception as ex:
@@ -187,27 +162,13 @@ def _validate(ls, params):
                 return
             validator = BlueprintValidationHandler(bp_tree, root)
             diagnostics += validator.validate()
-            # print(ls.workspace.colony_objs)
             
-            # for app in yaml_obj.get('applications', []):
-            #     app = list(app.keys())[0]
-            #     if app not in apps.keys():
-            #         for i in range(len(doc_lines)):
-            #             col_pos = doc_lines[i].find(app)
-            #             if col_pos == -1:
-            #                 continue
-            #             d = Diagnostic(
-            #                 range=Range(
-            #                     start=Position(line=i, character=col_pos),
-            #                     end=Position(line=i, character=col_pos + 1 +len(app))
-            #                 ),
-            #                 message=f"Application '{app}' doesn't exist"
-            #             )
-            #             diagnostics.append(d)
-            srvs = services.get_available_services(root, SERVICES)
+            # this part should be moved to the validator once the service parser exists
+            load_srvs = services.get_available_services(root)
+            available_srvs = services.get_available_services_names()
             for srv in yaml_obj.get('services', []):
                 srv = list(srv.keys())[0]
-                if srv not in srvs.keys():
+                if srv not in available_srvs:
                     for i in range(len(doc_lines)):
                         col_pos = doc_lines[i].find(srv)
                         if col_pos == -1:
@@ -270,7 +231,7 @@ def _validate_yaml(source):
         yaml.load(source, Loader=yaml.FullLoader)
     except yaml.MarkedYAMLError as ex:
         mark = ex.problem_mark
-        print(mark)
+        #print(mark)
         d = Diagnostic(
             range=Range(
                 start=Position(line=mark.line - 1, character=mark.column - 1),
@@ -279,7 +240,7 @@ def _validate_yaml(source):
             message=ex.problem,
             source=type(colony_server).__name__
         )
-        print(d)
+        #print(d)
 
         diagnostics.append(d)
 
