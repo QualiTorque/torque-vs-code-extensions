@@ -5,6 +5,7 @@ from pygls.lsp.types import diagnostics
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
 from server.ats.tree import BlueprintTree
 from server.constants import PREDEFINED_COLONY_INPUTS
+from server.utils import applications
 
 
 class VaidationHandler:
@@ -38,9 +39,13 @@ class AppValidationHandler(VaidationHandler):
     pass
 
 class BlueprintValidationHandler(VaidationHandler):
+    def __init__(self, tree: BlueprintTree, root_path: str):
+        super().__init__(tree, root_path)
+        self.blueprint_apps = [app.app_id.text for app in self._tree.apps_node.apps]
+    
     def _validate_dependency_exists(self):
         message = "The app '{}' is not part of the blueprint applications section"
-        apps = [app.app_id.text for app in self._tree.apps_node.apps]
+        apps = self.blueprint_apps
 
         for app in self._tree.apps_node.apps:
             for dep in app.depends_on:
@@ -110,10 +115,13 @@ class BlueprintValidationHandler(VaidationHandler):
                 return False, f"{var_name} is not a valid colony-generated variable"
             
             if parts[1] == "applications":
-                apps = [app.app_id.text for app in self._tree.apps_node.apps]
+                apps = self.blueprint_apps
                 if not parts[2] in apps:
                     return False, f"{var_name} is not a valid colony-generated variable (no such app in the blueprint)"
                 #TODO: check that the app has this output
+                app_outputs = applications.get_app_outputs(app_name=parts[2])
+                if parts[4] not in app_outputs:
+                    return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
             
             #TODO: check that services exist in the blueprint, and has the output
         else:
