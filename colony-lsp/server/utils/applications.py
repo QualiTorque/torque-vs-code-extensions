@@ -8,32 +8,29 @@ APPLICATIONS = {}
 
 def load_app_details(app_name: str, app_source: str):
     app_tree = AppParser(document=app_source).parse()
-    app_file = yaml.load(app_source, Loader=yaml.FullLoader)
     
     output = f"{app_name}:\n"
     output += "  instances: 1\n"                        
-    inputs = app_file['inputs'] if 'inputs' in app_file else None
+    inputs = app_tree.inputs_node.inputs
     if inputs:
         output += "  input_values:\n"
         for input in inputs:
-            if isinstance(input, str):
-                output += f"    - {input}: \n"
-            elif isinstance(input, dict):
-                for k,v in input.items():
-                    output += f"    - {k}: {v}\n"
-    aaa = yaml.load(output, Loader=yaml.FullLoader)
-    bbb = yaml.dump(aaa)
-    print(bbb)
+            if input.value:
+                output += f"    - {input.key.text}: {input.value.text}\n"
+            else:
+                output += f"    - {input.key.text}: \n"    
+            
+    subtree = yaml.load(output, Loader=yaml.FullLoader)
+    output = yaml.dump(subtree)
     
     APPLICATIONS[app_name] = {
         'app_tree': app_tree,
-        'app_completion': "- " + bbb.replace(": null", ": ")
+        'app_completion': "- " + output.replace(": null", ": ")
     }
 
 
 def reload_app_details(app_name, app_source):
-    if APPLICATIONS and app_name not in APPLICATIONS: # if there is already a cache, add this file
-        # APPLICATIONS[app_name] = app_tree
+    if APPLICATIONS: # if there is already a cache, add this file
         load_app_details(app_name, app_source)
 
 
@@ -52,6 +49,13 @@ def get_available_applications(root_folder: str):
                     load_app_details(app_name=dir, app_source=source)
                     
         return APPLICATIONS
+
+
+def get_available_applications_names():
+    if APPLICATIONS:
+        return list(APPLICATIONS.keys())
+    else:
+        return []
 
 
 def get_app_scripts(app_dir_path: str):
