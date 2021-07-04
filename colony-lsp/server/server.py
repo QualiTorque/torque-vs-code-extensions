@@ -57,55 +57,54 @@ DEBOUNCE_DELAY = 0.3
 COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
 
-APPLICATIONS = {}
 SERVICES = {}
 
 
-class ColonyWorkspace(Workspace):
-    """
-    Add colony-specific properties
-    """
+# class ColonyWorkspace(Workspace):
+#     """
+#     Add colony-specific properties
+#     """
 
-    def __init__(self, root_uri, sync_kind, workspace_folders):
-        self._colony_objs = {}
+#     def __init__(self, root_uri, sync_kind, workspace_folders):
+#         self._colony_objs = {}
 
-        super().__init__(root_uri, sync_kind=sync_kind, workspace_folders=workspace_folders)
+#         super().__init__(root_uri, sync_kind=sync_kind, workspace_folders=workspace_folders)
 
-    @property
-    def colony_objs(self):
-        return self._colony_objs
+#     @property
+#     def colony_objs(self):
+#         return self._colony_objs
 
-    def _update_document(self, text_document: Union[types.TextDocumentItem, types.VersionedTextDocumentIdentifier]) -> None:
-        self.logger.debug("updating document '%s'", text_document.uri)
-        uri = text_document.uri
-        colony_obj = yaml.load(self.get_document(uri).source, Loader=yaml.FullLoader)
-        self._colony_objs[uri] = colony_obj
+#     def _update_document(self, text_document: Union[types.TextDocumentItem, types.VersionedTextDocumentIdentifier]) -> None:
+#         self.logger.debug("updating document '%s'", text_document.uri)
+#         uri = text_document.uri
+#         colony_obj = yaml.load(self.get_document(uri).source, Loader=yaml.FullLoader)
+#         self._colony_objs[uri] = colony_obj
 
-    def update_document(self, text_doc: VersionedTextDocumentIdentifier, change: workspace.TextDocumentContentChangeEvent):
-        super().update_document(text_doc, change)
-        self._update_document(text_doc)
+#     def update_document(self, text_doc: VersionedTextDocumentIdentifier, change: workspace.TextDocumentContentChangeEvent):
+#         super().update_document(text_doc, change)
+#         self._update_document(text_doc)
 
-    def put_document(self, text_document: types.TextDocumentItem) -> None:
-        super().put_document(text_document)
-        self._update_document(text_document)
+#     def put_document(self, text_document: types.TextDocumentItem) -> None:
+#         super().put_document(text_document)
+#         self._update_document(text_document)
 
 
-class ColonyLspProtocol(LanguageServerProtocol):
-    """Custom protocol that replaces the workspace with a ColonyWorkspace
-    instance.
-    """
+# class ColonyLspProtocol(LanguageServerProtocol):
+#     """Custom protocol that replaces the workspace with a ColonyWorkspace
+#     instance.
+#     """
 
-    workspace: ColonyWorkspace
+#     workspace: ColonyWorkspace
 
-    def bf_initialize(self, *args, **kwargs) -> InitializeResult:
-        res = super().bf_initialize(*args, **kwargs)
-        ws = self.workspace
-        self.workspace = ColonyWorkspace(
-            ws.root_uri,
-            self._server.sync_kind,
-            ws.folders.values(),
-        )
-        return res
+#     def bf_initialize(self, *args, **kwargs) -> InitializeResult:
+#         res = super().bf_initialize(*args, **kwargs)
+#         ws = self.workspace
+#         self.workspace = ColonyWorkspace(
+#             ws.root_uri,
+#             self._server.sync_kind,
+#             ws.folders.values(),
+#         )
+#         return res
 
 
 class ColonyLanguageServer(LanguageServer):
@@ -122,23 +121,23 @@ class ColonyLanguageServer(LanguageServer):
 colony_server = ColonyLanguageServer()
 
 
-def _get_file_variables(source):
-    vars = re.findall(r"(\$[\w\.\-]+)", source, re.MULTILINE)
-    return vars  
+# def _get_file_variables(source):
+#     vars = re.findall(r"(\$[\w\.\-]+)", source, re.MULTILINE)
+#     return vars  
 
 
-def _get_file_inputs(source):
-    yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
-    inputs_obj = yaml_obj.get('inputs')
-    inputs = []
-    if inputs_obj:
-        for input in inputs_obj:
-            if isinstance(input, str):
-                inputs.append(f"${input}")
-            elif isinstance(input, dict):
-                inputs.append(f"${list(input.keys())[0]}")
+# def _get_file_inputs(source):
+#     yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
+#     inputs_obj = yaml_obj.get('inputs')
+#     inputs = []
+#     if inputs_obj:
+#         for input in inputs_obj:
+#             if isinstance(input, str):
+#                 inputs.append(f"${input}")
+#             elif isinstance(input, dict):
+#                 inputs.append(f"${list(input.keys())[0]}")
     
-    return inputs
+#     return inputs
 
 
 def _validate(ls, params):
@@ -154,37 +153,42 @@ def _validate(ls, params):
         yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
         doc_type = yaml_obj.get('kind', '')
         doc_lines = text_doc.lines
-        file_inputs = _get_file_inputs(source)
-        file_vars = _get_file_variables(source)
-        # validate vars exist
-        for var in file_vars:
-            if var not in file_inputs:
-                if (doc_type == "blueprint" and var.startswith('$colony')):
-                    continue
-                for i in range(len(doc_lines)):
-                    col_pos = doc_lines[i].find(var)
-                    if col_pos == -1:
-                        continue
-                    if var.startswith('$colony'):
-                        msg = f"'{var}' is not an allowed variable in this file"
-                    else:
-                        msg = f"'{var}' is not defined"
-                    # d = Diagnostic(
-                    #     range=Range(
-                    #         start=Position(line=i, character=col_pos),
-                    #         end=Position(line=i, character=col_pos + 1 +len(var))
-                    #     ),
-                    #     message=msg
-                    # )
-                    # diagnostics.append(d)
+        # file_inputs = _get_file_inputs(source)
+        # file_vars = _get_file_variables(source)
+        # # validate vars exist
+        # for var in file_vars:
+        #     if var not in file_inputs:
+        #         if (doc_type == "blueprint" and var.startswith('$colony')):
+        #             continue
+        #         for i in range(len(doc_lines)):
+        #             col_pos = doc_lines[i].find(var)
+        #             if col_pos == -1:
+        #                 continue
+        #             if var.startswith('$colony'):
+        #                 msg = f"'{var}' is not an allowed variable in this file"
+        #             else:
+        #                 msg = f"'{var}' is not defined"
+        #             # d = Diagnostic(
+        #             #     range=Range(
+        #             #         start=Position(line=i, character=col_pos),
+        #             #         end=Position(line=i, character=col_pos + 1 +len(var))
+        #             #     ),
+        #             #     message=msg
+        #             # )
+        #             # diagnostics.append(d)
 
         if doc_type == "blueprint":
-            bp_tree = BlueprintParser(source).parse()
+            apps = applications.get_available_applications(root)
+            
+            try:
+                bp_tree = BlueprintParser(source).parse()
+            except Exception as ex:
+                print(ex)
+                return
             validator = BlueprintValidationHandler(bp_tree, root)
-
             diagnostics += validator.validate()
             # print(ls.workspace.colony_objs)
-            # apps = applications.get_available_applications(root, APPLICATIONS)
+            
             # for app in yaml_obj.get('applications', []):
             #     app = list(app.keys())[0]
             #     if app not in apps.keys():
@@ -294,12 +298,9 @@ def did_change(ls, params: DidChangeTextDocumentParams):
     doc_type = yaml_obj.get('kind', '')
     
     if doc_type == "application":
-        # app_tree = AppParser(source).parse()
         app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-
-        if APPLICATIONS and app_name not in APPLICATIONS: # if there is already a cache, add this file
-            # APPLICATIONS[app_name] = app_tree
-            applications.load_app_details(app_name, params.text_document.uri, APPLICATIONS)
+        applications.reload_app_details(app_name=app_name, app_source=source)
+          
     elif doc_type == "TerraForm":
         srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
         if SERVICES and srv_name not in SERVICES: # if there is already a cache, add this file
