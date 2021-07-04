@@ -17,7 +17,7 @@
 		"colony",
 		"yaml",
 		"autocompletion",
-		"validation"	
+		"validation"
 	],
 	"categories": [
 		"Other"
@@ -30,17 +30,18 @@
 			"type": "object",
 			"title": "Colony Server Configuration",
 			"properties": {
-				"colonyServer.exampleConfiguration": {
-					"scope": "resource",
+				"Platform Name": {
 					"type": "string",
-					"default": "You can override this message."
+					"description": "The platform name you use",
+					"default": "colony",
+					"scope": "application"
 				}
 			}
 		},
 		"grammars": [
 			{
-			  "path": "./syntaxes/colony.tmLanguage.json",
-			  "scopeName": "source.yaml"
+				"path": "./syntaxes/colony.tmLanguage.json",
+				"scopeName": "source.yaml"
 			}
 		]
 	},
@@ -53,7 +54,8 @@
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"webpack": "webpack --mode development",
-		"postinstall": "echo npm install"
+		"vscepack": "vsce package",
+		"postinstall": "echo vscode-install"
 	},
 	"dependencies": {
 		"vscode-languageclient": "^7.0.0"
