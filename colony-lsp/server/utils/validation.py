@@ -5,7 +5,7 @@ from pygls.lsp.types import diagnostics
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
 from server.ats.tree import BlueprintTree
 from server.constants import PREDEFINED_COLONY_INPUTS
-from server.utils import applications
+from server.utils import applications, services
 
 
 class VaidationHandler:
@@ -43,6 +43,7 @@ class BlueprintValidationHandler(VaidationHandler):
         super().__init__(tree, root_path)
         self.blueprint_apps = [app.app_id.text for app in self._tree.apps_node.apps]
     
+    
     def _validate_dependency_exists(self):
         message = "The app '{}' is not part of the blueprint applications section"
         apps = self.blueprint_apps
@@ -56,15 +57,12 @@ class BlueprintValidationHandler(VaidationHandler):
                         message=message.format(dep.text)
                     )
     
-    def _validate_non_existing_app_is_declared(self):
+    
+    def _validate_non_existing_app_is_used(self):
         message = "The app '{}' could not be found in the /applications folder"
-        
-        diagnostics: List[Diagnostic] = []
-
+        available_apps = applications.get_available_applications_names()
         for app in self._tree.apps_node.apps:
-            app_path = os.path.join(self._root_path, "applications", app.app_id.text, "{}.yaml".format(app.app_id.text))
-
-            if not os.path.isfile(app_path):
+            if app.app_id.text not in available_apps:
                 self._add_diagnostic(
                     Position(line=app.app_id.start[0], character=app.start[1]),
                     Position(line=app.app_id.end[0], character=app.app_id.end[1]),
@@ -72,8 +70,19 @@ class BlueprintValidationHandler(VaidationHandler):
                 )
 
 
+    # def _validate_non_existing_service_is_used(self):
+    #     message = "The service '{}' could not be found in the /services folder"
+    #     available_srvs = services.get_available_services_names()
+    #     for srv in self._tree.services_node.services:
+    #         if srv.srv_id.text not in available_srvs:
+    #             self._add_diagnostic(
+    #                 Position(line=srv.srv_id.start[0], character=srv.start[1]),
+    #                 Position(line=srv.srv_id.end[0], character=srv.srv_id.end[1]),
+    #                 message=message.format(srv.srv_id.text)
+    #             )
+
+
     def _check_for_unused_bluerprint_inputs(self): 
-        
         used_vars = set()
         for app in self._tree.apps_node.apps:
             used_vars.update({var.value.text.replace("$", "") for var in app.inputs_node.inputs})
@@ -88,6 +97,7 @@ class BlueprintValidationHandler(VaidationHandler):
                     message=message.format(input.key.text),
                     diag_severity=DiagnosticSeverity.Warning
                 )
+
 
     def _is_valid_auto_var(self, var_name):
         if var_name.lower() in PREDEFINED_COLONY_INPUTS:
@@ -129,6 +139,7 @@ class BlueprintValidationHandler(VaidationHandler):
         
         return True, ""
         
+        
     def _validate_var_being_used_is_defined(self):
         bp_inputs = {input.key.text for input in self._tree.inputs_node.inputs}
         message = "Variable '{}' is not defined"
@@ -165,12 +176,23 @@ class BlueprintValidationHandler(VaidationHandler):
                                     Position(line=input.value.end[0], character=input.value.start[1]+pos[1]),
                                     message=error_message
                             )
-                    
+           
+    
+    # def _validate_apps_and_services_are_unique(self):
+    #     # check that there are no duplicate names in the apps being used
+    #     # check that there are no duplicate names in the services being used
+    #     # check that there are no duplicate names between app names and services names
+        
+        
     def validate(self):
+        #prep
+        apps = applications.get_available_applications(self._root_path)
         # warnings
         self._check_for_unused_bluerprint_inputs()
         # errors
         self._validate_dependency_exists()
         self._validate_var_being_used_is_defined()
-        self._validate_non_existing_app_is_declared()
+        self._validate_non_existing_app_is_used()
+        # self._validate_non_existing_service_is_used()
+        # self._validate_apps_and_services_are_unique()
         return self._diagnostics
