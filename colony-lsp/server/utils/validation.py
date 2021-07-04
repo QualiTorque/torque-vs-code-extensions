@@ -56,6 +56,12 @@ class BlueprintValidationHandler(VaidationHandler):
                         Position(line=dep.end[0], character=dep.end[1]),
                         message=message.format(dep.text)
                     )
+                elif dep.text == app.app_id.text:
+                    self._add_diagnostic(
+                        Position(line=dep.start[0], character=dep.start[1]),
+                        Position(line=dep.end[0], character=dep.end[1]),
+                        message=f"The app '{app.app_id.text}' cannot be dependent of itself"
+                    )
     
     
     def _validate_non_existing_app_is_used(self):
