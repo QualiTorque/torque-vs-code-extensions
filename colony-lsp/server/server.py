@@ -264,8 +264,7 @@ def did_change(ls, params: DidChangeTextDocumentParams):
           
     elif doc_type == "TerraForm":
         srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-        if SERVICES and srv_name not in SERVICES: # if there is already a cache, add this file
-            services.load_service_details(srv_name, params.text_document.uri, SERVICES)
+        services.reload_app_details(srv_name, srv_source=source)
 
 
 @colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)

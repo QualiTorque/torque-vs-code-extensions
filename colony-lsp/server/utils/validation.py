@@ -138,7 +138,7 @@ class BlueprintValidationHandler(VaidationHandler):
                 apps = self.blueprint_apps
                 if not parts[2] in apps:
                     return False, f"{var_name} is not a valid colony-generated variable (no such app in the blueprint)"
-                #TODO: check that the app has this output
+                
                 app_outputs = applications.get_app_outputs(app_name=parts[2])
                 if parts[4] not in app_outputs:
                     return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
@@ -178,7 +178,6 @@ class BlueprintValidationHandler(VaidationHandler):
                                 message=message.format(cur_var)
                             )
                     elif cur_var.lower().startswith("$colony"):
-                        print("colony var")
                         valid_var, error_message = self._is_valid_auto_var(cur_var)
                         if not valid_var:
                             self._add_diagnostic(

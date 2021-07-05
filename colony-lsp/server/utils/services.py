@@ -54,7 +54,7 @@ def load_service_details(srv_name: str, srv_source):
     }
 
 
-def reload_app_details(srv_name, srv_source):
+def reload_service_details(srv_name, srv_source):
     if SERVICES: # if there is already a cache, add this file
         load_service_details(srv_name, srv_source)
 
