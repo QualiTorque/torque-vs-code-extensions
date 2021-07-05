@@ -69,6 +69,7 @@ class Parser:
 
                 inputs_node.add(input_node)
                 tokens_stack.pop()
+                continue
 
             if isinstance(token, BlockMappingStartToken):
                 top = tokens_stack.pop()
