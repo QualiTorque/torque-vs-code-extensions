@@ -329,7 +329,7 @@
                     }
                 }
             },
-            "title": "Application"
+            "title": "Service"
         },
         "Ingress": {
             "type": "object",
