@@ -44,7 +44,7 @@ class AppValidationHandler(ValidationHandler):
 class BlueprintValidationHandler(ValidationHandler):
     def __init__(self, tree: BlueprintTree, root_path: str):
         super().__init__(tree, root_path)
-        self.blueprint_apps = [app.app_id.text for app in self._tree.apps_node.apps]
+        self.blueprint_apps = [app.id.text for app in self._tree.apps_node.items]
 
     def _validate_dependency_exists(self):
         message = "The app '{}' is not part of the blueprint applications section"
@@ -52,7 +52,7 @@ class BlueprintValidationHandler(ValidationHandler):
 
         # TODO: add checks for services - an app can be dependent on a service and vice versa
 
-        for app in self._tree.apps_node.apps:
+        for app in self._tree.apps_node.items:
             for dep in app.depends_on:
                 if dep.text not in apps:
                     self._add_diagnostic(
@@ -60,22 +60,22 @@ class BlueprintValidationHandler(ValidationHandler):
                         Position(line=dep.end[0], character=dep.end[1]),
                         message=message.format(dep.text)
                     )
-                elif dep.text == app.app_id.text:
+                elif dep.text == app.id.text:
                     self._add_diagnostic(
                         Position(line=dep.start[0], character=dep.start[1]),
                         Position(line=dep.end[0], character=dep.end[1]),
-                        message=f"The app '{app.app_id.text}' cannot be dependent of itself"
+                        message=f"The app '{app.id.text}' cannot be dependent of itself"
                     )
 
     def _validate_non_existing_app_is_used(self):
         message = "The app '{}' could not be found in the /applications folder"
         available_apps = applications.get_available_applications_names()
-        for app in self._tree.apps_node.apps:
-            if app.app_id.text not in available_apps:
+        for app in self._tree.apps_node.items:
+            if app.id.text not in available_apps:
                 self._add_diagnostic(
-                    Position(line=app.app_id.start[0], character=app.start[1]),
-                    Position(line=app.app_id.end[0], character=app.app_id.end[1]),
-                    message=message.format(app.app_id.text)
+                    Position(line=app.id.start[0], character=app.start[1]),
+                    Position(line=app.id.end[0], character=app.id.end[1]),
+                    message=message.format(app.id.text)
                 )
 
     # def _validate_non_existing_service_is_used(self):
@@ -91,7 +91,7 @@ class BlueprintValidationHandler(ValidationHandler):
 
     def _check_for_unused_blueprint_inputs(self):
         used_vars = set()
-        for app in self._tree.apps_node.apps:
+        for app in self._tree.apps_node.items:
             used_vars.update({var.value.text.replace("$", "") for var in app.inputs_node.inputs})
 
         message = "Unused variable {}"
@@ -149,7 +149,7 @@ class BlueprintValidationHandler(ValidationHandler):
         bp_inputs = {input.key.text for input in self._tree.inputs_node.inputs}
         message = "Variable '{}' is not defined"
         regex = re.compile('(^\$.+?$|\$\{.+?\})')
-        for app in self._tree.apps_node.apps:
+        for app in self._tree.apps_node.items:
             for input in app.inputs_node.inputs:
                 # we need to check values starting with '$' 
                 # and they shouldnt be colony related

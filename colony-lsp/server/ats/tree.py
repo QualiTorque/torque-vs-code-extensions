@@ -43,8 +43,8 @@ class InputsNode(YamlNode):
 
 
 @dataclass
-class ApplicationNode(YamlNode):
-    app_id: TextNode = None  # store key position
+class ResourceNode(YamlNode):
+    id: TextNode = None
     inputs_node: Optional[InputsNode] = field(init=False)
     depends_on: List[YamlNode] = field(default_factory=dict)  # TODO: ideally depends_on must be a node
 
@@ -57,15 +57,27 @@ class ApplicationNode(YamlNode):
 
 
 @dataclass
-class ApplicationsNode(YamlNode):
-    """
-    Node representing the list of apps
-    """
-    apps: List[ApplicationNode] = field(default_factory=list)
+class ServiceNode(ResourceNode):
+    pass
 
-    def add(self, app: ApplicationNode):
-        self.apps.append(app)
-        return self.apps[-1]
+
+@dataclass
+class ApplicationNode(ResourceNode):
+    # TODO: add handeling to parser
+    target = None
+    instances = None
+
+
+@dataclass
+class ResourcesContainerNode(YamlNode):
+    """
+    Node representing the list of ob
+    """
+    items: List[ResourceNode] = field(default_factory=list)
+
+    def add(self, resource: ResourceNode):
+        self.items.append(resource)
+        return self.items[-1]
 
 
 @dataclass
@@ -78,7 +90,8 @@ class BaseTree:
 
 @dataclass
 class BlueprintTree(BaseTree):
-    apps_node: Optional[ApplicationsNode] = None
+    apps_node: Optional[ResourcesContainerNode] = None
+    services_node: Optional[ResourcesContainerNode] = None
 
 
 @dataclass

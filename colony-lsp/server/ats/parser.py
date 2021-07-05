@@ -211,10 +211,10 @@ class BlueprintParser(Parser):
         self._tree = BlueprintTree()
 
     # TODO: processing of all sub-nodes must me merged to single method    
-    def _process_apps(self, data: Generator, apps_node: ApplicationNode) -> None:
+    def _process_resources(self, data: Generator, container_node: ResourcesContainerNode, resources_name: str) -> None:
         starting_token = next(data)
         tokens_stack = []
-        inside_app_declaration = False
+        inside_declaration = False
         no_indent = False
         last_token = None
 
@@ -247,71 +247,77 @@ class BlueprintParser(Parser):
                 tokens_stack.append(token)
                 continue
 
-            if isinstance(token, KeyToken) and not inside_app_declaration:
+            if isinstance(token, KeyToken) and not inside_declaration:
                 continue
 
-            if isinstance(token, ValueToken) and not inside_app_declaration:
+            if isinstance(token, ValueToken) and not inside_declaration:
                 tokens_stack.append(token)
                 continue
 
             if isinstance(token, BlockMappingStartToken):
                 top = tokens_stack.pop()
                 if isinstance(top, BlockEntryToken):  # it means it is a beginning of app declaration
-                    apps_node.add(ApplicationNode(parent=apps_node, start=token_start))
+                    container_node.add(ServiceNode(parent=container_node, start=token_start))
                 if isinstance(top, ValueToken):  # internal properties of app
-                    inside_app_declaration = True
+                    inside_declaration = True
 
                 tokens_stack.append(token)
 
-            if (isinstance(token, KeyToken) or isinstance(token, ValueToken)) and inside_app_declaration:
+            if (isinstance(token, KeyToken) or isinstance(token, ValueToken)) and inside_declaration:
                 tokens_stack.append(token)
                 continue
 
             if isinstance(token, ScalarToken):
-                if not inside_app_declaration:
+                if not inside_declaration:
                     # we are at the beginning of app declaration
-                    apps_node.apps[-1].app_id = TextNode(
+                    container_node.items[-1].id = TextNode(
                         start=token_start,
                         end=token_end,
-                        parent=apps_node.apps[-1],
+                        parent=container_node.items[-1],
                         text=token.value
                     )
 
                 else:
                     top = tokens_stack.pop()
                     if token.value == "input_values":
-                        inputs = InputsNode(start=token_start, parent=apps_node.apps[-1])
+                        inputs = InputsNode(start=token_start, parent=container_node.items[-1])
 
                         # ignore next "valueToken"
                         next(data)
                         last_token = self._process_inputs(data=data, inputs_node=inputs)
-                        apps_node.apps[-1].inputs_node = inputs
+                        container_node.items[-1].inputs_node = inputs
 
-                    # TODO: dirty handling. refactor
-                    if token.value == "target" or token.value == "instances":
+                    elif token.value == "depends_on":
+                        deps: List[TextNode] = []
+                        next(data)
+                        last_token = Parser.process_simple_array(data, deps, container_node.items[-1])
+                        container_node.items[-1].depends_on = deps
+
+                        continue
+
+                    else:
+                        if resources_name == "applications":
+                            # TODO: add handling
+                            if token.value == "target" or token.value == "instances":
+                                pass
+                        else:
+                            pass
+
                         # do nothing for now
                         next(data)  # skip
                         next(data)
-
-                    if token.value == "depends_on":
-                        deps: List[TextNode] = []
-                        next(data)
-                        last_token = Parser.process_simple_array(data, deps, apps_node.apps[-1])
-                        apps_node.apps[-1].depends_on = deps
-
-                        continue
 
             if isinstance(token, BlockEndToken):
                 top = tokens_stack.pop()
                 if isinstance(top, BlockSequenceStartToken):
                     # now we have the end of applications block
-                    apps_node.end = token_end
+                    container_node.end = token_end
 
                 elif isinstance(top, BlockMappingStartToken):
-                    if inside_app_declaration:
-                        inside_app_declaration = False
+                    if inside_declaration:
+                        inside_declaration = False
                     else:
-                        apps_node.apps[-1].end = token_start
+                        container_node.items[-1].end = token_start
                 else:
                     raise ValueError("Wrong structure of applications block")
 
@@ -327,18 +333,20 @@ class BlueprintParser(Parser):
             if isinstance(token, yaml.StreamEndToken):
                 self._tree.end = token_end
 
-            if isinstance(token, ScalarToken) and token.value == "applications":
-                apps = ApplicationsNode(start=token_start, parent=self._tree)
-
+            if isinstance(token, ScalarToken) and token.value in ["applications", "services"]:
+                resources = ResourcesContainerNode(start=token_start, parent=self._tree)
+                
                 try:
                     # first we need to skip ValueToken
                     next(tokens)
-                    self._process_apps(tokens, apps)
+                    self._process_resources(tokens, resources, resources_name=token.value)
                 except ValueError:
                     print("error during apps processing")
                     pass
-
-                self._tree.apps_node = apps
+                if token.value == "applications":
+                    self._tree.apps_node = resources
+                else:
+                    self._tree.services_node = resources
 
             if isinstance(token, ScalarToken) and token.value == "inputs":
                 inputs = InputsNode(start=token_start, parent=self._tree)
