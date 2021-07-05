@@ -264,7 +264,7 @@ def did_change(ls, params: DidChangeTextDocumentParams):
           
     elif doc_type == "TerraForm":
         srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-        services.reload_app_details(srv_name, srv_source=source)
+        services.reload_service_details(srv_name, srv_source=source)
 
 
 @colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
