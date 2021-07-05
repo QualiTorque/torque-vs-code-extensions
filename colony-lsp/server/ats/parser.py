@@ -210,6 +210,86 @@ class BlueprintParser(Parser):
         super().__init__(document=document)
         self._tree = BlueprintTree()
 
+    def _process_artifacts(self, data: Generator):
+        starting_token = next(data)
+        tokens_stack = []
+        extended_declare = False
+        no_indent = False
+
+        if isinstance(starting_token, BlockSequenceStartToken):
+            tokens_stack.append(starting_token)
+
+        # a special case when artifacts are listed without identation
+        elif isinstance(starting_token, BlockEntryToken):
+            no_indent = True
+            tokens_stack.append(starting_token)
+
+        else:
+            raise ValueError("Starting token is not correct")
+
+        while tokens_stack or no_indent:
+            token = next(data)
+            token_start = (token.start_mark.line, token.start_mark.column)
+            token_end = (token.end_mark.line, token.end_mark.column)
+
+            if isinstance(token, BlockEntryToken):  # dash ("-") symbol
+                tokens_stack.append(token)
+                continue
+
+            if isinstance(token, BlockMappingStartToken):
+                top = tokens_stack.pop()
+                if isinstance(top, BlockEntryToken):  # it means it is a beginning of mapping
+                    self._tree.artifacts.append(MappingNode(parent=self._tree))
+
+                tokens_stack.append(token)
+                continue
+
+            # stack is empty. in case artifacts do not have indentation
+            # it means list has ended 
+            if not tokens_stack and not isinstance(token, BlockEntryToken):
+                # but last token taken from generator is not a part of block
+                # so return it back to calling code
+                return token
+
+            if isinstance(token, (KeyToken, ValueToken)):
+                tokens_stack.append(token)
+                continue
+
+            if isinstance(token, ScalarToken):
+                top = tokens_stack.pop()
+                # it's an input name
+                if isinstance(top, KeyToken):
+                    self._tree.artifacts[-1].key = TextNode(
+                        start=token_start,
+                        end=token_end,
+                        parent=self._tree,
+                        text=token.value
+                    )
+                    self._tree.artifacts[-1].start = token_start
+
+                # it's a default value
+                if isinstance(top, ValueToken):
+                    self._tree.artifacts[-1].value = TextNode(
+                        start=token_start,
+                        end=token_end,
+                        parent=self._tree,
+                        text=token.value
+                    )
+
+            if isinstance(token, BlockEndToken):
+                # on the top of a stack we always must have BlockMappingStartToken 
+                # or BlockSequenceStartToken at this point
+                top = tokens_stack.pop()
+                if isinstance(top, BlockSequenceStartToken):
+                    pass
+                    # inputs_node.end = token_end
+
+                elif isinstance(top, BlockMappingStartToken):
+                    self._tree.artifacts[-1].end = token_start
+
+                else:
+                    raise ValueError("Wrong structure of artifacts block")
+
     # TODO: processing of all sub-nodes must me merged to single method    
     def _process_resources(self, data: Generator, container_node: ResourcesContainerNode, resources_name: str) -> None:
         starting_token = next(data)
@@ -347,6 +427,14 @@ class BlueprintParser(Parser):
                     self._tree.apps_node = resources
                 else:
                     self._tree.services_node = resources
+
+            if isinstance(token, ScalarToken) and token.value == "artifacts":
+                try:
+                    next(tokens)
+                    self._process_artifacts(tokens)
+                except ValueError as e:
+                    print(f"error during artifacts processing: {e}")
+                    pass
 
             if isinstance(token, ScalarToken) and token.value == "inputs":
                 inputs = InputsNode(start=token_start, parent=self._tree)

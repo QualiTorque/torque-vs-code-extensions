@@ -92,6 +92,7 @@ class BaseTree:
 class BlueprintTree(BaseTree):
     apps_node: Optional[ResourcesContainerNode] = None
     services_node: Optional[ResourcesContainerNode] = None
+    artifacts: List[MappingNode] = field(default_factory=list)
 
 
 @dataclass
