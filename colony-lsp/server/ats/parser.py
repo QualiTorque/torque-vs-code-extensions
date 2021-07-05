@@ -1,4 +1,5 @@
 
+from abc import abstractmethod
 from server.ats.tree import *
 from typing import Generator, List
 import yaml
@@ -7,10 +8,11 @@ from yaml.tokens import BlockEndToken, BlockEntryToken, BlockMappingStartToken, 
     ScalarToken, Token, ValueToken
 
 
-class Parser:
+class Parser(ABC):
     def __init__(self, document) -> None:
         self.document = document
 
+    @abstractmethod
     def parse(self):
         pass
 
@@ -148,11 +150,7 @@ class Parser:
                     raise ValueError("Wrong structure of inputs block")
 
 
-class AppParser(Parser):
-    def __init__(self, document):
-        super().__init__(document=document)
-        self._tree = AppTree()
-
+class AppSrvParser(Parser):
     def parse(self):
         tokens = yaml.scan(self.document)
 
@@ -187,6 +185,24 @@ class AppParser(Parser):
                     self._tree.outputs = outputs_list
 
         return self._tree
+
+
+class AppParser(AppSrvParser):
+    def __init__(self, document):
+        super().__init__(document=document)
+        self._tree = AppTree()
+
+    def parse(self):
+        return super().parse()
+
+
+class ServiceParser(AppSrvParser):
+    def __init__(self, document):
+        super().__init__(document=document)
+        self._tree = ServiceTree()
+
+    def parse(self):
+        return super().parse()
 
 
 class BlueprintParser(Parser):
