@@ -1,11 +1,10 @@
-from abc import ABC
-from dataclasses import dataclass, field
+
 from server.ats.tree import *
-from typing import Any, Dict, Generator, List, Optional, Tuple
+from typing import Generator, List
 import yaml
-from yaml import nodes
 from yaml.parser import Parser
-from yaml.tokens import BlockEndToken, BlockEntryToken, BlockMappingStartToken, BlockSequenceStartToken, KeyToken, ScalarToken, Token, ValueToken
+from yaml.tokens import BlockEndToken, BlockEntryToken, BlockMappingStartToken, BlockSequenceStartToken, KeyToken, \
+    ScalarToken, Token, ValueToken
 
 
 class Parser:
@@ -32,7 +31,7 @@ class Parser:
 
         return None if isinstance(token, BlockEndToken) else token
 
-    #inputs processing is the same for apps and blueprints
+    # inputs processing is the same for apps and blueprints
     def _process_inputs(self, data: Generator, inputs_node: InputsNode) -> Token:
         """
         Return None if inputs block has normal indentation
@@ -42,7 +41,7 @@ class Parser:
         tokens_stack = []
         extended_declare = False
         no_indent = False
-        
+
         if isinstance(starting_token, BlockSequenceStartToken):
             tokens_stack.append(starting_token)
 
@@ -59,7 +58,7 @@ class Parser:
             token_start = (token.start_mark.line, token.start_mark.column)
             token_end = (token.end_mark.line, token.end_mark.column)
 
-            if isinstance(token, BlockEntryToken): # dash ("-") symbol
+            if isinstance(token, BlockEntryToken):  # dash ("-") symbol
                 tokens_stack.append(token)
                 continue
 
@@ -73,9 +72,9 @@ class Parser:
 
             if isinstance(token, BlockMappingStartToken):
                 top = tokens_stack.pop()
-                if isinstance(top, BlockEntryToken): # it means it is a beginning of input declaration
+                if isinstance(top, BlockEntryToken):  # it means it is a beginning of input declaration
                     inputs_node.add(InputNode(parent=inputs_node))
-                
+
                 # it is a beginning of full input declaration 
                 # (could include 'display style' , 'description', ...)
                 if isinstance(top, ValueToken):
@@ -115,7 +114,7 @@ class Parser:
                             parent=inputs_node.inputs[-1],
                             text=token.value
                         )
- 
+
                 else:
                     # for now ignore all input properties except 'default_value'
                     if not isinstance(tokens_stack[-1], ScalarToken):
@@ -133,7 +132,7 @@ class Parser:
             if isinstance(token, BlockEndToken):
                 # on the top of a stack we always must have BlockMappingStartToken 
                 # or BlockSequenceStartToken at this point
-                top = tokens_stack.pop() 
+                top = tokens_stack.pop()
                 if isinstance(top, BlockSequenceStartToken):
                     # now we have the end of inputs block
                     inputs_node.end = token_end
@@ -141,7 +140,7 @@ class Parser:
                 elif isinstance(top, BlockMappingStartToken):
                     if extended_declare:
                         extended_declare = False
-                    else:                       
+                    else:
                         inputs_node.inputs[-1].end = token_start
 
                 else:
@@ -155,9 +154,7 @@ class AppParser(Parser):
 
     def parse(self):
         tokens = yaml.scan(self.document)
-        token = None
 
-        
         for token in tokens:
             token_start = (token.start_mark.line, token.start_mark.column)
             token_end = (token.end_mark.line, token.end_mark.column)
@@ -166,7 +163,7 @@ class AppParser(Parser):
                 self._tree.start = token_start
             if isinstance(token, yaml.StreamEndToken):
                 self._tree.end = token_end
-    
+
             if isinstance(token, ScalarToken):
                 if token.value == "inputs":
                     inputs = InputsNode(start=token_start, parent=self._tree)
@@ -180,7 +177,7 @@ class AppParser(Parser):
                         pass
 
                     self._tree.inputs_node = inputs
-                
+
                 if token.value == "outputs":
                     outputs_list: List[TextNode] = []
                     # first we need to skip ValueToken
@@ -195,7 +192,6 @@ class BlueprintParser(Parser):
     def __init__(self, document):
         super().__init__(document=document)
         self._tree = BlueprintTree()
-        
 
     # TODO: processing of all sub-nodes must me merged to single method    
     def _process_apps(self, data: Generator, apps_node: ApplicationNode) -> None:
@@ -208,7 +204,7 @@ class BlueprintParser(Parser):
         if isinstance(starting_token, BlockSequenceStartToken):
             tokens_stack.append(starting_token)
 
-         # a special case when artifacts are listed without indentation
+        # a special case when artifacts are listed without indentation
         elif isinstance(starting_token, BlockEntryToken):
             no_indent = True
             tokens_stack.append(starting_token)
@@ -230,10 +226,10 @@ class BlueprintParser(Parser):
                 # so return it back to calling code
                 return token
 
-            if isinstance(token, BlockEntryToken): # dash ("-") symbol
+            if isinstance(token, BlockEntryToken):  # dash ("-") symbol
                 tokens_stack.append(token)
                 continue
-            
+
             if isinstance(token, KeyToken) and not inside_app_declaration:
                 continue
 
@@ -243,9 +239,9 @@ class BlueprintParser(Parser):
 
             if isinstance(token, BlockMappingStartToken):
                 top = tokens_stack.pop()
-                if isinstance(top, BlockEntryToken): # it means it is a beginning of app declaration
+                if isinstance(top, BlockEntryToken):  # it means it is a beginning of app declaration
                     apps_node.add(ApplicationNode(parent=apps_node, start=token_start))
-                if isinstance(top, ValueToken): # internal properties of app
+                if isinstance(top, ValueToken):  # internal properties of app
                     inside_app_declaration = True
 
                 tokens_stack.append(token)
@@ -256,7 +252,7 @@ class BlueprintParser(Parser):
 
             if isinstance(token, ScalarToken):
                 if not inside_app_declaration:
-                # we are at the beginning of app declaration
+                    # we are at the beginning of app declaration
                     apps_node.apps[-1].app_id = TextNode(
                         start=token_start,
                         end=token_end,
@@ -275,9 +271,9 @@ class BlueprintParser(Parser):
                         apps_node.apps[-1].inputs_node = inputs
 
                     # TODO: dirty handling. refactor
-                    if token.value == "target" or token.value == "instances": 
+                    if token.value == "target" or token.value == "instances":
                         # do nothing for now
-                        next(data) # skip 
+                        next(data)  # skip
                         next(data)
 
                     if token.value == "depends_on":
@@ -286,10 +282,10 @@ class BlueprintParser(Parser):
                         last_token = Parser.process_simple_array(data, deps, apps_node.apps[-1])
                         apps_node.apps[-1].depends_on = deps
 
-                        continue        
-                     
+                        continue
+
             if isinstance(token, BlockEndToken):
-                top = tokens_stack.pop() 
+                top = tokens_stack.pop()
                 if isinstance(top, BlockSequenceStartToken):
                     # now we have the end of applications block
                     apps_node.end = token_end
@@ -297,15 +293,14 @@ class BlueprintParser(Parser):
                 elif isinstance(top, BlockMappingStartToken):
                     if inside_app_declaration:
                         inside_app_declaration = False
-                    else:                       
+                    else:
                         apps_node.apps[-1].end = token_start
                 else:
                     raise ValueError("Wrong structure of applications block")
-            
+
     def parse(self):
         tokens = yaml.scan(self.document)
-        token = None
-        
+
         for token in tokens:
             token_start = (token.start_mark.line, token.start_mark.column)
             token_end = (token.end_mark.line, token.end_mark.column)
@@ -314,7 +309,7 @@ class BlueprintParser(Parser):
                 self._tree.start = token_start
             if isinstance(token, yaml.StreamEndToken):
                 self._tree.end = token_end
-            
+
             if isinstance(token, ScalarToken) and token.value == "applications":
                 apps = ApplicationsNode(start=token_start, parent=self._tree)
 
@@ -327,7 +322,7 @@ class BlueprintParser(Parser):
                     pass
 
                 self._tree.apps_node = apps
-            
+
             if isinstance(token, ScalarToken) and token.value == "inputs":
                 inputs = InputsNode(start=token_start, parent=self._tree)
                 try:
