@@ -29,6 +29,9 @@ class ValidationHandler:
                 message=message,
                 severity=diag_severity
             ))
+    
+    # TODO: add validation method which will be common for all trees for finding
+    # duplicates in inputs
 
     def validate(self):
         pass
@@ -185,7 +188,7 @@ class BlueprintValidationHandler(ValidationHandler):
 
     def validate(self):
         # prep
-        apps = applications.get_available_applications(self._root_path)
+        _ = applications.get_available_applications(self._root_path)
         # warnings
         self._check_for_unused_blueprint_inputs()
         # errors
