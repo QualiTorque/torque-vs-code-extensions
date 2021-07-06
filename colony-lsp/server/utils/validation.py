@@ -44,28 +44,45 @@ class AppValidationHandler(ValidationHandler):
 class BlueprintValidationHandler(ValidationHandler):
     def __init__(self, tree: BlueprintTree, root_path: str):
         super().__init__(tree, root_path)
-        self.blueprint_apps = [app.id.text for app in self._tree.apps_node.items]
+        self.blueprint_apps = [app.id.text for app in self._tree.apps_node.items] if self._tree.apps_node else []
+        self.blueprint_services = [srv.id.text for srv in self._tree.services_node.items] if self._tree.services_node else []
 
     def _validate_dependency_exists(self):
-        message = "The app '{}' is not part of the blueprint applications section"
+        message = "The application/service '{}' is not defined in the applications/services section"            
         apps = self.blueprint_apps
+        srvs = self.blueprint_services
+        apps_n_srvs = set(apps + srvs)
 
-        # TODO: add checks for services - an app can be dependent on a service and vice versa
-
-        for app in self._tree.apps_node.items:
-            for dep in app.depends_on:
-                if dep.text not in apps:
-                    self._add_diagnostic(
-                        Position(line=dep.start[0], character=dep.start[1]),
-                        Position(line=dep.end[0], character=dep.end[1]),
-                        message=message.format(dep.text)
-                    )
-                elif dep.text == app.id.text:
-                    self._add_diagnostic(
-                        Position(line=dep.start[0], character=dep.start[1]),
-                        Position(line=dep.end[0], character=dep.end[1]),
-                        message=f"The app '{app.id.text}' cannot be dependent of itself"
-                    )
+        if self._tree.apps_node:
+            for app in self._tree.apps_node.items:
+                for dep in app.depends_on:
+                    if dep.text not in apps_n_srvs:
+                        self._add_diagnostic(
+                            Position(line=dep.start[0], character=dep.start[1]),
+                            Position(line=dep.end[0], character=dep.end[1]),
+                            message=message.format(dep.text)
+                        )
+                    elif dep.text == app.id.text:
+                        self._add_diagnostic(
+                            Position(line=dep.start[0], character=dep.start[1]),
+                            Position(line=dep.end[0], character=dep.end[1]),
+                            message=f"The app '{app.id.text}' cannot be dependent of itself"
+                        )
+        if self._tree.services_node:
+            for srv in self._tree.services_node.items:
+                for dep in srv.depends_on:
+                    if dep.text not in apps_n_srvs:
+                        self._add_diagnostic(
+                            Position(line=dep.start[0], character=dep.start[1]),
+                            Position(line=dep.end[0], character=dep.end[1]),
+                            message=message.format(dep.text)
+                        )
+                    elif dep.text == srv.id.text:
+                        self._add_diagnostic(
+                            Position(line=dep.start[0], character=dep.start[1]),
+                            Position(line=dep.end[0], character=dep.end[1]),
+                            message=f"The service '{srv.id.text}' cannot be dependent of itself"
+                        )
 
     def _validate_non_existing_app_is_used(self):
         message = "The app '{}' could not be found in the /applications folder"
@@ -140,6 +157,15 @@ class BlueprintValidationHandler(ValidationHandler):
                     return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
 
             # TODO: check that services exist in the blueprint, and has the output
+            if parts[1] == "services":
+                srvs = self.blueprint_services
+                if not parts[2] in srvs:
+                    return False, f"{var_name} is not a valid colony-generated variable (no such service in the blueprint)"
+
+                srv_outputs = services.get_service_outputs(srv_name=parts[2])
+                if parts[4] not in srv_outputs:
+                    return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
+
         else:
             return False, f"{var_name} is not a valid colony-generated variable (too many parts)"
 
