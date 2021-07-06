@@ -211,11 +211,63 @@ class BlueprintValidationHandler(ValidationHandler):
                                 message=error_message
                             )
 
-    # def _validate_apps_and_services_are_unique(self):
-    #     # check that there are no duplicate names in the apps being used
-    #     # check that there are no duplicate names in the services being used
-    #     # check that there are no duplicate names between app names and services names
-
+    def _validate_apps_and_services_are_unique(self):
+        # check that there are no duplicate names in the apps being used
+        # apps = set(self.blueprint_apps)
+        # if len(apps) != len(self.blueprint_apps):
+        duplicated = {}
+        apps = {}
+        for app in self._tree.apps_node.items:
+            if app.id.text not in apps:
+                apps[app.id.text] = app
+            else:
+                self._add_diagnostic(
+                    Position(line=app.id.start[0], character=app.start[1]),
+                    Position(line=app.id.end[0], character=app.id.end[1]),
+                    message="This application is already defined. Each application should be defined only once."
+                )
+                if app.id.text not in duplicated:
+                    prev_app = apps[app.id.text]
+                    self._add_diagnostic(
+                        Position(line=prev_app.id.start[0], character=prev_app.start[1]),
+                        Position(line=prev_app.id.end[0], character=prev_app.id.end[1]),
+                        message="This application is already defined. Each application should be defined only once."
+                    )
+                    duplicated[app.id.text] = 1
+            
+        # check that there are no duplicate names in the services being used
+        srvs = {}
+        for srv in self._tree.services_node.items:
+            if srv.id.text not in srvs:
+                srvs[srv.id.text] = srv
+            else:
+                self._add_diagnostic(
+                    Position(line=srv.id.start[0], character=srv.start[1]),
+                    Position(line=srv.id.end[0], character=srv.id.end[1]),
+                    message="This service is already defined. Each service should be defined only once."
+                )
+                if srv.id.text not in duplicated:
+                    prev_srv = srvs[srv.id.text]
+                    self._add_diagnostic(
+                        Position(line=prev_srv.id.start[0], character=prev_srv.start[1]),
+                        Position(line=prev_srv.id.end[0], character=prev_srv.id.end[1]),
+                        message="This service is already defined. Each service should be defined only once."
+                    )
+                    duplicated[srv.id.text] = 1
+            
+            if srv.id.text in apps:
+                self._add_diagnostic(
+                    Position(line=srv.id.start[0], character=srv.start[1]),
+                    Position(line=srv.id.end[0], character=srv.id.end[1]),
+                    message="There is already an application with the same name in this blueprint. Make sure the names are unique."
+                )
+                prev_app = apps[srv.id.text]
+                self._add_diagnostic(
+                    Position(line=prev_app.id.start[0], character=prev_app.start[1]),
+                    Position(line=prev_app.id.end[0], character=prev_app.id.end[1]),
+                    message="There is already a service with the same name in this blueprint. Make sure the names are unique."
+                )
+        
     def validate(self):
         # prep
         _ = applications.get_available_applications(self._root_path)
@@ -227,5 +279,5 @@ class BlueprintValidationHandler(ValidationHandler):
         self._validate_var_being_used_is_defined()
         self._validate_non_existing_app_is_used()
         self._validate_non_existing_service_is_used()
-        # self._validate_apps_and_services_are_unique()
+        self._validate_apps_and_services_are_unique()
         return self._diagnostics
