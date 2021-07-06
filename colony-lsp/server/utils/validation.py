@@ -308,9 +308,16 @@ class BlueprintValidationHandler(ValidationHandler):
                         message=f"The application '{app.id.text}' does not have an input named '{input.key.text}'"
                     )
             
-        
-    # def _validate_services_inputs_exists(self):
-    #     pass
+    def _validate_services_inputs_exists(self):
+        for srv in self._tree.services_node.items:
+            srv_inputs = services.get_service_inputs(srv.id.text)
+            for input in srv.inputs_node.inputs:
+                if input.key.text not in srv_inputs:
+                    self._add_diagnostic(
+                        Position(line=input.key.start[0], character=input.start[1]),
+                        Position(line=input.key.end[0], character=input.key.end[1]),
+                        message=f"The service '{srv.id.text}' does not have an input named '{input.key.text}'"
+                    )
      
     def validate(self):
         # prep
@@ -327,5 +334,5 @@ class BlueprintValidationHandler(ValidationHandler):
         self._validate_artifaces_apps_are_defined()
         self._validate_artifaces_are_unique()
         self._validate_apps_inputs_exists()
-        # self._validate_services_inputs_exists()
+        self._validate_services_inputs_exists()
         return self._diagnostics
