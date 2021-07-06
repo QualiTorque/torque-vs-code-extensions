@@ -190,16 +190,25 @@ class BlueprintValidationHandler(ValidationHandler):
 
     def _validate_var_being_used_is_defined(self):
         bp_inputs = {input.key.text for input in self._tree.inputs_node.inputs}
-        message = "Variable '{}' is not defined"
-        regex = re.compile('(^\$.+?$|\$\{.+?\})')
         for app in self._tree.apps_node.items:
             for input in app.inputs_node.inputs:
-                # we need to check values starting with '$' 
-                # and they shouldnt be colony related
+                self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
+        
+        for srv in self._tree.services_node.items:
+            for input in srv.inputs_node.inputs:
+                self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
+        
+        for art in self._tree.artifacts:
+            self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, art)
 
-                # need to break value to parts to handle variables in {} like: 
-                # abcd/${some_var}/asfsd/${var2}
-                # and highlight these portions      
+    def _confirm_variable_defined_in_blueprint_or_auto_var(self, bp_inputs, input):
+        # need to break value to parts to handle variables in {} like: 
+        # abcd/${some_var}/asfsd/${var2}
+        # and highlight these portions      
+        message = "Variable '{}' is not defined"
+        regex = re.compile('(^\$.+?$|\$\{.+?\})')
+        try:
+            if input.value:
                 iterator = regex.finditer(input.value.text)
                 for match in iterator:
                     cur_var = match.group()
@@ -211,18 +220,20 @@ class BlueprintValidationHandler(ValidationHandler):
                         var = cur_var.replace("$", "")
                         if var not in bp_inputs:
                             self._add_diagnostic(
-                                Position(line=input.value.start[0], character=input.value.start[1] + pos[0]),
-                                Position(line=input.value.end[0], character=input.value.start[1] + pos[1]),
-                                message=message.format(cur_var)
-                            )
+                                        Position(line=input.value.start[0], character=input.value.start[1] + pos[0]),
+                                        Position(line=input.value.end[0], character=input.value.start[1] + pos[1]),
+                                        message=message.format(cur_var)
+                                    )
                     elif cur_var.lower().startswith("$colony"):
                         valid_var, error_message = self._is_valid_auto_var(cur_var)
                         if not valid_var:
                             self._add_diagnostic(
-                                Position(line=input.value.start[0], character=input.value.start[1] + pos[0]),
-                                Position(line=input.value.end[0], character=input.value.start[1] + pos[1]),
-                                message=error_message
-                            )
+                                        Position(line=input.value.start[0], character=input.value.start[1] + pos[0]),
+                                        Position(line=input.value.end[0], character=input.value.start[1] + pos[1]),
+                                        message=error_message
+                                    )
+        except Exception as ex:
+            print(ex)
 
     def _validate_apps_and_services_are_unique(self):
         # check that there are no duplicate names in the apps being used
