@@ -157,11 +157,11 @@ def _validate(ls, params):
         if doc_type == "blueprint":
             try:
                 bp_tree = BlueprintParser(source).parse()
+                validator = BlueprintValidationHandler(bp_tree, root)
+                diagnostics += validator.validate()
             except Exception as ex:
                 print(ex)
                 return
-            validator = BlueprintValidationHandler(bp_tree, root)
-            diagnostics += validator.validate()
             
 
         if doc_type == "application":
