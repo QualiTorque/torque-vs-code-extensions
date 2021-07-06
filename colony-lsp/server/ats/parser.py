@@ -334,6 +334,15 @@ class BlueprintParser(Parser):
                 tokens_stack.append(token)
                 continue
 
+            if isinstance(token, ScalarToken) and isinstance(tokens_stack[-1], BlockEntryToken):
+                res_node = resource_map[resources_name](
+                    parent=container_node, start=token_start, end=token_end
+                )
+                res_node.id = TextNode(start=token_start, end=token_end, text=token.value)
+                container_node.add(res_node)
+                tokens_stack.pop()
+                continue
+
             if isinstance(token, KeyToken) and not inside_declaration:
                 continue
 
