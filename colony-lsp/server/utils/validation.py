@@ -313,24 +313,48 @@ class BlueprintValidationHandler(ValidationHandler):
     def _validate_apps_inputs_exists(self):
         for app in self._tree.apps_node.items:
             app_inputs = applications.get_app_inputs(app.id.text)
+            used_inputs = []
             for input in app.inputs_node.inputs:
+                used_inputs.append(input.key.text)
                 if input.key.text not in app_inputs:
                     self._add_diagnostic(
                         Position(line=input.key.start[0], character=input.start[1]),
                         Position(line=input.key.end[0], character=input.key.end[1]),
                         message=f"The application '{app.id.text}' does not have an input named '{input.key.text}'"
                     )
+            missing_inputs = []
+            for input in app_inputs:
+                if app_inputs[input] is None and input not in used_inputs:
+                    missing_inputs.append(input)
+            if missing_inputs:
+                self._add_diagnostic(
+                    Position(line=app.id.start[0], character=app.id.start[1]),
+                    Position(line=app.id.end[0], character=app.id.end[1]),
+                    message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
+                )
             
     def _validate_services_inputs_exists(self):
         for srv in self._tree.services_node.items:
             srv_inputs = services.get_service_inputs(srv.id.text)
+            used_inputs = []
             for input in srv.inputs_node.inputs:
+                used_inputs.append(input.key.text)
                 if input.key.text not in srv_inputs:
                     self._add_diagnostic(
                         Position(line=input.key.start[0], character=input.start[1]),
                         Position(line=input.key.end[0], character=input.key.end[1]),
                         message=f"The service '{srv.id.text}' does not have an input named '{input.key.text}'"
                     )
+            missing_inputs = []
+            for input in srv_inputs:
+                if srv_inputs[input] is None and input not in used_inputs:
+                    missing_inputs.append(input)
+            if missing_inputs:
+                self._add_diagnostic(
+                    Position(line=srv.id.start[0], character=srv.id.start[1]),
+                    Position(line=srv.id.end[0], character=srv.id.end[1]),
+                    message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
+                )
      
     def validate(self):
         super().validate()

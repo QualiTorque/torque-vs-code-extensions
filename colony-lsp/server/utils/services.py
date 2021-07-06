@@ -97,7 +97,9 @@ def get_service_vars(service_dir_path: str):
 def get_service_inputs(srv_name):
     if srv_name in SERVICES:
         srv_tree = SERVICES[srv_name]["srv_tree"]
-        inputs = [input.key.text for input in srv_tree.inputs_node.inputs]
+        inputs = {}
+        for input in srv_tree.inputs_node.inputs:
+            inputs[input.key.text] = input.value.text if input.value else None
         return inputs
     else:
         return []
