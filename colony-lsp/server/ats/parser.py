@@ -213,13 +213,12 @@ class BlueprintParser(Parser):
     def _process_artifacts(self, data: Generator):
         starting_token = next(data)
         tokens_stack = []
-        extended_declare = False
         no_indent = False
 
         if isinstance(starting_token, BlockSequenceStartToken):
             tokens_stack.append(starting_token)
 
-        # a special case when artifacts are listed without identation
+        # a special case when artifacts are listed without indentation
         elif isinstance(starting_token, BlockEntryToken):
             no_indent = True
             tokens_stack.append(starting_token)
@@ -292,6 +291,14 @@ class BlueprintParser(Parser):
 
     # TODO: processing of all sub-nodes must me merged to single method    
     def _process_resources(self, data: Generator, container_node: ResourcesContainerNode, resources_name: str) -> None:
+        if resources_name not in ["applications", "services"]:
+            raise AttributeError("resources_type must be in ['applications', 'services']")
+
+        resource_map = {
+            "applications": ApplicationNode,
+            "services": ServiceNode
+        }
+
         starting_token = next(data)
         tokens_stack = []
         inside_declaration = False
@@ -336,9 +343,9 @@ class BlueprintParser(Parser):
 
             if isinstance(token, BlockMappingStartToken):
                 top = tokens_stack.pop()
-                if isinstance(top, BlockEntryToken):  # it means it is a beginning of app declaration
-                    container_node.add(ServiceNode(parent=container_node, start=token_start))
-                if isinstance(top, ValueToken):  # internal properties of app
+                if isinstance(top, BlockEntryToken):  # it means it is a beginning of resource declaration
+                    container_node.add(resource_map[resources_name](parent=container_node, start=token_start))
+                if isinstance(top, ValueToken):  # internal properties of resource
                     inside_declaration = True
 
                 tokens_stack.append(token)
@@ -358,7 +365,7 @@ class BlueprintParser(Parser):
                     )
 
                 else:
-                    top = tokens_stack.pop()
+                    _ = tokens_stack.pop()
                     if token.value == "input_values":
                         inputs = InputsNode(start=token_start, parent=container_node.items[-1])
 
