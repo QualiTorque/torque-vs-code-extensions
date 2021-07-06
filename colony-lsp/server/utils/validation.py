@@ -297,6 +297,21 @@ class BlueprintValidationHandler(ValidationHandler):
                     )
                     duplicated[prev_art.key.text] = 1
     
+    def _validate_apps_inputs_exists(self):
+        for app in self._tree.apps_node.items:
+            app_inputs = applications.get_app_inputs(app.id.text)
+            for input in app.inputs_node.inputs:
+                if input.key.text not in app_inputs:
+                    self._add_diagnostic(
+                        Position(line=input.key.start[0], character=input.start[1]),
+                        Position(line=input.key.end[0], character=input.key.end[1]),
+                        message=f"The application '{app.id.text}' does not have an input named '{input.key.text}'"
+                    )
+            
+        
+    # def _validate_services_inputs_exists(self):
+    #     pass
+     
     def validate(self):
         # prep
         _ = applications.get_available_applications(self._root_path)
@@ -311,4 +326,6 @@ class BlueprintValidationHandler(ValidationHandler):
         self._validate_apps_and_services_are_unique()
         self._validate_artifaces_apps_are_defined()
         self._validate_artifaces_are_unique()
+        self._validate_apps_inputs_exists()
+        # self._validate_services_inputs_exists()
         return self._diagnostics

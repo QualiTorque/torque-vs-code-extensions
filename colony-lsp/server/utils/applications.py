@@ -68,6 +68,15 @@ def get_app_scripts(app_dir_path: str):
     return scripts
 
 
+def get_app_inputs(app_name):
+    if app_name in APPLICATIONS:
+        app_tree = APPLICATIONS[app_name]["app_tree"]
+        inputs = [input.key.text for input in app_tree.inputs_node.inputs]
+        return inputs
+    else:
+        return []
+
+
 def get_app_outputs(app_name):
     if app_name in APPLICATIONS:
         app_tree = APPLICATIONS[app_name]["app_tree"]
