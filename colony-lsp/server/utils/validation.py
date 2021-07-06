@@ -213,8 +213,6 @@ class BlueprintValidationHandler(ValidationHandler):
 
     def _validate_apps_and_services_are_unique(self):
         # check that there are no duplicate names in the apps being used
-        # apps = set(self.blueprint_apps)
-        # if len(apps) != len(self.blueprint_apps):
         duplicated = {}
         apps = {}
         for app in self._tree.apps_node.items:
@@ -255,6 +253,7 @@ class BlueprintValidationHandler(ValidationHandler):
                     )
                     duplicated[srv.id.text] = 1
             
+            # check that there is no app with this name
             if srv.id.text in apps:
                 self._add_diagnostic(
                     Position(line=srv.id.start[0], character=srv.start[1]),
@@ -267,7 +266,28 @@ class BlueprintValidationHandler(ValidationHandler):
                     Position(line=prev_app.id.end[0], character=prev_app.id.end[1]),
                     message="There is already a service with the same name in this blueprint. Make sure the names are unique."
                 )
-        
+    
+    def _validate_artifaces_apps_are_defined(self):
+        arts = {}
+        duplicated = {}
+        for art in self._tree.artifacts:
+            if art.key.text not in arts:
+                arts[art.key.text] = art
+            else:
+                self._add_diagnostic(
+                    Position(line=art.key.start[0], character=art.start[1]),
+                    Position(line=art.key.end[0], character=art.key.end[1]),
+                    message="This artifact is already defined. Each artifact should be defined only once."
+                )
+                if art.key.text not in duplicated:
+                    prev_art = arts[art.key.text]
+                    self._add_diagnostic(
+                        Position(line=prev_art.key.start[0], character=prev_art.start[1]),
+                        Position(line=prev_art.key.end[0], character=prev_art.key.end[1]),
+                        message="This artifact is already defined. Each artifact should be defined only once."
+                    )
+                    duplicated[prev_art.key.text] = 1
+    
     def validate(self):
         # prep
         _ = applications.get_available_applications(self._root_path)
@@ -280,4 +300,6 @@ class BlueprintValidationHandler(ValidationHandler):
         self._validate_non_existing_app_is_used()
         self._validate_non_existing_service_is_used()
         self._validate_apps_and_services_are_unique()
+        self._validate_artifaces_apps_are_defined()
+        # self._validate_artifaces_are_unique()
         return self._diagnostics
