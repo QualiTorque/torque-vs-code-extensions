@@ -2,6 +2,8 @@
 import os
 import re
 import pathlib
+from server.ats.parser import ServiceParser
+from server.ats.tree import ServiceTree
 import yaml
 
 
@@ -33,23 +35,23 @@ def get_available_services_names():
 
 
 def load_service_details(srv_name: str, srv_source):
+    srv_tree = ServiceParser(document=srv_source).parse()
+    
     output = f"{srv_name}:\n"
-    srv_file = yaml.load(srv_source, Loader=yaml.FullLoader)
-    inputs = srv_file['inputs'] if 'inputs' in srv_file else None
+    inputs = srv_tree.inputs_node.inputs
     if inputs:
         output += "  inputs_value:\n"
         for input in inputs:
-            if isinstance(input, str):
-                output += f"    - {input}: \n"
-            elif isinstance(input, dict):
-                for k,v in input.items():
-                    output += f"    - {k}: {v}\n"
+            if input.value:
+                output += f"    - {input.key.text}: {input.value.text}\n"
+            else:
+                output += f"    - {input.key.text}: \n" 
     
     subtree = yaml.load(output, Loader=yaml.FullLoader)
     output = yaml.dump(subtree)
     
     SERVICES[srv_name] = {
-        "srv_tree": None,
+        "srv_tree": srv_tree,
         "srv_completion": "- " + output.replace(": null", ": ")
     }
 
@@ -90,3 +92,13 @@ def get_service_vars(service_dir_path: str):
         return tfvars
     
     return []
+
+
+def get_service_outputs(srv_name):
+    if srv_name in SERVICES:
+        srv_tree = SERVICES[srv_name]["srv_tree"]
+        outputs = [out.text for out in srv_tree.outputs]
+        return outputs
+    else:
+        return None
+    
