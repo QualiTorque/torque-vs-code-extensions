@@ -268,6 +268,15 @@ class BlueprintValidationHandler(ValidationHandler):
                 )
     
     def _validate_artifaces_apps_are_defined(self):
+        for art in self._tree.artifacts:
+            if art.key.text not in self.blueprint_apps:
+                self._add_diagnostic(
+                    Position(line=art.key.start[0], character=art.start[1]),
+                    Position(line=art.key.end[0], character=art.key.end[1]),
+                    message="This application is not defined in this blueprint."
+                )
+    
+    def _validate_artifaces_are_unique(self):
         arts = {}
         duplicated = {}
         for art in self._tree.artifacts:
@@ -301,5 +310,5 @@ class BlueprintValidationHandler(ValidationHandler):
         self._validate_non_existing_service_is_used()
         self._validate_apps_and_services_are_unique()
         self._validate_artifaces_apps_are_defined()
-        # self._validate_artifaces_are_unique()
+        self._validate_artifaces_are_unique()
         return self._diagnostics
