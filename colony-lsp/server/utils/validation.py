@@ -3,15 +3,15 @@ import re
 from typing import List
 from pygls.lsp.types import diagnostics
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
-from server.ats.tree import BlueprintTree
+from server.ats.tree import BaseTree, BlueprintTree
 from server.constants import PREDEFINED_COLONY_INPUTS
 from server.utils import applications, services
 
 
 class ValidationHandler:
-    def __init__(self, tree: BlueprintTree, root_path: str):
+    def __init__(self, tree: BaseTree, root_path: str):
         self._tree = tree
-        self._diagnostics = []
+        self._diagnostics: List[Diagnostic] = []
         self._root_path = root_path
 
     def _add_diagnostic(
@@ -29,12 +29,25 @@ class ValidationHandler:
                 message=message,
                 severity=diag_severity
             ))
-    
-    # TODO: add validation method which will be common for all trees for finding
-    # duplicates in inputs
+
+    def _validate_no_duplicates_in_inputs(self):
+        message = "Multiple declaration of input '{}'"
+
+        inputs_names_list = [input.key.text for input in self._tree.inputs_node.inputs]
+
+        for input_node in self._tree.inputs_node.inputs:
+            if inputs_names_list.count(input_node.key.text) > 1:
+                self._add_diagnostic(
+                    Position(line=input_node.key.start[0], character=input_node.key.start[1]),
+                    Position(line=input_node.key.end[0], character=input_node.key.end[1]),
+                    message=message.format(input_node.key.text)
+                )
 
     def validate(self):
-        pass
+        # errors
+        self._validate_no_duplicates_in_inputs()
+
+        return self._diagnostics
 
 
 class AppValidationHandler(ValidationHandler):
@@ -320,6 +333,8 @@ class BlueprintValidationHandler(ValidationHandler):
                     )
      
     def validate(self):
+        super().validate()
+
         # prep
         _ = applications.get_available_applications(self._root_path)
         _ = services.get_available_services(self._root_path)

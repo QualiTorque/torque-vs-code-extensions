@@ -63,7 +63,7 @@ class ServiceNode(ResourceNode):
 
 @dataclass
 class ApplicationNode(ResourceNode):
-    # TODO: add handeling to parser
+    # TODO: add handling to parser
     target = None
     instances = None
 
