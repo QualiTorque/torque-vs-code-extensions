@@ -74,5 +74,5 @@ def get_app_outputs(app_name):
         outputs = [out.text for out in app_tree.outputs]
         return outputs
     else:
-        return None
+        return []
     

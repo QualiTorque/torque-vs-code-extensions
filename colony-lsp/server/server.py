@@ -163,24 +163,6 @@ def _validate(ls, params):
             validator = BlueprintValidationHandler(bp_tree, root)
             diagnostics += validator.validate()
             
-            # this part should be moved to the validator once the service parser exists
-            load_srvs = services.get_available_services(root)
-            available_srvs = services.get_available_services_names()
-            for srv in yaml_obj.get('services', []):
-                srv = list(srv.keys())[0]
-                if srv not in available_srvs:
-                    for i in range(len(doc_lines)):
-                        col_pos = doc_lines[i].find(srv)
-                        if col_pos == -1:
-                            continue
-                        d = Diagnostic(
-                            range=Range(
-                                start=Position(line=i, character=col_pos),
-                                end=Position(line=i, character=col_pos + 1 +len(srv))
-                            ),
-                            message=f"Service '{srv}' doesn't exist"
-                        )
-                        diagnostics.append(d)
 
         if doc_type == "application":
             app_tree = AppParser(source).parse()

@@ -95,16 +95,16 @@ class BlueprintValidationHandler(ValidationHandler):
                     message=message.format(app.id.text)
                 )
 
-    # def _validate_non_existing_service_is_used(self):
-    #     message = "The service '{}' could not be found in the /services folder"
-    #     available_srvs = services.get_available_services_names()
-    #     for srv in self._tree.services_node.services:
-    #         if srv.srv_id.text not in available_srvs:
-    #             self._add_diagnostic(
-    #                 Position(line=srv.srv_id.start[0], character=srv.start[1]),
-    #                 Position(line=srv.srv_id.end[0], character=srv.srv_id.end[1]),
-    #                 message=message.format(srv.srv_id.text)
-    #             )
+    def _validate_non_existing_service_is_used(self):
+        message = "The service '{}' could not be found in the /services folder"
+        available_srvs = services.get_available_services_names()
+        for srv in self._tree.services_node.items:
+            if srv.id.text not in available_srvs:
+                self._add_diagnostic(
+                    Position(line=srv.id.start[0], character=srv.start[1]),
+                    Position(line=srv.id.end[0], character=srv.id.end[1]),
+                    message=message.format(srv.id.text)
+                )
 
     def _check_for_unused_blueprint_inputs(self):
         used_vars = set()
@@ -151,21 +151,25 @@ class BlueprintValidationHandler(ValidationHandler):
                 apps = self.blueprint_apps
                 if not parts[2] in apps:
                     return False, f"{var_name} is not a valid colony-generated variable (no such app in the blueprint)"
+                
+                # TODO: check that the app is in the depends_on section
 
                 app_outputs = applications.get_app_outputs(app_name=parts[2])
                 if parts[4] not in app_outputs:
                     return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
 
-            # TODO: check that services exist in the blueprint, and has the output
             if parts[1] == "services":
                 srvs = self.blueprint_services
                 if not parts[2] in srvs:
                     return False, f"{var_name} is not a valid colony-generated variable (no such service in the blueprint)"
 
+                # TODO: check that the service is in the depends_on section
+                
                 srv_outputs = services.get_service_outputs(srv_name=parts[2])
                 if parts[4] not in srv_outputs:
                     return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
 
+            
         else:
             return False, f"{var_name} is not a valid colony-generated variable (too many parts)"
 
@@ -215,12 +219,13 @@ class BlueprintValidationHandler(ValidationHandler):
     def validate(self):
         # prep
         _ = applications.get_available_applications(self._root_path)
+        _ = services.get_available_services(self._root_path)
         # warnings
         self._check_for_unused_blueprint_inputs()
         # errors
         self._validate_dependency_exists()
         self._validate_var_being_used_is_defined()
         self._validate_non_existing_app_is_used()
-        # self._validate_non_existing_service_is_used()
+        self._validate_non_existing_service_is_used()
         # self._validate_apps_and_services_are_unique()
         return self._diagnostics

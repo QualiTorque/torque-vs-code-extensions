@@ -100,5 +100,5 @@ def get_service_outputs(srv_name):
         outputs = [out.text for out in srv_tree.outputs]
         return outputs
     else:
-        return None
+        return []
     
