@@ -123,6 +123,11 @@ class BlueprintValidationHandler(ValidationHandler):
         used_vars = set()
         for app in self._tree.apps_node.items:
             used_vars.update({var.value.text.replace("$", "") for var in app.inputs_node.inputs})
+        for srv in self._tree.services_node.items:
+            used_vars.update({var.value.text.replace("$", "") for var in srv.inputs_node.inputs})
+        for art in self._tree.artifacts:
+            if art.value:
+                used_vars.add(art.value.text.replace("$", ""))
 
         message = "Unused variable {}"
 
@@ -182,7 +187,6 @@ class BlueprintValidationHandler(ValidationHandler):
                 if parts[4] not in srv_outputs:
                     return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
 
-            
         else:
             return False, f"{var_name} is not a valid colony-generated variable (too many parts)"
 
