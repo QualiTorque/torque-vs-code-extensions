@@ -235,6 +235,24 @@ class BlueprintParser(Parser):
                 tokens_stack.append(token)
                 continue
 
+            # artifact without value
+            if isinstance(token, ScalarToken) and isinstance(tokens_stack[-1], BlockEntryToken):
+                self._tree.artifacts.append(
+                    MappingNode(
+                        start=token_start,
+                        end=token_end,
+                        parent=self._tree,
+                    ))
+                self._tree.artifacts[-1].key = TextNode(
+                    start=token_start,
+                    end=token_end,
+                    text=token.value,
+                    parent=self._tree.artifacts[-1]
+                )
+
+                tokens_stack.pop()
+                continue
+
             if isinstance(token, BlockMappingStartToken):
                 top = tokens_stack.pop()
                 if isinstance(top, BlockEntryToken):  # it means it is a beginning of mapping
