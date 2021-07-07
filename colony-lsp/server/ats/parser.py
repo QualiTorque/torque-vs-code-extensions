@@ -136,6 +136,10 @@ class Parser(ABC):
                 # on the top of a stack we always must have BlockMappingStartToken 
                 # or BlockSequenceStartToken at this point
                 top = tokens_stack.pop()
+                # last element in the list had a colon without value
+                if isinstance(top, ValueToken):
+                    top = tokens_stack.pop()
+
                 if isinstance(top, BlockSequenceStartToken):
                     # now we have the end of inputs block
                     inputs_node.end = token_end
@@ -297,6 +301,9 @@ class BlueprintParser(Parser):
                 # on the top of a stack we always must have BlockMappingStartToken 
                 # or BlockSequenceStartToken at this point
                 top = tokens_stack.pop()
+                # last element in the list had a colon without value
+                if isinstance(top, ValueToken):
+                    top = tokens_stack.pop()
                 if isinstance(top, BlockSequenceStartToken):
                     pass
                     # inputs_node.end = token_end
@@ -423,6 +430,9 @@ class BlueprintParser(Parser):
 
             if isinstance(token, BlockEndToken):
                 top = tokens_stack.pop()
+                # last element in the list had a colon without value
+                if isinstance(top, ValueToken):
+                    top = tokens_stack.pop()
                 if isinstance(top, BlockSequenceStartToken):
                     # now we have the end of applications block
                     container_node.end = token_end
