@@ -140,8 +140,6 @@ colony_server = ColonyLanguageServer()
 
 
 def _validate(ls, params):
-    #ls.show_message_log('Validating yaml...')
-
     text_doc = ls.workspace.get_document(params.text_document.uri)
     root = ls.workspace.root_path
     
@@ -213,7 +211,6 @@ def _validate_yaml(source):
         yaml.load(source, Loader=yaml.FullLoader)
     except yaml.MarkedYAMLError as ex:
         mark = ex.problem_mark
-        #print(mark)
         d = Diagnostic(
             range=Range(
                 start=Position(line=mark.line - 1, character=mark.column - 1),
@@ -222,8 +219,7 @@ def _validate_yaml(source):
             message=ex.problem,
             source=type(colony_server).__name__
         )
-        #print(d)
-
+        
         diagnostics.append(d)
 
     return diagnostics
@@ -231,36 +227,45 @@ def _validate_yaml(source):
 @colony_server.feature(TEXT_DOCUMENT_DID_CHANGE)
 def did_change(ls, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
-    print('------did change-------')
-    _validate(ls, params)
-    text_doc = ls.workspace.get_document(params.text_document.uri)
-    root = ls.workspace.root_path
-    
-    source = text_doc.source
-    yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
-    doc_type = yaml_obj.get('kind', '')
-    
-    if doc_type == "application":
-        app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-        applications.reload_app_details(app_name=app_name, app_source=source)
-          
-    elif doc_type == "TerraForm":
-        srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-        services.reload_service_details(srv_name, srv_source=source)
+    if '/blueprints/' in params.text_document.uri or \
+       '/applications/' in params.text_document.uri or \
+       '/services/' in params.text_document.uri:
+        _validate(ls, params)
+        text_doc = ls.workspace.get_document(params.text_document.uri)
+        root = ls.workspace.root_path
+        
+        source = text_doc.source
+        yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
+        doc_type = yaml_obj.get('kind', '')
+        
+        if doc_type == "application":
+            app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
+            applications.reload_app_details(app_name=app_name, app_source=source)
+            
+        elif doc_type == "TerraForm":
+            srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
+            services.reload_service_details(srv_name, srv_source=source)
 
 
-@colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
-def did_close(server: ColonyLanguageServer, params: DidCloseTextDocumentParams):
-    """Text document did close notification."""
-    server.show_message('Text Document Did Close')
+# @colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
+# def did_close(server: ColonyLanguageServer, params: DidCloseTextDocumentParams):
+#     """Text document did close notification."""
+#     if '/blueprints/' in params.text_document.uri or \
+#        '/applications/' in params.text_document.uri or \
+#        '/services/' in params.text_document.uri:
+#         # server.show_message('Text Document Did Close')
+#         pass
 
 
 @colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(ls, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
-    ls.show_message('Text Document Did Open')
-    ls.workspace.put_document(params.text_document)
-    _validate(ls, params)
+    if '/blueprints/' in params.text_document.uri or \
+       '/applications/' in params.text_document.uri or \
+       '/services/' in params.text_document.uri:
+        ls.show_message('Detected a Colony file')
+        ls.workspace.put_document(params.text_document)
+        _validate(ls, params)
 
 
 
