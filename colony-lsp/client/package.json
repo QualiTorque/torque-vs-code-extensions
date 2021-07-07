@@ -1,5 +1,6 @@
 {
 	"name": "colony-extension-client",
+	"displayName": "Colony Language Extension",
 	"description": "A VS Code extension for the Colony yaml syntax. Provides YAML schema verification, auto-complete, highlight problems and much more.",
 	"author": "Quali",
 	"license": "MIT",
