@@ -3,7 +3,7 @@ import re
 from typing import List
 from pygls.lsp.types import diagnostics
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
-from server.ats.tree import BaseTree, BlueprintTree
+from server.ats.tree import BaseTree, BlueprintTree, YamlNode
 from server.constants import PREDEFINED_COLONY_INPUTS
 from server.utils import applications, services
 
@@ -16,15 +16,14 @@ class ValidationHandler:
 
     def _add_diagnostic(
             self,
-            start_position: Position,
-            end_position: Position,
+            node: YamlNode,
             message: str = "",
             diag_severity: DiagnosticSeverity = None):
         self._diagnostics.append(
             Diagnostic(
                 range=Range(
-                    start=start_position,
-                    end=end_position
+                    start=Position(line=node.start[0], character=node.start[1]),
+                    end=Position(line=node.end[0], character=node.end[1]),
                 ),
                 message=message,
                 severity=diag_severity
@@ -57,8 +56,8 @@ class AppValidationHandler(ValidationHandler):
 class BlueprintValidationHandler(ValidationHandler):
     def __init__(self, tree: BlueprintTree, root_path: str):
         super().__init__(tree, root_path)
-        self.blueprint_apps = [app.id.text for app in self._tree.apps_node.items] if self._tree.apps_node else []
-        self.blueprint_services = [srv.id.text for srv in self._tree.services_node.items] if self._tree.services_node else []
+        self.blueprint_apps = [app.id.text for app in self._tree.apps_node.nodes] if self._tree.apps_node else []
+        self.blueprint_services = [srv.id.text for srv in self._tree.services_node.nodes] if self._tree.services_node else []
 
     def _validate_dependency_exists(self):
         message = "The application/service '{}' is not defined in the applications/services section"            
@@ -67,63 +66,39 @@ class BlueprintValidationHandler(ValidationHandler):
         apps_n_srvs = set(apps + srvs)
 
         if self._tree.apps_node:
-            for app in self._tree.apps_node.items:
+            for app in self._tree.apps_node.nodes:
                 for dep in app.depends_on:
                     if dep.text not in apps_n_srvs:
-                        self._add_diagnostic(
-                            Position(line=dep.start[0], character=dep.start[1]),
-                            Position(line=dep.end[0], character=dep.end[1]),
-                            message=message.format(dep.text)
-                        )
+                        self._add_diagnostic(dep, message=message.format(dep.text))
                     elif dep.text == app.id.text:
-                        self._add_diagnostic(
-                            Position(line=dep.start[0], character=dep.start[1]),
-                            Position(line=dep.end[0], character=dep.end[1]),
-                            message=f"The app '{app.id.text}' cannot be dependent of itself"
-                        )
+                        self._add_diagnostic(dep, message=f"The app '{app.id.text}' cannot be dependent of itself")
         if self._tree.services_node:
-            for srv in self._tree.services_node.items:
+            for srv in self._tree.services_node.nodes:
                 for dep in srv.depends_on:
                     if dep.text not in apps_n_srvs:
-                        self._add_diagnostic(
-                            Position(line=dep.start[0], character=dep.start[1]),
-                            Position(line=dep.end[0], character=dep.end[1]),
-                            message=message.format(dep.text)
-                        )
+                        self._add_diagnostic(dep, message=message.format(dep.text))
                     elif dep.text == srv.id.text:
-                        self._add_diagnostic(
-                            Position(line=dep.start[0], character=dep.start[1]),
-                            Position(line=dep.end[0], character=dep.end[1]),
-                            message=f"The service '{srv.id.text}' cannot be dependent of itself"
-                        )
+                        self._add_diagnostic(dep, message=f"The service '{srv.id.text}' cannot be dependent of itself")
 
     def _validate_non_existing_app_is_used(self):
         message = "The app '{}' could not be found in the /applications folder"
         available_apps = applications.get_available_applications_names()
-        for app in self._tree.apps_node.items:
+        for app in self._tree.apps_node.nodes:
             if app.id.text not in available_apps:
-                self._add_diagnostic(
-                    Position(line=app.id.start[0], character=app.start[1]),
-                    Position(line=app.id.end[0], character=app.id.end[1]),
-                    message=message.format(app.id.text)
-                )
+                self._add_diagnostic(app.id, message=message.format(app.id.text))
 
     def _validate_non_existing_service_is_used(self):
         message = "The service '{}' could not be found in the /services folder"
         available_srvs = services.get_available_services_names()
-        for srv in self._tree.services_node.items:
+        for srv in self._tree.services_node.nodes:
             if srv.id.text not in available_srvs:
-                self._add_diagnostic(
-                    Position(line=srv.id.start[0], character=srv.start[1]),
-                    Position(line=srv.id.end[0], character=srv.id.end[1]),
-                    message=message.format(srv.id.text)
-                )
+                self._add_diagnostic(srv.id, message=message.format(srv.id.text))
 
     def _check_for_unused_blueprint_inputs(self):
         used_vars = set()
-        for app in self._tree.apps_node.items:
+        for app in self._tree.apps_node.nodes:
             used_vars.update({var.value.text.replace("$", "") for var in app.inputs_node.inputs})
-        for srv in self._tree.services_node.items:
+        for srv in self._tree.services_node.nodes:
             used_vars.update({var.value.text.replace("$", "") for var in srv.inputs_node.inputs})
         for art in self._tree.artifacts:
             if art.value:
@@ -134,8 +109,7 @@ class BlueprintValidationHandler(ValidationHandler):
         for input in self._tree.inputs_node.inputs:
             if input.key.text not in used_vars:
                 self._add_diagnostic(
-                    Position(line=input.key.start[0], character=input.key.start[1]),
-                    Position(line=input.key.end[0], character=input.key.end[1]),
+                    input.key,
                     message=message.format(input.key.text),
                     diag_severity=DiagnosticSeverity.Warning
                 )
@@ -194,11 +168,11 @@ class BlueprintValidationHandler(ValidationHandler):
 
     def _validate_var_being_used_is_defined(self):
         bp_inputs = {input.key.text for input in self._tree.inputs_node.inputs}
-        for app in self._tree.apps_node.items:
+        for app in self._tree.apps_node.nodes:
             for input in app.inputs_node.inputs:
                 self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
         
-        for srv in self._tree.services_node.items:
+        for srv in self._tree.services_node.nodes:
             for input in srv.inputs_node.inputs:
                 self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
         
@@ -223,19 +197,23 @@ class BlueprintValidationHandler(ValidationHandler):
                     if cur_var.startswith("$") and "." not in cur_var:
                         var = cur_var.replace("$", "")
                         if var not in bp_inputs:
-                            self._add_diagnostic(
-                                        Position(line=input.value.start[0], character=input.value.start[1] + pos[0]),
-                                        Position(line=input.value.end[0], character=input.value.start[1] + pos[1]),
-                                        message=message.format(cur_var)
-                                    )
+                            self._diagnostics.append(Diagnostic(
+                                range=Range(
+                                    start=Position(line=input.value.start[0], character=input.value.start[1] + pos[0]),
+                                    end=Position(line=input.value.end[0], character=input.value.start[1] + pos[1]),
+                                ),
+                                message=message.format(cur_var),
+                            ))
                     elif cur_var.lower().startswith("$colony"):
                         valid_var, error_message = self._is_valid_auto_var(cur_var)
                         if not valid_var:
-                            self._add_diagnostic(
-                                        Position(line=input.value.start[0], character=input.value.start[1] + pos[0]),
-                                        Position(line=input.value.end[0], character=input.value.start[1] + pos[1]),
-                                        message=error_message
-                                    )
+                            self._diagnostics.append(Diagnostic(
+                                range=Range(
+                                    start=Position(line=input.value.start[0], character=input.value.start[1] + pos[0]),
+                                    end=Position(line=input.value.end[0], character=input.value.start[1] + pos[1]),
+                                ),
+                                message=error_message
+                            ))
         except Exception as ex:
             print(ex)
 
@@ -243,98 +221,69 @@ class BlueprintValidationHandler(ValidationHandler):
         # check that there are no duplicate names in the apps being used
         duplicated = {}
         apps = {}
-        for app in self._tree.apps_node.items:
+        for app in self._tree.apps_node.nodes:
             if app.id.text not in apps:
                 apps[app.id.text] = app
             else:
-                self._add_diagnostic(
-                    Position(line=app.id.start[0], character=app.start[1]),
-                    Position(line=app.id.end[0], character=app.id.end[1]),
-                    message="This application is already defined. Each application should be defined only once."
-                )
+                msg = "This application is already defined. Each application should be defined only once."
+                self._add_diagnostic(app.id, message=msg)
+
                 if app.id.text not in duplicated:
                     prev_app = apps[app.id.text]
-                    self._add_diagnostic(
-                        Position(line=prev_app.id.start[0], character=prev_app.start[1]),
-                        Position(line=prev_app.id.end[0], character=prev_app.id.end[1]),
-                        message="This application is already defined. Each application should be defined only once."
-                    )
+                    self._add_diagnostic(prev_app.id, message=msg)
                     duplicated[app.id.text] = 1
             
         # check that there are no duplicate names in the services being used
         srvs = {}
-        for srv in self._tree.services_node.items:
+        for srv in self._tree.services_node.nodes:
             if srv.id.text not in srvs:
                 srvs[srv.id.text] = srv
             else:
-                self._add_diagnostic(
-                    Position(line=srv.id.start[0], character=srv.start[1]),
-                    Position(line=srv.id.end[0], character=srv.id.end[1]),
-                    message="This service is already defined. Each service should be defined only once."
-                )
+                msg = "This service is already defined. Each service should be defined only once."
+                self._add_diagnostic(srv.id, message=msg)
+
                 if srv.id.text not in duplicated:
                     prev_srv = srvs[srv.id.text]
-                    self._add_diagnostic(
-                        Position(line=prev_srv.id.start[0], character=prev_srv.start[1]),
-                        Position(line=prev_srv.id.end[0], character=prev_srv.id.end[1]),
-                        message="This service is already defined. Each service should be defined only once."
-                    )
+                    self._add_diagnostic(prev_srv.id, message=msg)
                     duplicated[srv.id.text] = 1
             
             # check that there is no app with this name
             if srv.id.text in apps:
-                self._add_diagnostic(
-                    Position(line=srv.id.start[0], character=srv.start[1]),
-                    Position(line=srv.id.end[0], character=srv.id.end[1]),
-                    message="There is already an application with the same name in this blueprint. Make sure the names are unique."
-                )
+                msg = "There is already an application with the same name in this blueprint. Make sure the names are unique."
+                self._add_diagnostic(srv.id, message=msg)
+
                 prev_app = apps[srv.id.text]
-                self._add_diagnostic(
-                    Position(line=prev_app.id.start[0], character=prev_app.start[1]),
-                    Position(line=prev_app.id.end[0], character=prev_app.id.end[1]),
-                    message="There is already a service with the same name in this blueprint. Make sure the names are unique."
-                )
+                self._add_diagnostic(prev_app.id, message=msg)
     
     def _validate_artifaces_apps_are_defined(self):
         for art in self._tree.artifacts:
             if art.key.text not in self.blueprint_apps:
-                self._add_diagnostic(
-                    Position(line=art.key.start[0], character=art.start[1]),
-                    Position(line=art.key.end[0], character=art.key.end[1]),
-                    message="This application is not defined in this blueprint."
-                )
+                self._add_diagnostic(art.key, message="This application is not defined in this blueprint.")
     
     def _validate_artifaces_are_unique(self):
         arts = {}
         duplicated = {}
+        msg = "This artifact is already defined. Each artifact should be defined only once."
         for art in self._tree.artifacts:
             if art.key.text not in arts:
                 arts[art.key.text] = art
             else:
-                self._add_diagnostic(
-                    Position(line=art.key.start[0], character=art.start[1]),
-                    Position(line=art.key.end[0], character=art.key.end[1]),
-                    message="This artifact is already defined. Each artifact should be defined only once."
-                )
+                self._add_diagnostic(art.key, message=msg)
+
                 if art.key.text not in duplicated:
                     prev_art = arts[art.key.text]
-                    self._add_diagnostic(
-                        Position(line=prev_art.key.start[0], character=prev_art.start[1]),
-                        Position(line=prev_art.key.end[0], character=prev_art.key.end[1]),
-                        message="This artifact is already defined. Each artifact should be defined only once."
-                    )
+                    self._add_diagnostic(prev_art.key, message=msg)
                     duplicated[prev_art.key.text] = 1
     
     def _validate_apps_inputs_exists(self):
-        for app in self._tree.apps_node.items:
+        for app in self._tree.apps_node.nodes:
             app_inputs = applications.get_app_inputs(app.id.text)
             used_inputs = []
             for input in app.inputs_node.inputs:
                 used_inputs.append(input.key.text)
                 if input.key.text not in app_inputs:
                     self._add_diagnostic(
-                        Position(line=input.key.start[0], character=input.start[1]),
-                        Position(line=input.key.end[0], character=input.key.end[1]),
+                        input.key,
                         message=f"The application '{app.id.text}' does not have an input named '{input.key.text}'"
                     )
             missing_inputs = []
@@ -343,21 +292,19 @@ class BlueprintValidationHandler(ValidationHandler):
                     missing_inputs.append(input)
             if missing_inputs:
                 self._add_diagnostic(
-                    Position(line=app.id.start[0], character=app.id.start[1]),
-                    Position(line=app.id.end[0], character=app.id.end[1]),
+                    app.id,
                     message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
                 )
             
     def _validate_services_inputs_exists(self):
-        for srv in self._tree.services_node.items:
+        for srv in self._tree.services_node.nodes:
             srv_inputs = services.get_service_inputs(srv.id.text)
             used_inputs = []
             for input in srv.inputs_node.inputs:
                 used_inputs.append(input.key.text)
                 if input.key.text not in srv_inputs:
                     self._add_diagnostic(
-                        Position(line=input.key.start[0], character=input.start[1]),
-                        Position(line=input.key.end[0], character=input.key.end[1]),
+                        input.key,
                         message=f"The service '{srv.id.text}' does not have an input named '{input.key.text}'"
                     )
             missing_inputs = []
@@ -366,8 +313,7 @@ class BlueprintValidationHandler(ValidationHandler):
                     missing_inputs.append(input)
             if missing_inputs:
                 self._add_diagnostic(
-                    Position(line=srv.id.start[0], character=srv.id.start[1]),
-                    Position(line=srv.id.end[0], character=srv.id.end[1]),
+                    srv.id,
                     message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
                 )
      
