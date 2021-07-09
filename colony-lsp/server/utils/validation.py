@@ -37,8 +37,7 @@ class ValidationHandler:
         for input_node in self._tree.inputs_node.inputs:
             if inputs_names_list.count(input_node.key.text) > 1:
                 self._add_diagnostic(
-                    Position(line=input_node.key.start[0], character=input_node.key.start[1]),
-                    Position(line=input_node.key.end[0], character=input_node.key.end[1]),
+                    input_node.key,
                     message=message.format(input_node.key.text)
                 )
 
