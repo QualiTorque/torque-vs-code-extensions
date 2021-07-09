@@ -15,14 +15,15 @@ def get_available_services(root_folder: str):
         return SERVICES
     else:
         srv_path = os.path.join(root_folder, 'services')
-        for dir in os.listdir(srv_path):
-            srv_dir = os.path.join(srv_path, dir)
-            if os.path.isdir(srv_dir):
-                files = os.listdir(srv_dir)
-                if f'{dir}.yaml' in files:
-                    f = open(os.path.join(srv_dir, f'{dir}.yaml'), "r")
-                    source = f.read() 
-                    load_service_details(srv_name=dir, srv_source=source)
+        if os.path.exists(srv_path):
+            for dir in os.listdir(srv_path):
+                srv_dir = os.path.join(srv_path, dir)
+                if os.path.isdir(srv_dir):
+                    files = os.listdir(srv_dir)
+                    if f'{dir}.yaml' in files:
+                        f = open(os.path.join(srv_dir, f'{dir}.yaml'), "r")
+                        source = f.read() 
+                        load_service_details(srv_name=dir, srv_source=source)
 
         return SERVICES
 

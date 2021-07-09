@@ -39,14 +39,15 @@ def get_available_applications(root_folder: str):
         return APPLICATIONS
     else:
         apps_path = os.path.join(root_folder, 'applications')
-        for dir in os.listdir(apps_path):
-            app_dir = os.path.join(apps_path, dir)
-            if os.path.isdir(app_dir):
-                files = os.listdir(app_dir)
-                if f'{dir}.yaml' in files:
-                    f = open(os.path.join(app_dir, f'{dir}.yaml'), "r")
-                    source = f.read() 
-                    load_app_details(app_name=dir, app_source=source)
+        if os.path.exists(apps_path):
+            for dir in os.listdir(apps_path):
+                app_dir = os.path.join(apps_path, dir)
+                if os.path.isdir(app_dir):
+                    files = os.listdir(app_dir)
+                    if f'{dir}.yaml' in files:
+                        f = open(os.path.join(app_dir, f'{dir}.yaml'), "r")
+                        source = f.read() 
+                        load_app_details(app_name=dir, app_source=source)
                     
         return APPLICATIONS
 
