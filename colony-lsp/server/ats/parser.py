@@ -391,28 +391,28 @@ class BlueprintParser(Parser):
             if isinstance(token, ScalarToken):
                 if not inside_declaration:
                     # we are at the beginning of app declaration
-                    container_node.items[-1].id = TextNode(
+                    container_node.nodes[-1].id = TextNode(
                         start=token_start,
                         end=token_end,
-                        parent=container_node.items[-1],
+                        parent=container_node.nodes[-1],
                         text=token.value
                     )
 
                 else:
                     _ = tokens_stack.pop()
                     if token.value == "input_values":
-                        inputs = InputsNode(start=token_start, parent=container_node.items[-1])
+                        inputs = InputsNode(start=token_start, parent=container_node.nodes[-1])
 
                         # ignore next "valueToken"
                         next(data)
                         last_token = self._process_inputs(data=data, inputs_node=inputs)
-                        container_node.items[-1].inputs_node = inputs
+                        container_node.nodes[-1].inputs_node = inputs
 
                     elif token.value == "depends_on":
                         deps: List[TextNode] = []
                         next(data)
-                        last_token = Parser.process_simple_array(data, deps, container_node.items[-1])
-                        container_node.items[-1].depends_on = deps
+                        last_token = Parser.process_simple_array(data, deps, container_node.nodes[-1])
+                        container_node.nodes[-1].depends_on = deps
 
                         continue
 
@@ -441,7 +441,7 @@ class BlueprintParser(Parser):
                     if inside_declaration:
                         inside_declaration = False
                     else:
-                        container_node.items[-1].end = token_start
+                        container_node.nodes[-1].end = token_start
                 else:
                     raise ValueError("Wrong structure of applications block")
 

@@ -73,11 +73,11 @@ class ResourcesContainerNode(YamlNode):
     """
     Node representing the list of ob
     """
-    items: List[ResourceNode] = field(default_factory=list)
+    nodes: List[ResourceNode] = field(default_factory=list)
 
     def add(self, resource: ResourceNode):
-        self.items.append(resource)
-        return self.items[-1]
+        self.nodes.append(resource)
+        return self.nodes[-1]
 
 
 @dataclass
@@ -90,9 +90,13 @@ class BaseTree:
 
 @dataclass
 class BlueprintTree(BaseTree):
-    apps_node: Optional[ResourcesContainerNode] = None
-    services_node: Optional[ResourcesContainerNode] = None
+    apps_node: Optional[ResourcesContainerNode] = field(init=False)
+    services_node: Optional[ResourcesContainerNode] = field(init=False)
     artifacts: List[MappingNode] = field(default_factory=list)
+
+    def __post_init__(self):
+        self.services_node = ResourcesContainerNode(parent=self)
+        self.apps_node = ResourcesContainerNode(parent=self) 
 
 
 @dataclass
