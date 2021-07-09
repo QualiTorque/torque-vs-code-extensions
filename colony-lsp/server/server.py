@@ -16,6 +16,7 @@
 ############################################################################
 import asyncio
 from dataclasses import dataclass
+import logging
 from server.utils.validation import AppValidationHandler, BlueprintValidationHandler
 from pygls.lsp import types
 from pygls.lsp.types.basic_structures import VersionedTextDocumentIdentifier
@@ -158,6 +159,7 @@ def _validate(ls, params):
                 validator = BlueprintValidationHandler(bp_tree, root)
                 diagnostics += validator.validate()
             except Exception as ex:
+                logging.error(ex)
                 print(ex)
                 return
             
