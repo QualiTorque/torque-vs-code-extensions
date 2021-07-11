@@ -38,13 +38,7 @@
 					"scope": "application"
 				}				
 			}
-		},
-		"grammars": [
-			{
-				"path": "./syntaxes/colony.tmLanguage.json",
-				"scopeName": "source.yaml"
-			}
-		]
+		}
 	},
 	"extensionDependencies": [
 		"redhat.vscode-yaml"
