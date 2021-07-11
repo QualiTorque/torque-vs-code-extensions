@@ -39,7 +39,7 @@ function getClientOptions(): LanguageClientOptions {
         // Register the server for plain text documents
         documentSelector: [
             { scheme: "file", language: "yaml" },
-            { scheme: "untitled", language: "yaml" },
+            // { scheme: "untitled", language: "yaml" },
         ],
         outputChannelName: "ColonyLanguageServer",
         synchronize: {
