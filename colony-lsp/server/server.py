@@ -159,8 +159,9 @@ def _validate(ls, params):
                 validator = BlueprintValidationHandler(bp_tree, root)
                 diagnostics += validator.validate()
             except Exception as ex:
-                logging.error(ex)
-                print(ex)
+                import sys
+                print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+                logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
                 return
             
 
