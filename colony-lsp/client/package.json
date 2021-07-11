@@ -27,7 +27,7 @@
 		"onLanguage:yaml"
 	],
 	"contributes": {
-		"configuration": {
+		"configuration_old": {
 			"type": "object",
 			"title": "Colony Server Configuration",
 			"properties": {
