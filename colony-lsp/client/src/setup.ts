@@ -107,7 +107,7 @@ export async function installLSWithProgress(context: ExtensionContext): Promise<
   }, (progress): Promise<string> => {
     return new Promise<string>(async (resolve, reject) => {
       try {
-        progress.report({ message: "Installing Colony language server..." });
+        progress.report({ message: "First-time Colony language server initialization" });
 
         // Get python interpreter
         const python = await getPython();
