@@ -150,9 +150,8 @@
             "title": "Variables"
         },
         "ValueElement": {
-            "oneOf": [
+            "anyOf": [
                 {"type": "string", "title": "Value"},
-                {"$ref": "#/definitions/ValueFull"},
                 {"$ref": "#/definitions/ValueSimple"}
             ]
         },
@@ -163,26 +162,6 @@
                     "type": ["string", "integer", "boolean"]
                 }
             },
-            "title": "Value"
-        },
-        "ValueFull": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-                "db_name": {
-                    "type": "string"
-                },
-                "username": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "sandbox_id": {
-                    "type": "string"
-                }
-            },
-            "required": [],
             "title": "Value"
         }
     }
