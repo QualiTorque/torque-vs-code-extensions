@@ -19,7 +19,7 @@ from dataclasses import dataclass
 import logging
 
 # from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
-from server.utils.validation import AppValidationHandler, BlueprintValidationHandler
+from server.utils.validation import AppValidationHandler, BlueprintValidationHandler, ServiceValidationHandler
 from pygls.lsp import types
 from pygls.lsp.types.basic_structures import VersionedTextDocumentIdentifier
 from pygls.lsp import types, InitializeResult
@@ -33,7 +33,7 @@ import re
 from json import JSONDecodeError
 from typing import Any, Dict, Optional, Tuple, List, Union, cast
 
-from server.ats.parser import AppParser, BlueprintParser, BlueprintTree
+from server.ats.parser import AppParser, BlueprintParser, BlueprintTree, ServiceParser
 
 from server.utils import services, applications, common
 from pygls.protocol import LanguageServerProtocol
@@ -171,6 +171,7 @@ def _validate(ls, params):
         if doc_type == "application":
             app_tree = AppParser(source).parse()
             validator = AppValidationHandler(app_tree, root)
+            diagnostics += validator.validate()
             scripts = applications.get_app_scripts(params.text_document.uri)
                 
             for k, v in yaml_obj.get('configuration', []).items():
@@ -188,7 +189,11 @@ def _validate(ls, params):
                             message=f"File {script_ref} doesn't exist"
                         )
                         diagnostics.append(d)
-        elif doc_type == "TerraForm":            
+        elif doc_type == "TerraForm":        
+            srv_tree = ServiceParser(source).parse()            
+            validator = ServiceValidationHandler(srv_tree, root)
+            diagnostics += validator.validate()
+                
             vars = services.get_service_vars(params.text_document.uri)
             vars_files = [var["file"] for var in vars]
 

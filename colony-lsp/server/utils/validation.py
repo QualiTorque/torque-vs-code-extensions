@@ -42,17 +42,38 @@ class ValidationHandler:
                         input_node.key,
                         message=message.format(input_node.key.text)
                     )
+    
+    def _validate_no_duplicates_in_outputs(self):
+        if hasattr(self._tree, 'outputs') and self._tree.outputs:
+            message = "Multiple declaration of output '{}'. Outputs are not case sensitive."
+
+            outputs_names_list = [output.text.lower() for output in self._tree.outputs]
+            for output_node in self._tree.outputs:
+                if outputs_names_list.count(output_node.text.lower()) > 1:
+                    self._add_diagnostic(
+                        output_node,
+                        message=message.format(output_node.text)
+                    )
 
     def validate(self):
         # errors
         self._validate_no_duplicates_in_inputs()
+        self._validate_no_duplicates_in_outputs()
 
         return self._diagnostics
 
 
 class AppValidationHandler(ValidationHandler):
-    pass
-
+    def validate(self):
+        super().validate()
+        
+        return self._diagnostics
+    
+class ServiceValidationHandler(ValidationHandler):
+    def validate(self):
+        super().validate()
+        
+        return self._diagnostics
 
 class BlueprintValidationHandler(ValidationHandler):
     def __init__(self, tree: BlueprintTree, root_path: str):
