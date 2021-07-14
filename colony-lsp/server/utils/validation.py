@@ -33,7 +33,7 @@ class ValidationHandler:
 
     def _validate_no_duplicates_in_inputs(self):
         if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
-            message = "Multiple declaration of input '{}'"
+            message = "Multiple declarations of input '{}'"
 
             inputs_names_list = [input.key.text for input in self._tree.inputs_node.inputs]
             for input_node in self._tree.inputs_node.inputs:
@@ -45,7 +45,7 @@ class ValidationHandler:
     
     def _validate_no_duplicates_in_outputs(self):
         if hasattr(self._tree, 'outputs') and self._tree.outputs:
-            message = "Multiple declaration of output '{}'. Outputs are not case sensitive."
+            message = "Multiple declarations of output '{}'. Outputs are not case sensitive."
 
             outputs_names_list = [output.text.lower() for output in self._tree.outputs]
             for output_node in self._tree.outputs:
