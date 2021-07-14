@@ -27,7 +27,7 @@
 		"onLanguage:yaml"
 	],
 	"contributes": {
-		"configuration_old": {
+		"configuration": {
 			"type": "object",
 			"title": "Colony Server Configuration",
 			"properties": {
@@ -37,6 +37,30 @@
 					"default": "colony",
 					"scope": "application"
 				}				
+			}
+		},
+		"languages": [
+			{
+				"id": "yaml",
+				"aliases": [
+					"YAML",
+					"yaml"
+				],
+				"extensions": [
+					".yaml"
+				]
+			}
+		],
+		"grammars2": [
+			{
+				"language": "yaml",
+				"path": "./syntaxes/colony.tmLanguage.json",
+				"scopeName": "source.yaml"
+			}
+		],
+		"configurationDefaults": {
+			"[yaml]": {
+				"editor.semanticHighlighting.enabled": true
 			}
 		}
 	},
