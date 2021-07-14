@@ -15,7 +15,14 @@
 # limitations under the License.                                           #
 ############################################################################
 import asyncio
+from dataclasses import dataclass
+import logging
+
+# from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
+from server.utils.validation import AppValidationHandler, BlueprintValidationHandler, ServiceValidationHandler
 from pygls.lsp import types
+from pygls.lsp.types.basic_structures import VersionedTextDocumentIdentifier
+from pygls.lsp import types, InitializeResult
 import yaml
 import time
 import uuid
@@ -24,10 +31,16 @@ import glob
 import pathlib
 import re
 from json import JSONDecodeError
-from typing import Optional, Tuple, List
+from typing import Any, Dict, Optional, Tuple, List, Union, cast
+
+from server.ats.parser import AppParser, BlueprintParser, BlueprintTree, ServiceParser
+
+from server.utils import services, applications, common
+from pygls.protocol import LanguageServerProtocol
 
 from pygls.lsp.methods import (CODE_LENS, COMPLETION, COMPLETION_ITEM_RESOLVE, DOCUMENT_LINK, TEXT_DOCUMENT_DID_CHANGE,
-                               TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES, DEFINITION)
+                               TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES, DEFINITION, 
+                               TEXT_DOCUMENT_SEMANTIC_TOKENS)
 from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              CompletionParams, ConfigurationItem,
                              ConfigurationParams, Diagnostic, Location,
@@ -40,7 +53,7 @@ from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              CodeLens, CodeLensOptions, CodeLensParams,
                              workspace, CompletionItemKind)
 from pygls.server import LanguageServer
-from pygls.workspace import Document, position_from_utf16
+from pygls.workspace import Document, Workspace, position_from_utf16
 
 DEBOUNCE_DELAY = 0.3
 
@@ -48,195 +61,89 @@ DEBOUNCE_DELAY = 0.3
 COUNT_DOWN_START_IN_SECONDS = 10
 COUNT_DOWN_SLEEP_IN_SECONDS = 1
 
-APPLICATIONS = {}
-SERVICES = {}
 
-PREDEFINED_COLONY_INPUTS = [
-    "$colony.environment.id",
-    "$colony.environment.virtual_network_id",
-    "$colony.environment.public_address"
-    "$colony.repos.branch.current"
-]
+
+# class ColonyWorkspace(Workspace):
+#     """
+#     Add colony-specific properties
+#     """
+
+#     def __init__(self, root_uri, sync_kind, workspace_folders):
+#         self._colony_objs = {}
+
+#         super().__init__(root_uri, sync_kind=sync_kind, workspace_folders=workspace_folders)
+
+#     @property
+#     def colony_objs(self):
+#         return self._colony_objs
+
+#     def _update_document(self, text_document: Union[types.TextDocumentItem, types.VersionedTextDocumentIdentifier]) -> None:
+#         self.logger.debug("updating document '%s'", text_document.uri)
+#         uri = text_document.uri
+#         colony_obj = yaml.load(self.get_document(uri).source, Loader=yaml.FullLoader)
+#         self._colony_objs[uri] = colony_obj
+
+#     def update_document(self, text_doc: VersionedTextDocumentIdentifier, change: workspace.TextDocumentContentChangeEvent):
+#         super().update_document(text_doc, change)
+#         self._update_document(text_doc)
+
+#     def put_document(self, text_document: types.TextDocumentItem) -> None:
+#         super().put_document(text_document)
+#         self._update_document(text_document)
+
+
+# class ColonyLspProtocol(LanguageServerProtocol):
+#     """Custom protocol that replaces the workspace with a ColonyWorkspace
+#     instance.
+#     """
+
+#     workspace: ColonyWorkspace
+
+#     def bf_initialize(self, *args, **kwargs) -> InitializeResult:
+#         res = super().bf_initialize(*args, **kwargs)
+#         ws = self.workspace
+#         self.workspace = ColonyWorkspace(
+#             ws.root_uri,
+#             self._server.sync_kind,
+#             ws.folders.values(),
+#         )
+#         return res
 
 
 class ColonyLanguageServer(LanguageServer):
     CONFIGURATION_SECTION = 'colonyServer'
 
-    def __init__(self):
-        super().__init__()
+    # def __init__(self):
+    #     super().__init__(protocol_cls=ColonyLspProtocol)
+    
+    # @property
+    # def workspace(self) -> ColonyWorkspace:
+    #     return cast(ColonyWorkspace, super().workspace)
 
 
 colony_server = ColonyLanguageServer()
 
 
-def _get_parent_word(document: Document, position: Position):
-    lines = document.lines
-    if position.line >= len(lines) or position.line == 0:
-        return None
+# def _get_file_variables(source):
+#     vars = re.findall(r"(\$[\w\.\-]+)", source, re.MULTILINE)
+#     return vars  
 
-    row, col = position_from_utf16(lines, position)    
+
+# def _get_file_inputs(source):
+#     yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
+#     inputs_obj = yaml_obj.get('inputs')
+#     inputs = []
+#     if inputs_obj:
+#         for input in inputs_obj:
+#             if isinstance(input, str):
+#                 inputs.append(f"${input}")
+#             elif isinstance(input, dict):
+#                 inputs.append(f"${list(input.keys())[0]}")
     
-    cur_word = document.word_at_position(position=Position(line=row, character=col))
-    line = lines[row]
-    index = line.find(cur_word)
-    if index >= 2:
-        col = index - 2
-    
-    row -= 1
-    word = None
-    while row >= 0:
-        word = document.word_at_position(position=Position(line=row, character=col))
-        row -= 1
-        if word:
-            break
-    
-    return word
-    
-
-def _preceding_words(document: Document, position: Position) -> Optional[Tuple[str, str]]:
-    """
-    Get the word under the cursor returning the start and end positions.
-    """
-    lines = document.lines
-    if position.line >= len(lines):
-        return None
-
-    row, col = position_from_utf16(lines, position)
-    line = lines[row]
-    try:
-        word = line[:col].strip().split()[-2:]
-        return word
-    except (ValueError):
-        return None
-
-
-def _load_app_details(app_name: str, file_path: str):
-    output = f"- {app_name}:\n"
-    output += "  instances: 1\n"                        
-    with open(file_path.replace("file://", ""), "r") as file:
-        app_file = yaml.load(file, Loader=yaml.FullLoader)
-        inputs = app_file['inputs'] if 'inputs' in app_file else None
-        if inputs:
-            output += "  input_values:\n"
-            for input in inputs:
-                if isinstance(input, str):
-                    output += f"      - {input}: \n"
-                elif isinstance(input, dict):
-                    for k,v in input.items():
-                        output += f"  - {k}: {v}\n"
-    APPLICATIONS[app_name] = output
-
-
-def _get_available_applications(root_folder: str):
-    if APPLICATIONS:
-        return APPLICATIONS
-    else:
-        apps_path = os.path.join(root_folder, 'applications')
-        for dir in os.listdir(apps_path):
-            app_dir = os.path.join(apps_path, dir)
-            if os.path.isdir(app_dir):
-                files = os.listdir(app_dir)
-                if f'{dir}.yaml' in files:
-                    _load_app_details(app_name=dir, file_path=os.path.join(app_dir, f'{dir}.yaml'))
-                    
-        return APPLICATIONS
-
-
-def _load_service_details(srv_name: str, file_path: str):
-    output = f"- {srv_name}:\n"
-    with open(file_path.replace("file://", ""), "r") as file:
-        app_file = yaml.load(file, Loader=yaml.FullLoader)
-        inputs = app_file['inputs'] if 'inputs' in app_file else None
-        if inputs:
-            output += "  inputs_value:\n"
-            for input in inputs:
-                if isinstance(input, str):
-                    output += f"  - {input}: \n"
-                elif isinstance(input, dict):
-                    for k,v in input.items():
-                        output += f"  - {k}: {v}\n"
-    SERVICES[srv_name] = output
-
-
-def _get_available_services(root_folder: str):
-    if SERVICES:
-        return SERVICES
-    else:
-        srv_path = os.path.join(root_folder, 'services')
-        for dir in os.listdir(srv_path):
-            srv_dir = os.path.join(srv_path, dir)
-            if os.path.isdir(srv_dir):
-                files = os.listdir(srv_dir)
-                if f'{dir}.yaml' in files:
-                    _load_service_details(srv_name=dir, file_path=os.path.join(srv_dir, f'{dir}.yaml'))
-
-        return SERVICES
-
-
-def _get_app_scripts(app_dir_path: str):
-    scripts = []
-    files = pathlib.Path(app_dir_path.replace("file://", "")).parent.glob("./*")
-    for file in files:
-        if not file.name.endswith('.yaml'):
-            scripts.append(pathlib.Path(file).name)
-
-    return scripts
-
-
-def _get_vars_from_tfvars(file_path: str):
-    vars = []
-    with open(file_path, "r") as f:
-        content = f.read()
-        vars = re.findall(r"(^.+?)\s*=", content, re.MULTILINE)
-        
-    return vars
-
-def _get_service_vars(service_dir_path: str):
-    with open(service_dir_path.replace("file://", ""), 'r') as stream:
-        try:
-            yaml_obj = yaml.load(stream, Loader=yaml.FullLoader) # todo: refactor
-            doc_type = yaml_obj.get('kind', '')
-        except yaml.YAMLError as exc:
-            return []
-    
-    if doc_type == "TerraForm":
-        tfvars = []
-        files = pathlib.Path(service_dir_path.replace("file://", "")).parent.glob("./*")
-        for file in files:
-            if file.name.endswith('.tfvars'):
-                item = {
-                    "file": pathlib.Path(file).name,
-                    "variables": _get_vars_from_tfvars(file)
-                }
-                tfvars.append(item)
-
-        return tfvars
-    
-    return []
-
-
-def _get_file_variables(source):
-    vars = re.findall(r"(\$[\w\.\-]+)", source, re.MULTILINE)
-    return vars  
-
-
-def _get_file_inputs(source):
-    yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
-    inputs_obj = yaml_obj.get('inputs')
-    inputs = []
-    if inputs_obj:
-        for input in inputs_obj:
-            if isinstance(input, str):
-                inputs.append(f"${input}")
-            elif isinstance(input, dict):
-                inputs.append(f"${list(input.keys())[0]}")
-    
-    return inputs
+#     return inputs
 
 
 def _validate(ls, params):
-    ls.show_message_log('Validating yaml...')
-
     text_doc = ls.workspace.get_document(params.text_document.uri)
     root = ls.workspace.root_path
     
@@ -247,66 +154,25 @@ def _validate(ls, params):
         yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
         doc_type = yaml_obj.get('kind', '')
         doc_lines = text_doc.lines
-        file_inputs = _get_file_inputs(source)
-        file_vars = _get_file_variables(source)
-        # validate vars exist
-        for var in file_vars:
-            if var not in file_inputs:
-                if (doc_type == "blueprint" and var.startswith('$colony')):
-                    continue
-                for i in range(len(doc_lines)):
-                    col_pos = doc_lines[i].find(var)
-                    if col_pos == -1:
-                        continue
-                    if var.startswith('$colony'):
-                        msg = f"'{var}' is not an allowed variable in this file"
-                    else:
-                        msg = f"'{var}' is not defined"
-                    d = Diagnostic(
-                        range=Range(
-                            start=Position(line=i, character=col_pos),
-                            end=Position(line=i, character=col_pos + 1 +len(var))
-                        ),
-                        message=msg
-                    )
-                    diagnostics.append(d)
+        
 
         if doc_type == "blueprint":
-            apps = _get_available_applications(root)
-            for app in yaml_obj.get('applications', []):
-                app = list(app.keys())[0]
-                if app not in apps.keys():
-                    for i in range(len(doc_lines)):
-                        col_pos = doc_lines[i].find(app)
-                        if col_pos == -1:
-                            continue
-                        d = Diagnostic(
-                            range=Range(
-                                start=Position(line=i, character=col_pos),
-                                end=Position(line=i, character=col_pos + 1 +len(app))
-                            ),
-                            message=f"Application '{app}' doesn't exist"
-                        )
-                        diagnostics.append(d)
-            srvs = _get_available_services(root)
-            for srv in yaml_obj.get('services', []):
-                srv = list(srv.keys())[0]
-                if srv not in srvs.keys():
-                    for i in range(len(doc_lines)):
-                        col_pos = doc_lines[i].find(srv)
-                        if col_pos == -1:
-                            continue
-                        d = Diagnostic(
-                            range=Range(
-                                start=Position(line=i, character=col_pos),
-                                end=Position(line=i, character=col_pos + 1 +len(srv))
-                            ),
-                            message=f"Service '{srv}' doesn't exist"
-                        )
-                        diagnostics.append(d)
+            try:
+                bp_tree = BlueprintParser(source).parse()
+                validator = BlueprintValidationHandler(bp_tree, root)
+                diagnostics += validator.validate()
+            except Exception as ex:
+                import sys
+                print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+                logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+                return
+            
 
         if doc_type == "application":
-            scripts = _get_app_scripts(params.text_document.uri)
+            app_tree = AppParser(source).parse()
+            validator = AppValidationHandler(app_tree, root)
+            diagnostics += validator.validate()
+            scripts = applications.get_app_scripts(params.text_document.uri)
                 
             for k, v in yaml_obj.get('configuration', []).items():
                 script_ref = v.get('script', None)
@@ -323,8 +189,12 @@ def _validate(ls, params):
                             message=f"File {script_ref} doesn't exist"
                         )
                         diagnostics.append(d)
-        elif doc_type == "TerraForm":            
-            vars = _get_service_vars(params.text_document.uri)
+        elif doc_type == "TerraForm":        
+            srv_tree = ServiceParser(source).parse()            
+            validator = ServiceValidationHandler(srv_tree, root)
+            diagnostics += validator.validate()
+                
+            vars = services.get_service_vars(params.text_document.uri)
             vars_files = [var["file"] for var in vars]
 
             for k, v in yaml_obj.get('variables', []).items():
@@ -352,7 +222,6 @@ def _validate_yaml(source):
         yaml.load(source, Loader=yaml.FullLoader)
     except yaml.MarkedYAMLError as ex:
         mark = ex.problem_mark
-        print(mark)
         d = Diagnostic(
             range=Range(
                 start=Position(line=mark.line - 1, character=mark.column - 1),
@@ -361,11 +230,54 @@ def _validate_yaml(source):
             message=ex.problem,
             source=type(colony_server).__name__
         )
-        print(d)
-
+        
         diagnostics.append(d)
 
     return diagnostics
+
+@colony_server.feature(TEXT_DOCUMENT_DID_CHANGE)
+def did_change(ls, params: DidChangeTextDocumentParams):
+    """Text document did change notification."""
+    if '/blueprints/' in params.text_document.uri or \
+       '/applications/' in params.text_document.uri or \
+       '/services/' in params.text_document.uri:
+        _validate(ls, params)
+        text_doc = ls.workspace.get_document(params.text_document.uri)
+        root = ls.workspace.root_path
+        
+        source = text_doc.source
+        yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
+        doc_type = yaml_obj.get('kind', '')
+        
+        if doc_type == "application":
+            app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
+            applications.reload_app_details(app_name=app_name, app_source=source)
+            
+        elif doc_type == "TerraForm":
+            srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
+            services.reload_service_details(srv_name, srv_source=source)
+
+
+# @colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
+# def did_close(server: ColonyLanguageServer, params: DidCloseTextDocumentParams):
+#     """Text document did close notification."""
+#     if '/blueprints/' in params.text_document.uri or \
+#        '/applications/' in params.text_document.uri or \
+#        '/services/' in params.text_document.uri:
+#         # server.show_message('Text Document Did Close')
+#         pass
+
+
+@colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
+async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentParams):
+    """Text document did open notification."""
+    if '/blueprints/' in params.text_document.uri or \
+       '/applications/' in params.text_document.uri or \
+       '/services/' in params.text_document.uri:
+        server.show_message('Detected a Colony file', msg_type=MessageType.Log)
+        server.workspace.put_document(params.text_document)
+        _validate(server, params)
+
 
 
 # @colony_server.feature(COMPLETION_ITEM_RESOLVE, CompletionOptions())
@@ -593,37 +505,21 @@ def _validate_yaml(source):
 #     return None
 
 
-@colony_server.feature(TEXT_DOCUMENT_DID_CHANGE)
-def did_change(ls, params: DidChangeTextDocumentParams):
-    """Text document did change notification."""
-    print('------did change-------')
-    _validate(ls, params)
-    text_doc = ls.workspace.get_document(params.text_document.uri)
-    root = ls.workspace.root_path
-    
-    source = text_doc.source
-    yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
-    doc_type = yaml_obj.get('kind', '')
-    
-    if doc_type == "application":
-        app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-        if APPLICATIONS and app_name not in APPLICATIONS: # if there is already a cache, add this file
-            _load_app_details(app_name, params.text_document.uri)
-    elif doc_type == "TerraForm":
-        srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-        if SERVICES and srv_name not in SERVICES: # if there is already a cache, add this file
-            _load_service_details(srv_name, params.text_document.uri)
-
-
-@colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
-def did_close(server: ColonyLanguageServer, params: DidCloseTextDocumentParams):
-    """Text document did close notification."""
-    server.show_message('Text Document Did Close')
-
-
-@colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls, params: DidOpenTextDocumentParams):
-    """Text document did open notification."""
-    ls.show_message('Text Document Did Open')
-    _validate(ls, params)
-
+# @colony_server.feature(TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL, SemanticTokensOptions(
+#                 work_done_progress=False,
+#                 legend=SemanticTokensLegend(
+#                     token_types=['property', 'type', 'class', 'variable'],
+#                     token_modifiers=['private', 'static']
+#                 ),
+#                 range=True,
+#                 # full={"delta": False}
+#             ))
+# def semantic_tokens_range(server: ColonyLanguageServer, params: SemanticTokensParams) -> Optional[Union[SemanticTokens, SemanticTokensPartialResult]]:
+#     print('---- TEXT_DOCUMENT_SEMANTIC_TOKENS_RANGE ----')
+#     print(locals())
+#     # document = server.workspace.get_document(params.text_document.uri)
+#     # return Hover(contents="some content", range=Range(
+#     #             start=Position(line=31, character=1),
+#     #             end=Position(line=31, character=4),
+#     #         ))
+#     return None

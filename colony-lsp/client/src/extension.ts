@@ -21,6 +21,7 @@
 import * as net from "net";
 import * as path from "path";
 import { ExtensionContext, workspace, languages } from "vscode";
+import { installLSWithProgress } from "./setup";
 import {
     LanguageClient,
     LanguageClientOptions,
@@ -38,7 +39,7 @@ function getClientOptions(): LanguageClientOptions {
         // Register the server for plain text documents
         documentSelector: [
             { scheme: "file", language: "yaml" },
-            { scheme: "untitled", language: "yaml" },
+            // { scheme: "untitled", language: "yaml" },
         ],
         outputChannelName: "ColonyLanguageServer",
         synchronize: {
@@ -82,7 +83,6 @@ function startLangServer(
         command,
         options: { cwd },
     };
-
     return new LanguageClient(command, serverOptions, getClientOptions());
 }
 
@@ -91,13 +91,13 @@ async function activateYamlFeatures(context: ExtensionContext) {
     await activateYamlExtension();
 }
 
-export function activate(context: ExtensionContext): void {
+export async function activate(context: ExtensionContext) {
     if (isStartedInDebugMode()) {
         // Development - Run the server manually
         client = startLangServerTCP(2087);
     } else {
         // Production - Client is going to run the server (for use within `.vsix` package)
-        const cwd = path.join(__dirname, "..", "..");
+        const cwd = path.join(__dirname, "..", "out", "server");
         const pythonPath = workspace
             .getConfiguration("python")
             .get<string>("pythonPath");
@@ -105,8 +105,8 @@ export function activate(context: ExtensionContext): void {
         if (!pythonPath) {
             throw new Error("`python.pythonPath` is not set");
         }
-
-        client = startLangServer(pythonPath, ["-m", "server"], cwd);
+        const python = await installLSWithProgress(context);
+        client = startLangServer(python, ["-m", "server"], cwd);
     }
 
     activateYamlFeatures(context);    

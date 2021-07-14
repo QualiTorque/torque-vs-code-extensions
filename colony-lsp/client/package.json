@@ -1,9 +1,10 @@
 {
-	"name": "colony-extension-client",
+	"name": "colony-language-extension",
+	"displayName": "Colony Language Extension",
 	"description": "A VS Code extension for the Colony yaml syntax. Provides YAML schema verification, auto-complete, highlight problems and much more.",
 	"author": "Quali",
 	"license": "MIT",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"publisher": "Quali",
 	"repository": {
 		"type": "git",
@@ -17,7 +18,7 @@
 		"colony",
 		"yaml",
 		"autocompletion",
-		"validation"	
+		"validation"
 	],
 	"categories": [
 		"Other"
@@ -30,30 +31,50 @@
 			"type": "object",
 			"title": "Colony Server Configuration",
 			"properties": {
-				"colonyServer.exampleConfiguration": {
-					"scope": "resource",
+				"Platform Name": {
 					"type": "string",
-					"default": "You can override this message."
-				}
+					"description": "The platform name you use",
+					"default": "colony",
+					"scope": "application"
+				}				
 			}
 		},
-		"grammars": [
+		"languages": [
 			{
-			  "path": "./syntaxes/colony.tmLanguage.json",
-			  "scopeName": "source.yaml"
+				"id": "yaml",
+				"aliases": [
+					"YAML",
+					"yaml"
+				],
+				"extensions": [
+					".yaml"
+				]
 			}
-		]
+		],
+		"grammars2": [
+			{
+				"language": "yaml",
+				"path": "./syntaxes/colony.tmLanguage.json",
+				"scopeName": "source.yaml"
+			}
+		],
+		"configurationDefaults": {
+			"[yaml]": {
+				"editor.semanticHighlighting.enabled": true
+			}
+		}
 	},
 	"extensionDependencies": [
 		"redhat.vscode-yaml"
 	],
 	"main": "./out/extension",
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish": "npm run compile && echo copying server && cp -R ../server out/server",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"webpack": "webpack --mode development",
-		"postinstall": "echo npm install"
+		"vscepack": "vsce package",
+		"postinstall": "echo post-install"
 	},
 	"dependencies": {
 		"vscode-languageclient": "^7.0.0"

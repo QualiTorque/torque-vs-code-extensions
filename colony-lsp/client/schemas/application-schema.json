@@ -343,9 +343,6 @@
             "properties": {
                 "port": {
                     "$ref": "#/definitions/Port"
-                },
-                "path": {
-                    "type": "string"
                 }
             },
             "required" : ["port"],
@@ -364,9 +361,6 @@
                 },
                 "ingress-healthcheck": {
                     "$ref": "#/definitions/IngressHealthcheck"
-                },
-                "path": {
-                    "type": "string"
                 }
             },
             "oneOf": [
