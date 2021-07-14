@@ -269,14 +269,14 @@ def did_change(ls, params: DidChangeTextDocumentParams):
 
 
 @colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(ls, params: DidOpenTextDocumentParams):
+async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
     if '/blueprints/' in params.text_document.uri or \
        '/applications/' in params.text_document.uri or \
        '/services/' in params.text_document.uri:
-        ls.show_message('Detected a Colony file')
-        ls.workspace.put_document(params.text_document)
-        _validate(ls, params)
+        server.show_message('Detected a Colony file', msg_type=MessageType.Log)
+        server.workspace.put_document(params.text_document)
+        _validate(server, params)
 
 
 

@@ -64,8 +64,14 @@ class ValidationHandler:
 
 
 class AppValidationHandler(ValidationHandler):
+    def validate_script_files_exist(self):
+        # TODO: move the code from server.py to here after having the configuration tree ready
+        pass
+    
     def validate(self):
         super().validate()
+        #errors
+        self.validate_script_files_exist()
         
         return self._diagnostics
     
