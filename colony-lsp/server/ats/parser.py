@@ -1,4 +1,3 @@
-
 from abc import abstractmethod
 from server.ats.tree import *
 from typing import Generator, List

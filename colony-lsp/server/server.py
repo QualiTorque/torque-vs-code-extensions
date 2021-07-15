@@ -1,19 +1,3 @@
-############################################################################
-# Copyright(c) Open Law Library. All rights reserved.                      #
-# See ThirdPartyNotices.txt in the project root for additional notices.    #
-#                                                                          #
-# Licensed under the Apache License, Version 2.0 (the "License")           #
-# you may not use this file except in compliance with the License.         #
-# You may obtain a copy of the License at                                  #
-#                                                                          #
-#     http: // www.apache.org/licenses/LICENSE-2.0                         #
-#                                                                          #
-# Unless required by applicable law or agreed to in writing, software      #
-# distributed under the License is distributed on an "AS IS" BASIS,        #
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
-# See the License for the specific language governing permissions and      #
-# limitations under the License.                                           #
-############################################################################
 import asyncio
 from dataclasses import dataclass
 import logging
@@ -111,7 +95,10 @@ COUNT_DOWN_SLEEP_IN_SECONDS = 1
 
 
 class ColonyLanguageServer(LanguageServer):
-    CONFIGURATION_SECTION = 'colonyServer'
+    CONFIGURATION_SECTION = 'colony'
+    CMD_ADD_TORQUE_PROFILE = 'add_torque_profile'
+    CMD_VALIDATE_BLUEPRINT = 'validate_torque_blueprint'
+    CMD_START_SANDBOX = 'start_torque_sandbox'
 
     # def __init__(self):
     #     super().__init__(protocol_cls=ColonyLspProtocol)
@@ -523,3 +510,9 @@ async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentPara
 #     #             end=Position(line=31, character=4),
 #     #         ))
 #     return None
+
+
+@colony_server.command(ColonyLanguageServer.CMD_ADD_TORQUE_PROFILE)
+def add_torque_profile(server: ColonyLanguageServer, *args):
+    ccc = server.get_configuration()
+    

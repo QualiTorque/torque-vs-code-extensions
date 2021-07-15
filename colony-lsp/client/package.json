@@ -27,16 +27,62 @@
 		"onLanguage:yaml"
 	],
 	"contributes": {
+		"commands": [
+			{
+				"title": "Add Torque Profile",
+				"command": "add_torque_profile"				
+			},
+			{
+				"title": "Validate Torque Blueprint",
+				"command": "validate_torque_blueprint"				
+			},
+			{
+				"title": "Start Torque Sandbox",
+				"command": "start_torque_sandbox"				
+			}
+		],
 		"configuration": {
 			"type": "object",
-			"title": "Colony Server Configuration",
+			"title": "Colony Language Configuration",
 			"properties": {
-				"Platform Name": {
-					"type": "string",
-					"description": "The platform name you use",
-					"default": "colony",
-					"scope": "application"
-				}				
+				"colony.connections": {
+					"type": "array",
+					"default": [
+					  {
+						"profile": "{{put-profile-name-here}}",
+						"account": "{{put-account-name-here}}",
+						"space": "{{put-space-here}}",
+						"token": "{{put-token-here}}"
+					  }
+					],
+					"description": "Connection profiles for Torque",
+					"items": {
+					  "type": "object",
+					  "properties": {
+						"profile": {
+						  "type": "string",
+						  "default": "{{put-profile-name-here}}",
+						  "description": "Profile Name"
+						},
+						"account": {
+						  "type": "string",
+						  "default": "{{put-account-name-here}}",
+						  "description": "Account ID"
+						},
+						"space": {
+						  "type": "string",
+						  "default": "{{put-space-here}}",
+						  "description": "Torque Space"
+						},
+						"token": {
+						  "type": "string",
+						  "default": "{{put-token-here}}",
+						  "description": "Torque Token"
+						}
+					  }
+					},
+					"scope": "resource"
+				}
 			}
 		},
 		"languages": [
