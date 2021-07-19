@@ -413,37 +413,24 @@ async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentPara
 #         # )
 
 
-# @colony_server.feature(CODE_LENS, CodeLensOptions(resolve_provider=False),)
-# def code_lens(server: ColonyLanguageServer, params: Optional[CodeLensParams] = None) -> Optional[List[CodeLens]]:
-#     print('------- code lens -----')
-#     print(locals())
-#     if '/applications/' in params.text_document.uri:
-#         return [
-#                     # CodeLens(
-#                     #     range=Range(
-#                     #         start=Position(line=0, character=0),
-#                     #         end=Position(line=1, character=1),
-#                     #     ),
-#                     #     command=Command(
-#                     #         title='cmd1',
-#                     #         command=ColonyLanguageServer.CMD_COUNT_DOWN_BLOCKING,
-#                     #     ),
-#                     #     data='some data 1',
-#                     # ),
-#                     CodeLens(
-#                         range=Range(
-#                             start=Position(line=0, character=0),
-#                             end=Position(line=1, character=1),
-#                         ),
-#                         command=Command(
-#                             title='cmd2',
-#                             command='',
-#                         ),
-#                         data='some data 2',
-#                     ),
-#                 ]
-#     else:
-#         return None
+@colony_server.feature(CODE_LENS, CodeLensOptions(resolve_provider=False),)
+def code_lens(server: ColonyLanguageServer, params: Optional[CodeLensParams] = None) -> Optional[List[CodeLens]]:
+    if '/blueprints/' in params.text_document.uri:
+        return [
+                    CodeLens(
+                        range=Range(
+                            start=Position(line=0, character=0),
+                            end=Position(line=1, character=1),
+                        ),
+                        command=Command(
+                            title='Start Sandbox',
+                            command=ColonyLanguageServer.CMD_START_SANDBOX,
+                            arguments=[params.text_document.uri]
+                        )
+                    ),
+                ]
+    else:
+        return None
 
 
 # @colony_server.feature(REFERENCES)
@@ -512,7 +499,40 @@ async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentPara
 #     return None
 
 
-@colony_server.command(ColonyLanguageServer.CMD_ADD_TORQUE_PROFILE)
-def add_torque_profile(server: ColonyLanguageServer, *args):
-    ccc = server.get_configuration()
+@colony_server.command(ColonyLanguageServer.CMD_START_SANDBOX)
+async def start_sandbox(server: ColonyLanguageServer, *args):
+    if len(args[0]) == 0:
+        server.show_message('Please start the sandbox from the command in the blueprint file.', MessageType.Error)
+        return
     
+    try:
+        config = await server.get_configuration_async(ConfigurationParams(items=[
+                ConfigurationItem(
+                    scope_uri='',
+                    section=ColonyLanguageServer.CONFIGURATION_SECTION)
+                ]))
+        print(config)
+        connections = config[0].get('connections')
+    except:
+        server.show_message('Please define your connections in the settings first.', MessageType.Error)
+        return 
+    
+    if len(connections) == 1:
+        connection = connections[0]
+    else:
+        for con in connections:
+            if "default" in con and con["default"].lower() == "true":
+                connection = con
+                break
+    
+    blueprint_name = pathlib.Path(args[0][0]).name.replace(".yaml", "")
+    account = connection["account"]        
+    space = connection["space"]        
+    token = connection["token"]
+    server.show_message('Starting sandbox from blueprint: ' + blueprint_name)
+    time.sleep(10)
+    server.show_message('Sandbox is ready. See details in the Output view.')
+    server.show_message_log('Sandbox ID: ' + 'sandbox-id')
+    server.show_message_log('Sandbox URL: ' + 'sandbox-url')
+    
+
