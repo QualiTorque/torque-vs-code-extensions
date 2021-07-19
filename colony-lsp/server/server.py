@@ -96,7 +96,7 @@ COUNT_DOWN_SLEEP_IN_SECONDS = 1
 
 class ColonyLanguageServer(LanguageServer):
     CONFIGURATION_SECTION = 'colony'
-    CMD_ADD_TORQUE_PROFILE = 'add_torque_profile'
+    # CMD_ADD_TORQUE_PROFILE = 'add_torque_profile'
     CMD_VALIDATE_BLUEPRINT = 'validate_torque_blueprint'
     CMD_START_SANDBOX = 'start_torque_sandbox'
 
