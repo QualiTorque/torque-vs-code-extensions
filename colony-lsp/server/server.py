@@ -423,6 +423,17 @@ def code_lens(server: ColonyLanguageServer, params: Optional[CodeLensParams] = N
                             end=Position(line=1, character=1),
                         ),
                         command=Command(
+                            title='Validate Blueprint',
+                            command=ColonyLanguageServer.CMD_VALIDATE_BLUEPRINT,
+                            arguments=[params.text_document.uri]
+                        )
+                    ),
+                    CodeLens(
+                        range=Range(
+                            start=Position(line=0, character=0),
+                            end=Position(line=1, character=1),
+                        ),
+                        command=Command(
                             title='Start Sandbox',
                             command=ColonyLanguageServer.CMD_START_SANDBOX,
                             arguments=[params.text_document.uri]
@@ -536,3 +547,44 @@ async def start_sandbox(server: ColonyLanguageServer, *args):
     server.show_message_log('Sandbox URL: ' + 'sandbox-url')
     
 
+@colony_server.command(ColonyLanguageServer.CMD_VALIDATE_BLUEPRINT)
+async def validate_blueprint(server: ColonyLanguageServer, *args):
+    if len(args[0]) == 0:
+        server.show_message('Please validate the blueprint from the command in the blueprint file.', MessageType.Error)
+        return
+    
+    try:
+        config = await server.get_configuration_async(ConfigurationParams(items=[
+                ConfigurationItem(
+                    scope_uri='',
+                    section=ColonyLanguageServer.CONFIGURATION_SECTION)
+                ]))
+        print(config)
+        connections = config[0].get('connections')
+    except:
+        server.show_message('Please define your connections in the settings first.', MessageType.Error)
+        return 
+    
+    if len(connections) == 1:
+        connection = connections[0]
+    else:
+        for con in connections:
+            if "default" in con and con["default"].lower() == "true":
+                connection = con
+                break
+    
+    blueprint_name = pathlib.Path(args[0][0]).name.replace(".yaml", "")
+    account = connection["account"]        
+    space = connection["space"]        
+    token = connection["token"]
+    server.show_message('Validating blueprint: ' + blueprint_name)
+    time.sleep(3)
+    server.show_message('Validation complete. Check the Problems view for any issues.')
+    server.publish_diagnostics(args[0][0], [Diagnostic(
+                range=Range(
+                    start=Position(line=4, character=5),
+                    end=Position(line=4, character=12),
+                ),
+                message='message'
+            )])
+    
