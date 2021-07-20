@@ -42,10 +42,6 @@ from pygls.workspace import Document, Workspace, position_from_utf16
 DEBOUNCE_DELAY = 0.3
 
 
-COUNT_DOWN_START_IN_SECONDS = 10
-COUNT_DOWN_SLEEP_IN_SECONDS = 1
-
-
 
 # class ColonyWorkspace(Workspace):
 #     """
