@@ -31,14 +31,6 @@
 			{
 				"title": "Add Torque Profile",
 				"command": "add_torque_profile"				
-			},
-			{
-				"title": "Validate Torque Blueprint",
-				"command": "validate_torque_blueprint"				
-			},
-			{
-				"title": "Start Torque Sandbox",
-				"command": "start_torque_sandbox"				
 			}
 		],
 		"configuration": {
