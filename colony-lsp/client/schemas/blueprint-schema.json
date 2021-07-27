@@ -253,11 +253,6 @@
                     "enum": ["enabled-on", "enabled-off", "disabled"],
                     "description": "Bastion's default state in the sandbox: enabled-on: Bastion will be deployed and remain powered on. enabled-off: Bastion will be deployed and then powered off. Can be powered on easily by the user. disabled: Bastion will not be deployed, and debugging links will not be available for this blueprint."
                 },
-                "availability": {
-                    "type": "string",
-                    "enum": ["on", "off"],
-                    "description": "(Deprecated, use bastion_availability) Bastion's default state in the sandbox: enabled-on: Bastion will be deployed and remain powered on. enabled-off: Bastion will be deployed and then powered off. Can be powered on easily by the user. disabled: Bastion will not be deployed, and debugging links will not be available for this blueprint."
-                },
                 "direct_access": {
                     "type": "string",
                     "enum": ["on", "off"]
