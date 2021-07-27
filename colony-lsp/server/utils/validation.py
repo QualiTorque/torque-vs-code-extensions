@@ -247,7 +247,7 @@ class BlueprintValidationHandler(ValidationHandler):
         # abcd/${some_var}/asfsd/${var2}
         # and highlight these portions      
         message = "Variable '{}' is not defined"
-        regex = re.compile('(^\$.+?$|\$\{.+?\})')
+        regex = re.compile('(\$\{.+?\}|^\$.+?$)')
         try:
             if input.value:
                 iterator = regex.finditer(input.value.text)
