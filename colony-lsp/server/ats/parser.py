@@ -1,16 +1,21 @@
 
 from abc import abstractmethod
-from server.ats.tree import *
-from typing import Generator, List
+from typing import Generator
 import yaml
 from yaml.parser import Parser
 from yaml.tokens import BlockEndToken, BlockEntryToken, BlockMappingStartToken, BlockSequenceStartToken, KeyToken, \
     ScalarToken, Token, ValueToken
 
+from server.ats.trees.app import AppTree
+from server.ats.trees.blueprint import *
+from server.ats.trees.common import *
+from server.ats.trees.service import ServiceTree
+
 
 class Parser(ABC):
     def __init__(self, document) -> None:
         self.document = document
+        self._tree = BaseTree()
 
     @abstractmethod
     def parse(self):
@@ -107,7 +112,7 @@ class Parser(ABC):
                             parent=inputs_node.inputs[-1],
                             text=token.value
                         )
-                        inputs_node.inputs[-1].start = token_start
+                        inputs_node.inputs[-1].start_pos = token_start
 
                     # it's a default value
                     if isinstance(top, ValueToken):
@@ -142,13 +147,13 @@ class Parser(ABC):
 
                 if isinstance(top, BlockSequenceStartToken):
                     # now we have the end of inputs block
-                    inputs_node.end = token_end
+                    inputs_node.end_pos = token_end
 
                 elif isinstance(top, BlockMappingStartToken):
                     if extended_declare:
                         extended_declare = False
                     else:
-                        inputs_node.inputs[-1].end = token_start
+                        inputs_node.inputs[-1].end_pos = token_start
 
                 else:
                     raise ValueError("Wrong structure of inputs block")
@@ -163,9 +168,9 @@ class AppSrvParser(Parser):
             token_end = (token.end_mark.line, token.end_mark.column)
 
             if isinstance(token, yaml.StreamStartToken):
-                self._tree.start = token_start
+                self._tree.start_pos = token_start
             if isinstance(token, yaml.StreamEndToken):
-                self._tree.end = token_end
+                self._tree.end_pos = token_end
 
             if isinstance(token, ScalarToken):
                 if token.value == "inputs":
@@ -286,7 +291,7 @@ class BlueprintParser(Parser):
                         parent=self._tree,
                         text=token.value
                     )
-                    self._tree.artifacts[-1].start = token_start
+                    self._tree.artifacts[-1].start_pos = token_start
 
                 # it's a default value
                 if isinstance(top, ValueToken):
@@ -309,7 +314,7 @@ class BlueprintParser(Parser):
                     # inputs_node.end = token_end
 
                 elif isinstance(top, BlockMappingStartToken):
-                    self._tree.artifacts[-1].end = token_start
+                    self._tree.artifacts[-1].end_pos = token_start
 
                 else:
                     raise ValueError("Wrong structure of artifacts block")
@@ -435,13 +440,13 @@ class BlueprintParser(Parser):
                     top = tokens_stack.pop()
                 if isinstance(top, BlockSequenceStartToken):
                     # now we have the end of applications block
-                    container_node.end = token_end
+                    container_node.end_pos = token_end
 
                 elif isinstance(top, BlockMappingStartToken):
                     if inside_declaration:
                         inside_declaration = False
                     else:
-                        container_node.nodes[-1].end = token_start
+                        container_node.nodes[-1].end_pos = token_start
                 else:
                     raise ValueError("Wrong structure of applications block")
 
@@ -453,9 +458,9 @@ class BlueprintParser(Parser):
             token_end = (token.end_mark.line, token.end_mark.column)
 
             if isinstance(token, yaml.StreamStartToken):
-                self._tree.start = token_start
+                self._tree.start_pos = token_start
             if isinstance(token, yaml.StreamEndToken):
-                self._tree.end = token_end
+                self._tree.end_pos = token_end
 
             if isinstance(token, ScalarToken) and token.value in ["applications", "services"]:
                 resources = ResourcesContainerNode(start=token_start, parent=self._tree)
