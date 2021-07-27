@@ -192,7 +192,7 @@ def _validate(ls, params):
         elif doc_type == "TerraForm":        
             srv_tree = ServiceParser(source).parse()            
             validator = ServiceValidationHandler(srv_tree, root)
-            diagnostics += validator.validate()
+            diagnostics += validator.validate(text_doc)
                 
             vars = services.get_service_vars(params.text_document.uri)
             vars_files = [var["file"] for var in vars]
