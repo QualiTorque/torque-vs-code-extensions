@@ -24,8 +24,8 @@ class ValidationHandler:
         self._diagnostics.append(
             Diagnostic(
                 range=Range(
-                    start=Position(line=node.start[0], character=node.start[1]),
-                    end=Position(line=node.end[0], character=node.end[1]),
+                    start=Position(line=node.start_pos[0], character=node.start_pos[1]),
+                    end=Position(line=node.end_pos[0], character=node.end_pos[1]),
                 ),
                 message=message,
                 severity=diag_severity
@@ -304,8 +304,8 @@ class BlueprintValidationHandler(ValidationHandler):
                         if var not in bp_inputs:
                             self._diagnostics.append(Diagnostic(
                                 range=Range(
-                                    start=Position(line=input.value.start[0], character=input.value.start[1] + pos[0]),
-                                    end=Position(line=input.value.end[0], character=input.value.start[1] + pos[1]),
+                                    start=Position(line=input.value.start_pos[0], character=input.value.start_pos[1] + pos[0]),
+                                    end=Position(line=input.value.end_pos[0], character=input.value.start_pos[1] + pos[1]),
                                 ),
                                 message=message.format(cur_var),
                             ))
@@ -314,8 +314,8 @@ class BlueprintValidationHandler(ValidationHandler):
                         if not valid_var:
                             self._diagnostics.append(Diagnostic(
                                 range=Range(
-                                    start=Position(line=input.value.start[0], character=input.value.start[1] + pos[0]),
-                                    end=Position(line=input.value.end[0], character=input.value.start[1] + pos[1]),
+                                    start=Position(line=input.value.start_pos[0], character=input.value.start_pos[1] + pos[0]),
+                                    end=Position(line=input.value.end_pos[0], character=input.value.start_pos[1] + pos[1]),
                                 ),
                                 message=error_message
                             ))

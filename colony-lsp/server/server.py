@@ -154,11 +154,11 @@ def _validate(ls, params):
         yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
         doc_type = yaml_obj.get('kind', '')
         doc_lines = text_doc.lines
-        
 
         if doc_type == "blueprint":
             try:
                 bp_tree = BlueprintParser(source).parse()
+                bp_tree.errors
                 validator = BlueprintValidationHandler(bp_tree, root)
                 diagnostics += validator.validate(text_doc)
             except Exception as ex:
@@ -166,7 +166,6 @@ def _validate(ls, params):
                 print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
                 logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
                 return
-            
 
         if doc_type == "application":
             app_tree = AppParser(source).parse()
