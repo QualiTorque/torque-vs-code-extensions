@@ -86,7 +86,27 @@ class BlueprintValidationHandler(ValidationHandler):
         super().__init__(tree, root_path)
         self.blueprint_apps = [app.id.text for app in self._tree.apps_node.nodes] if self._tree.apps_node else []
         self.blueprint_services = [srv.id.text for srv in self._tree.services_node.nodes] if self._tree.services_node else []
-
+    
+    def _check_for_deprecated_properties(self, text_doc):
+        deprecated_properties = {"availability": "bastion_availability"}
+        message = "Deprecated property '{}'. Please use '{}' instead."
+        line_num = 0
+        for line in text_doc.lines:
+            for prop in deprecated_properties.keys():
+                found = re.findall('^(?!.*#).*(\\b'+prop+'\\b:)', line)
+                if len(found) > 0:
+                    col = line.find(prop)
+                    self._diagnostics.append(
+                        Diagnostic(
+                            range=Range(
+                                start=Position(line=line_num, character=col),
+                                end=Position(line=line_num, character=col+len(prop)),
+                            ),
+                            message=message.format(prop, deprecated_properties[prop]),
+                            severity=DiagnosticSeverity.Warning
+                    ))
+            line_num += 1
+    
     def _validate_dependency_exists(self):
         message = "The application/service '{}' is not defined in the applications/services section"            
         apps = self.blueprint_apps
@@ -138,24 +158,10 @@ class BlueprintValidationHandler(ValidationHandler):
                 if srv.id.text not in available_srvs:
                     self._add_diagnostic(srv.id, message=message.format(srv.id.text))
 
-    def _check_for_unused_blueprint_inputs(self, source):
+    def _check_for_unused_blueprint_inputs(self, text_doc):
         if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
-            # used_vars = set()
-            # if self._tree.apps_node:
-            #     for app in self._tree.apps_node.nodes:
-            #         for var in app.inputs_node.inputs:
-            #             if var.value:
-            #                 used_vars.update({var.value.text.replace("$", "")})                    
-            # if self._tree.services_node:
-            #     for srv in self._tree.services_node.nodes:
-            #         for var in srv.inputs_node.inputs:
-            #             if var.value:
-            #                 used_vars.update({var.value.text.replace("$", "")})                    
-            # if self._tree.artifacts:
-            #     for art in self._tree.artifacts:
-            #         if art.value:
-            #             used_vars.add(art.value.text.replace("$", ""))
             message = "Unused variable {}"
+            source = text_doc.source
             for input in self._tree.inputs_node.inputs:
                 found = re.findall('^(?!.*#).*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
                 if len(found) == 0:
@@ -164,15 +170,6 @@ class BlueprintValidationHandler(ValidationHandler):
                         message=message.format(input.key.text),
                         diag_severity=DiagnosticSeverity.Warning
                     )
-
-            
-            # for input in self._tree.inputs_node.inputs:
-            #     if input.key.text not in used_vars:
-            #         self._add_diagnostic(
-            #             input.key,
-            #             message=message.format(input.key.text),
-            #             diag_severity=DiagnosticSeverity.Warning
-            #         )
 
     def _is_valid_auto_var(self, var_name):
         if var_name.lower() in PREDEFINED_COLONY_INPUTS:
@@ -390,7 +387,7 @@ class BlueprintValidationHandler(ValidationHandler):
                             message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
                         )
      
-    def validate(self, source):
+    def validate(self, text_doc):
         super().validate()
 
         try:
@@ -398,7 +395,8 @@ class BlueprintValidationHandler(ValidationHandler):
             _ = applications.get_available_applications(self._root_path)
             _ = services.get_available_services(self._root_path)
             # warnings
-            self._check_for_unused_blueprint_inputs(source)
+            self._check_for_unused_blueprint_inputs(text_doc)
+            self._check_for_deprecated_properties(text_doc)
             # errors
             self._validate_blueprint_apps_have_input_values()
             self._validate_blueprint_services_have_input_values()
