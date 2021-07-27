@@ -107,6 +107,30 @@ class BlueprintValidationHandler(ValidationHandler):
                     ))
             line_num += 1
     
+    def _check_for_deprecated_syntax(self, text_doc):
+        deprecated_syntax = {
+            "outputs\..+": "colony.[app_name|service_name].outputs.[output_name]", 
+            "colony.sandboxid": "colony.environment.id"
+                            }
+        message = "Deprecated syntax '{}'. Please use '{}' instead."
+        line_num = 0
+        for line in text_doc.lines:
+            for prop in deprecated_syntax.keys():
+                for match in re.finditer('^(?!.*#).*(\$\{'+prop+'?\}|\$'+prop+'\\b)', line.lower()):
+                    col = match.span(1)
+                    old_syntax = match.group(1).replace('$', '').replace('{', '').replace('}', '')
+                    self._diagnostics.append(
+                        Diagnostic(
+                            range=Range(
+                                start=Position(line=line_num, character=col[0]),
+                                end=Position(line=line_num, character=col[1]),
+                            ),
+                            message=message.format(old_syntax, deprecated_syntax[prop]),
+                            severity=DiagnosticSeverity.Warning
+                    ))
+                    
+            line_num += 1
+
     def _validate_dependency_exists(self):
         message = "The application/service '{}' is not defined in the applications/services section"            
         apps = self.blueprint_apps
@@ -397,6 +421,7 @@ class BlueprintValidationHandler(ValidationHandler):
             # warnings
             self._check_for_unused_blueprint_inputs(text_doc)
             self._check_for_deprecated_properties(text_doc)
+            self._check_for_deprecated_syntax(text_doc)
             # errors
             self._validate_blueprint_apps_have_input_values()
             self._validate_blueprint_services_have_input_values()
