@@ -160,7 +160,7 @@ def _validate(ls, params):
             try:
                 bp_tree = BlueprintParser(source).parse()
                 validator = BlueprintValidationHandler(bp_tree, root)
-                diagnostics += validator.validate()
+                diagnostics += validator.validate(source)
             except Exception as ex:
                 import sys
                 print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)

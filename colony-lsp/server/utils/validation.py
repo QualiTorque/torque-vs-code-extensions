@@ -138,32 +138,41 @@ class BlueprintValidationHandler(ValidationHandler):
                 if srv.id.text not in available_srvs:
                     self._add_diagnostic(srv.id, message=message.format(srv.id.text))
 
-    def _check_for_unused_blueprint_inputs(self):
+    def _check_for_unused_blueprint_inputs(self, source):
         if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
-            used_vars = set()
-            if self._tree.apps_node:
-                for app in self._tree.apps_node.nodes:
-                    for var in app.inputs_node.inputs:
-                        if var.value:
-                            used_vars.update({var.value.text.replace("$", "")})                    
-            if self._tree.services_node:
-                for srv in self._tree.services_node.nodes:
-                    for var in srv.inputs_node.inputs:
-                        if var.value:
-                            used_vars.update({var.value.text.replace("$", "")})                    
-            if self._tree.artifacts:
-                for art in self._tree.artifacts:
-                    if art.value:
-                        used_vars.add(art.value.text.replace("$", ""))
-
+            # used_vars = set()
+            # if self._tree.apps_node:
+            #     for app in self._tree.apps_node.nodes:
+            #         for var in app.inputs_node.inputs:
+            #             if var.value:
+            #                 used_vars.update({var.value.text.replace("$", "")})                    
+            # if self._tree.services_node:
+            #     for srv in self._tree.services_node.nodes:
+            #         for var in srv.inputs_node.inputs:
+            #             if var.value:
+            #                 used_vars.update({var.value.text.replace("$", "")})                    
+            # if self._tree.artifacts:
+            #     for art in self._tree.artifacts:
+            #         if art.value:
+            #             used_vars.add(art.value.text.replace("$", ""))
             message = "Unused variable {}"
             for input in self._tree.inputs_node.inputs:
-                if input.key.text not in used_vars:
+                found = re.findall('^(?!.*#).*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
+                if len(found) == 0:
                     self._add_diagnostic(
                         input.key,
                         message=message.format(input.key.text),
                         diag_severity=DiagnosticSeverity.Warning
                     )
+
+            
+            # for input in self._tree.inputs_node.inputs:
+            #     if input.key.text not in used_vars:
+            #         self._add_diagnostic(
+            #             input.key,
+            #             message=message.format(input.key.text),
+            #             diag_severity=DiagnosticSeverity.Warning
+            #         )
 
     def _is_valid_auto_var(self, var_name):
         if var_name.lower() in PREDEFINED_COLONY_INPUTS:
@@ -381,7 +390,7 @@ class BlueprintValidationHandler(ValidationHandler):
                             message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
                         )
      
-    def validate(self):
+    def validate(self, source):
         super().validate()
 
         try:
@@ -389,7 +398,7 @@ class BlueprintValidationHandler(ValidationHandler):
             _ = applications.get_available_applications(self._root_path)
             _ = services.get_available_services(self._root_path)
             # warnings
-            self._check_for_unused_blueprint_inputs()
+            self._check_for_unused_blueprint_inputs(source)
             # errors
             self._validate_blueprint_apps_have_input_values()
             self._validate_blueprint_services_have_input_values()
