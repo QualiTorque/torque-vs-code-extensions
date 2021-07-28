@@ -73,18 +73,20 @@ def get_app_inputs(app_name):
     if app_name in APPLICATIONS:
         app_tree = APPLICATIONS[app_name]["app_tree"]
         inputs = {}
-        for input in app_tree.inputs_node.inputs:
-            inputs[input.key.text] = input.value.text if input.value else None
+        if hasattr(app_tree, 'inputs_node'):
+            for input in app_tree.inputs_node.inputs:
+                inputs[input.key.text] = input.value.text if input.value else None
         return inputs
-    else:
-        return []
+    
+    return []
 
 
 def get_app_outputs(app_name):
     if app_name in APPLICATIONS:
         app_tree = APPLICATIONS[app_name]["app_tree"]
-        outputs = [out.text for out in app_tree.outputs]
-        return outputs
-    else:
-        return []
+        if hasattr(app_tree, 'outputs'):
+            outputs = [out.text for out in app_tree.outputs]
+            return outputs
+    
+    return []
     

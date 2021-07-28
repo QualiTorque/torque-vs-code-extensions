@@ -99,18 +99,20 @@ def get_service_inputs(srv_name):
     if srv_name in SERVICES:
         srv_tree = SERVICES[srv_name]["srv_tree"]
         inputs = {}
-        for input in srv_tree.inputs_node.inputs:
-            inputs[input.key.text] = input.value.text if input.value else None
+        if hasattr(srv_tree, 'inputs_node'):
+            for input in srv_tree.inputs_node.inputs:
+                inputs[input.key.text] = input.value.text if input.value else None
         return inputs
-    else:
-        return []
+    
+    return []
 
 
 def get_service_outputs(srv_name):
     if srv_name in SERVICES:
         srv_tree = SERVICES[srv_name]["srv_tree"]
-        outputs = [out.text for out in srv_tree.outputs]
-        return outputs
-    else:
-        return []
+        if hasattr(srv_tree, 'outputs'):
+            outputs = [out.text for out in srv_tree.outputs]
+            return outputs
+    
+    return []
     
