@@ -46,6 +46,19 @@ class TextNode(YamlNode):
 
 
 @dataclass
+class ScalarSequence(YamlNode):
+    nodes: [TextNode] = field(default_factory=list)
+
+    def add(self, node: TextNode = None):
+        if node is None:
+            node = TextNode(parent=self)
+
+        self.nodes.append(node)
+
+        return self.nodes[-1]
+
+
+@dataclass
 class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit this
     key: YamlNode = None
     value: YamlNode = None
