@@ -51,6 +51,26 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
     value: YamlNode = None
     allow_variable: bool = False
 
+    def set_key(self, node: YamlNode = None):
+        if node is None:
+            key_class = self.__dataclass_fields__['key'].type
+            self.key = key_class(parent=self)
+
+        else:
+            self.key = node
+
+        return self.key
+
+    def set_value(self, node: YamlNode = None):
+        if node is None:
+            value_class = self.__dataclass_fields__['value'].type
+            self.value = value_class(parent=self)
+
+        else:
+            self.value = node
+
+        return self.value
+
 
 @dataclass
 class MapNode(YamlNode):
@@ -71,8 +91,11 @@ class InputsNode(YamlNode):
     """
     inputs: List[InputNode] = field(default_factory=list)
 
-    def add(self, input: InputNode):
-        self.inputs.append(input)
+    def add(self, input_node: InputNode = None):
+        if input_node is None:
+            input_node = InputNode(parent=self)
+
+        self.inputs.append(input_node)
         return self.inputs[-1]
 
 
