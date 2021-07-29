@@ -5,7 +5,7 @@ import logging
 from typing import List
 from pygls.lsp.types import diagnostics
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
-from server.ats.tree import BaseTree, BlueprintTree, YamlNode
+from server.ats.tree import BaseTree, BlueprintTree, MappingNode, TextNode, YamlNode
 from server.constants import PREDEFINED_COLONY_INPUTS
 from server.utils import applications, services
 
@@ -431,6 +431,27 @@ class BlueprintValidationHandler(ValidationHandler):
                             srv.id,
                             message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
                         )
+    
+    # def _validate_variables_being_used_where_it_is_allowed(self, tree):
+    #     tree_nodes = vars(tree)
+    #     for node_name, tree_node in tree_nodes.items():
+    #         if tree_node and node_name not in ['parent', 'start', 'end', 'key', 'id']:
+    #             if isinstance(tree_node, MappingNode):
+    #                 allow_var = tree_node.allow_variable
+    #                 if item.value:
+    #                     print(allow_var, item.value.text)
+    #             elif isinstance(tree_node, YamlNode):
+    #                 self._validate_variables_being_used_where_it_is_allowed(tree_node)
+    #             elif isinstance(tree_node, List):
+    #                 for item in tree_node:
+    #                     if isinstance(item, MappingNode):
+    #                         allow_var = item.allow_variable
+    #                         if item.value:
+    #                             print(allow_var, item.value.text)
+    #                     else:
+    #                         self._validate_variables_being_used_where_it_is_allowed(item)
+                
+                
      
     def validate(self, text_doc):
         super().validate()
@@ -446,6 +467,7 @@ class BlueprintValidationHandler(ValidationHandler):
             # errors
             self._validate_blueprint_apps_have_input_values()
             self._validate_blueprint_services_have_input_values()
+            # self._validate_variables_being_used_where_it_is_allowed(self._tree)
             self._validate_dependency_exists()
             self._validate_var_being_used_is_defined()
             self._validate_non_existing_app_is_used()
