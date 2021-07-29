@@ -158,7 +158,6 @@ def _validate(ls, params):
         if doc_type == "blueprint":
             try:
                 bp_tree = BlueprintParser(source).parse()
-                bp_tree.errors
                 validator = BlueprintValidationHandler(bp_tree, root)
                 diagnostics += validator.validate(text_doc)
             except Exception as ex:

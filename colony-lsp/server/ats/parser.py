@@ -32,7 +32,7 @@ class Parser(ABC):
             token_end = (token.end_mark.line, token.end_mark.column)
 
             if isinstance(token, ScalarToken):
-                node = TextNode(start=token_start, end=token_end, parent=parent_node, text=token.value)
+                node = TextNode(start_pos=token_start, end=token_end, parent=parent_node, text=token.value)
                 container.append(node)
             token = next(data)
 
@@ -71,8 +71,8 @@ class Parser(ABC):
 
             # input without default value at all:
             if isinstance(token, ScalarToken) and isinstance(tokens_stack[-1], BlockEntryToken):
-                input_node = InputNode(start=token_start, end=token_end, parent=inputs_node)
-                input_node.key = TextNode(start=token_start, end=token_end, parent=input_node, text=token.value)
+                input_node = InputNode(start_pos=token_start, end_pos=token_end, parent=inputs_node)
+                input_node.key = TextNode(start_pos=token_start, end_pos=token_end, parent=input_node, text=token.value)
 
                 inputs_node.add(input_node)
                 tokens_stack.pop()
@@ -107,8 +107,8 @@ class Parser(ABC):
                     # it's an input name
                     if isinstance(top, KeyToken):
                         inputs_node.inputs[-1].key = TextNode(
-                            start=token_start,
-                            end=token_end,
+                            start_pos=token_start,
+                            end_pos=token_end,
                             parent=inputs_node.inputs[-1],
                             text=token.value
                         )
@@ -117,8 +117,8 @@ class Parser(ABC):
                     # it's a default value
                     if isinstance(top, ValueToken):
                         inputs_node.inputs[-1].value = TextNode(
-                            start=token_start,
-                            end=token_end,
+                            start_pos=token_start,
+                            end_pos=token_end,
                             parent=inputs_node.inputs[-1],
                             text=token.value
                         )
@@ -131,8 +131,8 @@ class Parser(ABC):
                         scalar = tokens_stack.pop()
                         if scalar.value == "default_value":
                             inputs_node.inputs[-1].value = TextNode(
-                                start=token_start,
-                                end=token_end,
+                                start_pos=token_start,
+                                end_pos=token_end,
                                 parent=inputs_node.inputs[-1],
                                 text=token.value
                             )
@@ -174,7 +174,7 @@ class AppSrvParser(Parser):
 
             if isinstance(token, ScalarToken):
                 if token.value == "inputs":
-                    inputs = InputsNode(start=token_start, parent=self._tree)
+                    inputs = InputsNode(start_pos=token_start, parent=self._tree)
                     try:
                         # first we need to skip ValueToken
                         next(tokens)
@@ -248,13 +248,13 @@ class BlueprintParser(Parser):
             if isinstance(token, ScalarToken) and isinstance(tokens_stack[-1], BlockEntryToken):
                 self._tree.artifacts.append(
                     MappingNode(
-                        start=token_start,
-                        end=token_end,
+                        start_pos=token_start,
+                        end_pos=token_end,
                         parent=self._tree,
                     ))
                 self._tree.artifacts[-1].key = TextNode(
-                    start=token_start,
-                    end=token_end,
+                    start_pos=token_start,
+                    end_pos=token_end,
                     text=token.value,
                     parent=self._tree.artifacts[-1]
                 )
@@ -286,8 +286,8 @@ class BlueprintParser(Parser):
                 # it's an input name
                 if isinstance(top, KeyToken):
                     self._tree.artifacts[-1].key = TextNode(
-                        start=token_start,
-                        end=token_end,
+                        start_pos=token_start,
+                        end_pos=token_end,
                         parent=self._tree,
                         text=token.value
                     )
@@ -296,8 +296,8 @@ class BlueprintParser(Parser):
                 # it's a default value
                 if isinstance(top, ValueToken):
                     self._tree.artifacts[-1].value = TextNode(
-                        start=token_start,
-                        end=token_end,
+                        start_pos=token_start,
+                        end_pos=token_end,
                         parent=self._tree,
                         text=token.value
                     )
@@ -366,9 +366,9 @@ class BlueprintParser(Parser):
 
             if isinstance(token, ScalarToken) and isinstance(tokens_stack[-1], BlockEntryToken):
                 res_node = resource_map[resources_name](
-                    parent=container_node, start=token_start, end=token_end
+                    parent=container_node, start_pos=token_start, end_pos=token_end
                 )
-                res_node.id = TextNode(start=token_start, end=token_end, text=token.value)
+                res_node.id = TextNode(start_pos=token_start, end_pos=token_end, text=token.value)
                 container_node.add(res_node)
                 tokens_stack.pop()
                 continue
@@ -383,7 +383,7 @@ class BlueprintParser(Parser):
             if isinstance(token, BlockMappingStartToken):
                 top = tokens_stack.pop()
                 if isinstance(top, BlockEntryToken):  # it means it is a beginning of resource declaration
-                    container_node.add(resource_map[resources_name](parent=container_node, start=token_start))
+                    container_node.add(resource_map[resources_name](parent=container_node, start_pos=token_start))
                 if isinstance(top, ValueToken):  # internal properties of resource
                     inside_declaration = True
 
@@ -397,8 +397,8 @@ class BlueprintParser(Parser):
                 if not inside_declaration:
                     # we are at the beginning of app declaration
                     container_node.nodes[-1].id = TextNode(
-                        start=token_start,
-                        end=token_end,
+                        start_pos=token_start,
+                        end_pos=token_end,
                         parent=container_node.nodes[-1],
                         text=token.value
                     )
@@ -406,7 +406,7 @@ class BlueprintParser(Parser):
                 else:
                     _ = tokens_stack.pop()
                     if token.value == "input_values":
-                        inputs = InputsNode(start=token_start, parent=container_node.nodes[-1])
+                        inputs = InputsNode(start_pos=token_start, parent=container_node.nodes[-1])
 
                         # ignore next "valueToken"
                         next(data)
@@ -463,7 +463,7 @@ class BlueprintParser(Parser):
                 self._tree.end_pos = token_end
 
             if isinstance(token, ScalarToken) and token.value in ["applications", "services"]:
-                resources = ResourcesContainerNode(start=token_start, parent=self._tree)
+                resources = ResourcesContainerNode(start_pos=token_start, parent=self._tree)
                 
                 try:
                     # first we need to skip ValueToken
@@ -486,7 +486,7 @@ class BlueprintParser(Parser):
                     pass
 
             if isinstance(token, ScalarToken) and token.value == "inputs":
-                inputs = InputsNode(start=token_start, parent=self._tree)
+                inputs = InputsNode(start_pos=token_start, parent=self._tree)
                 try:
                     # first we need to skip ValueToken
                     next(tokens)
