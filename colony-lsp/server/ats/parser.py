@@ -106,20 +106,20 @@ class Parser(ABC):
                     top = tokens_stack.pop()
                     # it's an input name
                     if isinstance(top, KeyToken):
-                        inputs_node.inputs[-1].key = TextNode(
+                        inputs_node.nodes[-1].key = TextNode(
                             start_pos=token_start,
                             end_pos=token_end,
-                            parent=inputs_node.inputs[-1],
+                            parent=inputs_node.nodes[-1],
                             text=token.value
                         )
-                        inputs_node.inputs[-1].start_pos = token_start
+                        inputs_node.nodes[-1].start_pos = token_start
 
                     # it's a default value
                     if isinstance(top, ValueToken):
-                        inputs_node.inputs[-1].value = TextNode(
+                        inputs_node.nodes[-1].value = TextNode(
                             start_pos=token_start,
                             end_pos=token_end,
-                            parent=inputs_node.inputs[-1],
+                            parent=inputs_node.nodes[-1],
                             text=token.value
                         )
 
@@ -130,10 +130,10 @@ class Parser(ABC):
                     else:
                         scalar = tokens_stack.pop()
                         if scalar.value == "default_value":
-                            inputs_node.inputs[-1].value = TextNode(
+                            inputs_node.nodes[-1].value = TextNode(
                                 start_pos=token_start,
                                 end_pos=token_end,
-                                parent=inputs_node.inputs[-1],
+                                parent=inputs_node.nodes[-1],
                                 text=token.value
                             )
 
@@ -153,7 +153,7 @@ class Parser(ABC):
                     if extended_declare:
                         extended_declare = False
                     else:
-                        inputs_node.inputs[-1].end_pos = token_start
+                        inputs_node.nodes[-1].end_pos = token_start
 
                 else:
                     raise ValueError("Wrong structure of inputs block")

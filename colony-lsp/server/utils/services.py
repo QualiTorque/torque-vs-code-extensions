@@ -39,7 +39,7 @@ def load_service_details(srv_name: str, srv_source):
     srv_tree = ServiceParser(document=srv_source).parse()
     
     output = f"{srv_name}:\n"
-    inputs = srv_tree.inputs_node.inputs
+    inputs = srv_tree.inputs_node.nodes
     if inputs:
         output += "  inputs_value:\n"
         for input in inputs:
@@ -100,10 +100,10 @@ def get_service_inputs(srv_name):
         srv_tree = SERVICES[srv_name]["srv_tree"]
         inputs = {}
         if hasattr(srv_tree, 'inputs_node'):
-            for input in srv_tree.inputs_node.inputs:
+            for input in srv_tree.inputs_node.nodes:
                 inputs[input.key.text] = input.value.text if input.value else None
         return inputs
-    
+
     return []
 
 
@@ -113,6 +113,6 @@ def get_service_outputs(srv_name):
         if hasattr(srv_tree, 'outputs'):
             outputs = [out.text for out in srv_tree.outputs]
             return outputs
-    
+
     return []
     

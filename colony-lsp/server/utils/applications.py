@@ -11,7 +11,7 @@ def load_app_details(app_name: str, app_source: str):
     
     output = f"{app_name}:\n"
     output += "  instances: 1\n"                        
-    inputs = app_tree.inputs_node.inputs
+    inputs = app_tree.inputs_node.nodes
     if inputs:
         output += "  input_values:\n"
         for input in inputs:
@@ -74,7 +74,7 @@ def get_app_inputs(app_name):
         app_tree = APPLICATIONS[app_name]["app_tree"]
         inputs = {}
         if hasattr(app_tree, 'inputs_node'):
-            for input in app_tree.inputs_node.inputs:
+            for input in app_tree.inputs_node.nodes:
                 inputs[input.key.text] = input.value.text if input.value else None
         return inputs
     

@@ -25,9 +25,8 @@ class ConfigurationNode(YamlNode):
 
 
 @dataclass
-class AppTree(BaseTree, TreeWithOutputs):
+class AppTree(TreeWithOutputs, BaseTree):
     configuration: ConfigurationNode = None
-    pass
 
 
 import yaml
@@ -189,11 +188,12 @@ def process_token(token):
 
             node = node_stack[-1]
 
-            if not isinstance(node, MappingNode):
-                raise Exception(f"Expected MappingNode, got {type(node)}")
+            # if not isinstance(node, (MappingNode, TextNode)):
+            #     raise Exception(f"Expected MappingNode or, got {type(node)}")
 
-            key_node = node.set_key()
-            node_stack.append(key_node)
+            if isinstance(node, MappingNode):
+                key_node = node.set_key()
+                node_stack.append(key_node)
 
             # case when element in sequence doesn't have value and colon:
             # inputs:
@@ -207,7 +207,9 @@ def process_token(token):
                 node_stack[-1].end_pos = last_node.end_pos
                 node_stack[-1].start_pos = last_node.start_pos
 
-                node_stack.pop()
+                if isinstance(node, MappingNode):
+                    node_stack.pop()
+
                 is_array_item = False
 
             else:

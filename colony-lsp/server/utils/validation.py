@@ -35,14 +35,14 @@ class ValidationHandler:
         if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
             message = "Multiple declarations of input '{}'"
 
-            inputs_names_list = [input.key.text for input in self._tree.inputs_node.inputs]
-            for input_node in self._tree.inputs_node.inputs:
+            inputs_names_list = [input.key.text for input in self._tree.inputs_node.nodes]
+            for input_node in self._tree.inputs_node.nodes:
                 if inputs_names_list.count(input_node.key.text) > 1:
                     self._add_diagnostic(
                         input_node.key,
                         message=message.format(input_node.key.text)
                     )
-    
+
     def _validate_no_duplicates_in_outputs(self):
         if hasattr(self._tree, 'outputs') and self._tree.outputs:
             message = "Multiple declarations of output '{}'. Outputs are not case sensitive."
@@ -67,28 +67,29 @@ class AppValidationHandler(ValidationHandler):
     def validate_script_files_exist(self):
         # TODO: move the code from server.py to here after having the configuration tree ready
         pass
-    
+
     def validate(self):
         super().validate()
-        #errors
+        # errors
         self.validate_script_files_exist()
-        
+
         return self._diagnostics
-    
+
+
 class ServiceValidationHandler(ValidationHandler):
     def validate(self, text_doc):
         super().validate()
-        
+
         try:
             # warnings
             self._check_for_unused_service_inputs(text_doc)
-            
+
         except Exception as ex:
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
             logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-                
+
         return self._diagnostics
-    
+
     def _check_for_unused_service_inputs(self, text_doc):
         if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
             message = "Unused variable {}"
@@ -102,12 +103,15 @@ class ServiceValidationHandler(ValidationHandler):
                         diag_severity=DiagnosticSeverity.Warning
                     )
 
+
 class BlueprintValidationHandler(ValidationHandler):
     def __init__(self, tree: BlueprintTree, root_path: str):
         super().__init__(tree, root_path)
         self.blueprint_apps = [app.id.text for app in self._tree.apps_node.nodes] if self._tree.apps_node else []
+        self.blueprint_services = [srv.id.text for srv in
+                                   self._tree.services_node.nodes] if self._tree.services_node else []
         self.blueprint_services = [srv.id.text for srv in self._tree.services_node.nodes] if self._tree.services_node else []
-    
+
     def _check_for_deprecated_properties(self, text_doc):
         deprecated_properties = {"availability": "bastion_availability"}
         message = "Deprecated property '{}'. Please use '{}' instead."
@@ -127,10 +131,10 @@ class BlueprintValidationHandler(ValidationHandler):
                             severity=DiagnosticSeverity.Warning
                     ))
             line_num += 1
-    
+
     def _check_for_deprecated_syntax(self, text_doc):
         deprecated_syntax = {
-            "outputs\..+": "colony.[app_name|service_name].outputs.[output_name]", 
+            "outputs\..+": "colony.[app_name|service_name].outputs.[output_name]",
             "colony.sandboxid": "colony.environment.id"
                             }
         message = "Deprecated syntax '{}'. Please use '{}' instead."
@@ -149,11 +153,11 @@ class BlueprintValidationHandler(ValidationHandler):
                             message=message.format(old_syntax, deprecated_syntax[prop]),
                             severity=DiagnosticSeverity.Warning
                     ))
-                    
+
             line_num += 1
 
     def _validate_dependency_exists(self):
-        message = "The application/service '{}' is not defined in the applications/services section"            
+        message = "The application/service '{}' is not defined in the applications/services section"
         apps = self.blueprint_apps
         srvs = self.blueprint_services
         apps_n_srvs = set(apps + srvs)
@@ -180,18 +184,18 @@ class BlueprintValidationHandler(ValidationHandler):
             for app in self._tree.apps_node.nodes:
                 if app.id.text not in available_apps:
                     self._add_diagnostic(app.id, message=message.format(app.id.text))
-    
+
     def _validate_blueprint_apps_have_input_values(self):
         if self._tree.apps_node:
             for app in self._tree.apps_node.nodes:
-                for var in app.inputs_node.inputs:
+                for var in app.inputs_node.nodes:
                     if not var.value:
                         self._add_diagnostic(var.key, message="Application input must have a value")
-    
+
     def _validate_blueprint_services_have_input_values(self):
         if self._tree.services_node:
             for app in self._tree.services_node.nodes:
-                for var in app.inputs_node.inputs:
+                for var in app.inputs_node.nodes:
                     if not var.value:
                         self._add_diagnostic(var.key, message="Service input must have a value")
 
@@ -245,7 +249,7 @@ class BlueprintValidationHandler(ValidationHandler):
                 apps = self.blueprint_apps
                 if not parts[2] in apps:
                     return False, f"{var_name} is not a valid colony-generated variable (no such app in the blueprint)"
-                
+
                 # TODO: check that the app is in the depends_on section
 
                 app_outputs = applications.get_app_outputs(app_name=parts[2])
@@ -258,7 +262,7 @@ class BlueprintValidationHandler(ValidationHandler):
                     return False, f"{var_name} is not a valid colony-generated variable (no such service in the blueprint)"
 
                 # TODO: check that the service is in the depends_on section
-                
+
                 srv_outputs = services.get_service_outputs(srv_name=parts[2])
                 if parts[4] not in srv_outputs:
                     return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
@@ -269,17 +273,18 @@ class BlueprintValidationHandler(ValidationHandler):
         return True, ""
 
     def _validate_var_being_used_is_defined(self):
-        bp_inputs = {input.key.text for input in self._tree.inputs_node.inputs} if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node else {}
+        bp_inputs = {input.key.text for input in self._tree.inputs_node.nodes} if hasattr(self._tree,
+                                                                                          'inputs_node') and self._tree.inputs_node else {}
         if self._tree.apps_node:
             for app in self._tree.apps_node.nodes:
-                for input in app.inputs_node.inputs:
+                for input in app.inputs_node.nodes:
                     self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
-        
+
         if self._tree.services_node:
             for srv in self._tree.services_node.nodes:
-                for input in srv.inputs_node.inputs:
+                for input in srv.inputs_node.nodes:
                     self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
-        
+
         if self._tree.artifacts:
             for art in self._tree.artifacts:
                 self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, art)
@@ -304,8 +309,10 @@ class BlueprintValidationHandler(ValidationHandler):
                         if var not in bp_inputs:
                             self._diagnostics.append(Diagnostic(
                                 range=Range(
-                                    start=Position(line=input.value.start_pos[0], character=input.value.start_pos[1] + pos[0]),
-                                    end=Position(line=input.value.end_pos[0], character=input.value.start_pos[1] + pos[1]),
+                                    start=Position(line=input.value.start_pos[0],
+                                                   character=input.value.start_pos[1] + pos[0]),
+                                    end=Position(line=input.value.end_pos[0],
+                                                 character=input.value.start_pos[1] + pos[1]),
                                 ),
                                 message=message.format(cur_var),
                             ))
@@ -314,8 +321,10 @@ class BlueprintValidationHandler(ValidationHandler):
                         if not valid_var:
                             self._diagnostics.append(Diagnostic(
                                 range=Range(
-                                    start=Position(line=input.value.start_pos[0], character=input.value.start_pos[1] + pos[0]),
-                                    end=Position(line=input.value.end_pos[0], character=input.value.start_pos[1] + pos[1]),
+                                    start=Position(line=input.value.start_pos[0],
+                                                   character=input.value.start_pos[1] + pos[0]),
+                                    end=Position(line=input.value.end_pos[0],
+                                                 character=input.value.start_pos[1] + pos[1]),
                                 ),
                                 message=error_message
                             ))
@@ -338,7 +347,7 @@ class BlueprintValidationHandler(ValidationHandler):
                         prev_app = apps[app.id.text]
                         self._add_diagnostic(prev_app.id, message=msg)
                         duplicated[app.id.text] = 1
-            
+
         # check that there are no duplicate names in the services being used
         srvs = {}
         if self._tree.services_node:
@@ -353,7 +362,7 @@ class BlueprintValidationHandler(ValidationHandler):
                         prev_srv = srvs[srv.id.text]
                         self._add_diagnostic(prev_srv.id, message=msg)
                         duplicated[srv.id.text] = 1
-                
+
                 # check that there is no app with this name
                 if srv.id.text in apps:
                     msg = "There is already an application with the same name in this blueprint. Make sure the names are unique."
@@ -361,13 +370,13 @@ class BlueprintValidationHandler(ValidationHandler):
 
                     prev_app = apps[srv.id.text]
                     self._add_diagnostic(prev_app.id, message=msg)
-    
+
     def _validate_artifaces_apps_are_defined(self):
         if self._tree.artifacts:
             for art in self._tree.artifacts:
                 if art.key.text not in self.blueprint_apps:
                     self._add_diagnostic(art.key, message="This application is not defined in this blueprint.")
-    
+
     def _validate_artifaces_are_unique(self):
         if self._tree.artifacts:
             arts = {}
@@ -383,7 +392,7 @@ class BlueprintValidationHandler(ValidationHandler):
                         prev_art = arts[art.key.text]
                         self._add_diagnostic(prev_art.key, message=msg)
                         duplicated[prev_art.key.text] = 1
-    
+
     def _validate_apps_inputs_exists(self):
         if self._tree.apps_node:
             apps = applications.get_available_applications_names()
@@ -391,7 +400,7 @@ class BlueprintValidationHandler(ValidationHandler):
                 if app.id.text in apps:
                     app_inputs = applications.get_app_inputs(app.id.text)
                     used_inputs = []
-                    for input in app.inputs_node.inputs:
+                    for input in app.inputs_node.nodes:
                         used_inputs.append(input.key.text)
                         if input.key.text not in app_inputs:
                             self._add_diagnostic(
@@ -407,7 +416,7 @@ class BlueprintValidationHandler(ValidationHandler):
                             app.id,
                             message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
                         )
-            
+
     def _validate_services_inputs_exists(self):
         if self._tree.services_node:
             srvs = services.get_available_services_names()
@@ -415,7 +424,7 @@ class BlueprintValidationHandler(ValidationHandler):
                 if srv.id.text in srvs:
                     srv_inputs = services.get_service_inputs(srv.id.text)
                     used_inputs = []
-                    for input in srv.inputs_node.inputs:
+                    for input in srv.inputs_node.nodes:
                         used_inputs.append(input.key.text)
                         if input.key.text not in srv_inputs:
                             self._add_diagnostic(
@@ -431,7 +440,7 @@ class BlueprintValidationHandler(ValidationHandler):
                             srv.id,
                             message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
                         )
-    
+
     # def _validate_variables_being_used_where_it_is_allowed(self, tree):
     #     tree_nodes = vars(tree)
     #     for node_name, tree_node in tree_nodes.items():
@@ -450,9 +459,9 @@ class BlueprintValidationHandler(ValidationHandler):
     #                             print(allow_var, item.value.text)
     #                     else:
     #                         self._validate_variables_being_used_where_it_is_allowed(item)
-                
-                
-     
+
+
+
     def validate(self, text_doc):
         super().validate()
 
@@ -480,5 +489,5 @@ class BlueprintValidationHandler(ValidationHandler):
         except Exception as ex:
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
             logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-                
+
         return self._diagnostics
