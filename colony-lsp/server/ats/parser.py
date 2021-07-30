@@ -325,8 +325,8 @@ class BlueprintParser(Parser):
             raise AttributeError("resources_type must be in ['applications', 'services']")
 
         resource_map = {
-            "applications": ApplicationNode,
-            "services": ServiceNode
+            "applications": ApplicationResourceNode,
+            "services": ServiceResourceNode
         }
 
         starting_token = next(data)
@@ -473,9 +473,9 @@ class BlueprintParser(Parser):
                     print("error during apps processing")
                     pass
                 if token.value == "applications":
-                    self._tree.apps_node = resources
+                    self._tree.applications = resources
                 else:
-                    self._tree.services_node = resources
+                    self._tree.services = resources
 
             if isinstance(token, ScalarToken) and token.value == "artifacts":
                 try:
