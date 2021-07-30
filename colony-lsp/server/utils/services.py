@@ -111,7 +111,7 @@ def get_service_outputs(srv_name):
     if srv_name in SERVICES:
         srv_tree = SERVICES[srv_name]["srv_tree"]
         if hasattr(srv_tree, 'outputs'):
-            outputs = [out.text for out in srv_tree.outputs]
+            outputs = [out.text for out in srv_tree.outputs.nodes]
             return outputs
 
     return []

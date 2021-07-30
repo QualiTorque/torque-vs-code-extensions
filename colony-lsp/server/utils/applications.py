@@ -85,7 +85,7 @@ def get_app_outputs(app_name):
     if app_name in APPLICATIONS:
         app_tree = APPLICATIONS[app_name]["app_tree"]
         if hasattr(app_tree, 'outputs'):
-            outputs = [out.text for out in app_tree.outputs]
+            outputs = [out.text for out in app_tree.outputs.nodes]
             return outputs
     
     return []
