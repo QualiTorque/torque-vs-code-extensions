@@ -2,9 +2,10 @@
 import os
 import re
 import pathlib
+import yaml
 from server.ats.parser import ServiceParser
 from server.ats.tree import ServiceTree
-import yaml
+from server.utils.yaml_utils import format_yaml
 
 
 SERVICES = {}
@@ -38,7 +39,7 @@ def get_available_services_names():
 def load_service_details(srv_name: str, srv_source):
     srv_tree = ServiceParser(document=srv_source).parse()
     
-    output = f"{srv_name}:\n"
+    output = f"- {srv_name}:\n"
     inputs = srv_tree.inputs_node.inputs
     if inputs:
         output += "  inputs_value:\n"
@@ -48,12 +49,9 @@ def load_service_details(srv_name: str, srv_source):
             else:
                 output += f"    - {input.key.text}: \n" 
     
-    subtree = yaml.load(output, Loader=yaml.FullLoader)
-    output = yaml.dump(subtree)
-    
     SERVICES[srv_name] = {
         "srv_tree": srv_tree,
-        "srv_completion": "- " + output.replace(": null", ": ")
+        "srv_completion": format_yaml(output)
     }
 
 

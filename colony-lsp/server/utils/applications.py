@@ -1,7 +1,7 @@
 import os
 import pathlib
+from server.utils.yaml_utils import format_yaml
 from server.ats.parser import AppParser
-import yaml
 
 APPLICATIONS = {}
 
@@ -9,23 +9,20 @@ APPLICATIONS = {}
 def load_app_details(app_name: str, app_source: str):
     app_tree = AppParser(document=app_source).parse()
     
-    output = f"{app_name}:\n"
-    output += "  instances: 1\n"                        
+    output = f"- {app_name}:\n"
+    output += "    instances: 1\n"                        
     inputs = app_tree.inputs_node.inputs
     if inputs:
-        output += "  input_values:\n"
+        output += "    input_values:\n"
         for input in inputs:
             if input.value:
-                output += f"    - {input.key.text}: {input.value.text}\n"
+                output += f"      - {input.key.text}: {input.value.text}\n"
             else:
-                output += f"    - {input.key.text}: \n"    
-            
-    subtree = yaml.load(output, Loader=yaml.FullLoader)
-    output = yaml.dump(subtree)
+                output += f"      - {input.key.text}: \n"    
     
     APPLICATIONS[app_name] = {
         'app_tree': app_tree,
-        'app_completion': "- " + output.replace(": null", ": ")
+        'app_completion': format_yaml(output)
     }
 
 

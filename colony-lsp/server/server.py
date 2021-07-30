@@ -18,10 +18,12 @@ import asyncio
 from dataclasses import dataclass
 import logging
 
+from pygls.lsp.types.language_features.completion import InsertTextMode
+
 # from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
 from server.utils.validation import AppValidationHandler, BlueprintValidationHandler, ServiceValidationHandler
 from pygls.lsp import types
-from pygls.lsp.types.basic_structures import VersionedTextDocumentIdentifier
+from pygls.lsp.types.basic_structures import TextEdit, VersionedTextDocumentIdentifier
 from pygls.lsp import types, InitializeResult
 import yaml
 import time
@@ -280,135 +282,143 @@ async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentPara
 
 
 
-# @colony_server.feature(COMPLETION_ITEM_RESOLVE, CompletionOptions())
-# def completion_item_resolve(server: ColonyLanguageServer, params: CompletionItem) -> CompletionItem:
-#     """Resolves documentation and detail of given completion item."""
-#     print('completion_item_resolve')
-#     print(server)
-#     print(params)
-#     print('---------')
-#     if params.label == 'debugging':
-#         #completion = _MOST_RECENT_COMPLETIONS[item.label]
-#         params.detail = "debugging description"
-#         docstring = "some docstring" #convert_docstring(completion.docstring(), markup_kind)
-#         params.documentation = "documention"  #MarkupContent(kind=markup_kind, value=docstring)
-#         return params
+@colony_server.feature(COMPLETION_ITEM_RESOLVE, CompletionOptions())
+def completion_item_resolve(server: ColonyLanguageServer, params: CompletionItem) -> CompletionItem:
+    """Resolves documentation and detail of given completion item."""
+    print('completion_item_resolve')
+    print(server)
+    print(params)
+    print('---------')
+    if params.label == 'debugging':
+        #completion = _MOST_RECENT_COMPLETIONS[item.label]
+        params.detail = "debugging description"
+        docstring = "some docstring" #convert_docstring(completion.docstring(), markup_kind)
+        params.documentation = "documention"  #MarkupContent(kind=markup_kind, value=docstring)
+        return params
 
 
 
-# @colony_server.feature(COMPLETION, CompletionOptions(resolve_provider=True))
-# def completions(params: Optional[CompletionParams] = None) -> CompletionList:
-#     """Returns completion items."""
-#     doc = colony_server.workspace.get_document(params.text_document.uri)
-#     fdrs = colony_server.workspace.folders
-#     root = colony_server.workspace.root_path
-#     print('completion')
-#     print(params)
-#     print('--------')
+@colony_server.feature(COMPLETION, CompletionOptions(resolve_provider=True, trigger_characters=['.']))
+def completions(params: Optional[CompletionParams] = None) -> CompletionList:
+    """Returns completion items."""
+    doc = colony_server.workspace.get_document(params.text_document.uri)
+    yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)  # todo: refactor
+    doc_type = yaml_obj.get('kind', '')
+        
+    fdrs = colony_server.workspace.folders
+    root = colony_server.workspace.root_path
+    print('completion')
+    print(params)
+    print('--------')
     
-#     if '/blueprints/' in params.text_document.uri:
-#         parent = _get_parent_word(colony_server.workspace.get_document(params.text_document.uri), params.position)
-#         items=[
-#                 # CompletionItem(label='applications'),
-#                 # CompletionItem(label='clouds'),
-#                 # CompletionItem(label='debugging'),
-#                 # CompletionItem(label='ingress'),
-#                 # CompletionItem(label='availability'),
-#             ]
+    if doc_type == "blueprint":
+        if params.context.trigger_character == '.':
+            print('...')
+        else:
+            parent = common.get_parent_word(colony_server.workspace.get_document(params.text_document.uri), params.position)
+            items=[]
+            
+            if parent == "applications":
+                apps = applications.get_available_applications(root)
+                line = params.position.line
+                char = params.position.character
+                for app in apps:
+                    items.append(CompletionItem(label=app, 
+                                                kind=CompletionItemKind.Reference, 
+                                                text_edit=TextEdit(
+                                                                range=Range(start=Position(line=line, character=char-2),
+                                                                            end=Position(line=line, character=char)),
+                                                                new_text=apps[app]['app_completion'],
+                                                )))
+            
+            # if parent == "services":
+            #     srvs = services.get_available_services(root)
+            #     for srv in srvs:
+            #         items.append(CompletionItem(label=srv, kind=CompletionItemKind.Reference, insert_text=srvs[srv]))
+            
+            # if parent == "input_values":
+            #     available_inputs = _get_file_inputs(doc.source)
+            #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs]
+            #     items.extend(inputs)
+            #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in PREDEFINED_COLONY_INPUTS]
+            #     items.extend(inputs)
+            #     # TODO: add output generated variables of apps/services in this blueprint ($colony.applications.app_name.outputs.output_name, $colony.services.service_name.outputs.output_name)
         
-#         if parent == "applications":
-#             apps = _get_available_applications(root)
-#             for app in apps:
-#                 items.append(CompletionItem(label=app, kind=CompletionItemKind.Reference, insert_text=apps[app]))
-        
-#         if parent == "services":
-#             srvs = _get_available_services(root)
-#             for srv in srvs:
-#                 items.append(CompletionItem(label=srv, kind=CompletionItemKind.Reference, insert_text=srvs[srv]))
-        
-#         if parent == "input_values":
-#             available_inputs = _get_file_inputs(doc.source)
-#             inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs]
-#             items.extend(inputs)
-#             inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in PREDEFINED_COLONY_INPUTS]
-#             items.extend(inputs)
-#             # TODO: add output generated variables of apps/services in this blueprint ($colony.applications.app_name.outputs.output_name, $colony.services.service_name.outputs.output_name)
-        
-#         return CompletionList(
-#             is_incomplete=False,
-#             items=items
-#         )
-#     elif '/applications/' in params.text_document.uri:
-#         words = _preceding_words(
-#             colony_server.workspace.get_document(params.text_document.uri),
-#             params.position)
-#         # debug("words", words)
-#         if words:
-#             if words[0] == "script:":
-#                 scripts = _get_app_scripts(params.text_document.uri)
-#                 return CompletionList(
-#                     is_incomplete=False,
-#                     items=[CompletionItem(label=script) for script in scripts],
-#                 )
-#             elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
-#                 available_inputs = _get_file_inputs(doc.source)
-#                 return CompletionList(
-#                     is_incomplete=False,
-#                     items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
-#                 )
+        return CompletionList(
+            is_incomplete=False,
+            items=items
+        )
+    # elif doc_type == "application":
+    #     words = _preceding_words(
+    #         colony_server.workspace.get_document(params.text_document.uri),
+    #         params.position)
+    #     # debug("words", words)
+    #     if words:
+    #         if words[0] == "script:":
+    #             scripts = _get_app_scripts(params.text_document.uri)
+    #             return CompletionList(
+    #                 is_incomplete=False,
+    #                 items=[CompletionItem(label=script) for script in scripts],
+    #             )
+    #         elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
+    #             available_inputs = _get_file_inputs(doc.source)
+    #             return CompletionList(
+    #                 is_incomplete=False,
+    #                 items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
+    #             )
                 
-#         return CompletionList(
-#             is_incomplete=False,
-#             items=[
-#                 #CompletionItem(label='configuration'),
-#                 #CompletionItem(label='healthcheck'),
-#                 #CompletionItem(label='debugging'),
-#                 #CompletionItem(label='infrastructure'),
-#                 #CompletionItem(label='inputs'),
-#                 #CompletionItem(label='source'),
-#                 #CompletionItem(label='kind'),
-#                 #CompletionItem(label='spec_version'),
-#             ]
-#         )
-#     elif '/services/' in params.text_document.uri:
-#         words = _preceding_words(
-#             colony_server.workspace.get_document(params.text_document.uri),
-#             params.position)
-#         # debug("words", words)
-#         if words:
-#             if words[0] == "var_file:":
-#                 var_files = _get_service_vars(params.text_document.uri)
-#                 return CompletionList(
-#                     is_incomplete=False,
-#                     items=[CompletionItem(label=var["file"],
-#                                           insert_text=f"{var['file']}\r\nvalues:\r\n" + 
-#                                                        "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
-#                                           kind=CompletionItemKind.File
-#                 )
-#             # TODO: when services should use inputs?
-#             elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
-#                 available_inputs = _get_file_inputs(doc.source)
-#                 return CompletionList(
-#                     is_incomplete=False,
-#                     items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
-#                 )
+    #     return CompletionList(
+    #         is_incomplete=False,
+    #         items=[
+    #             #CompletionItem(label='configuration'),
+    #             #CompletionItem(label='healthcheck'),
+    #             #CompletionItem(label='debugging'),
+    #             #CompletionItem(label='infrastructure'),
+    #             #CompletionItem(label='inputs'),
+    #             #CompletionItem(label='source'),
+    #             #CompletionItem(label='kind'),
+    #             #CompletionItem(label='spec_version'),
+    #         ]
+    #     )
+    # if doc_type == "TerraForm":
+    #     words = _preceding_words(
+    #         colony_server.workspace.get_document(params.text_document.uri),
+    #         params.position)
+    #     # debug("words", words)
+    #     if words:
+    #         if words[0] == "var_file:":
+    #             var_files = _get_service_vars(params.text_document.uri)
+    #             return CompletionList(
+    #                 is_incomplete=False,
+    #                 items=[CompletionItem(label=var["file"],
+    #                                       insert_text=f"{var['file']}\r\nvalues:\r\n" + 
+    #                                                    "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
+    #                                       kind=CompletionItemKind.File
+    #             )
+    #         # TODO: when services should use inputs?
+    #         elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
+    #             available_inputs = _get_file_inputs(doc.source)
+    #             return CompletionList(
+    #                 is_incomplete=False,
+    #                 items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
+    #             )
                 
-#         # we don't need the below if we use a schema file 
-#         return CompletionList(
-#             is_incomplete=False,
-#             items=[
-#                 # CompletionItem(label='permissions'),
-#                 # CompletionItem(label='outputs'),
-#                 # CompletionItem(label='variables'),
-#                 # CompletionItem(label='module'),
-#                 # CompletionItem(label='inputs'),
-#                 # CompletionItem(label='source'),
-#                 # CompletionItem(label='kind'),
-#                 # CompletionItem(label='spec_version'),
-#             ]
-#         )
-#     else:
-#         return CompletionList(is_incomplete=True, items=[])
+    #     # we don't need the below if we use a schema file 
+    #     return CompletionList(
+    #         is_incomplete=False,
+    #         items=[
+    #             # CompletionItem(label='permissions'),
+    #             # CompletionItem(label='outputs'),
+    #             # CompletionItem(label='variables'),
+    #             # CompletionItem(label='module'),
+    #             # CompletionItem(label='inputs'),
+    #             # CompletionItem(label='source'),
+    #             # CompletionItem(label='kind'),
+    #             # CompletionItem(label='spec_version'),
+    #         ]
+    #     )
+    else:
+        return CompletionList(is_incomplete=True, items=[])
 
 
 # @colony_server.feature(DEFINITION)
