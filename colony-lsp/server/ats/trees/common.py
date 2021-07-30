@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import Any, List, Optional, ClassVar
 
 
 @dataclass
@@ -46,16 +46,25 @@ class TextNode(YamlNode):
 
 
 @dataclass
-class ScalarSequence(YamlNode):
-    nodes: [TextNode] = field(default_factory=list)
+class SequenceNode(YamlNode):
+    node_type: ClassVar[type] = YamlNode
 
-    def add(self, node: TextNode = None):
+    nodes: [node_type] = field(default_factory=list)
+
+    def add(self, node: node_type = None):
         if node is None:
-            node = TextNode(parent=self)
+            node = self.node_type(parent=self)
 
         self.nodes.append(node)
 
         return self.nodes[-1]
+
+
+@dataclass
+class TextNodesSequence(SequenceNode):
+    """Container for simple text arrays
+    like outputs, depends on """
+    node_type = TextNode
 
 
 @dataclass
@@ -98,23 +107,16 @@ class InputNode(MappingNode):
 
 
 @dataclass
-class InputsNode(YamlNode):
+class InputsNode(SequenceNode):
     """
     Node representing the list of inputs
     """
-    inputs: List[InputNode] = field(default_factory=list)
-
-    def add(self, input_node: InputNode = None):
-        if input_node is None:
-            input_node = InputNode(parent=self)
-
-        self.inputs.append(input_node)
-        return self.inputs[-1]
+    node_type = InputNode
 
 
 @dataclass
 class BaseTree(YamlNode):
-    inputs_node: InputsNode = field(init=False)
+    inputs_node: InputsNode = None
     kind: TextNode = None
 
     def _get_field_mapping(self) -> {str: str}:
@@ -124,9 +126,6 @@ class BaseTree(YamlNode):
         )
         return mapping
 
-    def __post_init__(self):
-        self.inputs_node = InputsNode(parent=self)
-
 
 @dataclass
 class ResourceNode(YamlNode):
@@ -134,9 +133,9 @@ class ResourceNode(YamlNode):
     inputs_node: Optional[InputsNode] = field(init=False)
     depends_on: List[YamlNode] = field(default_factory=dict)  # TODO: ideally depends_on must be a node
 
-    def add_input(self, input: InputNode):
-        self.inputs_node.add(input)
-        return self.inputs_node.inputs[-1]
+    def add_input(self, input_node: InputNode):
+        self.inputs_node.add(input_node)
+        return self.inputs_node.nodes[-1]
 
     def __post_init__(self):
         self.inputs_node = InputsNode(parent=self)
@@ -156,4 +155,4 @@ class ResourcesContainerNode(YamlNode):
 
 @dataclass
 class TreeWithOutputs(ABC):
-    outputs: List[YamlNode] = field(default_factory=list)
+    outputs: TextNodesSequence = None
