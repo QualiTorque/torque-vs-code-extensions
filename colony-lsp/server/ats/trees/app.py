@@ -1,6 +1,8 @@
 from yaml import StreamStartToken, ScalarToken, BlockMappingStartToken, KeyToken, ValueToken, BlockEndToken, \
     StreamEndToken, BlockSequenceStartToken, BlockEntryToken
 from dataclasses import dataclass
+
+from server.ats.trees.blueprint import BlueprintTree
 from server.ats.trees.common import *
 
 
@@ -117,8 +119,16 @@ def process_token(token):
     # the beginning of the object or mapping
     if isinstance(token, BlockMappingStartToken):
         print("Object started")
-        node_stack[-1].start_pos = (token.start_mark.line, token.start_mark.column)
         token_stack.append(token)
+
+        if is_array_item and isinstance(node_stack[-1], MappingNode):
+            value_node = node_stack[-1].set_value()
+            node_stack.append(value_node)
+            value_node.start_pos = (token.start_mark.line, token.start_mark.column)
+            is_array_item = False
+            return
+
+        node_stack[-1].start_pos = (token.start_mark.line, token.start_mark.column)
 
     if isinstance(token, BlockSequenceStartToken):
         is_array_processing = True
@@ -254,11 +264,13 @@ def process_token(token):
             token_stack.pop()
 
 
-with open(app_path, "r") as f:
+bp_path = "/Users/ddovbii/colony-demo-space-my/blueprints/promotions-manager-all-aws.yaml"
+
+with open(bp_path, "r") as f:
     data = yaml.scan(f, Loader=yaml.FullLoader)
-    app_tree = AppTree()
-    node_stack.append(app_tree)
+    bp_tree = BlueprintTree()
+    node_stack.append(bp_tree)
 
     for tok in data:
         process_token(tok)
-    print(app_tree)
+    print(bp_tree)
