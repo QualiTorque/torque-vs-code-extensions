@@ -23,10 +23,35 @@ class ConfigurationNode(YamlNode):
     start: StartNode = None
     healthcheck: HealthcheckNode = None
 
+# IMAGES
+
+
+@dataclass
+class AmiImageNode(YamlNode):
+    id: TextNode = None
+    region: TextNode = None
+    username: TextNode = None
+
+
+@dataclass
+class AmiSequenceNode(SequenceNode):
+    node_type = AmiImageNode
+
+
+@dataclass
+class SourceNode(YamlNode):
+
+    @dataclass
+    class ImageNode(YamlNode):
+        ami: AmiSequenceNode = None
+
+    image: ImageNode = None
+
 
 @dataclass
 class AppTree(TreeWithOutputs, BaseTree):
     configuration: ConfigurationNode = None
+    source: SourceNode = None
 
 
 import yaml
