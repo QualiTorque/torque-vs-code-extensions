@@ -3,9 +3,9 @@ import re
 import sys
 import logging
 from typing import List
-from pygls.lsp.types import diagnostics
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
-from server.ats.tree import BaseTree, BlueprintTree, MappingNode, TextNode, YamlNode
+from server.ats.trees.blueprint import BlueprintTree
+from server.ats.trees.common import BaseTree, YamlNode
 from server.constants import PREDEFINED_COLONY_INPUTS
 from server.utils import applications, services
 
