@@ -1,6 +1,8 @@
 import asyncio
 from dataclasses import dataclass
 import logging
+import subprocess
+import sys
 
 # from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
 from server.utils.validation import AppValidationHandler, BlueprintValidationHandler, ServiceValidationHandler
@@ -419,9 +421,9 @@ def code_lens(server: ColonyLanguageServer, params: Optional[CodeLensParams] = N
                             end=Position(line=1, character=1),
                         ),
                         command=Command(
-                            title='Validate Blueprint',
+                            title='Validate Blueprint on Server',
                             command=ColonyLanguageServer.CMD_VALIDATE_BLUEPRINT,
-                            arguments=[params.text_document.uri]
+                            arguments=[params.text_document.uri]                            
                         )
                     ),
                     CodeLens(
@@ -518,7 +520,6 @@ async def start_sandbox(server: ColonyLanguageServer, *args):
                     scope_uri='',
                     section=ColonyLanguageServer.CONFIGURATION_SECTION)
                 ]))
-        print(config)
         connections = config[0].get('connections')
     except:
         server.show_message('Please define your connections in the settings first.', MessageType.Error)
@@ -537,7 +538,39 @@ async def start_sandbox(server: ColonyLanguageServer, *args):
     space = connection["space"]        
     token = connection["token"]
     server.show_message('Starting sandbox from blueprint: ' + blueprint_name)
-    time.sleep(10)
+    try:
+        result = subprocess.run([sys.prefix + '/bin/colony', 
+                                '--token', token,
+                                '--account', account,
+                                '--space', space,
+                                'sb', 'start', blueprint_name], 
+                                cwd=server.workspace.root_path,
+                                capture_output=True, text=True)
+    except Exception as ex:
+        print(ex)
+    if result.stderr:
+        server.show_message_log(result.stderr, MessageType.Error)
+        server.show_message('Error while starting the sandbox. Check the output window for more details.', MessageType.Error)
+        return
+    print(result.stderr)
+    print(result.stdout)
+    if result.stderr:
+        error_lines = result.stderr.splitlines()
+        sep = error_lines[2].split(' ')
+        diags = []
+        for line in range(3, len(error_lines)):
+            msg = error_lines[line][0:len(sep[0])] + ': ' + error_lines[line][len(sep[0])+1: len(error_lines[line])].strip()
+            diags.append(Diagnostic(
+                range=Range(
+                    start=Position(line=0, character=0),
+                    end=Position(line=0, character=1),
+                ),
+                message=msg
+            ))
+        server.publish_diagnostics(args[0][0], diags)
+        server.show_message('Validation complete. Check the Problems view for any issues.')
+    else:
+        server.show_message('Validation completed. Blueprint is valid.')
     server.show_message('Sandbox is ready. See details in the Output view.')
     server.show_message_log('Sandbox ID: ' + 'sandbox-id')
     server.show_message_log('Sandbox URL: ' + 'sandbox-url')
@@ -555,7 +588,6 @@ async def validate_blueprint(server: ColonyLanguageServer, *args):
                     scope_uri='',
                     section=ColonyLanguageServer.CONFIGURATION_SECTION)
                 ]))
-        print(config)
         connections = config[0].get('connections')
     except:
         server.show_message('Please define your connections in the settings first.', MessageType.Error)
@@ -574,13 +606,35 @@ async def validate_blueprint(server: ColonyLanguageServer, *args):
     space = connection["space"]        
     token = connection["token"]
     server.show_message('Validating blueprint: ' + blueprint_name)
-    time.sleep(3)
-    server.show_message('Validation complete. Check the Problems view for any issues.')
-    server.publish_diagnostics(args[0][0], [Diagnostic(
+    # print(os.getcwd())
+    # print(sys.prefix, sys.base_prefix)
+    # print(sys.prefix == sys.base_prefix)
+    # print(os.getenv('VIRTUAL_ENV'))
+    try:
+        result = subprocess.run([sys.prefix + '/bin/colony', 
+                                '--token', token,
+                                '--account', account,
+                                '--space', space,
+                                'bp', 'validate', blueprint_name], 
+                                cwd=server.workspace.root_path,
+                                capture_output=True, text=True)
+    except Exception as ex:
+        print(ex)
+    if result.stderr:
+        error_lines = result.stderr.splitlines()
+        sep = error_lines[2].split(' ')
+        diags = []
+        for line in range(3, len(error_lines)):
+            msg = error_lines[line][0:len(sep[0])] + ': ' + error_lines[line][len(sep[0])+1: len(error_lines[line])].strip()
+            diags.append(Diagnostic(
                 range=Range(
-                    start=Position(line=4, character=5),
-                    end=Position(line=4, character=12),
+                    start=Position(line=0, character=0),
+                    end=Position(line=0, character=1),
                 ),
-                message='message'
-            )])
+                message=msg
+            ))
+        server.publish_diagnostics(args[0][0], diags)
+        server.show_message('Validation complete. Check the Problems view for any issues.')
+    else:
+        server.show_message('Validation completed. Blueprint is valid.')
     
