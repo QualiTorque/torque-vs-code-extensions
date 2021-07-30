@@ -23,7 +23,7 @@ class ConfigurationNode(YamlNode):
     start: StartNode = None
     healthcheck: HealthcheckNode = None
 
-# IMAGES
+# IMAGES:
 
 
 @dataclass
@@ -75,21 +75,23 @@ def _process_scalar_token(token):
     node.end_pos = (token.end_mark.line, token.end_mark.column)
 
 
+def _process_object_child(token):
+    token_stack.pop()
+    print(token.value)
+    node = node_stack[-1]
+    try:
+        child_node = node.get_child(token.value)
+        child_node.start_pos = (token.start_mark.line, token.start_mark.column)
+        node_stack.append(child_node)
+    except Exception as e:
+        print(f"error during getting a child : {e}")
+
+
 def process_token(token):
     global is_array_item
     global is_array_processing
     print(f"Processing token : ", token, token.start_mark.line,
           token.start_mark.column, ";", token.end_mark.line, token.end_mark.column)
-
-    if is_array_item:
-        pass
-        # there are three possible scenarios:
-        # - item
-        # - item:
-        # - item: value
-        # all of them could be with with or without indentation(no BlockSequenceStartToken at the beginning)
-
-        # if it's a list element, then previous node in a stack must have "add()" method
 
     # beginning of document
     if isinstance(token, StreamStartToken):
@@ -156,10 +158,10 @@ def process_token(token):
 
             return
 
-        if isinstance(top, ValueToken):
+        if isinstance(top, ValueToken) and isinstance(node_stack[-1], SequenceNode):
             # In means that we just finished processing a sequence without indentation
             # which means document didn't have BlockSequenceStartToken at the beginning of the block
-            # So, thin BlockEndToken is related to previous object => we need to remove not only the List node but also
+            # So, this BlockEndToken is related to previous object => we need to remove not only the List node but also
             # the previous one
 
             # first remove sequence node from stack
@@ -176,6 +178,10 @@ def process_token(token):
             # and node itself as well
             prev_node = node_stack.pop()
             prev_node.end_pos = (token.end_mark.line, token.end_mark.column)
+
+            if isinstance(token_stack[-1], ValueToken):
+                # remove value token opening it
+                token_stack.pop()
 
     if isinstance(token, KeyToken):
         # if sequence doesnt have indentation => there is no BlockEndToken at the end
@@ -209,23 +215,27 @@ def process_token(token):
         token_stack.pop()
 
     if isinstance(token, ScalarToken) and isinstance(token_stack[-1], (KeyToken, BlockEntryToken)):
-        if is_array_item:
+        if not is_array_item:
+            _process_object_child(token)
 
+        else:
             node = node_stack[-1]
 
-            # if not isinstance(node, (MappingNode, TextNode)):
-            #     raise Exception(f"Expected MappingNode or, got {type(node)}")
+            # process object first
+            if not isinstance(node, (MappingNode, TextNode)):
+                is_array_item = False
+                _process_object_child(token)
+                return
 
             if isinstance(node, MappingNode):
                 key_node = node.set_key()
                 node_stack.append(key_node)
 
-            # case when element in sequence doesn't have value and colon:
-            # inputs:
-            #   - A
-            #   - B
-
             if isinstance(token_stack[-1], BlockEntryToken):
+                # case when element in sequence doesn't have value and colon:
+                # inputs:
+                #   - A
+                #   - B
                 last_node = node_stack[-1] # store TextNode before deleting
                 _process_scalar_token(token)
 
@@ -233,6 +243,7 @@ def process_token(token):
                 node_stack[-1].start_pos = last_node.start_pos
 
                 if isinstance(node, MappingNode):
+                    # Sequence was processed as a list of Mapping Nodes
                     node_stack.pop()
 
                 is_array_item = False
@@ -241,17 +252,6 @@ def process_token(token):
                 _process_scalar_token(token)
 
             token_stack.pop()
-
-        else:
-            token_stack.pop()
-            print(token.value)
-            node = node_stack[-1]
-            try:
-                child_node = node.get_child(token.value)
-                child_node.start_pos = (token.start_mark.line, token.start_mark.column)
-                node_stack.append(child_node)
-            except Exception as e:
-                print(f"error during getting a child : {e}")
 
 
 with open(app_path, "r") as f:
