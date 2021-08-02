@@ -32,7 +32,7 @@ class BlueprintInputsSequence(SequenceNode):
 
 @dataclass
 class ResourceNode(YamlNode):
-    input_values: BlueprintInputsSequence = None  # TODO: it must another Inputs Class (e.g. BlueprintInputsNode)
+    input_values: BlueprintInputsSequence = None
     depend_on: TextNodesSequence = None
 
 
@@ -43,7 +43,6 @@ class ServiceResourceNode(ResourceNode):
 
 @dataclass
 class ApplicationResourceNode(ResourceNode):
-    # TODO: add handling to parser
     target: TextNode = None
     instances: TextNode = None
 
