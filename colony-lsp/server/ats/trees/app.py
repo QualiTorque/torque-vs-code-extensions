@@ -119,15 +119,16 @@ def process_token(token):
     # the beginning of the object or mapping
     if isinstance(token, BlockMappingStartToken):
         print("Object started")
-        token_stack.append(token)
 
-        if is_array_item and isinstance(node_stack[-1], MappingNode):
+        if (is_array_item and isinstance(node_stack[-1], MappingNode)
+                and not isinstance(token_stack[-1], BlockEntryToken)):
+            token_stack.append(token)
             value_node = node_stack[-1].set_value()
             node_stack.append(value_node)
             value_node.start_pos = (token.start_mark.line, token.start_mark.column)
             is_array_item = False
             return
-
+        token_stack.append(token)
         node_stack[-1].start_pos = (token.start_mark.line, token.start_mark.column)
 
     if isinstance(token, BlockSequenceStartToken):

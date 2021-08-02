@@ -15,14 +15,21 @@ class ApplicationResourceNode(ResourceNode):
 
 
 @dataclass
-class ApplicationNode(MappingNode):
+class ResourceMappingNode(MappingNode):
     key: TextNode = None
+
+    @property
+    def id(self):
+        return self.key
+
+
+@dataclass
+class ApplicationNode(ResourceMappingNode):
     value: ApplicationResourceNode = None
 
 
 @dataclass
-class ServiceNode(MappingNode):
-    key: TextNode = None
+class ServiceNode(ResourceMappingNode):
     value: ServiceResourceNode = None
 
 
@@ -40,11 +47,3 @@ class ServicesSequence(SequenceNode):
 class BlueprintTree(BaseTree):
     applications: AppsSequence = None
     services: ServicesSequence = None
-
-    # applications: Optional[ResourcesContainerNode] = field(init=False)
-    # services: Optional[ResourcesContainerNode] = field(init=False)
-    # artifacts: List[MappingNode] = field(default_factory=list)
-    #
-    # def __post_init__(self):
-    #     self.services = ResourcesContainerNode(parent=self)
-    #     self.applications = ResourcesContainerNode(parent=self)

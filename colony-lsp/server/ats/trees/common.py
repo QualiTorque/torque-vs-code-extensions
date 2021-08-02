@@ -130,17 +130,8 @@ class BaseTree(YamlNode):
 
 @dataclass
 class ResourceNode(YamlNode):
-    # id: TextNode = None
     input_values: InputsNode = None # TODO: it must another Inputs Class (e.g. BlueprintInputsNode)
     depend_on: TextNodesSequence = None
-    # depends_on: List[YamlNode] = field(default_factory=dict)  # TODO: ideally depends_on must be a node
-    #
-    # def add_input(self, input_node: InputNode):
-    #     self.inputs_node.add(input_node)
-    #     return self.inputs_node.nodes[-1]
-    #
-    # def __post_init__(self):
-    #     self.inputs_node = InputsNode(parent=self)
 
 
 @dataclass
