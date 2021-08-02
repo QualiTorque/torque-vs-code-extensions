@@ -4,6 +4,17 @@ from server.ats.trees.common import *
 
 
 @dataclass
+class ArtifactMapping(MappingNode):
+    key: TextNode = None
+    value: TextNode = None
+
+
+@dataclass
+class ArtifactsSequenceNode(SequenceNode):
+    node_type = ArtifactMapping
+
+
+@dataclass
 class BlueprintFullInputNode(YamlNode):
     display_style: TextNode = None
     description: TextNode = None
@@ -80,3 +91,4 @@ class ServicesSequence(SequenceNode):
 class BlueprintTree(BaseTree):
     applications: AppsSequence = None
     services: ServicesSequence = None
+    artifacts: ArtifactsSequenceNode = None
