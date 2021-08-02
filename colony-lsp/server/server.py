@@ -621,6 +621,7 @@ async def validate_blueprint(server: ColonyLanguageServer, *args):
     except Exception as ex:
         print(ex)
     if result.stderr:
+        server.show_message_log(result.stderr)
         error_lines = result.stderr.splitlines()
         sep = error_lines[2].split(' ')
         diags = []
