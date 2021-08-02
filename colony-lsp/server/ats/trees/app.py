@@ -119,17 +119,17 @@ def process_token(token):
     # the beginning of the object or mapping
     if isinstance(token, BlockMappingStartToken):
         print("Object started")
-
-        if (is_array_item and isinstance(node_stack[-1], MappingNode)
+        last_node = node_stack[-1]
+        if (is_array_item and isinstance(last_node, MappingNode)
                 and not isinstance(token_stack[-1], BlockEntryToken)):
             token_stack.append(token)
-            value_node = node_stack[-1].set_value()
+            value_node = last_node.get_value()
             node_stack.append(value_node)
             value_node.start_pos = (token.start_mark.line, token.start_mark.column)
             is_array_item = False
             return
         token_stack.append(token)
-        node_stack[-1].start_pos = (token.start_mark.line, token.start_mark.column)
+        last_node.start_pos = (token.start_mark.line, token.start_mark.column)
 
     if isinstance(token, BlockSequenceStartToken):
         is_array_processing = True
@@ -217,7 +217,7 @@ def process_token(token):
             if not isinstance(node, MappingNode):
                 raise Exception(f"Expected MappingNode, got {type(node)}")
 
-            value_node = node.set_value()
+            value_node = node.get_value(expected_type=TextNode)
             node_stack.append(value_node)
 
             is_array_item = False
@@ -239,7 +239,7 @@ def process_token(token):
                 return
 
             if isinstance(node, MappingNode):
-                key_node = node.set_key()
+                key_node = node.get_key()
                 node_stack.append(key_node)
 
             if isinstance(token_stack[-1], BlockEntryToken):

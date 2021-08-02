@@ -73,23 +73,38 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
     value: YamlNode = None
     allow_variable: bool = False
 
-    def set_key(self, node: YamlNode = None):
-        if node is None:
+    def get_key(self):
+        if self.key is None:
             key_class = self.__dataclass_fields__['key'].type
             self.key = key_class(parent=self)
 
-        else:
-            self.key = node
-
         return self.key
 
-    def set_value(self, node: YamlNode = None):
-        if node is None:
-            value_class = self.__dataclass_fields__['value'].type
-            self.value = value_class(parent=self)
+    def get_value(self, expected_type: type = None):
+        """Returns mapping value
+        If value is None, it first will be initialized
+        When value has Union typing annotation it will try to initialize it with provided expected_type
+        If expected_type is not provided, first type from Union will be used"""
 
-        else:
-            self.value = node
+        if self.value is None:
+            value_class = self.__dataclass_fields__['value'].type
+
+            try:
+                possible_types = value_class.__args__ # check if it's union
+
+            except AttributeError:
+                possible_types = None
+
+            if expected_type:
+                if possible_types and expected_type in possible_types:
+                    value_class = expected_type
+                else:
+                    raise ValueError(f"Mapping value cannot be initiated with type '{expected_type}'")
+
+            else:
+                value_class = value_class if not possible_types else possible_types[0]
+
+            self.value = value_class(parent=self)
 
         return self.value
 
@@ -126,24 +141,6 @@ class BaseTree(YamlNode):
             {"inputs": "inputs_node"}
         )
         return mapping
-
-
-@dataclass
-class ResourceNode(YamlNode):
-    input_values: InputsNode = None # TODO: it must another Inputs Class (e.g. BlueprintInputsNode)
-    depend_on: TextNodesSequence = None
-
-
-@dataclass
-class ResourcesContainerNode(YamlNode):
-    """
-    Node representing the list of resources
-    """
-    nodes: List[ResourceNode] = field(default_factory=list)
-
-    def add(self, resource: ResourceNode):
-        self.nodes.append(resource)
-        return self.nodes[-1]
 
 
 @dataclass
