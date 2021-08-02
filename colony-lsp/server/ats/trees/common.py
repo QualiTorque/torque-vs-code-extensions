@@ -95,7 +95,7 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
             except AttributeError:
                 possible_types = None
 
-            if expected_type:
+            if expected_type is not None and expected_type != value_class:
                 if possible_types and expected_type in possible_types:
                     value_class = expected_type
                 else:
