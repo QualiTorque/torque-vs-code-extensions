@@ -110,6 +110,17 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
 
 
 @dataclass
+class TextMapping(MappingNode):
+    key: TextNode = None
+    value: TextNode = None
+
+
+@dataclass
+class TextMappingSequence(SequenceNode):
+    node_type = TextMapping
+
+
+@dataclass
 class MapNode(YamlNode):
     items: [MappingNode] = field(default_factory=list)
 
