@@ -570,18 +570,46 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
 #     return references
 
 
-# @colony_server.feature(DOCUMENT_LINK)
-# async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkParams,) -> List[DocumentLink]:
-#     print('---- document_link ----')
-#     print(locals())
-#     await asyncio.sleep(DEBOUNCE_DELAY)
-#     links: List[DocumentLink] = []
+@colony_server.feature(DOCUMENT_LINK)
+async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkParams,) -> List[DocumentLink]:
+    await asyncio.sleep(DEBOUNCE_DELAY)
+    links: List[DocumentLink] = []
     
-#     links.append(DocumentLink(range=Range(
-#                             start=Position(line=0, character=0),
-#                             end=Position(line=1, character=1),
-#                         ), target='file:///Users/yanivk/Projects/github/kalsky/samples/applications/mysql/mysql.sh'))
-#     return links
+    doc = colony_server.workspace.get_document(params.text_document.uri)
+    try:
+        yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
+    except yaml.MarkedYAMLError as ex:
+        return links
+    doc_type = yaml_obj.get('kind', '')
+    root = colony_server.workspace.root_path
+        
+    if doc_type == "blueprint":
+        try:
+            bp_tree = BlueprintParser(doc.source).parse()            
+        except Exception as ex:
+            import sys
+            logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+            return links
+        
+        if bp_tree.apps_node:
+            for app in bp_tree.apps_node.nodes:
+                target_path = f"{root}/applications/{app.id.text}/{app.id.text}.yaml"
+                tooltip = "Open the application file at " + target_path
+                links.append(DocumentLink(range=Range(
+                                          start=Position(line=app.id.start[0], character=app.id.start[1]),
+                                          end=Position(line=app.id.start[0], character=app.start[1]+len(app.id.text)),
+                                         ), target=target_path, tooltip=tooltip))
+        
+        if bp_tree.services_node:
+            for srv in bp_tree.services_node.nodes:
+                target_path = f"{root}/services/{srv.id.text}/{srv.id.text}.yaml"
+                tooltip = "Open the service file at " + target_path
+                links.append(DocumentLink(range=Range(
+                                          start=Position(line=srv.id.start[0], character=srv.id.start[1]),
+                                          end=Position(line=srv.id.start[0], character=srv.start[1]+len(srv.id.text)),
+                                         ), target=target_path, tooltip=tooltip))
+    
+    return links
 
 
 # @colony_server.feature(HOVER)
