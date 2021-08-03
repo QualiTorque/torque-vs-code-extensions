@@ -304,7 +304,10 @@ def completion_item_resolve(server: ColonyLanguageServer, params: CompletionItem
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
     doc = colony_server.workspace.get_document(params.text_document.uri)
-    yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)  # todo: refactor
+    try:
+        yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
+    except yaml.MarkedYAMLError as ex:
+        return CompletionList(is_incomplete=True, items=[])
     doc_type = yaml_obj.get('kind', '')
         
     fdrs = colony_server.workspace.folders
