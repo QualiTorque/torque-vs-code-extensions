@@ -43,6 +43,7 @@ class RuleNode(YamlNode):
     color: TextNode = None
     shortcut: TextNode = None
     default: TextNode = None
+    stickiness: TextNode = None
 
 
 @dataclass
@@ -152,6 +153,7 @@ class ServicesSequence(SequenceNode):
 
 @dataclass
 class BlueprintTree(BaseTree):
+    inputs_node: BlueprintInputsSequence = None
     applications: AppsSequence = None
     services: ServicesSequence = None
     artifacts: TextMappingSequence = None
