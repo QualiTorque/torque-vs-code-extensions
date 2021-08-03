@@ -295,6 +295,8 @@ def completion_item_resolve(server: ColonyLanguageServer, params: CompletionItem
         docstring = "some docstring" #convert_docstring(completion.docstring(), markup_kind)
         params.documentation = "documention"  #MarkupContent(kind=markup_kind, value=docstring)
         return params
+    
+    return None
 
 
 
@@ -307,21 +309,45 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         
     fdrs = colony_server.workspace.folders
     root = colony_server.workspace.root_path
-    print('completion')
-    print(params)
-    print('--------')
     
     if doc_type == "blueprint":
+        items=[]
         if params.context.trigger_character == '.':
-            print('...')
+            words = common.preceding_words(doc, params.position)
+            cur_word = words[-1]
+            if cur_word.startswith('$'):
+                bp_tree = BlueprintParser(doc.source).parse()
+                cur_word = cur_word[1:]
+                if cur_word.startswith('{'):
+                    cur_word = cur_word[1:]
+                
+                options = []
+                if cur_word.startswith('colony'):
+                    if cur_word == 'colony.':
+                        options = ['environment', 'repos']
+                        if bp_tree.apps_node and len(bp_tree.apps_node.nodes) > 0:
+                            options.append('applications')
+                        if bp_tree.services_node and len(bp_tree.services_node.nodes) > 0:
+                            options.append('services')
+                    elif cur_word == 'colony.environment.':
+                        options = ['id', 'virtual_network_id', 'public_address']
+                    elif cur_word == 'colony.repos.':
+                        options = ['branch']
+                    elif cur_word == 'colony.repos.branch.':
+                        options = ['current']
+                
+                for option in options:
+                    items.append(CompletionItem(label=option,
+                                                kind=CompletionItemKind.Property))
+                    
+                
         else:
-            parent = common.get_parent_word(colony_server.workspace.get_document(params.text_document.uri), params.position)
-            items=[]
-            
+            parent = common.get_parent_word(doc, params.position)
+            line = params.position.line
+            char = params.position.character
+                
             if parent == "applications":
                 apps = applications.get_available_applications(root)
-                line = params.position.line
-                char = params.position.character
                 for app in apps:
                     items.append(CompletionItem(label=app, 
                                                 kind=CompletionItemKind.Reference, 
