@@ -345,7 +345,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                                 options.append(srv.id.text)
                     elif cur_word.startswith('colony.applications.'):
                         parts = cur_word.split('.')
-                        if len(parts) == 4:
+                        if len(parts) == 4 and parts[2] != '':
                             options.append('outputs')
                         elif len(parts) == 5 and parts[3] == 'outputs':
                             apps = applications.get_available_applications(root)
