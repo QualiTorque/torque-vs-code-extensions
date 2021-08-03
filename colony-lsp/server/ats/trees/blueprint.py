@@ -74,15 +74,7 @@ class BlueprintFullInputNode(YamlNode):
 @dataclass
 class BlueprintInputNode(MappingNode):
     key: TextNode = None
-    value: Union[BlueprintFullInputNode, TextNode] = None
-
-    @property
-    def default_value(self):
-        if isinstance(self.value, BlueprintFullInputNode):
-            return self.value.default_value
-
-        if isinstance(self.value, TextNode):
-            return self.value
+    value: BlueprintFullInputNode = None
 
 
 @dataclass
@@ -92,7 +84,7 @@ class BlueprintInputsSequence(SequenceNode):
 
 @dataclass
 class ServiceResourceNode(YamlNode):
-    input_values: BlueprintInputsSequence = None
+    input_values: InputsNode = None
     depends_on: TextNodesSequence = None
 
 
