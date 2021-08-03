@@ -29,12 +29,6 @@ class InfrastructureNode(YamlNode):
 
 
 @dataclass
-class MetadataNode(YamlNode):
-    description: TextNode = None
-    tags: TextNodesSequence = None
-
-
-@dataclass
 class RuleNode(YamlNode):
     path: TextNode = None
     host: TextNode = None
@@ -47,12 +41,11 @@ class RuleNode(YamlNode):
 
 
 @dataclass
-class RulesSequenceNode(SequenceNode):
-    node_type = RuleNode
-
-
-@dataclass
 class ListenerNode(YamlNode):
+    @dataclass
+    class RulesSequenceNode(SequenceNode):
+        node_type = RuleNode
+
     http: TextNode = None
     redirect_to_listener: TextNode = None
     https: TextNode = None
@@ -61,21 +54,13 @@ class ListenerNode(YamlNode):
 
 
 @dataclass
-class ListenersSequenceNode(SequenceNode):
-    node_type = ListenerNode
-
-
-@dataclass
 class IngressNode(YamlNode):
+    @dataclass
+    class ListenersSequenceNode(SequenceNode):
+        node_type = ListenerNode
+
     enabled: TextNode = None
     listeners: ListenersSequenceNode = None
-
-
-@dataclass
-class DebuggingNode(YamlNode):
-    bastion_availability: TextNode = None
-    direct_access: TextNode = None
-    availability: TextNode = None
 
 
 @dataclass
@@ -106,18 +91,13 @@ class BlueprintInputsSequence(SequenceNode):
 
 
 @dataclass
-class ResourceNode(YamlNode):
+class ServiceResourceNode(YamlNode):
     input_values: BlueprintInputsSequence = None
     depends_on: TextNodesSequence = None
 
 
 @dataclass
-class ServiceResourceNode(ResourceNode):
-    pass
-
-
-@dataclass
-class ApplicationResourceNode(ResourceNode):
+class ApplicationResourceNode(ServiceResourceNode):
     target: TextNode = None
     instances: TextNode = None
 
@@ -142,17 +122,26 @@ class ServiceNode(ResourceMappingNode):
 
 
 @dataclass
-class AppsSequence(SequenceNode):
-    node_type = ApplicationNode
-
-
-@dataclass
-class ServicesSequence(SequenceNode):
-    node_type = ServiceNode
-
-
-@dataclass
 class BlueprintTree(BaseTree):
+    @dataclass
+    class MetadataNode(YamlNode):
+        description: TextNode = None
+        tags: TextNodesSequence = None
+
+    @dataclass
+    class AppsSequence(SequenceNode):
+        node_type = ApplicationNode
+
+    @dataclass
+    class ServicesSequence(SequenceNode):
+        node_type = ServiceNode
+
+    @dataclass
+    class DebuggingNode(YamlNode):
+        bastion_availability: TextNode = None
+        direct_access: TextNode = None
+        availability: TextNode = None
+
     inputs_node: BlueprintInputsSequence = None
     applications: AppsSequence = None
     services: ServicesSequence = None
