@@ -331,10 +331,16 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                                                                 new_text=apps[app]['app_completion'],
                                                 )))
             
-            # if parent == "services":
-            #     srvs = services.get_available_services(root)
-            #     for srv in srvs:
-            #         items.append(CompletionItem(label=srv, kind=CompletionItemKind.Reference, insert_text=srvs[srv]))
+            if parent == "services":
+                srvs = services.get_available_services(root)
+                for srv in srvs:
+                    items.append(CompletionItem(label=srv, 
+                                                kind=CompletionItemKind.Reference, 
+                                                text_edit=TextEdit(
+                                                                range=Range(start=Position(line=line, character=char-2),
+                                                                            end=Position(line=line, character=char)),
+                                                                new_text=srvs[srv]['srv_completion'],
+                                                )))
             
             # if parent == "input_values":
             #     available_inputs = _get_file_inputs(doc.source)
@@ -345,7 +351,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             #     # TODO: add output generated variables of apps/services in this blueprint ($colony.applications.app_name.outputs.output_name, $colony.services.service_name.outputs.output_name)
         
         return CompletionList(
-            is_incomplete=False,
+            is_incomplete=(len(items)==0),
             items=items
         )
     # elif doc_type == "application":

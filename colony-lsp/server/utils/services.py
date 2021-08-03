@@ -42,12 +42,12 @@ def load_service_details(srv_name: str, srv_source):
     output = f"- {srv_name}:\n"
     inputs = srv_tree.inputs_node.inputs
     if inputs:
-        output += "  inputs_value:\n"
+        output += "    input_values:\n"
         for input in inputs:
             if input.value:
-                output += f"    - {input.key.text}: {input.value.text}\n"
+                output += f"      - {input.key.text}: {input.value.text}\n"
             else:
-                output += f"    - {input.key.text}: \n" 
+                output += f"      - {input.key.text}: \n" 
     
     SERVICES[srv_name] = {
         "srv_tree": srv_tree,
