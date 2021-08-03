@@ -539,41 +539,33 @@ async def start_sandbox(server: ColonyLanguageServer, *args):
     token = connection["token"]
     server.show_message('Starting sandbox from blueprint: ' + blueprint_name)
     try:
-        result = subprocess.run([sys.prefix + '/bin/colony', 
-                                '--token', token,
-                                '--account', account,
-                                '--space', space,
-                                'sb', 'start', blueprint_name], 
-                                cwd=server.workspace.root_path,
-                                capture_output=True, text=True)
+        process = subprocess.Popen([sys.prefix + '/bin/colony', 
+                                    '--token', token,
+                                    '--account', account,
+                                    '--space', space,
+                                    'sb', 'start', blueprint_name], 
+                                   cwd=server.workspace.root_path, 
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        for line in process.stdout:
+            line_dec = line.decode().strip()
+            if not line_dec.endswith('sec]'):
+                server.show_message_log(line_dec)
+        
+        error_msg = ""            
+        if process.stderr:
+            # server.show_message_log('Error while starting the sandbox:')
+            for line in process.stderr:
+                error_msg += line.decode().strip() + '\n'
+                # server.show_message_log(line.decode().strip())
+            if error_msg:
+                error_msg = 'Error while starting the sandbox:\n' + error_msg
+                server.show_message_log(error_msg)
+        if error_msg:
+            server.show_message('Sandbox had some errors. See details in the Output view.')
+        else:
+            server.show_message('Sandbox is ready. See details in the Output view.')
     except Exception as ex:
-        print(ex)
-    if result.stderr:
-        server.show_message_log(result.stderr, MessageType.Error)
-        server.show_message('Error while starting the sandbox. Check the output window for more details.', MessageType.Error)
-        return
-    print(result.stderr)
-    print(result.stdout)
-    if result.stderr:
-        error_lines = result.stderr.splitlines()
-        sep = error_lines[2].split(' ')
-        diags = []
-        for line in range(3, len(error_lines)):
-            msg = error_lines[line][0:len(sep[0])] + ': ' + error_lines[line][len(sep[0])+1: len(error_lines[line])].strip()
-            diags.append(Diagnostic(
-                range=Range(
-                    start=Position(line=0, character=0),
-                    end=Position(line=0, character=1),
-                ),
-                message=msg
-            ))
-        server.publish_diagnostics(args[0][0], diags)
-        server.show_message('Validation complete. Check the Problems view for any issues.')
-    else:
-        server.show_message('Validation completed. Blueprint is valid.')
-    server.show_message('Sandbox is ready. See details in the Output view.')
-    server.show_message_log('Sandbox ID: ' + 'sandbox-id')
-    server.show_message_log('Sandbox URL: ' + 'sandbox-url')
+        server.show_message_log(str(ex), msg_type=MessageType.Error)
     
 
 @colony_server.command(ColonyLanguageServer.CMD_VALIDATE_BLUEPRINT)
@@ -606,10 +598,7 @@ async def validate_blueprint(server: ColonyLanguageServer, *args):
     space = connection["space"]        
     token = connection["token"]
     server.show_message('Validating blueprint: ' + blueprint_name)
-    # print(os.getcwd())
-    # print(sys.prefix, sys.base_prefix)
-    # print(sys.prefix == sys.base_prefix)
-    # print(os.getenv('VIRTUAL_ENV'))
+
     try:
         result = subprocess.run([sys.prefix + '/bin/colony', 
                                 '--token', token,
@@ -621,20 +610,7 @@ async def validate_blueprint(server: ColonyLanguageServer, *args):
     except Exception as ex:
         print(ex)
     if result.stderr:
-        server.show_message_log(result.stderr)
-        error_lines = result.stderr.splitlines()
-        sep = error_lines[2].split(' ')
-        diags = []
-        for line in range(3, len(error_lines)):
-            msg = error_lines[line][0:len(sep[0])] + ': ' + error_lines[line][len(sep[0])+1: len(error_lines[line])].strip()
-            diags.append(Diagnostic(
-                range=Range(
-                    start=Position(line=0, character=0),
-                    end=Position(line=0, character=1),
-                ),
-                message=msg
-            ))
-        server.publish_diagnostics(args[0][0], diags)
+        server.show_message_log(result.stderr)        
         server.show_message('Validation complete. Check the Problems view for any issues.')
     else:
         server.show_message('Validation completed. Blueprint is valid.')
