@@ -371,7 +371,7 @@ def process_token(token):
             if not isinstance(node, MappingNode):
                 raise Exception(f"Expected MappingNode, got {type(node)}")
 
-            value_node = node.get_value(expected_type=TextNode)
+            value_node = node.get_value()
             node_stack.append(value_node)
 
             is_array_item = False
