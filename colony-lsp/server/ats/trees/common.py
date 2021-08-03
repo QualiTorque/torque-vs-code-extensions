@@ -110,6 +110,15 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
 
 
 @dataclass
+class ResourceMappingNode(MappingNode):
+    key: TextNode = None
+
+    @property
+    def id(self):
+        return self.key
+
+
+@dataclass
 class TextMapping(MappingNode):
     key: TextNode = None
     value: TextNode = None

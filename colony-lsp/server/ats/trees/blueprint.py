@@ -103,15 +103,6 @@ class ApplicationResourceNode(ServiceResourceNode):
 
 
 @dataclass
-class ResourceMappingNode(MappingNode):
-    key: TextNode = None
-
-    @property
-    def id(self):
-        return self.key
-
-
-@dataclass
 class ApplicationNode(ResourceMappingNode):
     value: ApplicationResourceNode = None
 
