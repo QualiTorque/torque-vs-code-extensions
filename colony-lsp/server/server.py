@@ -335,10 +335,50 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                         options = ['branch']
                     elif cur_word == 'colony.repos.branch.':
                         options = ['current']
+                    elif cur_word == 'colony.applications.':
+                        if bp_tree.apps_node and len(bp_tree.apps_node.nodes) > 0:
+                            for app in bp_tree.apps_node.nodes:
+                                options.append(app.id.text)
+                    elif cur_word == 'colony.services.':
+                        if bp_tree.apps_node and len(bp_tree.services_node.nodes) > 0:
+                            for srv in bp_tree.services_node.nodes:
+                                options.append(srv.id.text)
+                    elif cur_word.startswith('colony.applications.'):
+                        parts = cur_word.split('.')
+                        if len(parts) == 4:
+                            options.append('outputs')
+                        elif len(parts) == 5 and parts[3] == 'outputs':
+                            apps = applications.get_available_applications(root)
+                            for app in apps:
+                                if app == parts[2]:
+                                    outputs = applications.get_app_outputs(app_name=parts[2])
+                                    if outputs:
+                                        options.extend(outputs)
+                                    break
+                    elif cur_word.startswith('colony.services.'):
+                        parts = cur_word.split('.')
+                        if len(parts) == 4 and parts[2] != '':
+                            options.append('outputs')
+                        elif len(parts) == 5 and parts[3] == 'outputs':
+                            apps = services.get_available_services(root)
+                            for app in apps:
+                                if app == parts[2]:
+                                    outputs = services.get_service_outputs(srv_name=parts[2])
+                                    if outputs:
+                                        options.extend(outputs)
+                                    break
+                                    
                 
+                line = params.position.line
+                char = params.position.character
                 for option in options:
                     items.append(CompletionItem(label=option,
-                                                kind=CompletionItemKind.Property))
+                                                kind=CompletionItemKind.Property,
+                                                text_edit=TextEdit(
+                                                    range=Range(start=Position(line=line, character=char),
+                                                                end=Position(line=line, character=char+len(option))),
+                                                                new_text=option
+                                                )))
                     
                 
         else:
