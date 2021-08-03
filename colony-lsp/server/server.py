@@ -282,25 +282,25 @@ async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentPara
 
 
 
-@colony_server.feature(COMPLETION_ITEM_RESOLVE, CompletionOptions())
-def completion_item_resolve(server: ColonyLanguageServer, params: CompletionItem) -> CompletionItem:
-    """Resolves documentation and detail of given completion item."""
-    print('completion_item_resolve')
-    print(server)
-    print(params)
-    print('---------')
-    if params.label == 'debugging':
-        #completion = _MOST_RECENT_COMPLETIONS[item.label]
-        params.detail = "debugging description"
-        docstring = "some docstring" #convert_docstring(completion.docstring(), markup_kind)
-        params.documentation = "documention"  #MarkupContent(kind=markup_kind, value=docstring)
-        return params
+# @colony_server.feature(COMPLETION_ITEM_RESOLVE, CompletionOptions())
+# def completion_item_resolve(server: ColonyLanguageServer, params: CompletionItem) -> CompletionItem:
+#     """Resolves documentation and detail of given completion item."""
+#     print('completion_item_resolve')
+#     print(server)
+#     print(params)
+#     print('---------')
+#     if params.label == 'debugging':
+#         #completion = _MOST_RECENT_COMPLETIONS[item.label]
+#         params.detail = "debugging description"
+#         docstring = "some docstring" #convert_docstring(completion.docstring(), markup_kind)
+#         params.documentation = "documention"  #MarkupContent(kind=markup_kind, value=docstring)
+#         return params
     
-    return None
+#     return None
 
 
 
-@colony_server.feature(COMPLETION, CompletionOptions(resolve_provider=True, trigger_characters=['.']))
+@colony_server.feature(COMPLETION, CompletionOptions(resolve_provider=False, trigger_characters=['.']))
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
     doc = colony_server.workspace.get_document(params.text_document.uri)
