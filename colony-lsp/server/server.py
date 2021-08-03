@@ -319,12 +319,17 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             words = common.preceding_words(doc, params.position)
             if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
                 cur_word = words[-1]
-                if cur_word.startswith('$'):
+                word_parts = cur_word.split('$')
+                if word_parts:
+                    if word_parts[-1].startswith('{colony.'):
+                        cur_word = word_parts[-1][1:]
+                    elif word_parts[-1].startswith('colony.'):
+                        cur_word = word_parts[-1]
+                    else:
+                        cur_word = ''
+                if cur_word:
                     bp_tree = BlueprintParser(doc.source).parse()
-                    cur_word = cur_word[1:]
-                    if cur_word.startswith('{'):
-                        cur_word = cur_word[1:]
-                    
+                                        
                     options = []
                     if cur_word.startswith('colony'):
                         if cur_word == 'colony.':
