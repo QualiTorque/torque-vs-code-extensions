@@ -1,13 +1,15 @@
 import os
 import pathlib
-from server.ats.parser import AppParser
+from server.ats.parser import Parser
 import yaml
 
 APPLICATIONS = {}
 
 
 def load_app_details(app_name: str, app_source: str):
-    app_tree = AppParser(document=app_source).parse()
+    parser = Parser(document=app_source)
+    parser.parse()
+    app_tree = parser.tree
     
     output = f"{app_name}:\n"
     output += "  instances: 1\n"                        

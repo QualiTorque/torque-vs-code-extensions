@@ -47,6 +47,8 @@ class Parser:
             print(f"error during getting a child : {e}")
 
     def _process_token(self, token: Token) -> None:
+
+        print(f"Processin token: {token}")
         # beginning of document
         if isinstance(token, StreamStartToken):
             self.tree.start_pos = (token.start_mark.line, token.start_mark.column)
@@ -236,3 +238,12 @@ class Parser:
             raise ValueError(f"Unable to initialize tree from document kind '{doc_type}'")
 
         return trees[doc_type]()
+
+bp_path = "/Users/ddovbii/colony-demo-space-my/blueprints/My-eCommerce-App.yaml"
+with open(bp_path, 'r') as f:
+    doc = f.read()
+
+    parser = Parser(doc)
+    parser.parse()
+    tree = parser.tree
+    print(tree)

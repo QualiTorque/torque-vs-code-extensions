@@ -33,14 +33,14 @@ import re
 from json import JSONDecodeError
 from typing import Any, Dict, Optional, Tuple, List, Union, cast
 
-from server.ats.parser import AppParser, BlueprintParser, BlueprintTree, ServiceParser
+from server.ats.parser import   BlueprintTree, Parser
 
 from server.utils import services, applications, common
 from pygls.protocol import LanguageServerProtocol
 
 from pygls.lsp.methods import (CODE_LENS, COMPLETION, COMPLETION_ITEM_RESOLVE, DOCUMENT_LINK, TEXT_DOCUMENT_DID_CHANGE,
-                               TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES, DEFINITION, 
-                               TEXT_DOCUMENT_SEMANTIC_TOKENS)
+                               TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES, DEFINITION,  )
+                            #    TEXT_DOCUMENT_SEMANTIC_TOKENS)
 from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              CompletionParams, ConfigurationItem,
                              ConfigurationParams, Diagnostic, Location,
@@ -157,7 +157,10 @@ def _validate(ls, params):
 
         if doc_type == "blueprint":
             try:
-                bp_tree = BlueprintParser(source).parse()
+                parser = Parser(source)
+                parser.parse()
+                bp_tree = parser.tree
+                # bp_tree = BlueprintParser(source).parse()
                 validator = BlueprintValidationHandler(bp_tree, root)
                 diagnostics += validator.validate(text_doc)
             except Exception as ex:

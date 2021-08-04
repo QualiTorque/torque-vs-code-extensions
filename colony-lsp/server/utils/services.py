@@ -2,7 +2,7 @@
 import os
 import re
 import pathlib
-from server.ats.parser import ServiceParser
+from server.ats.parser import Parser
 import yaml
 
 
@@ -35,8 +35,9 @@ def get_available_services_names():
 
 
 def load_service_details(srv_name: str, srv_source):
-    srv_tree = ServiceParser(document=srv_source).parse()
-    
+    parser = Parser(document=srv_source)
+    parser.parse()
+    srv_tree = parser.tree
     output = f"{srv_name}:\n"
     inputs = srv_tree.inputs_node.nodes
     if inputs:
