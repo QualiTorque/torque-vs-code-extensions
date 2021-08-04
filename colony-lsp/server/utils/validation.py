@@ -107,10 +107,8 @@ class ServiceValidationHandler(ValidationHandler):
 class BlueprintValidationHandler(ValidationHandler):
     def __init__(self, tree: BlueprintTree, root_path: str):
         super().__init__(tree, root_path)
-        self.blueprint_apps = [app.id.text for app in self._tree.apps_node.nodes] if self._tree.apps_node else []
-        self.blueprint_services = [srv.id.text for srv in
-                                   self._tree.services_node.nodes] if self._tree.services_node else []
-        self.blueprint_services = [srv.id.text for srv in self._tree.services_node.nodes] if self._tree.services_node else []
+        self.blueprint_apps = [app.id.text for app in self._tree.applications.nodes] if self._tree.applications else []
+        self.blueprint_services = [srv.id.text for srv in self._tree.services.nodes] if self._tree.services else []
 
     def _check_for_deprecated_properties(self, text_doc):
         deprecated_properties = {"availability": "bastion_availability"}
@@ -162,15 +160,15 @@ class BlueprintValidationHandler(ValidationHandler):
         srvs = self.blueprint_services
         apps_n_srvs = set(apps + srvs)
 
-        if self._tree.apps_node:
-            for app in self._tree.apps_node.nodes:
+        if self._tree.applications:
+            for app in self._tree.applications.nodes:
                 for dep in app.depends_on:
                     if dep.text not in apps_n_srvs:
                         self._add_diagnostic(dep, message=message.format(dep.text))
                     elif dep.text == app.id.text:
                         self._add_diagnostic(dep, message=f"The app '{app.id.text}' cannot be dependent of itself")
-        if self._tree.services_node:
-            for srv in self._tree.services_node.nodes:
+        if self._tree.services:
+            for srv in self._tree.services.nodes:
                 for dep in srv.depends_on:
                     if dep.text not in apps_n_srvs:
                         self._add_diagnostic(dep, message=message.format(dep.text))
@@ -178,32 +176,32 @@ class BlueprintValidationHandler(ValidationHandler):
                         self._add_diagnostic(dep, message=f"The service '{srv.id.text}' cannot be dependent of itself")
 
     def _validate_non_existing_app_is_used(self):
-        if self._tree.apps_node:
+        if self._tree.applications:
             message = "The app '{}' could not be found in the /applications folder"
             available_apps = applications.get_available_applications_names()
-            for app in self._tree.apps_node.nodes:
+            for app in self._tree.applications.nodes:
                 if app.id.text not in available_apps:
                     self._add_diagnostic(app.id, message=message.format(app.id.text))
 
     def _validate_blueprint_apps_have_input_values(self):
-        if self._tree.apps_node:
-            for app in self._tree.apps_node.nodes:
+        if self._tree.applications:
+            for app in self._tree.applications.nodes:
                 for var in app.inputs_node.nodes:
                     if not var.value:
                         self._add_diagnostic(var.key, message="Application input must have a value")
 
     def _validate_blueprint_services_have_input_values(self):
-        if self._tree.services_node:
-            for app in self._tree.services_node.nodes:
+        if self._tree.services:
+            for app in self._tree.services.nodes:
                 for var in app.inputs_node.nodes:
                     if not var.value:
                         self._add_diagnostic(var.key, message="Service input must have a value")
 
     def _validate_non_existing_service_is_used(self):
-        if self._tree.services_node:
+        if self._tree.services:
             message = "The service '{}' could not be found in the /services folder"
             available_srvs = services.get_available_services_names()
-            for srv in self._tree.services_node.nodes:
+            for srv in self._tree.services.nodes:
                 if srv.id.text not in available_srvs:
                     self._add_diagnostic(srv.id, message=message.format(srv.id.text))
 
@@ -275,13 +273,13 @@ class BlueprintValidationHandler(ValidationHandler):
     def _validate_var_being_used_is_defined(self):
         bp_inputs = {input.key.text for input in self._tree.inputs_node.nodes} if hasattr(self._tree,
                                                                                           'inputs_node') and self._tree.inputs_node else {}
-        if self._tree.apps_node:
-            for app in self._tree.apps_node.nodes:
+        if self._tree.applications:
+            for app in self._tree.applications.nodes:
                 for input in app.inputs_node.nodes:
                     self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
 
-        if self._tree.services_node:
-            for srv in self._tree.services_node.nodes:
+        if self._tree.services:
+            for srv in self._tree.services.nodes:
                 for input in srv.inputs_node.nodes:
                     self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
 
@@ -335,8 +333,8 @@ class BlueprintValidationHandler(ValidationHandler):
         # check that there are no duplicate names in the apps being used
         duplicated = {}
         apps = {}
-        if self._tree.apps_node:
-            for app in self._tree.apps_node.nodes:
+        if self._tree.applications:
+            for app in self._tree.applications.nodes:
                 if app.id.text not in apps:
                     apps[app.id.text] = app
                 else:
@@ -350,8 +348,8 @@ class BlueprintValidationHandler(ValidationHandler):
 
         # check that there are no duplicate names in the services being used
         srvs = {}
-        if self._tree.services_node:
-            for srv in self._tree.services_node.nodes:
+        if self._tree.services:
+            for srv in self._tree.services.nodes:
                 if srv.id.text not in srvs:
                     srvs[srv.id.text] = srv
                 else:
@@ -371,13 +369,13 @@ class BlueprintValidationHandler(ValidationHandler):
                     prev_app = apps[srv.id.text]
                     self._add_diagnostic(prev_app.id, message=msg)
 
-    def _validate_artifaces_apps_are_defined(self):
+    def _validate_artifacts_apps_are_defined(self):
         if self._tree.artifacts:
             for art in self._tree.artifacts:
                 if art.key.text not in self.blueprint_apps:
                     self._add_diagnostic(art.key, message="This application is not defined in this blueprint.")
 
-    def _validate_artifaces_are_unique(self):
+    def _validate_artifacts_are_unique(self):
         if self._tree.artifacts:
             arts = {}
             duplicated = {}
@@ -394,9 +392,9 @@ class BlueprintValidationHandler(ValidationHandler):
                         duplicated[prev_art.key.text] = 1
 
     def _validate_apps_inputs_exists(self):
-        if self._tree.apps_node:
+        if self._tree.applications:
             apps = applications.get_available_applications_names()
-            for app in self._tree.apps_node.nodes:
+            for app in self._tree.applications.nodes:
                 if app.id.text in apps:
                     app_inputs = applications.get_app_inputs(app.id.text)
                     used_inputs = []
@@ -418,9 +416,9 @@ class BlueprintValidationHandler(ValidationHandler):
                         )
 
     def _validate_services_inputs_exists(self):
-        if self._tree.services_node:
+        if self._tree.services:
             srvs = services.get_available_services_names()
-            for srv in self._tree.services_node.nodes:
+            for srv in self._tree.services.nodes:
                 if srv.id.text in srvs:
                     srv_inputs = services.get_service_inputs(srv.id.text)
                     used_inputs = []
@@ -482,8 +480,8 @@ class BlueprintValidationHandler(ValidationHandler):
             self._validate_non_existing_app_is_used()
             self._validate_non_existing_service_is_used()
             self._validate_apps_and_services_are_unique()
-            self._validate_artifaces_apps_are_defined()
-            self._validate_artifaces_are_unique()
+            self._validate_artifacts_apps_are_defined()
+            self._validate_artifacts_are_unique()
             self._validate_apps_inputs_exists()
             self._validate_services_inputs_exists()
         except Exception as ex:
