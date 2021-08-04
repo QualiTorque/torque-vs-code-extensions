@@ -3,6 +3,7 @@ from yaml import StreamStartToken, ScalarToken, BlockMappingStartToken, KeyToken
 
 from server.ats.trees.blueprint import BlueprintTree
 from server.ats.trees.common import *
+from server.ats.trees.service import ServiceTree
 
 
 @dataclass
@@ -420,10 +421,10 @@ def process_token(token):
 
 
 bp_path = "/Users/ddovbii/colony-demo-space-my/blueprints/promotions-manager-all-aws.yaml"
-
-with open(app_path, "r") as f:
+srv_tree = "/Users/ddovbii/colony-demo-space-my/services/rds-mysql-aurora-cluster/rds-mysql-aurora-cluster.yaml"
+with open(bp_path, "r") as f:
     data = yaml.scan(f, Loader=yaml.FullLoader)
-    tree = AppTree()
+    tree = BlueprintTree()
     node_stack.append(tree)
 
     for tok in data:
