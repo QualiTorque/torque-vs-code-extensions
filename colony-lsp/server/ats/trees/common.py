@@ -80,9 +80,29 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
 
         return self.key
 
-    def get_value(self):
+    def get_value(self, expected_type: type = None):
+        """Returns mapping value
+        If value is None, it first will be initialized
+        When value has Union typing annotation it will try to initialize it with provided expected_type
+        If expected_type is not provided, first type from Union will be used"""
         if self.value is None:
             value_class = self.__dataclass_fields__['value'].type
+
+            try:
+                possible_types = value_class.__args__ # check if it's union
+
+            except AttributeError:
+                possible_types = None
+
+            if expected_type is not None and expected_type != value_class:
+                if possible_types and expected_type in possible_types:
+                    value_class = expected_type
+                else:
+                    raise ValueError(f"Mapping value cannot be initiated with type '{expected_type}'")
+
+            else:
+                value_class = value_class if not possible_types else possible_types[0]
+
             self.value = value_class(parent=self)
 
         return self.value

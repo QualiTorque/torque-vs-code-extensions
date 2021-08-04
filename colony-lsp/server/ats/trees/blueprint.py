@@ -74,7 +74,15 @@ class BlueprintFullInputNode(YamlNode):
 @dataclass
 class BlueprintInputNode(MappingNode):
     key: TextNode = None
-    value: BlueprintFullInputNode = None
+    value: Union[BlueprintFullInputNode, TextNode] = None
+
+    @property
+    def default_value(self):
+        if isinstance(self.value, BlueprintFullInputNode):
+            return self.value.default_value
+
+        if isinstance(self.value, TextNode):
+            return self.value
 
 
 @dataclass
