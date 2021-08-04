@@ -47,8 +47,6 @@ class Parser:
             print(f"error during getting a child : {e}")
 
     def _process_token(self, token: Token) -> None:
-
-        print(f"Processin token: {token}")
         # beginning of document
         if isinstance(token, StreamStartToken):
             self.tree.start_pos = (token.start_mark.line, token.start_mark.column)
@@ -217,12 +215,14 @@ class Parser:
 
                 self.tokens_stack.pop()
 
-    def parse(self) -> None:
+    def parse(self) -> BaseTree:
         data = yaml.scan(self.document, Loader=yaml.FullLoader)
         self.nodes_stack.append(self.tree)
 
         for token in data:
             self._process_token(token)
+
+        return self.tree
 
     def _get_tree(self) -> BaseTree:
         trees = {
