@@ -1,4 +1,5 @@
 
+import pathlib
 import re
 from server.validation.common import ValidationHandler
 import sys
@@ -11,10 +12,18 @@ from server.utils import applications, services
 
 
 class BlueprintValidationHandler(ValidationHandler):
-    def __init__(self, tree: BlueprintTree, root_path: str):
-        super().__init__(tree, root_path)
+    def __init__(self, tree: BlueprintTree, document_path: str):
+        super().__init__(tree, document_path)
         self.blueprint_apps = [app.id.text for app in self._tree.applications.nodes] if self._tree.applications else []
         self.blueprint_services = [srv.id.text for srv in self._tree.services.nodes] if self._tree.services else []
+
+    def _get_repo_root_path(self):
+        path = pathlib.Path(self._document_path).absolute()
+        if path.parents[0].name == "blueprints":
+            return path.parents[1].absolute().as_posix()
+
+        else:
+            raise ValueError(f"Wrong document path of blueprint file: {path.as_posix()}")    
 
     def _check_for_deprecated_properties(self, text_doc):
         deprecated_properties = {"availability": "bastion_availability"}
@@ -72,7 +81,7 @@ class BlueprintValidationHandler(ValidationHandler):
                 if not app.details or not app.details.depends_on:
                     continue
 
-                for dep in app.depends_on.nodes:
+                for dep in app.details.depends_on.nodes:
                     if dep.text not in apps_n_srvs:
                         self._add_diagnostic(dep, message=message.format(dep.text))
                     elif dep.text == app.id.text:
@@ -84,7 +93,7 @@ class BlueprintValidationHandler(ValidationHandler):
                 if not srv.details or not srv.details.depends_on:
                     continue
 
-                for dep in srv.depends_on.nodes:
+                for dep in srv.details.depends_on.nodes:
                     if dep.text not in apps_n_srvs:
                         self._add_diagnostic(dep, message=message.format(dep.text))
                     elif dep.text == srv.id.text:
@@ -391,8 +400,10 @@ class BlueprintValidationHandler(ValidationHandler):
 
         try:
             # prep
-            _ = applications.get_available_applications(self._root_path)
-            _ = services.get_available_services(self._root_path)
+            root_path = self._get_repo_root_path()
+
+            _ = applications.get_available_applications(root_path)
+            _ = services.get_available_services(root_path)
             # warnings
             self._check_for_unused_blueprint_inputs(text_doc)
             self._check_for_deprecated_properties(text_doc)

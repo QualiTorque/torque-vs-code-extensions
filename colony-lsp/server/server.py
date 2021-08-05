@@ -145,7 +145,7 @@ colony_server = ColonyLanguageServer()
 
 def _validate(ls, params):
     text_doc = ls.workspace.get_document(params.text_document.uri)
-    root = ls.workspace.root_path
+    doc_path = params.text_document.uri.replace("file://", "")
     
     source = text_doc.source
     diagnostics = _validate_yaml(source) if source else []
@@ -153,8 +153,9 @@ def _validate(ls, params):
     try:
         tree = Parser(source).parse()
         cls_validator = ValidatorFactory.get_validator(tree)
-        validator = cls_validator(tree, root)
+        validator = cls_validator(tree, doc_path)
         diagnostics += validator.validate(text_doc)
+
     except ParserError as e:
         diagnostics.append(
             Diagnostic(
@@ -162,6 +163,7 @@ def _validate(ls, params):
                     start=Position(line=e.start_pos[0], character=e.start_pos[1]),
                     end=Position(line=e.end_pos[0], character=e.end_pos[1])),
                 message=e.message))
+
     except ValueError as e:
         diagnostics.append(
             Diagnostic(
@@ -169,6 +171,7 @@ def _validate(ls, params):
                     start=Position(line=0, character=0),
                     end=Position(line=0, character=0)),
                 message=e))
+
     except Exception as ex:
         import sys
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)

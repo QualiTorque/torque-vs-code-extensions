@@ -5,10 +5,13 @@ from server.constants import PREDEFINED_COLONY_INPUTS
 
 
 class ValidationHandler:
-    def __init__(self, tree: BaseTree, root_path: str):
+    def __init__(self, tree: BaseTree, document_path: str):
         self._tree = tree
         self._diagnostics: List[Diagnostic] = []
-        self._root_path = root_path
+        self._document_path = document_path
+
+    def _get_repo_root_path(self):
+        raise NotImplementedError()
 
     def _add_diagnostic(
             self,

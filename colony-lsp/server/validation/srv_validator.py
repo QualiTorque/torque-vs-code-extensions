@@ -1,3 +1,4 @@
+import pathlib
 import re
 from server.validation.common import ValidationHandler
 import sys
@@ -20,6 +21,14 @@ class ServiceValidationHandler(ValidationHandler):
             logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
 
         return self._diagnostics
+
+    def _get_repo_root_path(self):
+        path = pathlib.Path(self._document_path).absolute()
+        if path.parents[1].name == "services":
+            return path.parents[2].absolute().as_posix()
+
+        else:
+            raise ValueError(f"Wrong document path of service file: {path.as_posix()}")    
 
     def _check_for_unused_service_inputs(self, text_doc):
         if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
