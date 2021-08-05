@@ -297,7 +297,7 @@ class BlueprintValidationHandler(ValidationHandler):
                 if not srv.details or not srv.details.input_values:
                     continue
 
-                for input in srv.input_values.nodes:
+                for input in srv.details.input_values.nodes:
                     self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
 
         if self._tree.artifacts:
@@ -442,7 +442,7 @@ class BlueprintValidationHandler(ValidationHandler):
                     used_inputs = []
 
                     if srv.details and srv.details.input_values:
-                        for input in srv.inputs_node.nodes:
+                        for input in srv.details.input_values.nodes:
                             used_inputs.append(input.key.text)
                             if input.key.text not in srv_inputs:
                                 self._add_diagnostic(
