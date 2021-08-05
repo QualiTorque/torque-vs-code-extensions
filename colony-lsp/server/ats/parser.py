@@ -254,12 +254,3 @@ class Parser:
             raise ValueError(f"Unable to initialize tree from document kind '{doc_type}'")
 
         return trees[doc_type]()
-
-bp_path = "/Users/ddovbii/colony-demo-space-my/blueprints/My-eCommerce-App.yaml"
-# with open(bp_path, 'r') as f:
-#     doc = f.read()
-
-#     parser = Parser(doc)
-#     parser.parse()
-#     tree = parser.tree
-#     print(tree)
