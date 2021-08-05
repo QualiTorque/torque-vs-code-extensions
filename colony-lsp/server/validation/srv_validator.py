@@ -1,11 +1,13 @@
 import pathlib
 import re
+from server.ats.trees.service import ServiceTree
 from server.validation.common import ValidationHandler
 import sys
 import logging
 from typing import List
 from pygls.lsp.types.basic_structures import DiagnosticSeverity
 from server.constants import PREDEFINED_COLONY_INPUTS
+from server.utils import services
 
 
 class ServiceValidationHandler(ValidationHandler):
@@ -42,3 +44,27 @@ class ServiceValidationHandler(ValidationHandler):
                         message=message.format(input.key.text),
                         diag_severity=DiagnosticSeverity.Warning
                     )
+
+    def _validate_variables_file_exist(self):
+        vars = services.get_service_vars(self._document_path)
+        vars_files = [var["file"] for var in vars]
+        tree: ServiceTree = self._tree
+
+        if tree.variables is None:
+            return
+
+        node = tree.variables.var_file
+        if node is not None:
+            if node.text:
+                self._add_diagnostic(node, f"File {node.text} doesn't exist")
+            else:
+                self._add_diagnostic(node, f"Provide a filename")
+    
+    def validate(self, text_doc):
+        super().validate()
+        # errors
+        self._validate_variables_file_exist()
+
+        return self._diagnostics
+
+        

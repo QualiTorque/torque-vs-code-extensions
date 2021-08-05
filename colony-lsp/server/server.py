@@ -142,11 +142,10 @@ colony_server = ColonyLanguageServer()
     
 #     return inputs
 
-
 def _validate(ls, params):
     text_doc = ls.workspace.get_document(params.text_document.uri)
     doc_path = params.text_document.uri.replace("file://", "")
-    
+
     source = text_doc.source
     diagnostics = _validate_yaml(source) if source else []
 
@@ -180,28 +179,6 @@ def _validate(ls, params):
 
 
     ls.publish_diagnostics(text_doc.uri, diagnostics)
-        # elif doc_type == "TerraForm":        
-        #     srv_tree = ServiceParser(source).parse()            
-        #     validator = ServiceValidationHandler(srv_tree, root)
-        #     diagnostics += validator.validate(text_doc)
-                
-        #     vars = services.get_service_vars(params.text_document.uri)
-        #     vars_files = [var["file"] for var in vars]
-
-        #     for k, v in yaml_obj.get('variables', []).items():
-        #         if k == "var_file" and v not in vars_files:
-        #             for i in range(len(doc_lines)):
-        #                 col_pos = doc_lines[i].find(v)
-        #                 if col_pos == -1:
-        #                     continue
-        #                 d = Diagnostic(
-        #                     range=Range(
-        #                         start=Position(line=i, character=col_pos),
-        #                         end=Position(line=i, character=col_pos + 1 +len(v))
-        #                     ),
-        #                     message=f"File {v} doesn't exist"
-        #                 )
-        #                 diagnostics.append(d)
 
 
 def _validate_yaml(source):
