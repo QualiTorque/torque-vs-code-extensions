@@ -94,7 +94,7 @@ class ServiceValidationHandler(ValidationHandler):
         if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
             message = "Unused variable {}"
             source = text_doc.source
-            for input in self._tree.inputs_node.inputs:
+            for input in self._tree.inputs_node.nodes:
                 found = re.findall('^(?!.*#).*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
                 if len(found) == 0:
                     self._add_diagnostic(
@@ -161,15 +161,24 @@ class BlueprintValidationHandler(ValidationHandler):
         apps_n_srvs = set(apps + srvs)
 
         if self._tree.applications:
+            
             for app in self._tree.applications.nodes:
-                for dep in app.depends_on:
+                if not app.details or not app.details.depends_on:
+                    continue
+
+                for dep in app.depends_on.nodes:
                     if dep.text not in apps_n_srvs:
                         self._add_diagnostic(dep, message=message.format(dep.text))
                     elif dep.text == app.id.text:
                         self._add_diagnostic(dep, message=f"The app '{app.id.text}' cannot be dependent of itself")
+
         if self._tree.services:
+            
             for srv in self._tree.services.nodes:
-                for dep in srv.depends_on:
+                if not srv.details or not srv.details.depends_on:
+                    continue
+
+                for dep in srv.depends_on.nodes:
                     if dep.text not in apps_n_srvs:
                         self._add_diagnostic(dep, message=message.format(dep.text))
                     elif dep.text == srv.id.text:
@@ -186,16 +195,18 @@ class BlueprintValidationHandler(ValidationHandler):
     def _validate_blueprint_apps_have_input_values(self):
         if self._tree.applications:
             for app in self._tree.applications.nodes:
-                for var in app.inputs_node.nodes:
-                    if not var.value:
-                        self._add_diagnostic(var.key, message="Application input must have a value")
+                if app.value and app.value.input_values:
+                    for var in app.value.input_values.nodes:
+                        if not var.value:
+                            self._add_diagnostic(var.key, message="Application input must have a value")
 
     def _validate_blueprint_services_have_input_values(self):
         if self._tree.services:
-            for app in self._tree.services.nodes:
-                for var in app.inputs_node.nodes:
-                    if not var.value:
-                        self._add_diagnostic(var.key, message="Service input must have a value")
+            for srv in self._tree.services.nodes:
+                if srv.value and srv.value.input_values:
+                    for var in srv.value.input_values.nodes:
+                        if not var.value:
+                            self._add_diagnostic(var.key, message="Service input must have a value")
 
     def _validate_non_existing_service_is_used(self):
         if self._tree.services:
@@ -209,7 +220,7 @@ class BlueprintValidationHandler(ValidationHandler):
         if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
             message = "Unused variable {}"
             source = text_doc.source
-            for input in self._tree.inputs_node.inputs:
+            for input in self._tree.inputs_node.nodes:
                 found = re.findall('^(?!.*#).*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
                 if len(found) == 0:
                     self._add_diagnostic(
@@ -275,16 +286,22 @@ class BlueprintValidationHandler(ValidationHandler):
                                                                                           'inputs_node') and self._tree.inputs_node else {}
         if self._tree.applications:
             for app in self._tree.applications.nodes:
-                for input in app.inputs_node.nodes:
+                if not app.details or not app.details.input_values:
+                    continue
+                
+                for input in app.details.input_values.nodes:
                     self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
 
         if self._tree.services:
             for srv in self._tree.services.nodes:
-                for input in srv.inputs_node.nodes:
+                if not srv.details or not srv.details.input_values:
+                    continue
+
+                for input in srv.input_values.nodes:
                     self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
 
         if self._tree.artifacts:
-            for art in self._tree.artifacts:
+            for art in self._tree.artifacts.nodes:
                 self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, art)
 
     def _confirm_variable_defined_in_blueprint_or_auto_var(self, bp_inputs, input):
@@ -371,7 +388,7 @@ class BlueprintValidationHandler(ValidationHandler):
 
     def _validate_artifacts_apps_are_defined(self):
         if self._tree.artifacts:
-            for art in self._tree.artifacts:
+            for art in self._tree.artifacts.nodes:
                 if art.key.text not in self.blueprint_apps:
                     self._add_diagnostic(art.key, message="This application is not defined in this blueprint.")
 
@@ -380,7 +397,7 @@ class BlueprintValidationHandler(ValidationHandler):
             arts = {}
             duplicated = {}
             msg = "This artifact is already defined. Each artifact should be defined only once."
-            for art in self._tree.artifacts:
+            for art in self._tree.artifacts.nodes:
                 if art.key.text not in arts:
                     arts[art.key.text] = art
                 else:
@@ -398,13 +415,14 @@ class BlueprintValidationHandler(ValidationHandler):
                 if app.id.text in apps:
                     app_inputs = applications.get_app_inputs(app.id.text)
                     used_inputs = []
-                    for input in app.inputs_node.nodes:
-                        used_inputs.append(input.key.text)
-                        if input.key.text not in app_inputs:
-                            self._add_diagnostic(
-                                input.key,
-                                message=f"The application '{app.id.text}' does not have an input named '{input.key.text}'"
-                            )
+                    if app.details and app.details.input_values:
+                        for input in app.details.input_values.nodes:    
+                            used_inputs.append(input.key.text)
+                            if input.key.text not in app_inputs:
+                                self._add_diagnostic(
+                                    input.key,
+                                    message=f"The application '{app.id.text}' does not have an input named '{input.key.text}'"
+                                )
                     missing_inputs = []
                     for input in app_inputs:
                         if app_inputs[input] is None and input not in used_inputs:
@@ -422,13 +440,15 @@ class BlueprintValidationHandler(ValidationHandler):
                 if srv.id.text in srvs:
                     srv_inputs = services.get_service_inputs(srv.id.text)
                     used_inputs = []
-                    for input in srv.inputs_node.nodes:
-                        used_inputs.append(input.key.text)
-                        if input.key.text not in srv_inputs:
-                            self._add_diagnostic(
-                                input.key,
-                                message=f"The service '{srv.id.text}' does not have an input named '{input.key.text}'"
-                            )
+
+                    if srv.details and srv.details.input_values:
+                        for input in srv.inputs_node.nodes:
+                            used_inputs.append(input.key.text)
+                            if input.key.text not in srv_inputs:
+                                self._add_diagnostic(
+                                    input.key,
+                                    message=f"The service '{srv.id.text}' does not have an input named '{input.key.text}'"
+                                )
                     missing_inputs = []
                     for input in srv_inputs:
                         if srv_inputs[input] is None and input not in used_inputs:

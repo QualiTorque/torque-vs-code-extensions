@@ -1,6 +1,7 @@
+from dataclasses import dataclass
+from server.ats.trees.common import (BaseTree, InputsNode, MappingNode, SequenceNode, 
+    TextMappingSequence, TextNode, TextNodesSequence, YamlNode)
 from typing import Union
-
-from server.ats.trees.common import *
 
 
 @dataclass
@@ -103,12 +104,26 @@ class ApplicationResourceNode(ServiceResourceNode):
 
 
 @dataclass
-class ApplicationNode(ResourceMappingNode):
+class BlueprintResourceMappingNode(MappingNode):
+    key: TextNode = None
+    value: ServiceResourceNode = None
+
+    @property
+    def id(self):
+        return self.key
+
+    @property
+    def details(self):        
+        return self.value
+
+
+@dataclass
+class ApplicationNode(BlueprintResourceMappingNode):
     value: ApplicationResourceNode = None
 
 
 @dataclass
-class ServiceNode(ResourceMappingNode):
+class ServiceNode(BlueprintResourceMappingNode):
     value: ServiceResourceNode = None
 
 

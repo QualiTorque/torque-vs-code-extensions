@@ -35,14 +35,17 @@ def get_available_services_names():
 
 
 def load_service_details(srv_name: str, srv_source):
-    parser = Parser(document=srv_source)
-    parser.parse()
-    srv_tree = parser.tree
+    try:
+        srv_tree = Parser(document=srv_source).parse()
+    except:
+        raise Exception(f"Unable to load details of service '{srv_name}'")
+
     output = f"{srv_name}:\n"
-    inputs = srv_tree.inputs_node.nodes
+
+    inputs = srv_tree.inputs_node
     if inputs:
         output += "  inputs_value:\n"
-        for input in inputs:
+        for input in inputs.nodes:
             if input.value:
                 output += f"    - {input.key.text}: {input.value.text}\n"
             else:

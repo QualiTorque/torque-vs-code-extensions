@@ -60,7 +60,7 @@ class Parser:
             self.nodes_stack.append(child_node)
         # TODO: replace with parser exception
         except Exception as e:
-            raise ParserError(f"Parent node doesn't have child with name '{token.value}'", token)
+            raise ParserError(f"Parent node doesn't have child with name '{token.value}'", token=token)
 
     def _process_token(self, token: Token) -> None:
         # beginning of document

@@ -7,16 +7,17 @@ APPLICATIONS = {}
 
 
 def load_app_details(app_name: str, app_source: str):
-    parser = Parser(document=app_source)
-    parser.parse()
-    app_tree = parser.tree
-    
+    try:
+        app_tree = Parser(document=app_source).parse()
+    except:
+        raise Exception(f"Unable to load details of app '{app_name}'")
+        
     output = f"{app_name}:\n"
     output += "  instances: 1\n"                        
-    inputs = app_tree.inputs_node.nodes
+    inputs = app_tree.inputs_node
     if inputs:
         output += "  input_values:\n"
-        for input in inputs:
+        for input in inputs.nodes:
             if input.value:
                 output += f"    - {input.key.text}: {input.value.text}\n"
             else:
