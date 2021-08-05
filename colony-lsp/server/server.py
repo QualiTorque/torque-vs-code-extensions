@@ -19,6 +19,7 @@ from dataclasses import dataclass
 import logging
 
 from pygls.lsp.types.language_features.completion import InsertTextMode
+from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult
 
 # from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
 from server.utils.validation import AppValidationHandler, BlueprintValidationHandler, ServiceValidationHandler
@@ -42,7 +43,7 @@ from pygls.protocol import LanguageServerProtocol
 
 from pygls.lsp.methods import (CODE_LENS, COMPLETION, COMPLETION_ITEM_RESOLVE, DOCUMENT_LINK, TEXT_DOCUMENT_DID_CHANGE,
                                TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES, DEFINITION, 
-                               TEXT_DOCUMENT_SEMANTIC_TOKENS)
+                               TEXT_DOCUMENT_SEMANTIC_TOKENS, TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL, TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL_DELTA)
 from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              CompletionParams, ConfigurationItem,
                              ConfigurationParams, Diagnostic, Location,
@@ -624,21 +625,28 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
 #     return None
 
 
-# @colony_server.feature(TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL, SemanticTokensOptions(
-#                 work_done_progress=False,
-#                 legend=SemanticTokensLegend(
-#                     token_types=['property', 'type', 'class', 'variable'],
-#                     token_modifiers=['private', 'static']
-#                 ),
-#                 range=True,
-#                 # full={"delta": False}
-#             ))
-# def semantic_tokens_range(server: ColonyLanguageServer, params: SemanticTokensParams) -> Optional[Union[SemanticTokens, SemanticTokensPartialResult]]:
-#     print('---- TEXT_DOCUMENT_SEMANTIC_TOKENS_RANGE ----')
-#     print(locals())
-#     # document = server.workspace.get_document(params.text_document.uri)
-#     # return Hover(contents="some content", range=Range(
-#     #             start=Position(line=31, character=1),
-#     #             end=Position(line=31, character=4),
-#     #         ))
-#     return None
+@colony_server.feature(TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL_DELTA
+                       , SemanticTokensOptions(
+                # work_done_progress=True,
+                legend=SemanticTokensLegend(
+                    token_types=[
+        'comment', 'string', 'keyword', 'number', 'regexp', 'operator', 'namespace',
+        'type', 'struct', 'class', 'interface', 'enum', 'typeParameter', 'function',
+        'method', 'macro', 'variable', 'parameter', 'property', 'label'
+                    ],
+                    token_modifiers=['declaration', 'documentation', 'readonly', 'static', 'abstract', 'deprecated',
+        'modification', 'async']
+                ),
+                # range=False,
+                # full=True
+                full={"delta": True}
+            ))
+def semantic_tokens_range(server: ColonyLanguageServer, params: SemanticTokensParams) -> Optional[Union[SemanticTokens, SemanticTokensPartialResult]]:
+    print('---- TEXT_DOCUMENT_SEMANTIC_TOKENS_RANGE ----')
+    print(locals())
+    # document = server.workspace.get_document(params.text_document.uri)
+    # return Hover(contents="some content", range=Range(
+    #             start=Position(line=31, character=1),
+    #             end=Position(line=31, character=4),
+    #         ))
+    return None
