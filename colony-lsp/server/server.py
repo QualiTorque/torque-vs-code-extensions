@@ -17,9 +17,9 @@
 import asyncio
 from dataclasses import dataclass
 import logging
+from server.validation.factory import ValidatorFactory
 
 # from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
-from server.utils.validation import AppValidationHandler, BlueprintValidationHandler, ServiceValidationHandler, ValidatorFactory
 from pygls.lsp import types
 from pygls.lsp.types.basic_structures import VersionedTextDocumentIdentifier
 from pygls.lsp import types, InitializeResult

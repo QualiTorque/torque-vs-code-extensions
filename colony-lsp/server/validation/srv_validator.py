@@ -1,0 +1,35 @@
+import re
+from server.validation.common import ValidationHandler
+import sys
+import logging
+from typing import List
+from pygls.lsp.types.basic_structures import DiagnosticSeverity
+from server.constants import PREDEFINED_COLONY_INPUTS
+
+
+class ServiceValidationHandler(ValidationHandler):
+    def validate(self, text_doc):
+        super().validate()
+
+        try:
+            # warnings
+            self._check_for_unused_service_inputs(text_doc)
+
+        except Exception as ex:
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+            logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+
+        return self._diagnostics
+
+    def _check_for_unused_service_inputs(self, text_doc):
+        if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
+            message = "Unused variable {}"
+            source = text_doc.source
+            for input in self._tree.inputs_node.nodes:
+                found = re.findall('^(?!.*#).*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
+                if len(found) == 0:
+                    self._add_diagnostic(
+                        input.key,
+                        message=message.format(input.key.text),
+                        diag_severity=DiagnosticSeverity.Warning
+                    )

@@ -1,107 +1,13 @@
-import os
+
 import re
+from server.validation.common import ValidationHandler
 import sys
 import logging
 from typing import List
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
 from server.ats.trees.blueprint import BlueprintTree
-from server.ats.trees.common import BaseTree, YamlNode
 from server.constants import PREDEFINED_COLONY_INPUTS
 from server.utils import applications, services
-
-
-class ValidationHandler:
-    def __init__(self, tree: BaseTree, root_path: str):
-        self._tree = tree
-        self._diagnostics: List[Diagnostic] = []
-        self._root_path = root_path
-
-    def _add_diagnostic(
-            self,
-            node: YamlNode,
-            message: str = "",
-            diag_severity: DiagnosticSeverity = None):
-        self._diagnostics.append(
-            Diagnostic(
-                range=Range(
-                    start=Position(line=node.start_pos[0], character=node.start_pos[1]),
-                    end=Position(line=node.end_pos[0], character=node.end_pos[1]),
-                ),
-                message=message,
-                severity=diag_severity
-            ))
-
-    def _validate_no_duplicates_in_inputs(self):
-        if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
-            message = "Multiple declarations of input '{}'"
-
-            inputs_names_list = [input.key.text for input in self._tree.inputs_node.nodes]
-            for input_node in self._tree.inputs_node.nodes:
-                if inputs_names_list.count(input_node.key.text) > 1:
-                    self._add_diagnostic(
-                        input_node.key,
-                        message=message.format(input_node.key.text)
-                    )
-
-    def _validate_no_duplicates_in_outputs(self):
-        if hasattr(self._tree, 'outputs') and self._tree.outputs:
-            message = "Multiple declarations of output '{}'. Outputs are not case sensitive."
-
-            outputs_names_list = [output.text.lower() for output in self._tree.outputs.nodes]
-            for output_node in self._tree.outputs.nodes:
-                if outputs_names_list.count(output_node.text.lower()) > 1:
-                    self._add_diagnostic(
-                        output_node,
-                        message=message.format(output_node.text)
-                    )
-
-    def validate(self):
-        # errors
-        self._validate_no_duplicates_in_inputs()
-        self._validate_no_duplicates_in_outputs()
-
-        return self._diagnostics
-
-
-class AppValidationHandler(ValidationHandler):
-    def validate_script_files_exist(self):
-        # TODO: move the code from server.py to here after having the configuration tree ready
-        pass
-
-    def validate(self, text_doc):
-        super().validate()
-        # errors
-        self.validate_script_files_exist()
-
-        return self._diagnostics
-
-
-class ServiceValidationHandler(ValidationHandler):
-    def validate(self, text_doc):
-        super().validate()
-
-        try:
-            # warnings
-            self._check_for_unused_service_inputs(text_doc)
-
-        except Exception as ex:
-            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-            logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-
-        return self._diagnostics
-
-    def _check_for_unused_service_inputs(self, text_doc):
-        if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
-            message = "Unused variable {}"
-            source = text_doc.source
-            for input in self._tree.inputs_node.nodes:
-                found = re.findall('^(?!.*#).*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
-                if len(found) == 0:
-                    self._add_diagnostic(
-                        input.key,
-                        message=message.format(input.key.text),
-                        diag_severity=DiagnosticSeverity.Warning
-                    )
 
 
 class BlueprintValidationHandler(ValidationHandler):
@@ -509,23 +415,3 @@ class BlueprintValidationHandler(ValidationHandler):
             logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
 
         return self._diagnostics
-
-
-class ValidatorFactory:
-    kind_validators_map = {
-        'blueprint': BlueprintValidationHandler,
-        'application': AppValidationHandler,
-        'terraform': ServiceValidationHandler
-    }
-    @classmethod
-    def get_validator(cls, tree: BaseTree):
-        if tree.kind is None:
-            raise ValueError("Unable to validate document. 'kind' property is not defined")
-
-        kind = tree.kind.text.lower()
-
-        if kind not in cls.kind_validators_map:
-            options = ", ".join(list(cls.kind_validators_map.keys()))
-            raise ValueError(f"'kind' property is not correct. Must be in {options}")
-
-        return cls.kind_validators_map[kind]
