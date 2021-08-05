@@ -33,7 +33,7 @@ import re
 from json import JSONDecodeError
 from typing import Any, Dict, Optional, Tuple, List, Union, cast
 
-from server.ats.parser import   BlueprintTree, Parser
+from server.ats.parser import   BlueprintTree, Parser, ParserError
 
 from server.utils import services, applications, common
 from pygls.protocol import LanguageServerProtocol
@@ -160,6 +160,16 @@ def _validate(ls, params):
                 tree = Parser(source).parse()
                 validator = BlueprintValidationHandler(tree, root)
                 diagnostics += validator.validate(text_doc)
+            except ParserError as e:
+                diagnostics.append(
+                    Diagnostic(
+                        range = Range(
+                            start=Position(line=e.start_pos[0], character=e.start_pos[1],
+                            end=Position(line=e.end_pos[0], character=e.end_pos[1]))
+                        ),
+                        message=e.message
+                    )
+                )
             except Exception as ex:
                 import sys
                 print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)

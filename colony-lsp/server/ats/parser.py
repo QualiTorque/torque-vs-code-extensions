@@ -9,6 +9,22 @@ from server.ats.trees.common import *
 from server.ats.trees.service import ServiceTree
 
 
+class ParserError(Exception):
+    
+    def __init__(self, message: str = None, start_pos: tuple = None, end_pos: tuple = None, token: Token = None):
+        self.message = message
+        if token is not None:
+            self.start_pos = (token.start_mark.line, token.start_mark.column)
+            self.end_pos = (token.end_mark.line, token.end_mark.column)
+            
+        else:
+            self.start_pos = start_pos
+            self.end_pos = end_pos
+
+    def __str__(self) -> str:
+        return f"Parser issue with message '{self.message}' on position {self.start_pos} - {self.end_pos}"
+
+
 class Parser:
     def __init__(self, document: str):
         self.document = document
@@ -44,7 +60,7 @@ class Parser:
             self.nodes_stack.append(child_node)
         # TODO: replace with parser exception
         except Exception as e:
-            print(f"error during getting a child : {e}")
+            raise ParserError(f"Parent node doesn't have child with name '{token.value}'", token)
 
     def _process_token(self, token: Token) -> None:
         # beginning of document
@@ -240,10 +256,10 @@ class Parser:
         return trees[doc_type]()
 
 bp_path = "/Users/ddovbii/colony-demo-space-my/blueprints/My-eCommerce-App.yaml"
-with open(bp_path, 'r') as f:
-    doc = f.read()
+# with open(bp_path, 'r') as f:
+#     doc = f.read()
 
-    parser = Parser(doc)
-    parser.parse()
-    tree = parser.tree
-    print(tree)
+#     parser = Parser(doc)
+#     parser.parse()
+#     tree = parser.tree
+#     print(tree)
