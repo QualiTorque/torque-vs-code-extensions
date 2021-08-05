@@ -1,8 +1,9 @@
 
+import logging
 import os
 import re
 import pathlib
-from server.ats.parser import Parser
+from server.ats.parser import Parser, ParserError
 import yaml
 
 
@@ -22,7 +23,11 @@ def get_available_services(root_folder: str):
                     if f'{dir}.yaml' in files:
                         f = open(os.path.join(srv_dir, f'{dir}.yaml'), "r")
                         source = f.read() 
-                        load_service_details(srv_name=dir, srv_source=source)
+                        try:
+                            load_service_details(srv_name=dir, srv_source=source)
+                        except ParserError as e:
+                            logging.warning(f"Unable to load service '{dir}.yaml' due to error: {e.message}")
+                            continue
 
         return SERVICES
 
@@ -35,10 +40,7 @@ def get_available_services_names():
 
 
 def load_service_details(srv_name: str, srv_source):
-    try:
-        srv_tree = Parser(document=srv_source).parse()
-    except:
-        raise Exception(f"Unable to load details of service '{srv_name}'")
+    srv_tree = Parser(document=srv_source).parse()
 
     output = f"{srv_name}:\n"
 

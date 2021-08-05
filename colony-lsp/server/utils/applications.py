@@ -1,16 +1,14 @@
 import os
 import pathlib
-from server.ats.parser import Parser
+from server.ats.parser import Parser, ParserError
 import yaml
+import logging
 
 APPLICATIONS = {}
 
 
 def load_app_details(app_name: str, app_source: str):
-    try:
-        app_tree = Parser(document=app_source).parse()
-    except:
-        raise Exception(f"Unable to load details of app '{app_name}'")
+    app_tree = Parser(document=app_source).parse()
         
     output = f"{app_name}:\n"
     output += "  instances: 1\n"                        
@@ -49,8 +47,12 @@ def get_available_applications(root_folder: str):
                     files = os.listdir(app_dir)
                     if f'{dir}.yaml' in files:
                         f = open(os.path.join(app_dir, f'{dir}.yaml'), "r")
-                        source = f.read() 
-                        load_app_details(app_name=dir, app_source=source)
+                        source = f.read()
+                        try:
+                            load_app_details(app_name=dir, app_source=source)
+                        except ParserError as e:
+                            logging.warning(f"Unable to load application '{dir}.yaml' due to error: {e.message}")
+                            continue
                     
         return APPLICATIONS
 

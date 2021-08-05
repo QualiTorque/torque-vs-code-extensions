@@ -68,7 +68,7 @@ class AppValidationHandler(ValidationHandler):
         # TODO: move the code from server.py to here after having the configuration tree ready
         pass
 
-    def validate(self):
+    def validate(self, text_doc):
         super().validate()
         # errors
         self.validate_script_files_exist()
@@ -509,3 +509,23 @@ class BlueprintValidationHandler(ValidationHandler):
             logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
 
         return self._diagnostics
+
+
+class ValidatorFactory:
+    kind_validators_map = {
+        'blueprint': BlueprintValidationHandler,
+        'application': AppValidationHandler,
+        'terraform': ServiceValidationHandler
+    }
+    @classmethod
+    def get_validator(cls, tree: BaseTree):
+        if tree.kind is None:
+            raise ValueError("Unable to validate document. 'kind' property is not defined")
+
+        kind = tree.kind.text.lower()
+
+        if kind not in cls.kind_validators_map:
+            options = ", ".join(list(cls.kind_validators_map.keys()))
+            raise ValueError(f"'kind' property is not correct. Must be in {options}")
+
+        return cls.kind_validators_map[kind]
