@@ -180,42 +180,6 @@ def _validate(ls, params):
 
 
     ls.publish_diagnostics(text_doc.uri, diagnostics)
-
-    #     if doc_type == "application":
-    #         try:
-    #             app_tree = Parser(source).parse()
-                
-    #         except ParserError as e:
-    #             diagnostics.append(
-    #                 Diagnostic(
-    #                     range=Range(
-    #                         start=Position(line=e.start_pos[0], character=e.start_pos[1]),
-    #                         end=Position(line=e.end_pos[0], character=e.end_pos[1])
-    #                     ),
-    #                     message=e.message
-    #                 )
-    #             )
-    #         else:
-    #             validator = AppValidationHandler(app_tree, root)
-    #             diagnostics += validator.validate()
-    #             scripts = applications.get_app_scripts(params.text_document.uri)
-
-                
-            # for k, v in yaml_obj.get('configuration', []).items():
-            #     script_ref = v.get('script', None)
-            #     if script_ref and script_ref not in scripts:
-            #         for i in range(len(doc_lines)):
-            #             col_pos = doc_lines[i].find(script_ref)
-            #             if col_pos == -1:
-            #                 continue
-            #             d = Diagnostic(
-            #                 range=Range(
-            #                     start=Position(line=i, character=col_pos),
-            #                     end=Position(line=i, character=col_pos + 1 +len(script_ref))
-            #                 ),
-            #                 message=f"File {script_ref} doesn't exist"
-            #             )
-            #             diagnostics.append(d)
         # elif doc_type == "TerraForm":        
         #     srv_tree = ServiceParser(source).parse()            
         #     validator = ServiceValidationHandler(srv_tree, root)

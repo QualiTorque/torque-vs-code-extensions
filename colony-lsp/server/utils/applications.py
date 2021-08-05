@@ -64,9 +64,9 @@ def get_available_applications_names():
         return []
 
 
-def get_app_scripts(app_dir_path: str):
+def get_app_scripts(app_path: str):
     scripts = []
-    files = pathlib.Path(app_dir_path.replace("file://", "")).parent.glob("./*")
+    files = pathlib.Path(app_path.replace("file://", "")).parent.glob("./*")
     for file in files:
         if not file.name.endswith('.yaml'):
             scripts.append(pathlib.Path(file).name)
