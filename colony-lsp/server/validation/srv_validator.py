@@ -53,8 +53,10 @@ class ServiceValidationHandler(ValidationHandler):
             return
 
         node = tree.variables.var_file
-        if node is not None:
-            if node.text:
-                self._add_diagnostic(node, f"File {node.text} doesn't exist")
-            else:
+        if node:
+            if not node.text:
                 self._add_diagnostic(node, f"Provide a filename")
+                return
+
+            if node.text not in vars_files:
+                self._add_diagnostic(node, f"File {node.text} doesn't exist")
