@@ -28,17 +28,19 @@ class ParserError(Exception):
 
 class Parser:
     def __init__(self, document: str):
-        self.document = document
+        self.document = self._remove_invalid_characters(document)
         try:
             self.tree = self._get_tree()
-        except ValueError:
-            # TODO: replace with parser exception
-            raise NotImplementedError()
+        except ValueError as ve:
+            raise ParserError(str(ve))
 
         self.nodes_stack: [YamlNode] = []
         self.tokens_stack: [Token] = []
 
         self.is_array_item: bool = False
+    
+    def _remove_invalid_characters(self, document: str):
+        return document.replace('\t','  ')
 
     def _get_token_start(self, token: Token) -> Tuple[int]:
         return (token.start_mark.line, token.start_mark.column)

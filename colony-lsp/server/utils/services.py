@@ -3,8 +3,9 @@ import logging
 import os
 import re
 import pathlib
-from server.ats.parser import Parser, ParserError
 import yaml
+from server.ats.parser import Parser, ParserError
+from server.utils.yaml_utils import format_yaml
 
 
 SERVICES = {}
@@ -28,6 +29,9 @@ def get_available_services(root_folder: str):
                         except ParserError as e:
                             logging.warning(f"Unable to load service '{dir}.yaml' due to error: {e.message}")
                             continue
+                        except Exception as e:
+                            logging.warning(f"Unable to load service '{dir}.yaml' due to error: {str(e)}")
+                            continue
 
         return SERVICES
 
@@ -41,24 +45,21 @@ def get_available_services_names():
 
 def load_service_details(srv_name: str, srv_source):
     srv_tree = Parser(document=srv_source).parse()
-
-    output = f"{srv_name}:\n"
-
-    inputs = srv_tree.inputs_node
-    if inputs:
-        output += "  inputs_value:\n"
-        for input in inputs.nodes:
-            if input.value:
-                output += f"    - {input.key.text}: {input.value.text}\n"
-            else:
-                output += f"    - {input.key.text}: \n" 
     
-    subtree = yaml.load(output, Loader=yaml.FullLoader)
-    output = yaml.dump(subtree)
+    output = f"- {srv_name}:\n"
+    if srv_tree.inputs_node:
+        inputs = srv_tree.inputs_node.nodes
+        if inputs:
+            output += "    input_values:\n"
+            for input in inputs:
+                if input.value:
+                    output += f"      - {input.key.text}: {input.value.text}\n"
+                else:
+                    output += f"      - {input.key.text}: \n" 
     
     SERVICES[srv_name] = {
         "srv_tree": srv_tree,
-        "srv_completion": "- " + output.replace(": null", ": ")
+        "srv_completion": format_yaml(output)
     }
 
 

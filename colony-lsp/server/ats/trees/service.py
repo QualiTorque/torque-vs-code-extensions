@@ -36,4 +36,5 @@ class ServiceTree(BaseTree, TreeWithOutputs):
     terraform_version: TextNode = None
     variables: VariablesNode = None
     permissions: PermissionsNode = None
-
+    # old syntax
+    tfvars_file: TextNode = None

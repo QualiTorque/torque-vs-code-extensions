@@ -1,32 +1,30 @@
 import os
-import pathlib
-from server.ats.parser import Parser, ParserError
-import yaml
 import logging
+import pathlib
+from server.utils.yaml_utils import format_yaml
+from server.ats.parser import Parser, ParserError
 
 APPLICATIONS = {}
 
 
 def load_app_details(app_name: str, app_source: str):
     app_tree = Parser(document=app_source).parse()
-        
-    output = f"{app_name}:\n"
-    output += "  instances: 1\n"                        
-    inputs = app_tree.inputs_node
-    if inputs:
-        output += "  input_values:\n"
-        for input in inputs.nodes:
-            if input.value:
-                output += f"    - {input.key.text}: {input.value.text}\n"
-            else:
-                output += f"    - {input.key.text}: \n"    
-            
-    subtree = yaml.load(output, Loader=yaml.FullLoader)
-    output = yaml.dump(subtree)
+    
+    output = f"- {app_name}:\n"
+    output += "    instances: 1\n"
+    if app_tree.inputs_node:                        
+        inputs = app_tree.inputs_node.nodes
+        if inputs:
+            output += "    input_values:\n"
+            for input in inputs:
+                if input.value:
+                    output += f"      - {input.key.text}: {input.value.text}\n"
+                else:
+                    output += f"      - {input.key.text}: \n"    
     
     APPLICATIONS[app_name] = {
         'app_tree': app_tree,
-        'app_completion': "- " + output.replace(": null", ": ")
+        'app_completion': format_yaml(output)
     }
 
 
@@ -52,6 +50,9 @@ def get_available_applications(root_folder: str):
                             load_app_details(app_name=dir, app_source=source)
                         except ParserError as e:
                             logging.warning(f"Unable to load application '{dir}.yaml' due to error: {e.message}")
+                            continue
+                        except Exception as e:
+                            logging.warning(f"Unable to load appliiation '{dir}.yaml' due to error: {str(e)}")
                             continue
                     
         return APPLICATIONS
