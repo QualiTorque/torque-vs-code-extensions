@@ -1,4 +1,5 @@
 import os
+import logging
 import pathlib
 from server.utils.yaml_utils import format_yaml
 from server.ats.parser import Parser, ParserError
@@ -10,15 +11,16 @@ def load_app_details(app_name: str, app_source: str):
     app_tree = Parser(document=app_source).parse()
     
     output = f"- {app_name}:\n"
-    output += "    instances: 1\n"                        
-    inputs = app_tree.inputs_node.inputs
-    if inputs:
-        output += "    input_values:\n"
-        for input in inputs:
-            if input.value:
-                output += f"      - {input.key.text}: {input.value.text}\n"
-            else:
-                output += f"      - {input.key.text}: \n"    
+    output += "    instances: 1\n"
+    if app_tree.inputs_node:                        
+        inputs = app_tree.inputs_node.nodes
+        if inputs:
+            output += "    input_values:\n"
+            for input in inputs:
+                if input.value:
+                    output += f"      - {input.key.text}: {input.value.text}\n"
+                else:
+                    output += f"      - {input.key.text}: \n"    
     
     APPLICATIONS[app_name] = {
         'app_tree': app_tree,

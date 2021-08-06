@@ -20,7 +20,6 @@ import logging
 from server.validation.factory import ValidatorFactory
 
 from pygls.lsp.types.language_features.completion import InsertTextMode
-from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult
 
 # from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
 from pygls.lsp import types
@@ -294,7 +293,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                     else:
                         cur_word = ''
                 if cur_word:
-                    bp_tree = BlueprintParser(doc.source).parse()
+                    bp_tree = Parser(doc.source).parse()
                                         
                     options = []
                     if cur_word.startswith('colony'):
@@ -551,14 +550,14 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
         
     if doc_type == "blueprint":
         try:
-            bp_tree = BlueprintParser(doc.source).parse()            
+            bp_tree = Parser(doc.source).parse()            
         except Exception as ex:
             import sys
             logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
             return links
         
-        if bp_tree.apps_node:
-            for app in bp_tree.apps_node.nodes:
+        if bp_tree.applications:
+            for app in bp_tree.applications.nodes:
                 target_path = f"{root}/applications/{app.id.text}/{app.id.text}.yaml"
                 tooltip = "Open the application file at " + target_path
                 links.append(DocumentLink(range=Range(
@@ -566,8 +565,8 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                                           end=Position(line=app.id.start[0], character=app.start[1]+len(app.id.text)),
                                          ), target=target_path, tooltip=tooltip))
         
-        if bp_tree.services_node:
-            for srv in bp_tree.services_node.nodes:
+        if bp_tree.services:
+            for srv in bp_tree.services.nodes:
                 target_path = f"{root}/services/{srv.id.text}/{srv.id.text}.yaml"
                 tooltip = "Open the service file at " + target_path
                 links.append(DocumentLink(range=Range(
@@ -590,23 +589,23 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
 #     return None
 
 
-@colony_server.feature(TEXT_DOCUMENT_SEMANTIC_TOKENS)
-            #            , SemanticTokensOptions(
-            #     # work_done_progress=True,
-            #     legend=SemanticTokensLegend(
-            #         token_types=['colonyVariable'],
-            #         token_modifiers=[]
-            #     ),
-            #     # range=False,
-            #     # full=True
-            #     # full={"delta": True}
-            # ))
-def semantic_tokens_range(server: ColonyLanguageServer, params: SemanticTokensParams) -> Optional[Union[SemanticTokens, SemanticTokensPartialResult]]:
-    print('---- TEXT_DOCUMENT_SEMANTIC_TOKENS_RANGE ----')
-    print(locals())
-    # document = server.workspace.get_document(params.text_document.uri)
-    # return Hover(contents="some content", range=Range(
-    #             start=Position(line=31, character=1),
-    #             end=Position(line=31, character=4),
-    #         ))
-    return None
+# @colony_server.feature(TEXT_DOCUMENT_SEMANTIC_TOKENS)
+#             #            , SemanticTokensOptions(
+#             #     # work_done_progress=True,
+#             #     legend=SemanticTokensLegend(
+#             #         token_types=['colonyVariable'],
+#             #         token_modifiers=[]
+#             #     ),
+#             #     # range=False,
+#             #     # full=True
+#             #     # full={"delta": True}
+#             # ))
+# def semantic_tokens_range(server: ColonyLanguageServer, params: SemanticTokensParams) -> Optional[Union[SemanticTokens, SemanticTokensPartialResult]]:
+#     print('---- TEXT_DOCUMENT_SEMANTIC_TOKENS_RANGE ----')
+#     print(locals())
+#     # document = server.workspace.get_document(params.text_document.uri)
+#     # return Hover(contents="some content", range=Range(
+#     #             start=Position(line=31, character=1),
+#     #             end=Position(line=31, character=4),
+#     #         ))
+#     return None

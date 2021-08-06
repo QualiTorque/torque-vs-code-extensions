@@ -5,7 +5,6 @@ import re
 import pathlib
 import yaml
 from server.ats.parser import Parser, ParserError
-from server.ats.tree import ServiceTree
 from server.utils.yaml_utils import format_yaml
 
 
@@ -45,14 +44,15 @@ def load_service_details(srv_name: str, srv_source):
     srv_tree = Parser(document=srv_source).parse()
     
     output = f"- {srv_name}:\n"
-    inputs = srv_tree.inputs_node.inputs
-    if inputs:
-        output += "    input_values:\n"
-        for input in inputs:
-            if input.value:
-                output += f"      - {input.key.text}: {input.value.text}\n"
-            else:
-                output += f"      - {input.key.text}: \n" 
+    if srv_tree.inputs_node:
+        inputs = srv_tree.inputs_node.nodes
+        if inputs:
+            output += "    input_values:\n"
+            for input in inputs:
+                if input.value:
+                    output += f"      - {input.key.text}: {input.value.text}\n"
+                else:
+                    output += f"      - {input.key.text}: \n" 
     
     SERVICES[srv_name] = {
         "srv_tree": srv_tree,
