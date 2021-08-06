@@ -152,6 +152,9 @@ def _validate(ls, params):
 
     try:
         tree = Parser(source).parse()
+        cls_validator = ValidatorFactory.get_validator(tree)
+        validator = cls_validator(tree, text_doc)
+        diagnostics += validator.validate()
     except ParserError as e:
         diagnostics.append(
             Diagnostic(
@@ -171,16 +174,8 @@ def _validate(ls, params):
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
         logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)        
 
-    try:
-        cls_validator = ValidatorFactory.get_validator(tree)
-        validator = cls_validator(tree, text_doc)
-        diagnostics += validator.validate()
-    except Exception as ex:
-        import sys
-        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-        logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)        
-
-    ls.publish_diagnostics(text_doc.uri, diagnostics)
+    if diagnostics: 
+        ls.publish_diagnostics(text_doc.uri, diagnostics)
 
 
 def _validate_yaml(source):
