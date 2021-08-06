@@ -1,3 +1,4 @@
+from typing import Tuple
 import yaml
 from yaml.tokens import (BlockEndToken, BlockEntryToken, BlockMappingStartToken,
                          BlockSequenceStartToken, KeyToken,
@@ -14,8 +15,8 @@ class ParserError(Exception):
     def __init__(self, message: str = None, start_pos: tuple = None, end_pos: tuple = None, token: Token = None):
         self.message = message
         if token is not None:
-            self.start_pos = (token.start_mark.line, token.start_mark.column)
-            self.end_pos = (token.end_mark.line, token.end_mark.column)
+            self.start_pos = self._get_token_start(token)
+            self.end_pos = self._get_token_end(token)
             
         else:
             self.start_pos = start_pos
@@ -39,6 +40,12 @@ class Parser:
 
         self.is_array_item: bool = False
 
+    def _get_token_start(self, token: Token) -> Tuple[int]:
+        return (token.start_mark.line, token.start_mark.column)
+
+    def _get_token_end(self, token: Token) -> Tuple[int]:
+        return (token.end_mark.line, token.end_mark.column)
+
     def _process_scalar_token(self, token: ScalarToken):
         node: TextNode = self.nodes_stack.pop()
         if not isinstance(node, TextNode):
@@ -46,8 +53,8 @@ class Parser:
             raise Exception("Wrong node. Expected TextNode")
 
         node.text = token.value
-        node.start_pos = (token.start_mark.line, token.start_mark.column)
-        node.end_pos = (token.end_mark.line, token.end_mark.column)
+        node.start_pos = self._get_token_start(token)
+        node.end_pos = self._get_token_end(token)
 
     def _process_object_child(self, token: ScalarToken):
         """Gets the property of the last Node in a stack and puts
@@ -56,7 +63,7 @@ class Parser:
         node = self.nodes_stack[-1]
         try:
             child_node = node.get_child(token.value)
-            child_node.start_pos = (token.start_mark.line, token.start_mark.column)
+            child_node.start_pos = self._get_token_start(token)
             self.nodes_stack.append(child_node)
         # TODO: replace with parser exception
         except Exception:
@@ -65,7 +72,7 @@ class Parser:
     def _process_token(self, token: Token) -> None:
         # beginning of document
         if isinstance(token, StreamStartToken):
-            self.tree.start_pos = (token.start_mark.line, token.start_mark.column)
+            self.tree.start_pos = self._get_token_start(token)
             self.tokens_stack.append(token)
             return
 
@@ -81,7 +88,7 @@ class Parser:
                 raise Exception(f"Unable to add item to the node's container : {e}")
 
         if isinstance(token, StreamEndToken):
-            self.tree.end_pos = (token.start_mark.line, token.start_mark.column)
+            self.tree.end_pos = self._get_token_start(token)
             return
 
         # the beginning of the object or mapping
@@ -92,11 +99,11 @@ class Parser:
                 self.tokens_stack.append(token)
                 value_node = last_node.get_value()
                 self.nodes_stack.append(value_node)
-                value_node.start_pos = (token.start_mark.line, token.start_mark.column)
+                value_node.start_pos = self._get_token_start(token)
                 self.is_array_item = False
                 return
             self.tokens_stack.append(token)
-            last_node.start_pos = (token.start_mark.line, token.start_mark.column)
+            last_node.start_pos = self._get_token_start(token)
 
         if isinstance(token, BlockSequenceStartToken):
             self.tokens_stack.append(token)
@@ -108,64 +115,77 @@ class Parser:
             if (isinstance(top, (BlockMappingStartToken, BlockSequenceStartToken))
                     and isinstance(self.tokens_stack[-1], (ValueToken, BlockEntryToken, StreamStartToken))):
                 node = self.nodes_stack.pop()
-                node.end_pos = (token.end_mark.line, token.end_mark.column)
+                node.end_pos = self._get_token_end(token)
                 self.tokens_stack.pop()
 
                 return
 
-            if isinstance(top, ValueToken) and self.is_array_item:
-                # case when mapping didn't have value after ':'
-                # inputs:
-                #   API_PORT: 9090
-                #   PORT:
+            elif isinstance(top, ValueToken):
+                if self.is_array_item:
+                    # case when mapping didn't have value after ':'
+                    # inputs:
+                    #   API_PORT: 9090
+                    #   PORT:
 
-                # remove last Node and ValueToken and BlockEndToken as well
-                node = self.nodes_stack.pop()
-                node.end_pos = (token.end_mark.line, token.end_mark.column)
-                if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
-                    raise Exception("Wrong structure of document")  # TODO: provide better message
-                self.tokens_stack.pop()
-
-                if not isinstance(self.tokens_stack[-1], BlockEntryToken):
-                    raise Exception("Wrong structure of document")  # TODO: provide better message
-                self.tokens_stack.pop()
-                self.is_array_item = False
-
-                return
-
-            if isinstance(top, ValueToken) and isinstance(self.nodes_stack[-1], SequenceNode):
-                # In means that we just finished processing a sequence without indentation
-                # which means document didn't have BlockSequenceStartToken at the beginning of the block
-                # So, this BlockEndToken is related to previous object => we need to remove not only the
-                # List node but also the previous one
-
-                # first remove sequence node from stack
-                seq_node = self.nodes_stack.pop()
-                # in this case it's ok the end pos will be the same for both objects
-                seq_node.end_pos = (token.end_mark.line, token.end_mark.column)
-
-                # then check if after ValueToken removal we have any start token on the top of the tokens stack
-                if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
-                    raise Exception("Wrong structure of document")  # TODO: provide better message
-
-                # and remove it from the token stack
-                self.tokens_stack.pop()
-                # and node itself as well
-                prev_node = self.nodes_stack.pop()
-                prev_node.end_pos = (token.end_mark.line, token.end_mark.column)
-
-                if isinstance(self.tokens_stack[-1], ValueToken):
-                    # remove value token opening it
+                    # remove last Node and ValueToken and BlockEndToken as well
+                    node = self.nodes_stack.pop()
+                    node.end_pos = self._get_token_end(token)
+                    if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
+                        raise Exception("Wrong structure of document")  # TODO: provide better message
                     self.tokens_stack.pop()
-                return
+
+                    if not isinstance(self.tokens_stack[-1], BlockEntryToken):
+                        raise Exception("Wrong structure of document")  # TODO: provide better message
+                    self.tokens_stack.pop()
+                    self.is_array_item = False
+
+                    return
+
+                elif isinstance(self.nodes_stack[-1], SequenceNode):
+                    # In means that we just finished processing a sequence without indentation
+                    # which means document didn't have BlockSequenceStartToken at the beginning of the block
+                    # So, this BlockEndToken is related to previous object => we need to remove not only the
+                    # List node but also the previous one
+
+                    # first remove sequence node from stack
+                    seq_node = self.nodes_stack.pop()
+                    # in this case it's ok the end pos will be the same for both objects
+                    seq_node.end_pos = self._get_token_end(token)
+
+                    # then check if after ValueToken removal we have any start token on the top of the tokens stack
+                    if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
+                        raise Exception("Wrong structure of document")  # TODO: provide better message
+
+                    # and remove it from the token stack
+                    self.tokens_stack.pop()
+                    # and node itself as well
+                    prev_node = self.nodes_stack.pop()
+                    prev_node.end_pos = self._get_token_end(token)
+
+                    if isinstance(self.tokens_stack[-1], ValueToken):
+                        # remove value token opening it
+                        self.tokens_stack.pop()
+                    return
+            
+                else:
+                    # We exptected a value for property inside object but it wasn't found after ValueToken
+                    # It means BlockEndToken closes the parent
+                    # Close expected node
+                    node = self.nodes_stack.pop()
+                    node.end_pos = self._get_token_end(token)
+                    # Close parent node
+                    self.nodes_stack[-1].end_pos = self._get_token_end(token)
+                    self.nodes_stack.pop()
+
 
         if isinstance(token, KeyToken):
             # if sequence doesnt have indentation => there is no BlockEndToken at the end
             # and in such case KeyToken will go just after the ValueToken opening the sequence
+            # It will also covers issues when object has empty property
             if isinstance(self.tokens_stack[-1], ValueToken):
                 # in this case we need first correctly finalize sequence node
                 node = self.nodes_stack.pop()
-                node.end_pos = (token.start_mark.line, token.start_mark.column)
+                node.end_pos = self._get_token_start(token)
                 self.tokens_stack.pop()  # remove ValueToken
 
             self.tokens_stack.append(token)

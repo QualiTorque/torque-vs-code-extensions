@@ -16,6 +16,10 @@ class AppValidationHandler(ValidationHandler):
 
             if not node or not node.script:
                 continue
+            
+            if not node.script.text:
+                self._add_diagnostic(node.script, "No filename provided")
+                continue
 
             if node.script.text not in scripts:
                 self._add_diagnostic(node.script, f"File {node.script.text} doesn't exist")
