@@ -36,7 +36,7 @@
 					"description": "The platform name you use",
 					"default": "colony",
 					"scope": "application"
-				}				
+				}
 			}
 		},
 		"languages": [
