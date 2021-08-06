@@ -143,6 +143,7 @@ class BlueprintTree(BaseTree):
     class DebuggingNode(YamlNode):
         bastion_availability: TextNode = None
         direct_access: TextNode = None
+        # old syntax
         availability: TextNode = None
 
     inputs_node: BlueprintInputsSequence = None
@@ -154,3 +155,5 @@ class BlueprintTree(BaseTree):
     debugging: DebuggingNode = None
     ingress: IngressNode = None
     infrastructure: InfrastructureNode = None
+    # old syntax
+    environmentType: TextNode = None
