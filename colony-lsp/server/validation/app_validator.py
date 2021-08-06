@@ -29,7 +29,7 @@ class AppValidationHandler(ValidationHandler):
         else:
             raise ValueError(f"Wrong document path of application file: {path.as_posix()}")
 
-    def validate(self, text_doc):
+    def validate(self):
         super().validate()
         # errors
         self._validate_script_files_exist()
