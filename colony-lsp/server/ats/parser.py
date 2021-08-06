@@ -4,8 +4,8 @@ from yaml.tokens import (BlockEndToken, BlockEntryToken, BlockMappingStartToken,
                          ScalarToken, Token, ValueToken, StreamStartToken, StreamEndToken)
 
 from server.ats.trees.app import AppTree
-from server.ats.trees.blueprint import *
-from server.ats.trees.common import *
+from server.ats.trees.blueprint import BlueprintTree
+from server.ats.trees.common import YamlNode, TextNode, MappingNode, BaseTree, SequenceNode
 from server.ats.trees.service import ServiceTree
 
 
@@ -59,7 +59,7 @@ class Parser:
             child_node.start_pos = (token.start_mark.line, token.start_mark.column)
             self.nodes_stack.append(child_node)
         # TODO: replace with parser exception
-        except Exception as e:
+        except Exception:
             raise ParserError(f"Parent node doesn't have child with name '{token.value}'", token=token)
 
     def _process_token(self, token: Token) -> None:

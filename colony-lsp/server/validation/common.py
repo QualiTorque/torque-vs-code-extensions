@@ -1,14 +1,14 @@
 from typing import List
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
+from pygls.workspace import Document
 from server.ats.trees.common import BaseTree, YamlNode
-from server.constants import PREDEFINED_COLONY_INPUTS
 
 
 class ValidationHandler:
-    def __init__(self, tree: BaseTree, document_path: str):
+    def __init__(self, tree: BaseTree, document: Document) -> None:
         self._tree = tree
         self._diagnostics: List[Diagnostic] = []
-        self._document_path = document_path
+        self._document = document
 
     def _get_repo_root_path(self):
         raise NotImplementedError()

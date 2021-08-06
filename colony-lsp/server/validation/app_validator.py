@@ -1,14 +1,12 @@
 import pathlib
 from server.ats.trees.app import AppTree
 from server.validation.common import ValidationHandler
-from typing import List
-from server.constants import PREDEFINED_COLONY_INPUTS
 from server.utils import applications
 
 
 class AppValidationHandler(ValidationHandler):
     def _validate_script_files_exist(self):
-        scripts = applications.get_app_scripts(self._document_path)
+        scripts = applications.get_app_scripts(self._document.path)
         tree: AppTree = self._tree
         if tree.configuration is None:
             return
@@ -24,7 +22,7 @@ class AppValidationHandler(ValidationHandler):
 
 
     def _get_repo_root_path(self):
-        path = pathlib.Path(self._document_path).absolute()
+        path = pathlib.Path(self._document.path).absolute()
         if path.parents[1].name == "applications":
             return path.parents[2].absolute().as_posix()
 

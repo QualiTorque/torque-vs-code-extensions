@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, ClassVar
+from typing import Any, Optional, ClassVar
 
 
 @dataclass

@@ -144,7 +144,6 @@ colony_server = ColonyLanguageServer()
 
 def _validate(ls, params):
     text_doc = ls.workspace.get_document(params.text_document.uri)
-    doc_path = params.text_document.uri.replace("file://", "")
 
     source = text_doc.source
     diagnostics = _validate_yaml(source) if source else []
@@ -152,8 +151,8 @@ def _validate(ls, params):
     try:
         tree = Parser(source).parse()
         cls_validator = ValidatorFactory.get_validator(tree)
-        validator = cls_validator(tree, doc_path)
-        diagnostics += validator.validate(text_doc)
+        validator = cls_validator(tree, text_doc)
+        diagnostics += validator.validate()
 
     except ParserError as e:
         diagnostics.append(
@@ -210,7 +209,6 @@ def did_change(ls, params: DidChangeTextDocumentParams):
        '/services/' in params.text_document.uri:
         _validate(ls, params)
         text_doc = ls.workspace.get_document(params.text_document.uri)
-        root = ls.workspace.root_path
         
         source = text_doc.source
         yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor

@@ -4,7 +4,6 @@ import re
 from server.validation.common import ValidationHandler
 import sys
 import logging
-from typing import List
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
 from server.ats.trees.blueprint import BlueprintTree
 from server.constants import PREDEFINED_COLONY_INPUTS
@@ -18,18 +17,18 @@ class BlueprintValidationHandler(ValidationHandler):
         self.blueprint_services = [srv.id.text for srv in self._tree.services.nodes] if self._tree.services else []
 
     def _get_repo_root_path(self):
-        path = pathlib.Path(self._document_path).absolute()
+        path = pathlib.Path(self._document.path).absolute()
         if path.parents[0].name == "blueprints":
             return path.parents[1].absolute().as_posix()
 
         else:
             raise ValueError(f"Wrong document path of blueprint file: {path.as_posix()}")    
 
-    def _check_for_deprecated_properties(self, text_doc):
+    def _check_for_deprecated_properties(self):
         deprecated_properties = {"availability": "bastion_availability"}
         message = "Deprecated property '{}'. Please use '{}' instead."
         line_num = 0
-        for line in text_doc.lines:
+        for line in self._document.lines:
             for prop in deprecated_properties.keys():
                 found = re.findall('^(?!.*#).*(\\b'+prop+'\\b:)', line)
                 if len(found) > 0:
@@ -45,14 +44,14 @@ class BlueprintValidationHandler(ValidationHandler):
                     ))
             line_num += 1
 
-    def _check_for_deprecated_syntax(self, text_doc):
+    def _check_for_deprecated_syntax(self):
         deprecated_syntax = {
             "outputs\..+": "colony.[app_name|service_name].outputs.[output_name]",
             "colony.sandboxid": "colony.environment.id"
                             }
         message = "Deprecated syntax '{}'. Please use '{}' instead."
         line_num = 0
-        for line in text_doc.lines:
+        for line in self._document.lines:
             for prop in deprecated_syntax.keys():
                 for match in re.finditer('^(?!.*#).*(\$\{'+prop+'?\}|\$'+prop+'\\b)', line.lower()):
                     col = match.span(1)
@@ -131,10 +130,10 @@ class BlueprintValidationHandler(ValidationHandler):
                 if srv.id.text not in available_srvs:
                     self._add_diagnostic(srv.id, message=message.format(srv.id.text))
 
-    def _check_for_unused_blueprint_inputs(self, text_doc):
-        if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
+    def _check_for_unused_blueprint_inputs(self):
+        if self._tree.inputs_node:
             message = "Unused variable {}"
-            source = text_doc.source
+            source = self._document.source
             for input in self._tree.inputs_node.nodes:
                 found = re.findall('^(?!.*#).*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
                 if len(found) == 0:
@@ -197,8 +196,7 @@ class BlueprintValidationHandler(ValidationHandler):
         return True, ""
 
     def _validate_var_being_used_is_defined(self):
-        bp_inputs = {input.key.text for input in self._tree.inputs_node.nodes} if hasattr(self._tree,
-                                                                                          'inputs_node') and self._tree.inputs_node else {}
+        bp_inputs = {input.key.text for input in self._tree.inputs_node.nodes} if self._tree.inputs_node else {}
         if self._tree.applications:
             for app in self._tree.applications.nodes:
                 if not app.details or not app.details.input_values:
@@ -395,7 +393,7 @@ class BlueprintValidationHandler(ValidationHandler):
 
 
 
-    def validate(self, text_doc):
+    def validate(self):
         super().validate()
 
         try:
@@ -405,9 +403,9 @@ class BlueprintValidationHandler(ValidationHandler):
             _ = applications.get_available_applications(root_path)
             _ = services.get_available_services(root_path)
             # warnings
-            self._check_for_unused_blueprint_inputs(text_doc)
-            self._check_for_deprecated_properties(text_doc)
-            self._check_for_deprecated_syntax(text_doc)
+            self._check_for_unused_blueprint_inputs()
+            self._check_for_deprecated_properties()
+            self._check_for_deprecated_syntax()
             # errors
             self._validate_blueprint_apps_have_input_values()
             self._validate_blueprint_services_have_input_values()

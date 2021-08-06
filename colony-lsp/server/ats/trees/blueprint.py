@@ -1,18 +1,15 @@
 from dataclasses import dataclass
-from server.ats.trees.common import (BaseTree, InputsNode, MappingNode, SequenceNode, 
-    TextMappingSequence, TextNode, TextNodesSequence, YamlNode)
+from server.ats.trees.common import (BaseTree, InputsNode, MappingNode, SequenceNode,
+                                     TextMappingSequence, TextNode, TextNodesSequence, YamlNode)
 from typing import Union
 
 
 @dataclass
 class InfrastructureNode(YamlNode):
-
     @dataclass
     class ConnectivityNode(YamlNode):
-
         @dataclass
         class VirtualNetwork(YamlNode):
-
             @dataclass
             class SubnetsNode(YamlNode):
                 gateway: TextNodesSequence = None
@@ -113,7 +110,7 @@ class BlueprintResourceMappingNode(MappingNode):
         return self.key
 
     @property
-    def details(self):        
+    def details(self):
         return self.value
 
 
