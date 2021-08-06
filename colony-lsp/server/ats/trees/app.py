@@ -206,3 +206,5 @@ class AppTree(TreeWithOutputs, BaseTree):
     source: SourceNode = None
     debugging: DebuggingNode = None
     infrastructure: InfrastructureNode = None
+    # old syntax
+    ostype: TextNode = None
