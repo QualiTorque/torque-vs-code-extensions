@@ -18,15 +18,33 @@ class ValidationHandler:
             node: YamlNode,
             message: str = "",
             diag_severity: DiagnosticSeverity = None):
-        self._diagnostics.append(
-            Diagnostic(
-                range=Range(
-                    start=Position(line=node.start_pos[0], character=node.start_pos[1]),
-                    end=Position(line=node.end_pos[0], character=node.end_pos[1]),
-                ),
-                message=message,
-                severity=diag_severity
-            ))
+        if node:
+            self._diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(line=node.start_pos[0], character=node.start_pos[1]),
+                        end=Position(line=node.end_pos[0], character=node.end_pos[1]),
+                    ),
+                    message=message,
+                    severity=diag_severity
+                ))
+    
+    def _add_diagnostic_for_range(
+            self,
+            message: str = "",
+            range_start_tupple = None,
+            range_end_tupple = None,
+            diag_severity: DiagnosticSeverity = None):
+        if range_start_tupple and range_end_tupple:
+            self._diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(line=range_start_tupple[0], character=range_start_tupple[1]),
+                        end=Position(line=range_end_tupple[0], character=range_end_tupple[1]),
+                    ),
+                    message=message,
+                    severity=diag_severity
+                ))
 
     def _validate_no_duplicates_in_inputs(self):
         if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:

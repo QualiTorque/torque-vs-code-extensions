@@ -25,46 +25,43 @@ class BlueprintValidationHandler(ValidationHandler):
             raise ValueError(f"Wrong document path of blueprint file: {path.as_posix()}")    
 
     def _check_for_deprecated_properties(self):
-        deprecated_properties = {"availability": "bastion_availability"}
-        message = "Deprecated property '{}'. Please use '{}' instead."
+        deprecated_properties = {"availability": "bastion_availability",
+                                 "environmentType": None}
+        message_dep = "Deprecated property '{}'."
+        message_replace = "Please use '{}' instead."
         line_num = 0
         for line in self._document.lines:
             for prop in deprecated_properties.keys():
-                found = re.findall('^(?!.*#).*(\\b'+prop+'\\b:)', line)
+                found = re.findall('^[^#\\n]*(\\b'+prop+'\\b:)', line)
                 if len(found) > 0:
                     col = line.find(prop)
-                    self._diagnostics.append(
-                        Diagnostic(
-                            range=Range(
-                                start=Position(line=line_num, character=col),
-                                end=Position(line=line_num, character=col+len(prop)),
-                            ),
-                            message=message.format(prop, deprecated_properties[prop]),
-                            severity=DiagnosticSeverity.Warning
-                    ))
+                    message = message_dep.format(prop)
+                    if deprecated_properties[prop]:
+                        message += " " + message_replace.format(deprecated_properties[prop])
+                    self._add_diagnostic_for_range(message,
+                                                   range_start_tupple=(line_num, col),
+                                                   range_end_tupple=(line_num, col+len(prop)),
+                                                   diag_severity=DiagnosticSeverity.Warning)                    
             line_num += 1
 
     def _check_for_deprecated_syntax(self):
         deprecated_syntax = {
             "outputs\..+": "colony.[app_name|service_name].outputs.[output_name]",
-            "colony.sandboxid": "colony.environment.id"
+            "colony.sandboxid": "colony.environment.id",
+            "colony.publicaddress": "colony.environment.public_address",
+            "colony.virtualnetworkid": "colony.environment.virtual_network_id"
                             }
         message = "Deprecated syntax '{}'. Please use '{}' instead."
         line_num = 0
         for line in self._document.lines:
             for prop in deprecated_syntax.keys():
-                for match in re.finditer('^(?!.*#).*(\$\{'+prop+'?\}|\$'+prop+'\\b)', line.lower()):
+                for match in re.finditer('^[^#\\n]*(\$\{'+prop+'?\}|\$'+prop+'\\b)', line.lower()):
                     col = match.span(1)
                     old_syntax = match.group(1).replace('$', '').replace('{', '').replace('}', '')
-                    self._diagnostics.append(
-                        Diagnostic(
-                            range=Range(
-                                start=Position(line=line_num, character=col[0]),
-                                end=Position(line=line_num, character=col[1]),
-                            ),
-                            message=message.format(old_syntax, deprecated_syntax[prop]),
-                            severity=DiagnosticSeverity.Warning
-                    ))
+                    self._add_diagnostic_for_range(message.format(old_syntax, deprecated_syntax[prop]),
+                                                   range_start_tupple=(line_num, col[0]),
+                                                   range_end_tupple=(line_num, col[1]),
+                                                   diag_severity=DiagnosticSeverity.Warning)
 
             line_num += 1
 
@@ -135,7 +132,7 @@ class BlueprintValidationHandler(ValidationHandler):
             message = "Unused variable {}"
             source = self._document.source
             for input in self._tree.inputs_node.nodes:
-                found = re.findall('^(?!.*#).*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
+                found = re.findall('^[^#\\n]*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
                 if len(found) == 0:
                     self._add_diagnostic(
                         input.key,
