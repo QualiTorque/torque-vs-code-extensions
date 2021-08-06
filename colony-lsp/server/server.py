@@ -152,10 +152,6 @@ def _validate(ls, params):
 
     try:
         tree = Parser(source).parse()
-        cls_validator = ValidatorFactory.get_validator(tree)
-        validator = cls_validator(tree, text_doc)
-        diagnostics += validator.validate()
-
     except ParserError as e:
         diagnostics.append(
             Diagnostic(
@@ -163,7 +159,6 @@ def _validate(ls, params):
                     start=Position(line=e.start_pos[0], character=e.start_pos[1]),
                     end=Position(line=e.end_pos[0], character=e.end_pos[1])),
                 message=e.message))
-
     except ValueError as e:
         diagnostics.append(
             Diagnostic(
@@ -171,13 +166,19 @@ def _validate(ls, params):
                     start=Position(line=0, character=0),
                     end=Position(line=0, character=0)),
                 message=e))
-
     except Exception as ex:
         import sys
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-        logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-        return
+        logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)        
 
+    try:
+        cls_validator = ValidatorFactory.get_validator(tree)
+        validator = cls_validator(tree, text_doc)
+        diagnostics += validator.validate()
+    except Exception as ex:
+        import sys
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+        logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)        
 
     ls.publish_diagnostics(text_doc.uri, diagnostics)
 
@@ -223,16 +224,6 @@ def did_change(ls, params: DidChangeTextDocumentParams):
         elif doc_type == "TerraForm":
             srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
             services.reload_service_details(srv_name, srv_source=source)
-
-
-# @colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
-# def did_close(server: ColonyLanguageServer, params: DidCloseTextDocumentParams):
-#     """Text document did close notification."""
-#     if '/blueprints/' in params.text_document.uri or \
-#        '/applications/' in params.text_document.uri or \
-#        '/services/' in params.text_document.uri:
-#         # server.show_message('Text Document Did Close')
-#         pass
 
 
 @colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
@@ -341,8 +332,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                                         if outputs:
                                             options.extend(outputs)
                                         break
-                                        
-                    
+                                                            
                     line = params.position.line
                     char = params.position.character
                     for option in options:
@@ -353,8 +343,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                                                                     end=Position(line=line, character=char+len(option))),
                                                                     new_text=option
                                                     )))
-                    
-                
+                                    
         else:
             parent = common.get_parent_word(doc, params.position)
             line = params.position.line
