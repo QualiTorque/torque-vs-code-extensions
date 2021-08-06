@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from server.ats.trees.common import BaseTree, TreeWithOutputs, YamlNode, TextNode, TextNodesSequence, \
-    TextMappingSequence
+from server.ats.trees.common import (BaseTree, TreeWithOutputs, YamlNode,
+                                     TextNode, TextNodesSequence, TextMappingSequence)
 
 
 @dataclass

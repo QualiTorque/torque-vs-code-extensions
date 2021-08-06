@@ -1,9 +1,7 @@
-from yaml import StreamStartToken, ScalarToken, BlockMappingStartToken, KeyToken, ValueToken, BlockEndToken, \
-    StreamEndToken, BlockSequenceStartToken, BlockEntryToken
-
-from server.ats.trees.blueprint import BlueprintTree
-from server.ats.trees.common import *
-from server.ats.trees.service import ServiceTree
+from abc import ABC
+from dataclasses import dataclass
+from server.ats.trees.common import (BaseTree, ResourceMappingNode, SequenceNode,
+                                     TextNode, TreeWithOutputs, YamlNode)
 
 
 @dataclass
