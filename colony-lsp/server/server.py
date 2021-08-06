@@ -290,9 +290,9 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                     if cur_word.startswith('colony'):
                         if cur_word == 'colony.':
                             options = ['environment', 'repos']
-                            if bp_tree.apps_node and len(bp_tree.apps_node.nodes) > 0:
+                            if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
                                 options.append('applications')
-                            if bp_tree.services_node and len(bp_tree.services_node.nodes) > 0:
+                            if bp_tree.services and len(bp_tree.services.nodes) > 0:
                                 options.append('services')
                         elif cur_word == 'colony.environment.':
                             options = ['id', 'virtual_network_id', 'public_address']
@@ -301,17 +301,17 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                         elif cur_word == 'colony.repos.branch.':
                             options = ['current']
                         elif cur_word == 'colony.applications.':
-                            if bp_tree.apps_node and len(bp_tree.apps_node.nodes) > 0:
-                                for app in bp_tree.apps_node.nodes:
+                            if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
+                                for app in bp_tree.applications.nodes:
                                     options.append(app.id.text)
                         elif cur_word == 'colony.services.':
-                            if bp_tree.apps_node and len(bp_tree.services_node.nodes) > 0:
-                                for srv in bp_tree.services_node.nodes:
+                            if bp_tree.services and len(bp_tree.services.nodes) > 0:
+                                for srv in bp_tree.services.nodes:
                                     options.append(srv.id.text)
                         elif cur_word.startswith('colony.applications.'):
                             parts = cur_word.split('.')
                             if len(parts) == 4 and parts[2] != '':
-                                options.append('outputs')
+                                options = ['outputs', 'dns']
                             elif len(parts) == 5 and parts[3] == 'outputs':
                                 apps = applications.get_available_applications(root)
                                 for app in apps:
@@ -548,20 +548,22 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
         if bp_tree.applications:
             for app in bp_tree.applications.nodes:
                 target_path = f"{root}/applications/{app.id.text}/{app.id.text}.yaml"
-                tooltip = "Open the application file at " + target_path
-                links.append(DocumentLink(range=Range(
-                                          start=Position(line=app.id.start[0], character=app.id.start[1]),
-                                          end=Position(line=app.id.start[0], character=app.start[1]+len(app.id.text)),
-                                         ), target=target_path, tooltip=tooltip))
+                if os.path.exists(target_path) and os.path.isfile(target_path):
+                    tooltip = "Open the application file at " + target_path
+                    links.append(DocumentLink(range=Range(
+                                            start=Position(line=app.id.start_pos[0], character=app.id.start_pos[1]),
+                                            end=Position(line=app.id.start_pos[0], character=app.start_pos[1]+len(app.id.text)),
+                                            ), target=target_path, tooltip=tooltip))
         
         if bp_tree.services:
             for srv in bp_tree.services.nodes:
                 target_path = f"{root}/services/{srv.id.text}/{srv.id.text}.yaml"
-                tooltip = "Open the service file at " + target_path
-                links.append(DocumentLink(range=Range(
-                                          start=Position(line=srv.id.start[0], character=srv.id.start[1]),
-                                          end=Position(line=srv.id.start[0], character=srv.start[1]+len(srv.id.text)),
-                                         ), target=target_path, tooltip=tooltip))
+                if os.path.exists(target_path) and os.path.isfile(target_path):
+                    tooltip = "Open the service file at " + target_path
+                    links.append(DocumentLink(range=Range(
+                                            start=Position(line=srv.id.start_pos[0], character=srv.id.start_pos[1]),
+                                            end=Position(line=srv.id.start_pos[0], character=srv.start_pos[1]+len(srv.id.text)),
+                                            ), target=target_path, tooltip=tooltip))
     
     return links
 
