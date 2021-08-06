@@ -625,22 +625,17 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
 #     return None
 
 
-@colony_server.feature(TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL_DELTA
-                       , SemanticTokensOptions(
-                # work_done_progress=True,
-                legend=SemanticTokensLegend(
-                    token_types=[
-        'comment', 'string', 'keyword', 'number', 'regexp', 'operator', 'namespace',
-        'type', 'struct', 'class', 'interface', 'enum', 'typeParameter', 'function',
-        'method', 'macro', 'variable', 'parameter', 'property', 'label'
-                    ],
-                    token_modifiers=['declaration', 'documentation', 'readonly', 'static', 'abstract', 'deprecated',
-        'modification', 'async']
-                ),
-                # range=False,
-                # full=True
-                full={"delta": True}
-            ))
+@colony_server.feature(TEXT_DOCUMENT_SEMANTIC_TOKENS)
+            #            , SemanticTokensOptions(
+            #     # work_done_progress=True,
+            #     legend=SemanticTokensLegend(
+            #         token_types=['colonyVariable'],
+            #         token_modifiers=[]
+            #     ),
+            #     # range=False,
+            #     # full=True
+            #     # full={"delta": True}
+            # ))
 def semantic_tokens_range(server: ColonyLanguageServer, params: SemanticTokensParams) -> Optional[Union[SemanticTokens, SemanticTokensPartialResult]]:
     print('---- TEXT_DOCUMENT_SEMANTIC_TOKENS_RANGE ----')
     print(locals())
