@@ -29,6 +29,9 @@ def get_available_services(root_folder: str):
                         except ParserError as e:
                             logging.warning(f"Unable to load service '{dir}.yaml' due to error: {e.message}")
                             continue
+                        except Exception as e:
+                            logging.warning(f"Unable to load service '{dir}.yaml' due to error: {str(e)}")
+                            continue
 
         return SERVICES
 

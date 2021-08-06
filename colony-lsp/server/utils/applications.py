@@ -51,6 +51,9 @@ def get_available_applications(root_folder: str):
                         except ParserError as e:
                             logging.warning(f"Unable to load application '{dir}.yaml' due to error: {e.message}")
                             continue
+                        except Exception as e:
+                            logging.warning(f"Unable to load appliiation '{dir}.yaml' due to error: {str(e)}")
+                            continue
                     
         return APPLICATIONS
 
