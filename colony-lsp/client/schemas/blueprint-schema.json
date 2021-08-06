@@ -181,7 +181,7 @@
                 "input_values": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InputValuesElement"
+                        "$ref": "#/definitions/InputValues"
                     }
                 },
                 "depends_on": {
@@ -193,23 +193,12 @@
             },
             "title": "Application"
         },
-        "InputValuesElement": {
-            "anyOf": [
-                {
-                    "$ref": "#/definitions/InputValues"
-                },
-                {
-                    "type": "string"
-                }
-            ],
-            "title": "Input value"
-        },
         "InputValues": {
             "type": "object",
             "additionalProperties": false,
             "patternProperties": {
                 "^[\\w\\-]+$": { 
-                    "type": ["string", "integer", "null"]
+                    "type": ["string", "number", "boolean"]
                 }
             },
             "title": "Input Values"
@@ -252,11 +241,6 @@
                     "type": "string",
                     "enum": ["enabled-on", "enabled-off", "disabled"],
                     "description": "Bastion's default state in the sandbox: enabled-on: Bastion will be deployed and remain powered on. enabled-off: Bastion will be deployed and then powered off. Can be powered on easily by the user. disabled: Bastion will not be deployed, and debugging links will not be available for this blueprint."
-                },
-                "availability": {
-                    "type": "string",
-                    "enum": ["on", "off"],
-                    "description": "(Deprecated, use bastion_availability) Bastion's default state in the sandbox: enabled-on: Bastion will be deployed and remain powered on. enabled-off: Bastion will be deployed and then powered off. Can be powered on easily by the user. disabled: Bastion will not be deployed, and debugging links will not be available for this blueprint."
                 },
                 "direct_access": {
                     "type": "string",
@@ -322,7 +306,7 @@
                 "input_values": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InputValuesElement"
+                        "$ref": "#/definitions/InputValues"
                     }
                 },
                 "depends_on": {
@@ -395,7 +379,7 @@
             "properties": {
                 "path": {
                     "type": "string",
-                    "description": "Optional) The path rule indicates that only requests for a URL that has the defined path will be routed to the specified application. A rule can include both a host and a path."
+                    "description": "(Optional) The path rule indicates that only requests for a URL that has the defined path will be routed to the specified application. A rule can include both a host and a path."
                 },
                 "host": {
                     "type": "string",

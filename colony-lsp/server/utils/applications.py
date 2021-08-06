@@ -1,20 +1,21 @@
 import os
 import pathlib
-from server.ats.parser import AppParser
+from server.ats.parser import Parser, ParserError
 import yaml
+import logging
 
 APPLICATIONS = {}
 
 
 def load_app_details(app_name: str, app_source: str):
-    app_tree = AppParser(document=app_source).parse()
-    
+    app_tree = Parser(document=app_source).parse()
+        
     output = f"{app_name}:\n"
     output += "  instances: 1\n"                        
-    inputs = app_tree.inputs_node.inputs
+    inputs = app_tree.inputs_node
     if inputs:
         output += "  input_values:\n"
-        for input in inputs:
+        for input in inputs.nodes:
             if input.value:
                 output += f"    - {input.key.text}: {input.value.text}\n"
             else:
@@ -46,8 +47,12 @@ def get_available_applications(root_folder: str):
                     files = os.listdir(app_dir)
                     if f'{dir}.yaml' in files:
                         f = open(os.path.join(app_dir, f'{dir}.yaml'), "r")
-                        source = f.read() 
-                        load_app_details(app_name=dir, app_source=source)
+                        source = f.read()
+                        try:
+                            load_app_details(app_name=dir, app_source=source)
+                        except ParserError as e:
+                            logging.warning(f"Unable to load application '{dir}.yaml' due to error: {e.message}")
+                            continue
                     
         return APPLICATIONS
 
@@ -59,9 +64,9 @@ def get_available_applications_names():
         return []
 
 
-def get_app_scripts(app_dir_path: str):
+def get_app_scripts(app_path: str):
     scripts = []
-    files = pathlib.Path(app_dir_path.replace("file://", "")).parent.glob("./*")
+    files = pathlib.Path(app_path.replace("file://", "")).parent.glob("./*")
     for file in files:
         if not file.name.endswith('.yaml'):
             scripts.append(pathlib.Path(file).name)
@@ -73,18 +78,20 @@ def get_app_inputs(app_name):
     if app_name in APPLICATIONS:
         app_tree = APPLICATIONS[app_name]["app_tree"]
         inputs = {}
-        for input in app_tree.inputs_node.inputs:
-            inputs[input.key.text] = input.value.text if input.value else None
+        if app_tree.inputs_node:
+            for input in app_tree.inputs_node.nodes:
+                inputs[input.key.text] = input.value.text if input.value else None
         return inputs
-    else:
-        return []
+    
+    return []
 
 
 def get_app_outputs(app_name):
     if app_name in APPLICATIONS:
         app_tree = APPLICATIONS[app_name]["app_tree"]
-        outputs = [out.text for out in app_tree.outputs]
-        return outputs
-    else:
-        return []
+        if app_tree.outputs:
+            outputs = [out.text for out in app_tree.outputs.nodes]
+            return outputs
+    
+    return []
     

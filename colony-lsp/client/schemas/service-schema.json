@@ -18,7 +18,7 @@
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/ServiceInput"
+                        "$ref": "#/definitions/ServiceInputElement"
                     }
                 },
                 "module": {
@@ -54,10 +54,20 @@
             ],
             "title": "Colony Service"
         },
-        "ServiceInput": {
-            "type": ["string", "object"],
-            "additionalProperties": true,
-            "title": "Input"
+        "ServiceInputElement": {
+            "anyOf": [
+                {"type": "string", "title": "Input"},
+                {"$ref": "#/definitions/ServiceInputSimple"}
+            ]
+        },
+        "ServiceInputSimple": {
+            "type": "object",
+            "patternProperties": {
+                "^[\\w\\-]+$": { 
+                    "type": ["string", "number", "boolean", "null"]
+                }
+            },
+            "title": "Value"
         },
         "Module": {
             "type": "object",
@@ -159,7 +169,7 @@
             "type": "object",
             "patternProperties": {
                 "^[\\w\\-]+$": { 
-                    "type": ["string", "integer", "boolean"]
+                    "type": ["string", "number", "boolean"]
                 }
             },
             "title": "Value"

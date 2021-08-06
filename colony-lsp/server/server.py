@@ -17,9 +17,9 @@
 import asyncio
 from dataclasses import dataclass
 import logging
+from server.validation.factory import ValidatorFactory
 
 # from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
-from server.utils.validation import AppValidationHandler, BlueprintValidationHandler, ServiceValidationHandler
 from pygls.lsp import types
 from pygls.lsp.types.basic_structures import VersionedTextDocumentIdentifier
 from pygls.lsp import types, InitializeResult
@@ -33,14 +33,14 @@ import re
 from json import JSONDecodeError
 from typing import Any, Dict, Optional, Tuple, List, Union, cast
 
-from server.ats.parser import AppParser, BlueprintParser, BlueprintTree, ServiceParser
+from server.ats.parser import   BlueprintTree, Parser, ParserError
 
 from server.utils import services, applications, common
 from pygls.protocol import LanguageServerProtocol
 
 from pygls.lsp.methods import (CODE_LENS, COMPLETION, COMPLETION_ITEM_RESOLVE, DOCUMENT_LINK, TEXT_DOCUMENT_DID_CHANGE,
-                               TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES, DEFINITION, 
-                               TEXT_DOCUMENT_SEMANTIC_TOKENS)
+                               TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES, DEFINITION,  )
+                            #    TEXT_DOCUMENT_SEMANTIC_TOKENS)
 from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              CompletionParams, ConfigurationItem,
                              ConfigurationParams, Diagnostic, Location,
@@ -142,75 +142,41 @@ colony_server = ColonyLanguageServer()
     
 #     return inputs
 
-
 def _validate(ls, params):
     text_doc = ls.workspace.get_document(params.text_document.uri)
-    root = ls.workspace.root_path
-    
+
     source = text_doc.source
     diagnostics = _validate_yaml(source) if source else []
 
-    if not diagnostics: 
-        yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
-        doc_type = yaml_obj.get('kind', '')
-        doc_lines = text_doc.lines
-        
+    try:
+        tree = Parser(source).parse()
+        cls_validator = ValidatorFactory.get_validator(tree)
+        validator = cls_validator(tree, text_doc)
+        diagnostics += validator.validate()
 
-        if doc_type == "blueprint":
-            try:
-                bp_tree = BlueprintParser(source).parse()
-                validator = BlueprintValidationHandler(bp_tree, root)
-                diagnostics += validator.validate()
-            except Exception as ex:
-                import sys
-                print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-                logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-                return
-            
+    except ParserError as e:
+        diagnostics.append(
+            Diagnostic(
+                range = Range(
+                    start=Position(line=e.start_pos[0], character=e.start_pos[1]),
+                    end=Position(line=e.end_pos[0], character=e.end_pos[1])),
+                message=e.message))
 
-        if doc_type == "application":
-            app_tree = AppParser(source).parse()
-            validator = AppValidationHandler(app_tree, root)
-            diagnostics += validator.validate()
-            scripts = applications.get_app_scripts(params.text_document.uri)
-                
-            for k, v in yaml_obj.get('configuration', []).items():
-                script_ref = v.get('script', None)
-                if script_ref and script_ref not in scripts:
-                    for i in range(len(doc_lines)):
-                        col_pos = doc_lines[i].find(script_ref)
-                        if col_pos == -1:
-                            continue
-                        d = Diagnostic(
-                            range=Range(
-                                start=Position(line=i, character=col_pos),
-                                end=Position(line=i, character=col_pos + 1 +len(script_ref))
-                            ),
-                            message=f"File {script_ref} doesn't exist"
-                        )
-                        diagnostics.append(d)
-        elif doc_type == "TerraForm":        
-            srv_tree = ServiceParser(source).parse()            
-            validator = ServiceValidationHandler(srv_tree, root)
-            diagnostics += validator.validate()
-                
-            vars = services.get_service_vars(params.text_document.uri)
-            vars_files = [var["file"] for var in vars]
+    except ValueError as e:
+        diagnostics.append(
+            Diagnostic(
+                range = Range(
+                    start=Position(line=0, character=0),
+                    end=Position(line=0, character=0)),
+                message=e))
 
-            for k, v in yaml_obj.get('variables', []).items():
-                if k == "var_file" and v not in vars_files:
-                    for i in range(len(doc_lines)):
-                        col_pos = doc_lines[i].find(v)
-                        if col_pos == -1:
-                            continue
-                        d = Diagnostic(
-                            range=Range(
-                                start=Position(line=i, character=col_pos),
-                                end=Position(line=i, character=col_pos + 1 +len(v))
-                            ),
-                            message=f"File {v} doesn't exist"
-                        )
-                        diagnostics.append(d)
+    except Exception as ex:
+        import sys
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+        logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+        return
+
+
     ls.publish_diagnostics(text_doc.uri, diagnostics)
 
 
@@ -243,7 +209,6 @@ def did_change(ls, params: DidChangeTextDocumentParams):
        '/services/' in params.text_document.uri:
         _validate(ls, params)
         text_doc = ls.workspace.get_document(params.text_document.uri)
-        root = ls.workspace.root_path
         
         source = text_doc.source
         yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor

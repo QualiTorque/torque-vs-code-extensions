@@ -1,9 +1,9 @@
 
+import logging
 import os
 import re
 import pathlib
-from server.ats.parser import ServiceParser
-from server.ats.tree import ServiceTree
+from server.ats.parser import Parser, ParserError
 import yaml
 
 
@@ -23,7 +23,11 @@ def get_available_services(root_folder: str):
                     if f'{dir}.yaml' in files:
                         f = open(os.path.join(srv_dir, f'{dir}.yaml'), "r")
                         source = f.read() 
-                        load_service_details(srv_name=dir, srv_source=source)
+                        try:
+                            load_service_details(srv_name=dir, srv_source=source)
+                        except ParserError as e:
+                            logging.warning(f"Unable to load service '{dir}.yaml' due to error: {e.message}")
+                            continue
 
         return SERVICES
 
@@ -36,13 +40,14 @@ def get_available_services_names():
 
 
 def load_service_details(srv_name: str, srv_source):
-    srv_tree = ServiceParser(document=srv_source).parse()
-    
+    srv_tree = Parser(document=srv_source).parse()
+
     output = f"{srv_name}:\n"
-    inputs = srv_tree.inputs_node.inputs
+
+    inputs = srv_tree.inputs_node
     if inputs:
         output += "  inputs_value:\n"
-        for input in inputs:
+        for input in inputs.nodes:
             if input.value:
                 output += f"    - {input.key.text}: {input.value.text}\n"
             else:
@@ -99,18 +104,20 @@ def get_service_inputs(srv_name):
     if srv_name in SERVICES:
         srv_tree = SERVICES[srv_name]["srv_tree"]
         inputs = {}
-        for input in srv_tree.inputs_node.inputs:
-            inputs[input.key.text] = input.value.text if input.value else None
+        if srv_tree.inputs_node:
+            for input in srv_tree.inputs_node.nodes:
+                inputs[input.key.text] = input.value.text if input.value else None
         return inputs
-    else:
-        return []
+
+    return []
 
 
 def get_service_outputs(srv_name):
     if srv_name in SERVICES:
         srv_tree = SERVICES[srv_name]["srv_tree"]
-        outputs = [out.text for out in srv_tree.outputs]
-        return outputs
-    else:
-        return []
+        if srv_tree.outputs:
+            outputs = [out.text for out in srv_tree.outputs.nodes]
+            return outputs
+
+    return []
     
