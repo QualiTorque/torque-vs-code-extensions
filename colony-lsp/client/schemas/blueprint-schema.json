@@ -181,7 +181,7 @@
                 "input_values": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InputValuesElement"
+                        "$ref": "#/definitions/InputValues"
                     }
                 },
                 "depends_on": {
@@ -193,23 +193,12 @@
             },
             "title": "Application"
         },
-        "InputValuesElement": {
-            "anyOf": [
-                {
-                    "$ref": "#/definitions/InputValues"
-                },
-                {
-                    "type": "string"
-                }
-            ],
-            "title": "Input value"
-        },
         "InputValues": {
             "type": "object",
             "additionalProperties": false,
             "patternProperties": {
                 "^[\\w\\-]+$": { 
-                    "type": ["string", "integer", "null"]
+                    "type": ["string", "number", "boolean"]
                 }
             },
             "title": "Input Values"
@@ -317,7 +306,7 @@
                 "input_values": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InputValuesElement"
+                        "$ref": "#/definitions/InputValues"
                     }
                 },
                 "depends_on": {
@@ -390,7 +379,7 @@
             "properties": {
                 "path": {
                     "type": "string",
-                    "description": "Optional) The path rule indicates that only requests for a URL that has the defined path will be routed to the specified application. A rule can include both a host and a path."
+                    "description": "(Optional) The path rule indicates that only requests for a URL that has the defined path will be routed to the specified application. A rule can include both a host and a path."
                 },
                 "host": {
                     "type": "string",
