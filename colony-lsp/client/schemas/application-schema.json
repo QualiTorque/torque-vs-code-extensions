@@ -17,8 +17,9 @@
                 },
                 "inputs": {
                     "type": "array",
+                    "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/Input"
+                        "$ref": "#/definitions/AppInputElement"
                     }
                 },
                 "outputs": {
@@ -427,10 +428,20 @@
             "additionalProperties": false,
             "title": "Ingress Healthcheck"
         },
-        "Input": {
-            "type": ["string", "object"],
-            "additionalProperties": true,
-            "title": "Input"
+        "AppInputElement": {
+            "anyOf": [
+                {"type": "string", "title": "Input"},
+                {"$ref": "#/definitions/AppInputSimple"}
+            ]
+        },
+        "AppInputSimple": {
+            "type": "object",
+            "patternProperties": {
+                "^[\\w\\-]+$": { 
+                    "type": ["string", "number", "boolean", "null"]
+                }
+            },
+            "title": "Value"
         },
         "Output": {
             "type": "string",
