@@ -542,7 +542,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
         
         if bp_tree.applications:
             for app in bp_tree.applications.nodes:
-                target_path = f"{root}/applications/{app.id.text}/{app.id.text}.yaml"
+                target_path = os.path.join(root, "applications", app.id.text, app.id.text+".yaml")
                 if os.path.exists(target_path) and os.path.isfile(target_path):
                     tooltip = "Open the application file at " + target_path
                     links.append(DocumentLink(range=Range(
@@ -552,7 +552,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
         
         if bp_tree.services:
             for srv in bp_tree.services.nodes:
-                target_path = f"{root}/services/{srv.id.text}/{srv.id.text}.yaml"
+                target_path = os.path.join(root, "services", srv.id.text, srv.id.text+".yaml")
                 if os.path.exists(target_path) and os.path.isfile(target_path):
                     tooltip = "Open the service file at " + target_path
                     links.append(DocumentLink(range=Range(
@@ -574,7 +574,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                 if app_tree.configuration.healthcheck.script:
                     script = app_tree.configuration.healthcheck.script
                     file_name = script.text
-                    target_path = f"{root}/applications/{app_name}/{file_name}"
+                    target_path = os.path.join(root, "applications", app_name, file_name)
                     if os.path.exists(target_path) and os.path.isfile(target_path):
                         tooltip = "Open the script file at " + target_path
                         links.append(DocumentLink(range=Range(
@@ -586,7 +586,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                 if app_tree.configuration.initialization.script:
                     script = app_tree.configuration.initialization.script
                     file_name = script.text
-                    target_path = f"{root}/applications/{app_name}/{file_name}"
+                    target_path = os.path.join(root, "applications", app_name, file_name)
                     if os.path.exists(target_path) and os.path.isfile(target_path):
                         tooltip = "Open the script file at " + target_path
                         links.append(DocumentLink(range=Range(
@@ -598,7 +598,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                 if app_tree.configuration.start.script:
                     script = app_tree.configuration.start.script
                     file_name = script.text
-                    target_path = f"{root}/applications/{app_name}/{file_name}"
+                    target_path = os.path.join(root, "applications", app_name, file_name)
                     if os.path.exists(target_path) and os.path.isfile(target_path):
                         tooltip = "Open the script file at " + target_path
                         links.append(DocumentLink(range=Range(
@@ -618,7 +618,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
             if srv_tree.variables.var_file:
                 script = srv_tree.variables.var_file
                 file_name = script.text
-                target_path = f"{root}/services/{srv_name}/{file_name}"
+                target_path = os.path.join(root, "services", srv_name, file_name)
                 if os.path.exists(target_path) and os.path.isfile(target_path):
                     tooltip = "Open the variables file at " + target_path
                     links.append(DocumentLink(range=Range(
