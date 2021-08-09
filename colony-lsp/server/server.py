@@ -347,24 +347,26 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             if parent == "applications":
                 apps = applications.get_available_applications(root)
                 for app in apps:
-                    items.append(CompletionItem(label=app, 
-                                                kind=CompletionItemKind.Reference, 
-                                                text_edit=TextEdit(
-                                                                range=Range(start=Position(line=line, character=char-2),
-                                                                            end=Position(line=line, character=char)),
-                                                                new_text=apps[app]['app_completion'],
-                                                )))
+                    if apps[app]['app_completion']:
+                        items.append(CompletionItem(label=app, 
+                                                    kind=CompletionItemKind.Reference, 
+                                                    text_edit=TextEdit(
+                                                                    range=Range(start=Position(line=line, character=char-2),
+                                                                                end=Position(line=line, character=char)),
+                                                                    new_text=apps[app]['app_completion'],
+                                                    )))
             
             if parent == "services":
                 srvs = services.get_available_services(root)
                 for srv in srvs:
-                    items.append(CompletionItem(label=srv, 
-                                                kind=CompletionItemKind.Reference, 
-                                                text_edit=TextEdit(
-                                                                range=Range(start=Position(line=line, character=char-2),
-                                                                            end=Position(line=line, character=char)),
-                                                                new_text=srvs[srv]['srv_completion'],
-                                                )))
+                    if srvs[srv]['srv_completion']:
+                        items.append(CompletionItem(label=srv, 
+                                                    kind=CompletionItemKind.Reference, 
+                                                    text_edit=TextEdit(
+                                                                    range=Range(start=Position(line=line, character=char-2),
+                                                                                end=Position(line=line, character=char)),
+                                                                    new_text=srvs[srv]['srv_completion'],
+                                                    )))
             
             # if parent == "input_values":
             #     available_inputs = _get_file_inputs(doc.source)
