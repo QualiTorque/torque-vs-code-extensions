@@ -60,67 +60,8 @@ from pygls.workspace import Document, Workspace, position_from_utf16
 DEBOUNCE_DELAY = 0.3
 
 
-COUNT_DOWN_START_IN_SECONDS = 10
-COUNT_DOWN_SLEEP_IN_SECONDS = 1
-
-
-
-# class ColonyWorkspace(Workspace):
-#     """
-#     Add colony-specific properties
-#     """
-
-#     def __init__(self, root_uri, sync_kind, workspace_folders):
-#         self._colony_objs = {}
-
-#         super().__init__(root_uri, sync_kind=sync_kind, workspace_folders=workspace_folders)
-
-#     @property
-#     def colony_objs(self):
-#         return self._colony_objs
-
-#     def _update_document(self, text_document: Union[types.TextDocumentItem, types.VersionedTextDocumentIdentifier]) -> None:
-#         self.logger.debug("updating document '%s'", text_document.uri)
-#         uri = text_document.uri
-#         colony_obj = yaml.load(self.get_document(uri).source, Loader=yaml.FullLoader)
-#         self._colony_objs[uri] = colony_obj
-
-#     def update_document(self, text_doc: VersionedTextDocumentIdentifier, change: workspace.TextDocumentContentChangeEvent):
-#         super().update_document(text_doc, change)
-#         self._update_document(text_doc)
-
-#     def put_document(self, text_document: types.TextDocumentItem) -> None:
-#         super().put_document(text_document)
-#         self._update_document(text_document)
-
-
-# class ColonyLspProtocol(LanguageServerProtocol):
-#     """Custom protocol that replaces the workspace with a ColonyWorkspace
-#     instance.
-#     """
-
-#     workspace: ColonyWorkspace
-
-#     def bf_initialize(self, *args, **kwargs) -> InitializeResult:
-#         res = super().bf_initialize(*args, **kwargs)
-#         ws = self.workspace
-#         self.workspace = ColonyWorkspace(
-#             ws.root_uri,
-#             self._server.sync_kind,
-#             ws.folders.values(),
-#         )
-#         return res
-
-
 class ColonyLanguageServer(LanguageServer):
     CONFIGURATION_SECTION = 'colonyServer'
-
-    # def __init__(self):
-    #     super().__init__(protocol_cls=ColonyLspProtocol)
-    
-    # @property
-    # def workspace(self) -> ColonyWorkspace:
-    #     return cast(ColonyWorkspace, super().workspace)
 
 
 colony_server = ColonyLanguageServer()
