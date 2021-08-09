@@ -420,7 +420,7 @@
                 },
                 "ignore_exposure": {
                     "type": "boolean",
-                    "description": "(Optional) When marking a blue rule with ignore_exposure: true, it’s used even when the green environment is exposed with 100%."
+                    "description": "(Optional - Applies to production environments, set on blue rules only) Allows routing traffic to blue rules regardless of exposure."
                 }
             },
             "anyOf": [
