@@ -396,57 +396,27 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             #         is_incomplete=False,
             #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
             #     )
-                
-    #     return CompletionList(
-    #         is_incomplete=False,
-    #         items=[
-    #             #CompletionItem(label='configuration'),
-    #             #CompletionItem(label='healthcheck'),
-    #             #CompletionItem(label='debugging'),
-    #             #CompletionItem(label='infrastructure'),
-    #             #CompletionItem(label='inputs'),
-    #             #CompletionItem(label='source'),
-    #             #CompletionItem(label='kind'),
-    #             #CompletionItem(label='spec_version'),
-    #         ]
-    #     )
-    # if doc_type == "TerraForm":
-    #     words = _preceding_words(
-    #         colony_server.workspace.get_document(params.text_document.uri),
-    #         params.position)
-    #     # debug("words", words)
-    #     if words:
-    #         if words[0] == "var_file:":
-    #             var_files = _get_service_vars(params.text_document.uri)
-    #             return CompletionList(
-    #                 is_incomplete=False,
-    #                 items=[CompletionItem(label=var["file"],
-    #                                       insert_text=f"{var['file']}\r\nvalues:\r\n" + 
-    #                                                    "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
-    #                                       kind=CompletionItemKind.File
-    #             )
-    #         # TODO: when services should use inputs?
-    #         elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
-    #             available_inputs = _get_file_inputs(doc.source)
-    #             return CompletionList(
-    #                 is_incomplete=False,
-    #                 items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
-    #             )
-                
-    #     # we don't need the below if we use a schema file 
-    #     return CompletionList(
-    #         is_incomplete=False,
-    #         items=[
-    #             # CompletionItem(label='permissions'),
-    #             # CompletionItem(label='outputs'),
-    #             # CompletionItem(label='variables'),
-    #             # CompletionItem(label='module'),
-    #             # CompletionItem(label='inputs'),
-    #             # CompletionItem(label='source'),
-    #             # CompletionItem(label='kind'),
-    #             # CompletionItem(label='spec_version'),
-    #         ]
-    #     )
+
+    if doc_type == "TerraForm":
+        words = common.preceding_words(doc, params.position)
+        if words and len(words) == 1:
+            if words[0] == "var_file:":
+                var_files = services.get_service_vars(params.text_document.uri)
+                return CompletionList(
+                    is_incomplete=False,
+                    items=[CompletionItem(label=var["file"],
+                                          insert_text=f"{var['file']}\r\nvalues:\r\n" + 
+                                                       "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
+                                          kind=CompletionItemKind.File
+                )
+            # TODO: check based on allow_variable
+            # elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
+            #     available_inputs = _get_file_inputs(doc.source)
+            #     return CompletionList(
+            #         is_incomplete=False,
+            #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
+            #     )
+
     else:
         return CompletionList(is_incomplete=True, items=[])
 
