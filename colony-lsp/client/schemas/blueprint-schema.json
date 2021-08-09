@@ -181,7 +181,7 @@
                 "input_values": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InputValues"
+                        "$ref": "#/definitions/InputValuesElement"
                     }
                 },
                 "depends_on": {
@@ -192,6 +192,17 @@
                 }
             },
             "title": "Application"
+        },
+        "InputValuesElement": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/InputValues"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "Blueprint Input"
         },
         "InputValues": {
             "type": "object",
@@ -306,7 +317,7 @@
                 "input_values": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InputValues"
+                        "$ref": "#/definitions/InputValuesElement"
                     }
                 },
                 "depends_on": {
