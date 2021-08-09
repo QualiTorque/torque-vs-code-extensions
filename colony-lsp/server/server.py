@@ -174,8 +174,7 @@ def _validate(ls, params):
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
         logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)        
 
-    if diagnostics: 
-        ls.publish_diagnostics(text_doc.uri, diagnostics)
+    ls.publish_diagnostics(text_doc.uri, diagnostics)
 
 
 def _validate_yaml(source):
