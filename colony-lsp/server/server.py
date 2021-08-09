@@ -126,24 +126,6 @@ class ColonyLanguageServer(LanguageServer):
 colony_server = ColonyLanguageServer()
 
 
-# def _get_file_variables(source):
-#     vars = re.findall(r"(\$[\w\.\-]+)", source, re.MULTILINE)
-#     return vars  
-
-
-# def _get_file_inputs(source):
-#     yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
-#     inputs_obj = yaml_obj.get('inputs')
-#     inputs = []
-#     if inputs_obj:
-#         for input in inputs_obj:
-#             if isinstance(input, str):
-#                 inputs.append(f"${input}")
-#             elif isinstance(input, dict):
-#                 inputs.append(f"${list(input.keys())[0]}")
-    
-#     return inputs
-
 def _validate(ls, params):
     text_doc = ls.workspace.get_document(params.text_document.uri)
 
