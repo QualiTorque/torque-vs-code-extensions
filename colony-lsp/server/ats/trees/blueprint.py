@@ -35,6 +35,8 @@ class RuleNode(YamlNode):
     color: TextNode = None
     shortcut: TextNode = None
     default: TextNode = None
+    ignore_case: TextNode = None
+    # new/unsupported
     stickiness: TextNode = None
 
 
