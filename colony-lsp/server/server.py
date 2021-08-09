@@ -380,24 +380,23 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             is_incomplete=(len(items)==0),
             items=items
         )
-    # elif doc_type == "application":
-    #     words = _preceding_words(
-    #         colony_server.workspace.get_document(params.text_document.uri),
-    #         params.position)
-    #     # debug("words", words)
-    #     if words:
-    #         if words[0] == "script:":
-    #             scripts = _get_app_scripts(params.text_document.uri)
-    #             return CompletionList(
-    #                 is_incomplete=False,
-    #                 items=[CompletionItem(label=script) for script in scripts],
-    #             )
-    #         elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
-    #             available_inputs = _get_file_inputs(doc.source)
-    #             return CompletionList(
-    #                 is_incomplete=False,
-    #                 items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
-    #             )
+    elif doc_type == "application":
+        words = common.preceding_words(doc, params.position)
+        if words and len(words) == 1:
+            if words[0] == "script:":
+                scripts = applications.get_app_scripts(params.text_document.uri)
+                return CompletionList(
+                    is_incomplete=False,
+                    items=[CompletionItem(label=script,
+                                          kind=CompletionItemKind.File) for script in scripts],
+                )
+            # TODO: check based on allow_variable
+            # elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
+            #     available_inputs = _get_file_inputs(doc.source)
+            #     return CompletionList(
+            #         is_incomplete=False,
+            #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
+            #     )
                 
     #     return CompletionList(
     #         is_incomplete=False,
