@@ -119,15 +119,16 @@ class BlueprintValidationHandler(ValidationHandler):
                 if app.value and app.value.input_values:
                     for var in app.value.input_values.nodes:
                         if not var.value and var.key.text not in blueprint_inputs:
-                            self._add_diagnostic(var.key, message="Application input must have a value")
+                            self._add_diagnostic(var.key, message="Application input must have a value or a blueprint input with the same name should be defined")
 
     def _validate_blueprint_services_have_input_values(self):
         if self._tree.services:
+            blueprint_inputs = [input.key.text for input in self._tree.inputs_node.nodes]
             for srv in self._tree.services.nodes:
                 if srv.value and srv.value.input_values:
                     for var in srv.value.input_values.nodes:
-                        if not var.value:
-                            self._add_diagnostic(var.key, message="Service input must have a value")
+                        if not var.value and var.key.text not in blueprint_inputs:
+                            self._add_diagnostic(var.key, message="Service input must have a value or a blueprint input with the same name should be defined")
 
     def _validate_non_existing_service_is_used(self):
         if self._tree.services:
@@ -150,15 +151,31 @@ class BlueprintValidationHandler(ValidationHandler):
         if self._tree.inputs_node:
             message = "Unused variable {}"
             source = self._document.source
+            # build a list of inputs used as "name only" to be matched with a blueprint input
+            name_only_inputs = {}
+            if self._tree.applications:
+                for app in self._tree.applications.nodes:
+                    if app.value and app.value.input_values:
+                        for var in app.value.input_values.nodes:
+                            if var.value is None and var.key.text not in name_only_inputs:
+                                name_only_inputs[var.key.text] = 1
+            if self._tree.services:
+                for srv in self._tree.services.nodes:
+                    if srv.value and srv.value.input_values:
+                        for var in srv.value.input_values.nodes:
+                            if var.value is None and var.key.text not in name_only_inputs:
+                                name_only_inputs[var.key.text] = 1
+            # search if used as a variable
             for input in self._tree.inputs_node.nodes:
-                found = re.findall('^[^#\\n]*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
-                if len(found) == 0:
-                    self._add_diagnostic(
-                        input.key,
-                        message=message.format(input.key.text),
-                        diag_severity=DiagnosticSeverity.Warning
-                    )
-
+                if input.key.text not in name_only_inputs:
+                    found = re.findall('^[^#\\n]*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
+                    if len(found) == 0:
+                        self._add_diagnostic(
+                            input.key,
+                            message=message.format(input.key.text),
+                            diag_severity=DiagnosticSeverity.Warning
+                        )
+                
     def _is_valid_auto_var(self, var_name):
         if var_name.lower() in PREDEFINED_COLONY_INPUTS:
             return True, ""
