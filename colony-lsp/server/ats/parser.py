@@ -43,11 +43,11 @@ class Parser:
         return document.replace('\t','  ')
 
     @staticmethod
-    def get_token_start(token: Token) -> tuple[int, int]:
+    def get_token_start(token: Token) -> Tuple[int, int]:
         return token.start_mark.line, token.start_mark.column
 
     @staticmethod
-    def get_token_end(token: Token) -> tuple[int, int]:
+    def get_token_end(token: Token) -> Tuple[int, int]:
         return token.end_mark.line, token.end_mark.column
 
     def _process_scalar_token(self, token: ScalarToken):
