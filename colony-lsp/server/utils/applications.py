@@ -8,23 +8,30 @@ APPLICATIONS = {}
 
 
 def load_app_details(app_name: str, app_source: str):
-    app_tree = Parser(document=app_source).parse()
-    
-    output = f"- {app_name}:\n"
-    output += "    instances: 1\n"
-    if app_tree.inputs_node:                        
-        inputs = app_tree.inputs_node.nodes
-        if inputs:
-            output += "    input_values:\n"
-            for input in inputs:
-                if input.value:
-                    output += f"      - {input.key.text}: {input.value.text}\n"
-                else:
-                    output += f"      - {input.key.text}: \n"    
-    
+    app_tree = None
+    output = None
+    try:
+        app_tree = Parser(document=app_source).parse()
+        
+        output = f"- {app_name}:\n"
+        output += "    instances: 1\n"
+        if app_tree.inputs_node:                        
+            inputs = app_tree.inputs_node.nodes
+            if inputs:
+                output += "    input_values:\n"
+                for input in inputs:
+                    if input.value:
+                        output += f"      - {input.key.text}: {input.value.text}\n"
+                    else:
+                        output += f"      - {input.key.text}: \n"
+    except ParserError as e:
+        logging.warning(f"Unable to load application '{dir}.yaml' due to error: {e.message}")        
+    except Exception as e:
+        logging.warning(f"Unable to load appliiation '{dir}.yaml' due to error: {str(e)}")
+                        
     APPLICATIONS[app_name] = {
         'app_tree': app_tree,
-        'app_completion': format_yaml(output)
+        'app_completion': format_yaml(output) if output else None
     }
 
 
@@ -33,29 +40,25 @@ def reload_app_details(app_name, app_source):
         load_app_details(app_name, app_source)
 
 
-def get_available_applications(root_folder: str):
+def get_available_applications(root_folder: str=None):
     if APPLICATIONS:
         return APPLICATIONS
     else:
-        apps_path = os.path.join(root_folder, 'applications')
-        if os.path.exists(apps_path):
-            for dir in os.listdir(apps_path):
-                app_dir = os.path.join(apps_path, dir)
-                if os.path.isdir(app_dir):
-                    files = os.listdir(app_dir)
-                    if f'{dir}.yaml' in files:
-                        f = open(os.path.join(app_dir, f'{dir}.yaml'), "r")
-                        source = f.read()
-                        try:
+        if root_folder:        
+            apps_path = os.path.join(root_folder, 'applications')
+            if os.path.exists(apps_path):
+                for dir in os.listdir(apps_path):
+                    app_dir = os.path.join(apps_path, dir)
+                    if os.path.isdir(app_dir):
+                        files = os.listdir(app_dir)
+                        if f'{dir}.yaml' in files:
+                            f = open(os.path.join(app_dir, f'{dir}.yaml'), "r")
+                            source = f.read()
                             load_app_details(app_name=dir, app_source=source)
-                        except ParserError as e:
-                            logging.warning(f"Unable to load application '{dir}.yaml' due to error: {e.message}")
-                            continue
-                        except Exception as e:
-                            logging.warning(f"Unable to load appliiation '{dir}.yaml' due to error: {str(e)}")
-                            continue
-                    
-        return APPLICATIONS
+                                                
+            return APPLICATIONS
+        else:
+            return None
 
 
 def get_available_applications_names():
@@ -78,19 +81,19 @@ def get_app_scripts(app_path: str):
 def get_app_inputs(app_name):
     if app_name in APPLICATIONS:
         app_tree = APPLICATIONS[app_name]["app_tree"]
-        inputs = {}
-        if app_tree.inputs_node:
+        if app_tree and app_tree.inputs_node:
+            inputs = {}            
             for input in app_tree.inputs_node.nodes:
                 inputs[input.key.text] = input.value.text if input.value else None
-        return inputs
+            return inputs
     
-    return []
+    return {}
 
 
 def get_app_outputs(app_name):
     if app_name in APPLICATIONS:
         app_tree = APPLICATIONS[app_name]["app_tree"]
-        if app_tree.outputs:
+        if app_tree and app_tree.outputs:
             outputs = [out.text for out in app_tree.outputs.nodes]
             return outputs
     

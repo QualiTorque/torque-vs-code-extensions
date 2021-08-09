@@ -102,13 +102,23 @@ class BlueprintValidationHandler(ValidationHandler):
             for app in self._tree.applications.nodes:
                 if app.id.text not in available_apps:
                     self._add_diagnostic(app.id, message=message.format(app.id.text))
-
+    
+    def _validate_used_apps_are_valid(self):
+        if self._tree.applications:
+            message = "The app '{}' is not valid. Open the file to get more details."
+            available_apps = applications.get_available_applications()
+            for app in self._tree.applications.nodes:
+                if app.id.text in available_apps:
+                    if available_apps[app.id.text]["app_tree"] is None:
+                        self._add_diagnostic(app.id, message=message.format(app.id.text))
+            
     def _validate_blueprint_apps_have_input_values(self):
         if self._tree.applications:
+            blueprint_inputs = [input.key.text for input in self._tree.inputs_node.nodes]
             for app in self._tree.applications.nodes:
                 if app.value and app.value.input_values:
                     for var in app.value.input_values.nodes:
-                        if not var.value:
+                        if not var.value and var.key.text not in blueprint_inputs:
                             self._add_diagnostic(var.key, message="Application input must have a value")
 
     def _validate_blueprint_services_have_input_values(self):
@@ -126,6 +136,15 @@ class BlueprintValidationHandler(ValidationHandler):
             for srv in self._tree.services.nodes:
                 if srv.id.text not in available_srvs:
                     self._add_diagnostic(srv.id, message=message.format(srv.id.text))
+    
+    def _validate_used_services_are_valid(self):
+        if self._tree.services:
+            message = "The service '{}' is not valid. Open the file to get more details."
+            available_srvs = services.get_available_services()
+            for srv in self._tree.services.nodes:
+                if srv.id.text in available_srvs:
+                    if available_srvs[srv.id.text]["srv_tree"] is None:
+                        self._add_diagnostic(srv.id, message=message.format(srv.id.text))
 
     def _check_for_unused_blueprint_inputs(self):
         if self._tree.inputs_node:
@@ -416,6 +435,8 @@ class BlueprintValidationHandler(ValidationHandler):
             self._validate_artifacts_are_unique()
             self._validate_apps_inputs_exists()
             self._validate_services_inputs_exists()
+            self._validate_used_apps_are_valid()
+            self._validate_used_services_are_valid()
         except Exception as ex:
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
             logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
