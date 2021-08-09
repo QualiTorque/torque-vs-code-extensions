@@ -406,6 +406,10 @@
                 "default": {
                     "type": "boolean",
                     "description": "(Optional) If true, this rule will be used for default routing to define on the ALB when no other rules apply."
+                },
+                "ignore_exposure": {
+                    "type": "boolean",
+                    "description": "(Optional) When marking a blue rule with ignore_exposure: true, it’s used even when the green environment is exposed with 100%."
                 }
             },
             "anyOf": [
