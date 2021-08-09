@@ -40,11 +40,13 @@ class IngressHealthCheckNode(YamlNode):
     unhealthy_threshold = None
 
     def _get_field_mapping(self) -> {str: str}:
-        return super()._get_field_mapping().update(
-            {"healthy-threshold": "healthy_threshold",
-             "status-code": "status_code",
-             "unhealthy-threshold": "unhealthy_threshold"}
-        )
+        mapping = super()._get_field_mapping()
+        mapping.update({
+            "healthy-threshold": "healthy_threshold",
+            "status-code": "status_code",
+            "unhealthy-threshold": "unhealthy_threshold"
+        })
+        return mapping
 
 
 @dataclass
@@ -59,10 +61,12 @@ class PortInfoInternalNode(PortInfoNode):
     port_range: TextNode = None
 
     def _get_field_mapping(self) -> {str: str}:
-        return super()._get_field_mapping().update(
-            {"port-range": "port_range",
-             "ingress-healthcheck": "ingress_healthcheck"}
-        )
+        mapping = super()._get_field_mapping()
+        mapping.update({
+            "port-range": "port_range",
+            "ingress-healthcheck": "ingress_healthcheck"
+        })
+        return mapping
 
 
 @dataclass
