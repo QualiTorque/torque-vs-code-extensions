@@ -140,7 +140,7 @@
                     "description": "In the relevant UI field, enter a description to be displayed to the user."
                 },
                 "default_value": {
-                    "type": ["integer", "string"],
+                    "type": ["integer", "string", "boolean"],
                     "description": "When the sandbox is created, Colony automatically populates the default value. The end-user can choose to edit the value or leave it as-is."
                 },
                 "optional": {
