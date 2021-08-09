@@ -543,7 +543,7 @@ async def start_sandbox(server: ColonyLanguageServer, *args):
                                     '--token', token,
                                     '--account', account,
                                     '--space', space,
-                                    'sb', 'start', blueprint_name], 
+                                    'sb', 'start', blueprint_name, '-d', '30'], 
                                    cwd=server.workspace.root_path, 
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         for line in process.stdout:
