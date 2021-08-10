@@ -30,8 +30,8 @@ import time
 import uuid
 import os
 import glob
-import pathlib
 import re
+import pathlib
 from json import JSONDecodeError
 from typing import Any, Dict, Optional, Tuple, List, Union, cast
 
@@ -439,9 +439,10 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                 if os.path.exists(target_path) and os.path.isfile(target_path):
                     tooltip = "Open the application file at " + target_path
                     links.append(DocumentLink(range=Range(
-                                            start=Position(line=app.id.start_pos[0], character=app.id.start_pos[1]),
-                                            end=Position(line=app.id.start_pos[0], character=app.start_pos[1]+len(app.id.text)),
-                                            ), target=target_path, tooltip=tooltip))
+                                              start=Position(line=app.id.start_pos[0], character=app.id.start_pos[1]),
+                                              end=Position(line=app.id.start_pos[0], character=app.start_pos[1]+len(app.id.text))), 
+                                              target=pathlib.Path(target_path).as_uri(), 
+                                              tooltip=tooltip))
         
         if bp_tree.services:
             for srv in bp_tree.services.nodes:
@@ -449,9 +450,10 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                 if os.path.exists(target_path) and os.path.isfile(target_path):
                     tooltip = "Open the service file at " + target_path
                     links.append(DocumentLink(range=Range(
-                                            start=Position(line=srv.id.start_pos[0], character=srv.id.start_pos[1]),
-                                            end=Position(line=srv.id.start_pos[0], character=srv.start_pos[1]+len(srv.id.text)),
-                                            ), target=target_path, tooltip=tooltip))
+                                              start=Position(line=srv.id.start_pos[0], character=srv.id.start_pos[1]),
+                                              end=Position(line=srv.id.start_pos[0], character=srv.start_pos[1]+len(srv.id.text))), 
+                                              target=pathlib.Path(target_path).as_uri(), 
+                                              tooltip=tooltip))
     
     elif doc_type == "application":
         try:
@@ -471,9 +473,10 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                     if os.path.exists(target_path) and os.path.isfile(target_path):
                         tooltip = "Open the script file at " + target_path
                         links.append(DocumentLink(range=Range(
-                                                start=Position(line=script.start_pos[0], character=script.start_pos[1]),
-                                                end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text)),
-                                                ), target=target_path, tooltip=tooltip))
+                                                  start=Position(line=script.start_pos[0], character=script.start_pos[1]),
+                                                  end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text))), 
+                                                  target=pathlib.Path(target_path).as_uri(), 
+                                                  tooltip=tooltip))
             
             if app_tree.configuration.initialization:
                 if app_tree.configuration.initialization.script:
@@ -483,9 +486,10 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                     if os.path.exists(target_path) and os.path.isfile(target_path):
                         tooltip = "Open the script file at " + target_path
                         links.append(DocumentLink(range=Range(
-                                                start=Position(line=script.start_pos[0], character=script.start_pos[1]),
-                                                end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text)),
-                                                ), target=target_path, tooltip=tooltip))
+                                                  start=Position(line=script.start_pos[0], character=script.start_pos[1]),
+                                                  end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text))), 
+                                                  target=pathlib.Path(target_path).as_uri(), 
+                                                  tooltip=tooltip))
             
             if app_tree.configuration.start:
                 if app_tree.configuration.start.script:
@@ -495,9 +499,10 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                     if os.path.exists(target_path) and os.path.isfile(target_path):
                         tooltip = "Open the script file at " + target_path
                         links.append(DocumentLink(range=Range(
-                                                start=Position(line=script.start_pos[0], character=script.start_pos[1]),
-                                                end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text)),
-                                                ), target=target_path, tooltip=tooltip))
+                                                  start=Position(line=script.start_pos[0], character=script.start_pos[1]),
+                                                  end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text))), 
+                                                  target=pathlib.Path(target_path).as_uri(), 
+                                                  tooltip=tooltip))
     elif doc_type == "TerraForm":
         try:
             srv_tree = Parser(doc.source).parse()        
@@ -515,9 +520,10 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                 if os.path.exists(target_path) and os.path.isfile(target_path):
                     tooltip = "Open the variables file at " + target_path
                     links.append(DocumentLink(range=Range(
-                                            start=Position(line=script.start_pos[0], character=script.start_pos[1]),
-                                            end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text)),
-                                            ), target=target_path, tooltip=tooltip))             
+                                              start=Position(line=script.start_pos[0], character=script.start_pos[1]),
+                                              end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text))), 
+                                              target=pathlib.Path(target_path).as_uri(), 
+                                              tooltip=tooltip))             
         
     return links
 
