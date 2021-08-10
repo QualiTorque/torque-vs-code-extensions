@@ -4,7 +4,7 @@
 	"description": "A VS Code extension for the Torque yaml syntax. Provides YAML schema verification, auto-complete, highlight problems and much more.",
 	"author": "Quali",
 	"license": "MIT",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"publisher": "Quali",
 	"repository": {
 		"type": "git",
