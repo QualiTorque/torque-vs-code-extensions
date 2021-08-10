@@ -45,9 +45,9 @@ def main():
     args = parser.parse_args()
 
     if args.tcp:
-        colony_server.start_tcp(args.host, args.port)
+        torque_server.start_tcp(args.host, args.port)
     else:
-        colony_server.start_io()
+        torque_server.start_io()
 
 
 if __name__ == '__main__':

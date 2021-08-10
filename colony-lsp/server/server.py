@@ -60,11 +60,11 @@ from pygls.workspace import Document, Workspace, position_from_utf16
 DEBOUNCE_DELAY = 0.3
 
 
-class ColonyLanguageServer(LanguageServer):
-    CONFIGURATION_SECTION = 'colonyServer'
+class TorqueLanguageServer(LanguageServer):
+    CONFIGURATION_SECTION = 'torqueServer'
 
 
-colony_server = ColonyLanguageServer()
+torque_ls = TorqueLanguageServer()
 
 
 def _validate(ls, params):
@@ -114,14 +114,14 @@ def _validate_yaml(source):
                 end=Position(line=mark.line - 1, character=mark.column)
             ),
             message=ex.problem,
-            source=type(colony_server).__name__
+            source=type(torque_ls).__name__
         )
         
         diagnostics.append(d)
 
     return diagnostics
 
-@colony_server.feature(TEXT_DOCUMENT_DID_CHANGE)
+@torque_ls.feature(TEXT_DOCUMENT_DID_CHANGE)
 def did_change(ls, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
     if '/blueprints/' in params.text_document.uri or \
@@ -143,20 +143,20 @@ def did_change(ls, params: DidChangeTextDocumentParams):
             services.reload_service_details(srv_name, srv_source=source)
 
 
-@colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
-async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentParams):
+@torque_ls.feature(TEXT_DOCUMENT_DID_OPEN)
+async def did_open(server: TorqueLanguageServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
     if '/blueprints/' in params.text_document.uri or \
        '/applications/' in params.text_document.uri or \
        '/services/' in params.text_document.uri:
-        server.show_message('Detected a Colony file', msg_type=MessageType.Log)
+        server.show_message('Detected a Torque file', msg_type=MessageType.Log)
         server.workspace.put_document(params.text_document)
         _validate(server, params)
 
 
 
-# @colony_server.feature(COMPLETION_ITEM_RESOLVE, CompletionOptions())
-# def completion_item_resolve(server: ColonyLanguageServer, params: CompletionItem) -> CompletionItem:
+# @torque_ls.feature(COMPLETION_ITEM_RESOLVE, CompletionOptions())
+# def completion_item_resolve(server: TorqueLanguageServer, params: CompletionItem) -> CompletionItem:
 #     """Resolves documentation and detail of given completion item."""
 #     print('completion_item_resolve')
 #     print(server)
@@ -173,18 +173,18 @@ async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentPara
 
 
 
-@colony_server.feature(COMPLETION, CompletionOptions(resolve_provider=False, trigger_characters=['.']))
+@torque_ls.feature(COMPLETION, CompletionOptions(resolve_provider=False, trigger_characters=['.']))
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
-    doc = colony_server.workspace.get_document(params.text_document.uri)
+    doc = torque_ls.workspace.get_document(params.text_document.uri)
     try:
         yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
     except yaml.MarkedYAMLError as ex:
         return CompletionList(is_incomplete=True, items=[])
     doc_type = yaml_obj.get('kind', '')
         
-    fdrs = colony_server.workspace.folders
-    root = colony_server.workspace.root_path
+    fdrs = torque_ls.workspace.folders
+    root = torque_ls.workspace.root_path
     
     if doc_type == "blueprint":
         items=[]
@@ -194,9 +194,9 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                 cur_word = words[-1]
                 word_parts = cur_word.split('$')
                 if word_parts:
-                    if word_parts[-1].startswith('{colony.'):
+                    if word_parts[-1].startswith('{torque.'):
                         cur_word = word_parts[-1][1:]
-                    elif word_parts[-1].startswith('colony.'):
+                    elif word_parts[-1].startswith('torque.'):
                         cur_word = word_parts[-1]
                     else:
                         cur_word = ''
@@ -204,28 +204,28 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                     bp_tree = Parser(doc.source).parse()
                                         
                     options = []
-                    if cur_word.startswith('colony'):
-                        if cur_word == 'colony.':
+                    if cur_word.startswith('torque'):
+                        if cur_word == 'torque.':
                             options = ['environment', 'repos']
                             if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
                                 options.append('applications')
                             if bp_tree.services and len(bp_tree.services.nodes) > 0:
                                 options.append('services')
-                        elif cur_word == 'colony.environment.':
+                        elif cur_word == 'torque.environment.':
                             options = ['id', 'virtual_network_id', 'public_address']
-                        elif cur_word == 'colony.repos.':
+                        elif cur_word == 'torque.repos.':
                             options = ['branch']
-                        elif cur_word == 'colony.repos.branch.':
+                        elif cur_word == 'torque.repos.branch.':
                             options = ['current']
-                        elif cur_word == 'colony.applications.':
+                        elif cur_word == 'torque.applications.':
                             if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
                                 for app in bp_tree.applications.nodes:
                                     options.append(app.id.text)
-                        elif cur_word == 'colony.services.':
+                        elif cur_word == 'torque.services.':
                             if bp_tree.services and len(bp_tree.services.nodes) > 0:
                                 for srv in bp_tree.services.nodes:
                                     options.append(srv.id.text)
-                        elif cur_word.startswith('colony.applications.'):
+                        elif cur_word.startswith('torque.applications.'):
                             parts = cur_word.split('.')
                             if len(parts) == 4 and parts[2] != '':
                                 options = ['outputs', 'dns']
@@ -237,7 +237,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                                         if outputs:
                                             options.extend(outputs)
                                         break
-                        elif cur_word.startswith('colony.services.'):
+                        elif cur_word.startswith('torque.services.'):
                             parts = cur_word.split('.')
                             if len(parts) == 4 and parts[2] != '':
                                 options.append('outputs')
@@ -294,9 +294,9 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             #     available_inputs = _get_file_inputs(doc.source)
             #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs]
             #     items.extend(inputs)
-            #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in PREDEFINED_COLONY_INPUTS]
+            #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in PREDEFINED_TORQUE_INPUTS]
             #     items.extend(inputs)
-            #     # TODO: add output generated variables of apps/services in this blueprint ($colony.applications.app_name.outputs.output_name, $colony.services.service_name.outputs.output_name)
+            #     # TODO: add output generated variables of apps/services in this blueprint ($torque.applications.app_name.outputs.output_name, $torque.services.service_name.outputs.output_name)
         
         return CompletionList(
             is_incomplete=(len(items)==0),
@@ -344,10 +344,10 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         return CompletionList(is_incomplete=True, items=[])
 
 
-# @colony_server.feature(DEFINITION)
-# def goto_definition(server: ColonyLanguageServer, params: types.DeclarationParams):
+# @torque_ls.feature(DEFINITION)
+# def goto_definition(server: TorqueLanguageServer, params: types.DeclarationParams):
 #     uri = params.text_document.uri
-#     doc = colony_server.workspace.get_document(uri)
+#     doc = torque_ls.workspace.get_document(uri)
 #     words = _preceding_words(doc, params.position)
 #         # debug("words", words)
 #     if words[0].startswith("script"):
@@ -359,8 +359,8 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
 #         # )
 
 
-# @colony_server.feature(CODE_LENS, CodeLensOptions(resolve_provider=False),)
-# def code_lens(server: ColonyLanguageServer, params: Optional[CodeLensParams] = None) -> Optional[List[CodeLens]]:
+# @torque_ls.feature(CODE_LENS, CodeLensOptions(resolve_provider=False),)
+# def code_lens(server: TorqueLanguageServer, params: Optional[CodeLensParams] = None) -> Optional[List[CodeLens]]:
 #     print('------- code lens -----')
 #     print(locals())
 #     if '/applications/' in params.text_document.uri:
@@ -372,7 +372,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
 #                     #     ),
 #                     #     command=Command(
 #                     #         title='cmd1',
-#                     #         command=ColonyLanguageServer.CMD_COUNT_DOWN_BLOCKING,
+#                     #         command=TorqueLanguageServer.CMD_COUNT_DOWN_BLOCKING,
 #                     #     ),
 #                     #     data='some data 1',
 #                     # ),
@@ -392,8 +392,8 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
 #         return None
 
 
-# @colony_server.feature(REFERENCES)
-# async def lsp_references(server: ColonyLanguageServer, params: TextDocumentPositionParams,) -> List[Location]:
+# @torque_ls.feature(REFERENCES)
+# async def lsp_references(server: TorqueLanguageServer, params: TextDocumentPositionParams,) -> List[Location]:
 #     print('---- references ----')
 #     print(locals())
 #     references: List[Location] = []
@@ -412,18 +412,18 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
 #     return references
 
 
-@colony_server.feature(DOCUMENT_LINK)
-async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkParams,) -> List[DocumentLink]:
+@torque_ls.feature(DOCUMENT_LINK)
+async def lsp_document_link(server: TorqueLanguageServer, params: DocumentLinkParams,) -> List[DocumentLink]:
     await asyncio.sleep(DEBOUNCE_DELAY)
     links: List[DocumentLink] = []
     
-    doc = colony_server.workspace.get_document(params.text_document.uri)
+    doc = torque_ls.workspace.get_document(params.text_document.uri)
     try:
         yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
     except yaml.MarkedYAMLError as ex:
         return links
     doc_type = yaml_obj.get('kind', '')
-    root = colony_server.workspace.root_path
+    root = torque_ls.workspace.root_path
         
     if doc_type == "blueprint":
         try:
@@ -522,8 +522,8 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
     return links
 
 
-# @colony_server.feature(HOVER)
-# def hover(server: ColonyLanguageServer, params: TextDocumentPositionParams) -> Optional[Hover]:
+# @torque_ls.feature(HOVER)
+# def hover(server: TorqueLanguageServer, params: TextDocumentPositionParams) -> Optional[Hover]:
 #     print('---- hover ----')
 #     print(locals())
 #     document = server.workspace.get_document(params.text_document.uri)
@@ -534,18 +534,18 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
 #     return None
 
 
-# @colony_server.feature(TEXT_DOCUMENT_SEMANTIC_TOKENS)
+# @torque_ls.feature(TEXT_DOCUMENT_SEMANTIC_TOKENS)
 #             #            , SemanticTokensOptions(
 #             #     # work_done_progress=True,
 #             #     legend=SemanticTokensLegend(
-#             #         token_types=['colonyVariable'],
+#             #         token_types=['torqueVariable'],
 #             #         token_modifiers=[]
 #             #     ),
 #             #     # range=False,
 #             #     # full=True
 #             #     # full={"delta": True}
 #             # ))
-# def semantic_tokens_range(server: ColonyLanguageServer, params: SemanticTokensParams) -> Optional[Union[SemanticTokens, SemanticTokensPartialResult]]:
+# def semantic_tokens_range(server: TorqueLanguageServer, params: SemanticTokensParams) -> Optional[Union[SemanticTokens, SemanticTokensPartialResult]]:
 #     print('---- TEXT_DOCUMENT_SEMANTIC_TOKENS_RANGE ----')
 #     print(locals())
 #     # document = server.workspace.get_document(params.text_document.uri)

@@ -277,7 +277,7 @@ class BlueprintValidationHandler(ValidationHandler):
                                 ),
                                 message=message.format(cur_var),
                             ))
-                    elif cur_var.lower().startswith("$colony"):
+                    elif cur_var.lower().startswith("$torque"):
                         valid_var, error_message = self._is_valid_auto_var(cur_var)
                         if not valid_var:
                             self._diagnostics.append(Diagnostic(

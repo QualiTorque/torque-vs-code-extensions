@@ -68,7 +68,7 @@ class TextNodesSequence(SequenceNode):
 
 
 @dataclass
-class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit this
+class MappingNode(YamlNode):  # TODO: actually all torque nodes must inherit this
     key: YamlNode = None
     value: YamlNode = None
     allow_variable: bool = False

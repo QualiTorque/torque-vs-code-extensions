@@ -1,7 +1,7 @@
 {
-	"name": "colony-language-extension",
-	"displayName": "Colony Language Extension",
-	"description": "A VS Code extension for the Colony yaml syntax. Provides YAML schema verification, auto-complete, highlight problems and much more.",
+	"name": "torque-language-extension",
+	"displayName": "Torque Language Extension",
+	"description": "A VS Code extension for the Torque yaml syntax. Provides YAML schema verification, auto-complete, highlight problems and much more.",
 	"author": "Quali",
 	"license": "MIT",
 	"version": "0.0.3",
@@ -15,7 +15,8 @@
 	},
 	"icon": "icon/icon_q_square.png",
 	"keywords": [
-		"colony",
+		"quali",
+		"torque",
 		"yaml",
 		"autocompletion",
 		"validation"
@@ -29,12 +30,12 @@
 	"contributes": {
 		"configuration": {
 			"type": "object",
-			"title": "Colony Server Configuration",
+			"title": "Torque Server Configuration",
 			"properties": {
 				"Platform Name": {
 					"type": "string",
 					"description": "The platform name you use",
-					"default": "colony",
+					"default": "torque",
 					"scope": "application"
 				}
 			}
@@ -49,13 +50,6 @@
 				"extensions": [
 					".yaml"
 				]
-			}
-		],
-		"grammars2": [
-			{
-				"language": "yaml",
-				"path": "./syntaxes/colony.tmLanguage.json",
-				"scopeName": "source.yaml"
 			}
 		],
 		"configurationDefaults": {

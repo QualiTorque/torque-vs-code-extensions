@@ -1,8 +1,8 @@
 {
     "$schema": "http://json-schema.org/draft-06/schema#",
-    "$ref": "#/definitions/Colony-Service",
+    "$ref": "#/definitions/Torque-Service",
     "definitions": {
-        "Colony-Service": {
+        "Torque-Service": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
@@ -52,7 +52,7 @@
                 "module",
                 "terraform_version"
             ],
-            "title": "Colony Service"
+            "title": "Torque Service"
         },
         "ServiceInputElement": {
             "anyOf": [
@@ -78,7 +78,7 @@
                 },
                 "exclude_from_tagging": {
                     "type": "array",
-                    "description": "If you must use a Terraform module containing resources that use these 'tag' definitions, you will need to explicitly tell Colony NOT to tag those resource types.",
+                    "description": "If you must use a Terraform module containing resources that use these 'tag' definitions, you will need to explicitly tell Torque NOT to tag those resource types.",
                     "minItems": 1,
                     "items": {
                         "type": "string"
