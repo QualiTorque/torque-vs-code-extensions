@@ -436,11 +436,14 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
     doc = colony_server.workspace.get_document(params.text_document.uri)
     try:
         yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
+        if yaml_obj:
+            doc_type = yaml_obj.get('kind', '')
+        else:
+            return links
     except yaml.MarkedYAMLError as ex:
         return links
-    doc_type = yaml_obj.get('kind', '')
-    root = colony_server.workspace.root_path
-        
+    
+    root = colony_server.workspace.root_path        
     if doc_type == "blueprint":
         try:
             bp_tree = Parser(doc.source).parse()            
