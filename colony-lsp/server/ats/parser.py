@@ -43,7 +43,6 @@ class Parser:
         self.tokens_stack: [Token] = []
 
         self.is_array_item: bool = False
-        self.is_unprocessed_node = False
 
     def _remove_invalid_characters(self, document: str):
         return document.replace('\t', '  ')
