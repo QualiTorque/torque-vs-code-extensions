@@ -17,7 +17,7 @@
 import argparse
 import logging
 
-logging.basicConfig(filename="pygls.log", level=logging.DEBUG, filemode="w")
+logging.basicConfig(filename="colony_ls.log", level=logging.DEBUG, filemode="w")
 
 from .server import colony_server
 

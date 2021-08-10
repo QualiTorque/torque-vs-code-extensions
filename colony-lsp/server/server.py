@@ -60,89 +60,12 @@ from pygls.workspace import Document, Workspace, position_from_utf16
 DEBOUNCE_DELAY = 0.3
 
 
-COUNT_DOWN_START_IN_SECONDS = 10
-COUNT_DOWN_SLEEP_IN_SECONDS = 1
-
-
-
-# class ColonyWorkspace(Workspace):
-#     """
-#     Add colony-specific properties
-#     """
-
-#     def __init__(self, root_uri, sync_kind, workspace_folders):
-#         self._colony_objs = {}
-
-#         super().__init__(root_uri, sync_kind=sync_kind, workspace_folders=workspace_folders)
-
-#     @property
-#     def colony_objs(self):
-#         return self._colony_objs
-
-#     def _update_document(self, text_document: Union[types.TextDocumentItem, types.VersionedTextDocumentIdentifier]) -> None:
-#         self.logger.debug("updating document '%s'", text_document.uri)
-#         uri = text_document.uri
-#         colony_obj = yaml.load(self.get_document(uri).source, Loader=yaml.FullLoader)
-#         self._colony_objs[uri] = colony_obj
-
-#     def update_document(self, text_doc: VersionedTextDocumentIdentifier, change: workspace.TextDocumentContentChangeEvent):
-#         super().update_document(text_doc, change)
-#         self._update_document(text_doc)
-
-#     def put_document(self, text_document: types.TextDocumentItem) -> None:
-#         super().put_document(text_document)
-#         self._update_document(text_document)
-
-
-# class ColonyLspProtocol(LanguageServerProtocol):
-#     """Custom protocol that replaces the workspace with a ColonyWorkspace
-#     instance.
-#     """
-
-#     workspace: ColonyWorkspace
-
-#     def bf_initialize(self, *args, **kwargs) -> InitializeResult:
-#         res = super().bf_initialize(*args, **kwargs)
-#         ws = self.workspace
-#         self.workspace = ColonyWorkspace(
-#             ws.root_uri,
-#             self._server.sync_kind,
-#             ws.folders.values(),
-#         )
-#         return res
-
-
 class ColonyLanguageServer(LanguageServer):
     CONFIGURATION_SECTION = 'colonyServer'
-
-    # def __init__(self):
-    #     super().__init__(protocol_cls=ColonyLspProtocol)
-    
-    # @property
-    # def workspace(self) -> ColonyWorkspace:
-    #     return cast(ColonyWorkspace, super().workspace)
 
 
 colony_server = ColonyLanguageServer()
 
-
-# def _get_file_variables(source):
-#     vars = re.findall(r"(\$[\w\.\-]+)", source, re.MULTILINE)
-#     return vars  
-
-
-# def _get_file_inputs(source):
-#     yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
-#     inputs_obj = yaml_obj.get('inputs')
-#     inputs = []
-#     if inputs_obj:
-#         for input in inputs_obj:
-#             if isinstance(input, str):
-#                 inputs.append(f"${input}")
-#             elif isinstance(input, dict):
-#                 inputs.append(f"${list(input.keys())[0]}")
-    
-#     return inputs
 
 def _validate(ls, params):
     text_doc = ls.workspace.get_document(params.text_document.uri)
@@ -174,8 +97,7 @@ def _validate(ls, params):
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
         logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)        
 
-    if diagnostics: 
-        ls.publish_diagnostics(text_doc.uri, diagnostics)
+    ls.publish_diagnostics(text_doc.uri, diagnostics)
 
 
 def _validate_yaml(source):
@@ -347,24 +269,26 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             if parent == "applications":
                 apps = applications.get_available_applications(root)
                 for app in apps:
-                    items.append(CompletionItem(label=app, 
-                                                kind=CompletionItemKind.Reference, 
-                                                text_edit=TextEdit(
-                                                                range=Range(start=Position(line=line, character=char-2),
-                                                                            end=Position(line=line, character=char)),
-                                                                new_text=apps[app]['app_completion'],
-                                                )))
+                    if apps[app]['app_completion']:
+                        items.append(CompletionItem(label=app, 
+                                                    kind=CompletionItemKind.Reference, 
+                                                    text_edit=TextEdit(
+                                                                    range=Range(start=Position(line=line, character=char-2),
+                                                                                end=Position(line=line, character=char)),
+                                                                    new_text=apps[app]['app_completion'],
+                                                    )))
             
             if parent == "services":
                 srvs = services.get_available_services(root)
                 for srv in srvs:
-                    items.append(CompletionItem(label=srv, 
-                                                kind=CompletionItemKind.Reference, 
-                                                text_edit=TextEdit(
-                                                                range=Range(start=Position(line=line, character=char-2),
-                                                                            end=Position(line=line, character=char)),
-                                                                new_text=srvs[srv]['srv_completion'],
-                                                )))
+                    if srvs[srv]['srv_completion']:
+                        items.append(CompletionItem(label=srv, 
+                                                    kind=CompletionItemKind.Reference, 
+                                                    text_edit=TextEdit(
+                                                                    range=Range(start=Position(line=line, character=char-2),
+                                                                                end=Position(line=line, character=char)),
+                                                                    new_text=srvs[srv]['srv_completion'],
+                                                    )))
             
             # if parent == "input_values":
             #     available_inputs = _get_file_inputs(doc.source)
@@ -378,75 +302,44 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             is_incomplete=(len(items)==0),
             items=items
         )
-    # elif doc_type == "application":
-    #     words = _preceding_words(
-    #         colony_server.workspace.get_document(params.text_document.uri),
-    #         params.position)
-    #     # debug("words", words)
-    #     if words:
-    #         if words[0] == "script:":
-    #             scripts = _get_app_scripts(params.text_document.uri)
-    #             return CompletionList(
-    #                 is_incomplete=False,
-    #                 items=[CompletionItem(label=script) for script in scripts],
-    #             )
-    #         elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
-    #             available_inputs = _get_file_inputs(doc.source)
-    #             return CompletionList(
-    #                 is_incomplete=False,
-    #                 items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
-    #             )
-                
-    #     return CompletionList(
-    #         is_incomplete=False,
-    #         items=[
-    #             #CompletionItem(label='configuration'),
-    #             #CompletionItem(label='healthcheck'),
-    #             #CompletionItem(label='debugging'),
-    #             #CompletionItem(label='infrastructure'),
-    #             #CompletionItem(label='inputs'),
-    #             #CompletionItem(label='source'),
-    #             #CompletionItem(label='kind'),
-    #             #CompletionItem(label='spec_version'),
-    #         ]
-    #     )
-    # if doc_type == "TerraForm":
-    #     words = _preceding_words(
-    #         colony_server.workspace.get_document(params.text_document.uri),
-    #         params.position)
-    #     # debug("words", words)
-    #     if words:
-    #         if words[0] == "var_file:":
-    #             var_files = _get_service_vars(params.text_document.uri)
-    #             return CompletionList(
-    #                 is_incomplete=False,
-    #                 items=[CompletionItem(label=var["file"],
-    #                                       insert_text=f"{var['file']}\r\nvalues:\r\n" + 
-    #                                                    "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
-    #                                       kind=CompletionItemKind.File
-    #             )
-    #         # TODO: when services should use inputs?
-    #         elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
-    #             available_inputs = _get_file_inputs(doc.source)
-    #             return CompletionList(
-    #                 is_incomplete=False,
-    #                 items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
-    #             )
-                
-    #     # we don't need the below if we use a schema file 
-    #     return CompletionList(
-    #         is_incomplete=False,
-    #         items=[
-    #             # CompletionItem(label='permissions'),
-    #             # CompletionItem(label='outputs'),
-    #             # CompletionItem(label='variables'),
-    #             # CompletionItem(label='module'),
-    #             # CompletionItem(label='inputs'),
-    #             # CompletionItem(label='source'),
-    #             # CompletionItem(label='kind'),
-    #             # CompletionItem(label='spec_version'),
-    #         ]
-    #     )
+    elif doc_type == "application":
+        words = common.preceding_words(doc, params.position)
+        if words and len(words) == 1:
+            if words[0] == "script:":
+                scripts = applications.get_app_scripts(params.text_document.uri)
+                return CompletionList(
+                    is_incomplete=False,
+                    items=[CompletionItem(label=script,
+                                          kind=CompletionItemKind.File) for script in scripts],
+                )
+            # TODO: check based on allow_variable
+            # elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
+            #     available_inputs = _get_file_inputs(doc.source)
+            #     return CompletionList(
+            #         is_incomplete=False,
+            #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
+            #     )
+
+    if doc_type == "TerraForm":
+        words = common.preceding_words(doc, params.position)
+        if words and len(words) == 1:
+            if words[0] == "var_file:":
+                var_files = services.get_service_vars(params.text_document.uri)
+                return CompletionList(
+                    is_incomplete=False,
+                    items=[CompletionItem(label=var["file"],
+                                          insert_text=f"{var['file']}\r\nvalues:\r\n" + 
+                                                       "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
+                                          kind=CompletionItemKind.File
+                )
+            # TODO: check based on allow_variable
+            # elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
+            #     available_inputs = _get_file_inputs(doc.source)
+            #     return CompletionList(
+            #         is_incomplete=False,
+            #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
+            #     )
+
     else:
         return CompletionList(is_incomplete=True, items=[])
 
@@ -542,7 +435,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
         
         if bp_tree.applications:
             for app in bp_tree.applications.nodes:
-                target_path = f"{root}/applications/{app.id.text}/{app.id.text}.yaml"
+                target_path = os.path.join(root, "applications", app.id.text, app.id.text+".yaml")
                 if os.path.exists(target_path) and os.path.isfile(target_path):
                     tooltip = "Open the application file at " + target_path
                     links.append(DocumentLink(range=Range(
@@ -552,7 +445,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
         
         if bp_tree.services:
             for srv in bp_tree.services.nodes:
-                target_path = f"{root}/services/{srv.id.text}/{srv.id.text}.yaml"
+                target_path = os.path.join(root, "services", srv.id.text, srv.id.text+".yaml")
                 if os.path.exists(target_path) and os.path.isfile(target_path):
                     tooltip = "Open the service file at " + target_path
                     links.append(DocumentLink(range=Range(
@@ -574,7 +467,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                 if app_tree.configuration.healthcheck.script:
                     script = app_tree.configuration.healthcheck.script
                     file_name = script.text
-                    target_path = f"{root}/applications/{app_name}/{file_name}"
+                    target_path = os.path.join(root, "applications", app_name, file_name)
                     if os.path.exists(target_path) and os.path.isfile(target_path):
                         tooltip = "Open the script file at " + target_path
                         links.append(DocumentLink(range=Range(
@@ -586,7 +479,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                 if app_tree.configuration.initialization.script:
                     script = app_tree.configuration.initialization.script
                     file_name = script.text
-                    target_path = f"{root}/applications/{app_name}/{file_name}"
+                    target_path = os.path.join(root, "applications", app_name, file_name)
                     if os.path.exists(target_path) and os.path.isfile(target_path):
                         tooltip = "Open the script file at " + target_path
                         links.append(DocumentLink(range=Range(
@@ -598,7 +491,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                 if app_tree.configuration.start.script:
                     script = app_tree.configuration.start.script
                     file_name = script.text
-                    target_path = f"{root}/applications/{app_name}/{file_name}"
+                    target_path = os.path.join(root, "applications", app_name, file_name)
                     if os.path.exists(target_path) and os.path.isfile(target_path):
                         tooltip = "Open the script file at " + target_path
                         links.append(DocumentLink(range=Range(
@@ -618,7 +511,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
             if srv_tree.variables.var_file:
                 script = srv_tree.variables.var_file
                 file_name = script.text
-                target_path = f"{root}/services/{srv_name}/{file_name}"
+                target_path = os.path.join(root, "services", srv_name, file_name)
                 if os.path.exists(target_path) and os.path.isfile(target_path):
                     tooltip = "Open the variables file at " + target_path
                     links.append(DocumentLink(range=Range(

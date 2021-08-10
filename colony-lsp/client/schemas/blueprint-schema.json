@@ -140,7 +140,7 @@
                     "description": "In the relevant UI field, enter a description to be displayed to the user."
                 },
                 "default_value": {
-                    "type": ["integer", "string"],
+                    "type": ["integer", "string", "boolean"],
                     "description": "When the sandbox is created, Colony automatically populates the default value. The end-user can choose to edit the value or leave it as-is."
                 },
                 "optional": {
@@ -181,7 +181,7 @@
                 "input_values": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InputValues"
+                        "$ref": "#/definitions/InputValuesElement"
                     }
                 },
                 "depends_on": {
@@ -192,6 +192,17 @@
                 }
             },
             "title": "Application"
+        },
+        "InputValuesElement": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/InputValues"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "title": "Blueprint Input"
         },
         "InputValues": {
             "type": "object",
@@ -306,7 +317,7 @@
                 "input_values": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/InputValues"
+                        "$ref": "#/definitions/InputValuesElement"
                     }
                 },
                 "depends_on": {
@@ -406,6 +417,10 @@
                 "default": {
                     "type": "boolean",
                     "description": "(Optional) If true, this rule will be used for default routing to define on the ALB when no other rules apply."
+                },
+                "ignore_exposure": {
+                    "type": "boolean",
+                    "description": "(Optional - Applies to production environments, set on blue rules only) Allows routing traffic to blue rules regardless of exposure."
                 }
             },
             "anyOf": [

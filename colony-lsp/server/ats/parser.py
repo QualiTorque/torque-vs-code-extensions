@@ -15,9 +15,9 @@ class ParserError(Exception):
     def __init__(self, message: str = None, start_pos: tuple = None, end_pos: tuple = None, token: Token = None):
         self.message = message
         if token is not None:
-            self.start_pos = self._get_token_start(token)
-            self.end_pos = self._get_token_end(token)
-            
+            self.start_pos = Parser.get_token_start(token)
+            self.end_pos = Parser.get_token_end(token)
+
         else:
             self.start_pos = start_pos
             self.end_pos = end_pos
@@ -42,11 +42,13 @@ class Parser:
     def _remove_invalid_characters(self, document: str):
         return document.replace('\t','  ')
 
-    def _get_token_start(self, token: Token) -> Tuple[int]:
-        return (token.start_mark.line, token.start_mark.column)
+    @staticmethod
+    def get_token_start(token: Token) -> Tuple[int, int]:
+        return token.start_mark.line, token.start_mark.column
 
-    def _get_token_end(self, token: Token) -> Tuple[int]:
-        return (token.end_mark.line, token.end_mark.column)
+    @staticmethod
+    def get_token_end(token: Token) -> Tuple[int, int]:
+        return token.end_mark.line, token.end_mark.column
 
     def _process_scalar_token(self, token: ScalarToken):
         node: TextNode = self.nodes_stack.pop()
@@ -55,8 +57,8 @@ class Parser:
             raise Exception("Wrong node. Expected TextNode")
 
         node.text = token.value
-        node.start_pos = self._get_token_start(token)
-        node.end_pos = self._get_token_end(token)
+        node.start_pos = self.get_token_start(token)
+        node.end_pos = self.get_token_end(token)
 
     def _process_object_child(self, token: ScalarToken):
         """Gets the property of the last Node in a stack and puts
@@ -65,7 +67,7 @@ class Parser:
         node = self.nodes_stack[-1]
         try:
             child_node = node.get_child(token.value)
-            child_node.start_pos = self._get_token_start(token)
+            child_node.start_pos = self.get_token_start(token)
             self.nodes_stack.append(child_node)
         # TODO: replace with parser exception
         except Exception:
@@ -74,7 +76,7 @@ class Parser:
     def _process_token(self, token: Token) -> None:
         # beginning of document
         if isinstance(token, StreamStartToken):
-            self.tree.start_pos = self._get_token_start(token)
+            self.tree.start_pos = self.get_token_start(token)
             self.tokens_stack.append(token)
             return
 
@@ -90,7 +92,7 @@ class Parser:
                 raise Exception(f"Unable to add item to the node's container : {e}")
 
         if isinstance(token, StreamEndToken):
-            self.tree.end_pos = self._get_token_start(token)
+            self.tree.end_pos = self.get_token_start(token)
             return
 
         # the beginning of the object or mapping
@@ -101,11 +103,11 @@ class Parser:
                 self.tokens_stack.append(token)
                 value_node = last_node.get_value()
                 self.nodes_stack.append(value_node)
-                value_node.start_pos = self._get_token_start(token)
+                value_node.start_pos = self.get_token_start(token)
                 self.is_array_item = False
                 return
             self.tokens_stack.append(token)
-            last_node.start_pos = self._get_token_start(token)
+            last_node.start_pos = self.get_token_start(token)
 
         if isinstance(token, BlockSequenceStartToken):
             self.tokens_stack.append(token)
@@ -117,7 +119,7 @@ class Parser:
             if (isinstance(top, (BlockMappingStartToken, BlockSequenceStartToken))
                     and isinstance(self.tokens_stack[-1], (ValueToken, BlockEntryToken, StreamStartToken))):
                 node = self.nodes_stack.pop()
-                node.end_pos = self._get_token_end(token)
+                node.end_pos = self.get_token_end(token)
                 self.tokens_stack.pop()
 
                 return
@@ -131,7 +133,7 @@ class Parser:
 
                     # remove last Node and ValueToken and BlockEndToken as well
                     node = self.nodes_stack.pop()
-                    node.end_pos = self._get_token_end(token)
+                    node.end_pos = self.get_token_end(token)
                     if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
                         raise Exception("Wrong structure of document")  # TODO: provide better message
                     self.tokens_stack.pop()
@@ -152,7 +154,7 @@ class Parser:
                     # first remove sequence node from stack
                     seq_node = self.nodes_stack.pop()
                     # in this case it's ok the end pos will be the same for both objects
-                    seq_node.end_pos = self._get_token_end(token)
+                    seq_node.end_pos = self.get_token_end(token)
 
                     # then check if after ValueToken removal we have any start token on the top of the tokens stack
                     if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
@@ -162,7 +164,7 @@ class Parser:
                     self.tokens_stack.pop()
                     # and node itself as well
                     prev_node = self.nodes_stack.pop()
-                    prev_node.end_pos = self._get_token_end(token)
+                    prev_node.end_pos = self.get_token_end(token)
 
                     if isinstance(self.tokens_stack[-1], ValueToken):
                         # remove value token opening it
@@ -170,13 +172,13 @@ class Parser:
                     return
             
                 else:
-                    # We exptected a value for property inside object but it wasn't found after ValueToken
+                    # We expected a value for property inside object but it wasn't found after ValueToken
                     # It means BlockEndToken closes the parent
                     # Close expected node
                     node = self.nodes_stack.pop()
-                    node.end_pos = self._get_token_end(token)
+                    node.end_pos = self.get_token_end(token)
                     # Close parent node
-                    self.nodes_stack[-1].end_pos = self._get_token_end(token)
+                    self.nodes_stack[-1].end_pos = self.get_token_end(token)
                     self.nodes_stack.pop()
 
 
@@ -187,7 +189,7 @@ class Parser:
             if isinstance(self.tokens_stack[-1], ValueToken):
                 # in this case we need first correctly finalize sequence node
                 node = self.nodes_stack.pop()
-                node.end_pos = self._get_token_start(token)
+                node.end_pos = self.get_token_start(token)
                 self.tokens_stack.pop()  # remove ValueToken
 
             self.tokens_stack.append(token)
