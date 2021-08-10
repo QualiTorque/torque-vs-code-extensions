@@ -70,10 +70,6 @@ class Parser:
         else:
             # TODO: replace with parser exception
             raise Exception("Wrong node. Expected TextNode")
-        #
-        # node.text = token.value
-        # node.start_pos = self.get_token_start(token)
-        # node.end_pos = self.get_token_end(token)
 
     def _process_object_child(self, token: ScalarToken):
         """Gets the property of the last Node in a stack and puts
@@ -304,9 +300,3 @@ class Parser:
             raise ValueError(f"Unable to initialize tree from document kind '{doc_type}'")
 
         return trees[doc_type]()
-
-
-with open("/Users/ddovbii/colony-demo-space-my/blueprints/promotions-manager-all-aws.yaml", "r") as f:
-    content = f.read()
-    tree = Parser(content).parse()
-    print(tree)
