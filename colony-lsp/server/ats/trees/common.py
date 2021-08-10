@@ -1,6 +1,13 @@
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Any, Optional, ClassVar
+from typing import Any, List, Optional, ClassVar, Tuple
+
+
+@dataclass
+class NodeError(ABC):
+    start_pos: Tuple[int, int]
+    end_pos: Tuple[int, int]
+    message: str
 
 
 @dataclass
@@ -8,6 +15,12 @@ class YamlNode(ABC):
     start_pos: tuple = None
     end_pos: tuple = None
     parent: Optional[Any] = None  # TODO: must be Node, not any
+    errors: List[NodeError] = field(default_factory=list)
+
+    def add_error(self, error: NodeError) -> None:
+        self.errors.append(error)
+        if self.parent is not None:
+            self.parent.add_error(error)
 
     def _get_field_mapping(self) -> {str: str}:
         return {}

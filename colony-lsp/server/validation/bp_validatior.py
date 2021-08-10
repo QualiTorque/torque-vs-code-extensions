@@ -113,7 +113,7 @@ class BlueprintValidationHandler(ValidationHandler):
                         self._add_diagnostic(app.id, message=message.format(app.id.text))
             
     def _validate_blueprint_apps_have_input_values(self):
-        if self._tree.applications:
+        if self._tree.applications and self._tree.inputs_node:
             blueprint_inputs = {input.key.text: 1 for input in self._tree.inputs_node.nodes}
             for app in self._tree.applications.nodes:
                 if app.value and app.value.input_values:
@@ -122,7 +122,7 @@ class BlueprintValidationHandler(ValidationHandler):
                             self._add_diagnostic(var.key, message="Application input must have a value or a blueprint input with the same name should be defined")
 
     def _validate_blueprint_services_have_input_values(self):
-        if self._tree.services:
+        if self._tree.services and self._tree.inputs_node:
             blueprint_inputs = {input.key.text: 1 for input in self._tree.inputs_node.nodes}
             for srv in self._tree.services.nodes:
                 if srv.value and srv.value.input_values:
