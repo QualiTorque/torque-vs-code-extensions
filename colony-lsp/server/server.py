@@ -17,6 +17,8 @@
 import asyncio
 from dataclasses import dataclass
 import logging
+
+from server.ats.trees.common import BaseTree
 from server.validation.factory import ValidatorFactory
 
 from pygls.lsp.types.language_features.completion import InsertTextMode
@@ -67,6 +69,19 @@ class ColonyLanguageServer(LanguageServer):
 colony_server = ColonyLanguageServer()
 
 
+def _diagnose_tree_errors(tree: BaseTree) -> list:
+    diagnostics = []
+    for error in tree.errors:
+        d = Diagnostic(
+            range=Range(
+                start=Position(line=error.start_pos[0], character=error.start_pos[1]),
+                end=Position(line=error.end_pos[0], character=error.end_pos[1])
+            ),
+            message=error.message)
+        diagnostics.append(d)
+    return diagnostics
+
+
 def _validate(ls, params):
     text_doc = ls.workspace.get_document(params.text_document.uri)
 
@@ -75,6 +90,7 @@ def _validate(ls, params):
 
     try:
         tree = Parser(source).parse()
+        diagnostics += _diagnose_tree_errors(tree)
         cls_validator = ValidatorFactory.get_validator(tree)
         validator = cls_validator(tree, text_doc)
         diagnostics += validator.validate()
@@ -95,7 +111,7 @@ def _validate(ls, params):
     except Exception as ex:
         import sys
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-        logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)        
+        logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
 
     ls.publish_diagnostics(text_doc.uri, diagnostics)
 
