@@ -1,8 +1,8 @@
 {
     "$schema": "http://json-schema.org/draft-06/schema#",
-    "$ref": "#/definitions/Colony-Application",
+    "$ref": "#/definitions/Torque-Application",
     "definitions": {
-        "Colony-Application": {
+        "Torque-Application": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
@@ -52,7 +52,7 @@
                 "source",
                 "spec_version"
             ],
-            "title": "Colony Application"
+            "title": "Torque Application"
         },
         "Configuration": {
             "type": "object",
@@ -85,7 +85,7 @@
                 "wait_for_ports": {
                     "type": ["string", "number"],
                     "default": "ALL",
-                    "description": "(Optional if a script is specified) CloudShell Colony already implements some basic checks which make sure that the application's internal ports, which are declared in the 'connectivity' section of the application YAML, are ready."
+                    "description": "(Optional if a script is specified) Torque already implements some basic checks which make sure that the application's internal ports, which are declared in the 'connectivity' section of the application YAML, are ready."
                 },
                 "script": {
                     "type": "string"
@@ -570,7 +570,7 @@
                         "properties": {
                             "name": {
                                 "type": "string",
-                                "description": "Name of the docker image. By default, Colony will search for the image on Docker Hub."
+                                "description": "Name of the docker image. By default, Torque will search for the image on Docker Hub."
                             },
                             "pull_secret": {
                                 "type": "string",
@@ -601,7 +601,7 @@
             "properties": {
                 "subscription_id": {
                     "type": "string",
-                    "description": "(Optional) Azure subscription id. Omit this argument if you want Colony to use the Subcription ID of the cloud account."
+                    "description": "(Optional) Azure subscription id. Omit this argument if you want Torque to use the Subcription ID of the cloud account."
                 },
                 "resource_group": {
                     "type": "string",
@@ -624,7 +624,7 @@
             "properties": {
                 "subscription_id": {
                     "type": "string",
-                    "description": "(Optional) Azure subscription id. Omit this argument if you want Colony to use the Subcription ID of the cloud account."
+                    "description": "(Optional) Azure subscription id. Omit this argument if you want Torque to use the Subcription ID of the cloud account."
                 },
                 "resource_group": {
                     "type": "string",

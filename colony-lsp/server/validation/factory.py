@@ -3,7 +3,6 @@ from server.validation.app_validator import AppValidationHandler
 from server.validation.bp_validatior import BlueprintValidationHandler
 from typing import List
 from server.ats.trees.common import BaseTree
-from server.constants import PREDEFINED_COLONY_INPUTS
 
 
 class ValidatorFactory:

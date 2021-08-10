@@ -6,7 +6,7 @@ import sys
 import logging
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
 from server.ats.trees.blueprint import BlueprintTree
-from server.constants import PREDEFINED_COLONY_INPUTS
+from server.constants import PREDEFINED_TORQUE_INPUTS
 from server.utils import applications, services
 
 
@@ -46,10 +46,10 @@ class BlueprintValidationHandler(ValidationHandler):
 
     def _check_for_deprecated_syntax(self):
         deprecated_syntax = {
-            "outputs\..+": "colony.[app_name|service_name].outputs.[output_name]",
-            "colony.sandboxid": "colony.environment.id",
-            "colony.publicaddress": "colony.environment.public_address",
-            "colony.virtualnetworkid": "colony.environment.virtual_network_id"
+            "outputs\..+": "torque.[app_name|service_name].outputs.[output_name]",
+            "torque.sandboxid": "torque.environment.id",
+            "torque.publicaddress": "torque.environment.public_address",
+            "torque.virtualnetworkid": "torque.environment.virtual_network_id"
                             }
         message = "Deprecated syntax '{}'. Please use '{}' instead."
         line_num = 0
@@ -177,54 +177,54 @@ class BlueprintValidationHandler(ValidationHandler):
                         )
                 
     def _is_valid_auto_var(self, var_name):
-        if var_name.lower() in PREDEFINED_COLONY_INPUTS:
+        if var_name.lower() in PREDEFINED_TORQUE_INPUTS:
             return True, ""
 
         parts = var_name.split('.')
-        if not parts[0].lower() == "$colony":
-            return False, f"{var_name} is not a valid colony-generated variable"
+        if not parts[0].lower() == "$torque":
+            return False, f"{var_name} is not a valid torque-generated variable"
 
         if not parts[1].lower() == "applications" and not parts[1].lower() == "services":
-            return False, f"{var_name} is not a valid colony-generated variable"
+            return False, f"{var_name} is not a valid torque-generated variable"
 
         if len(parts) == 4:
             if not parts[3] == "dns":
-                return False, f"{var_name} is not a valid colony-generated variable"
+                return False, f"{var_name} is not a valid torque-generated variable"
             else:
                 return True, ""
 
         if len(parts) == 5:
             if parts[1].lower() == "applications" and (not parts[3].lower() == "outputs" and
                                                        not parts[3].lower() == "dns"):
-                return False, f"{var_name} is not a valid colony-generated variable"
+                return False, f"{var_name} is not a valid torque-generated variable"
 
             if parts[1].lower() == "services" and not parts[3].lower() == "outputs":
-                return False, f"{var_name} is not a valid colony-generated variable"
+                return False, f"{var_name} is not a valid torque-generated variable"
 
             if parts[1] == "applications":
                 apps = self.blueprint_apps
                 if not parts[2] in apps:
-                    return False, f"{var_name} is not a valid colony-generated variable (no such app in the blueprint)"
+                    return False, f"{var_name} is not a valid torque-generated variable (no such app in the blueprint)"
 
                 # TODO: check that the app is in the depends_on section
 
                 app_outputs = applications.get_app_outputs(app_name=parts[2])
                 if parts[4] not in app_outputs:
-                    return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
+                    return False, f"{var_name} is not a valid torque-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
 
             if parts[1] == "services":
                 srvs = self.blueprint_services
                 if not parts[2] in srvs:
-                    return False, f"{var_name} is not a valid colony-generated variable (no such service in the blueprint)"
+                    return False, f"{var_name} is not a valid torque-generated variable (no such service in the blueprint)"
 
                 # TODO: check that the service is in the depends_on section
 
                 srv_outputs = services.get_service_outputs(srv_name=parts[2])
                 if parts[4] not in srv_outputs:
-                    return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
+                    return False, f"{var_name} is not a valid torque-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
 
         else:
-            return False, f"{var_name} is not a valid colony-generated variable (too many parts)"
+            return False, f"{var_name} is not a valid torque-generated variable (too many parts)"
 
         return True, ""
 
