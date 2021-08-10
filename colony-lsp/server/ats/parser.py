@@ -11,7 +11,7 @@ from server.ats.trees.service import ServiceTree
 
 
 class ParserError(Exception):
-    
+
     def __init__(self, message: str = None, start_pos: tuple = None, end_pos: tuple = None, token: Token = None):
         self.message = message
         if token is not None:
@@ -26,6 +26,11 @@ class ParserError(Exception):
         return f"Parser issue with message '{self.message}' on position {self.start_pos} - {self.end_pos}"
 
 
+class UnprocessedNode(YamlNode):
+    def add(self):
+        return UnprocessedNode()
+
+
 class Parser:
     def __init__(self, document: str):
         self.document = self._remove_invalid_characters(document)
@@ -38,9 +43,10 @@ class Parser:
         self.tokens_stack: [Token] = []
 
         self.is_array_item: bool = False
-    
+        self.is_unprocessed_node = False
+
     def _remove_invalid_characters(self, document: str):
-        return document.replace('\t','  ')
+        return document.replace('\t', '  ')
 
     @staticmethod
     def get_token_start(token: Token) -> Tuple[int, int]:
@@ -51,27 +57,38 @@ class Parser:
         return token.end_mark.line, token.end_mark.column
 
     def _process_scalar_token(self, token: ScalarToken):
-        node: TextNode = self.nodes_stack.pop()
-        if not isinstance(node, TextNode):
-            # TODO: replace with parser exception
-            raise Exception("Wrong node. Expected TextNode")
+        node = self.nodes_stack.pop()
 
-        node.text = token.value
         node.start_pos = self.get_token_start(token)
         node.end_pos = self.get_token_end(token)
+
+        if isinstance(node, UnprocessedNode):
+            return
+
+        elif isinstance(node, TextNode):
+            node.text = token.value
+
+        else:
+            # TODO: replace with parser exception
+            raise Exception("Wrong node. Expected TextNode")
+        #
+        # node.text = token.value
+        # node.start_pos = self.get_token_start(token)
+        # node.end_pos = self.get_token_end(token)
 
     def _process_object_child(self, token: ScalarToken):
         """Gets the property of the last Node in a stack and puts
         it to the stack (where property name equals scalar token's value)"""
         self.tokens_stack.pop()
         node = self.nodes_stack[-1]
+
         try:
             child_node = node.get_child(token.value)
             child_node.start_pos = self.get_token_start(token)
             self.nodes_stack.append(child_node)
         # TODO: replace with parser exception
         except Exception:
-            raise ParserError(f"Parent node doesn't have child with name '{token.value}'", token=token)
+            self.nodes_stack.append(UnprocessedNode())
 
     def _process_token(self, token: Token) -> None:
         # beginning of document
@@ -170,7 +187,7 @@ class Parser:
                         # remove value token opening it
                         self.tokens_stack.pop()
                     return
-            
+
                 else:
                     # We expected a value for property inside object but it wasn't found after ValueToken
                     # It means BlockEndToken closes the parent
@@ -180,7 +197,6 @@ class Parser:
                     # Close parent node
                     self.nodes_stack[-1].end_pos = self.get_token_end(token)
                     self.nodes_stack.pop()
-
 
         if isinstance(token, KeyToken):
             # if sequence doesnt have indentation => there is no BlockEndToken at the end
@@ -222,6 +238,12 @@ class Parser:
 
             else:
                 node = self.nodes_stack[-1]
+
+                if isinstance(node, UnprocessedNode) and isinstance(self.tokens_stack[-1], BlockEntryToken):
+                    self.nodes_stack.pop()
+                    self.is_array_item = False
+                    self.tokens_stack.pop()
+                    return
 
                 # process object first
                 if not isinstance(node, (MappingNode, TextNode)):
