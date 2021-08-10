@@ -6,7 +6,7 @@ from yaml.tokens import (BlockEndToken, BlockEntryToken, BlockMappingStartToken,
 
 from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintTree
-from server.ats.trees.common import YamlNode, TextNode, MappingNode, BaseTree, SequenceNode
+from server.ats.trees.common import YamlNode, TextNode, MappingNode, BaseTree, SequenceNode, NodeError
 from server.ats.trees.service import ServiceTree
 
 
@@ -80,7 +80,7 @@ class Parser:
         """Gets the property of the last Node in a stack and puts
         it to the stack (where property name equals scalar token's value)"""
         self.tokens_stack.pop()
-        node = self.nodes_stack[-1]
+        node: YamlNode = self.nodes_stack[-1]
 
         try:
             child_node = node.get_child(token.value)
@@ -88,6 +88,11 @@ class Parser:
             self.nodes_stack.append(child_node)
         # TODO: replace with parser exception
         except Exception:
+            node.add_error(NodeError(
+                start_pos=Parser.get_token_start(token),
+                end_pos=Parser.get_token_end(token),
+                message=f"Parent node doesn't have child with name '{token.value}'"
+            ))
             self.nodes_stack.append(UnprocessedNode())
 
     def _process_token(self, token: Token) -> None:
@@ -300,3 +305,9 @@ class Parser:
             raise ValueError(f"Unable to initialize tree from document kind '{doc_type}'")
 
         return trees[doc_type]()
+
+
+with open("/Users/ddovbii/colony-demo-space-my/blueprints/promotions-manager-all-aws.yaml", "r") as f:
+    content = f.read()
+    tree = Parser(content).parse()
+    print(tree)
