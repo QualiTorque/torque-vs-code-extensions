@@ -195,9 +195,13 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     doc = colony_server.workspace.get_document(params.text_document.uri)
     try:
         yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
+        if yaml_obj:
+            doc_type = yaml_obj.get('kind', '')
+        else:
+            return CompletionList(is_incomplete=True, items=[])
     except yaml.MarkedYAMLError as ex:
         return CompletionList(is_incomplete=True, items=[])
-    doc_type = yaml_obj.get('kind', '')
+    
         
     fdrs = colony_server.workspace.folders
     root = colony_server.workspace.root_path
