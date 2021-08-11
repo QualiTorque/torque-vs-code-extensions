@@ -55,6 +55,23 @@ class Parser:
     def get_token_end(token: Token) -> Tuple[int, int]:
         return token.end_mark.line, token.end_mark.column
 
+    def _handle_hanging_dash(self, token):
+        # remove unnecessary empty element added to sequence
+        self.nodes_stack.pop()
+        
+        seq: SequenceNode = self.nodes_stack[-1]
+        if not isinstance(seq, SequenceNode):
+            raise ParserError(message="Wrong structure of sequence", token=token)
+
+        seq.nodes.pop()
+        seq.add_error(NodeError(
+            start_pos=self.get_token_start(token),
+            end_pos=self.get_token_end(token),
+            message="Element could not be empty")
+        )
+
+        self.is_array_item = False
+
     def _process_scalar_token(self, token: ScalarToken):
         node = self.nodes_stack.pop()
 
@@ -98,6 +115,11 @@ class Parser:
             return
 
         if isinstance(token, BlockEntryToken):
+            # Check if before we didn't have empty array element
+            if isinstance(self.tokens_stack[-1], BlockEntryToken):
+                extra_token = self.tokens_stack.pop()
+                self._handle_hanging_dash(extra_token)
+
             self.tokens_stack.append(token)
 
             self.is_array_item = True
@@ -132,6 +154,12 @@ class Parser:
 
         if isinstance(token, BlockEndToken):
             top = self.tokens_stack.pop()
+
+            # Handle sequence with last empty element
+            if isinstance(top, BlockEntryToken):
+                self._handle_hanging_dash(top)
+                top = self.tokens_stack.pop()
+
             # TODO: refactor condition
             if (isinstance(top, (BlockMappingStartToken, BlockSequenceStartToken))
                     and isinstance(self.tokens_stack[-1], (ValueToken, BlockEntryToken, StreamStartToken))):
