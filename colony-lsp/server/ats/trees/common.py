@@ -107,17 +107,21 @@ class SequenceNode(YamlNode):
 
 
 @dataclass
-class TextNodesSequence(SequenceNode):
+class ScalarNodesSequence(SequenceNode):
     """Container for simple text arrays
     like outputs, depends on """
+    node_type = ScalarNode
+
+
+@dataclass
+class TextNodesSequence(SequenceNode):
     node_type = TextNode
 
 
 @dataclass
 class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit this
-    key: YamlNode = None
+    key: ScalarNode = None
     value: YamlNode = None
-    allow_variable: bool = False
 
     def get_key(self):
         if self.key is None:
@@ -135,7 +139,7 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
             value_class = self.__dataclass_fields__['value'].type
 
             try:
-                possible_types = value_class.__args__ # check if it's union
+                possible_types = value_class.__args__  # check if it's union
 
             except AttributeError:
                 possible_types = None
@@ -156,7 +160,7 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
 
 @dataclass
 class ResourceMappingNode(MappingNode):
-    key: TextNode = None
+    key: ScalarNode = None
 
     @property
     def id(self):
@@ -165,7 +169,7 @@ class ResourceMappingNode(MappingNode):
 
 @dataclass
 class TextMapping(MappingNode):
-    key: TextNode = None
+    key: ScalarNode = None
     value: TextNode = None
 
 
@@ -181,7 +185,7 @@ class MapNode(YamlNode):
 
 @dataclass
 class InputNode(MappingNode):
-    key: TextNode = None
+    key: ScalarNode = None
     value: TextNode = None
     allow_variable = True
 
@@ -197,8 +201,8 @@ class InputsNode(SequenceNode):
 @dataclass
 class BaseTree(YamlNode):
     inputs_node: InputsNode = None
-    kind: TextNode = None
-    spec_version: TextNode = None
+    kind: ScalarNode = None
+    spec_version: ScalarNode = None
 
     def _get_field_mapping(self) -> {str: str}:
         mapping = super()._get_field_mapping()
@@ -210,4 +214,4 @@ class BaseTree(YamlNode):
 
 @dataclass
 class TreeWithOutputs(ABC):
-    outputs: TextNodesSequence = None
+    outputs: ScalarNodesSequence = None

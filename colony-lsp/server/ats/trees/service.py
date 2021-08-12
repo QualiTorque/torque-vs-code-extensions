@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from server.ats.trees.common import (BaseTree, TreeWithOutputs, YamlNode,
-                                     TextNode, TextNodesSequence, TextMappingSequence)
+                                     TextNode, ScalarNodesSequence, TextMappingSequence, ScalarNode)
 
 
 @dataclass
 class ModuleNode(YamlNode):
     source: TextNode = None
-    exclude_from_tagging: TextNodesSequence = None
+    exclude_from_tagging: ScalarNodesSequence = None
 
 
 @dataclass
@@ -37,4 +37,4 @@ class ServiceTree(BaseTree, TreeWithOutputs):
     variables: VariablesNode = None
     permissions: PermissionsNode = None
     # old syntax
-    tfvars_file: TextNode = None
+    tfvars_file: ScalarNode = None
