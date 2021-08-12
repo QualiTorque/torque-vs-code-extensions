@@ -1,10 +1,11 @@
 from abc import ABC
 from dataclasses import dataclass, field
 from typing import Any, List, Optional, ClassVar, Tuple
+import re
 
 
 @dataclass
-class NodeError(ABC):
+class NodeError(Exception):
     start_pos: Tuple[int, int]
     end_pos: Tuple[int, int]
     message: str
@@ -55,7 +56,39 @@ class YamlNode(ABC):
 @dataclass
 # Could be extended by VariableNote (for $VAR), PathNode(for artifacts), DoubleQuoted, SingleQuoted etc
 class TextNode(YamlNode):
-    text: str = ""
+    allow_vars: ClassVar[bool] = True
+    _text: str = ""
+
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, v: str):
+        try:
+            self._validate(v)
+        except NodeError as e:
+            self.add_error(e)
+        self._text = v
+
+    def _validate(self, v: str):
+        pass
+
+
+class ScalarNode(TextNode):
+    allow_vars = False
+
+    def _validate(self, v: str):
+        regex = re.compile("(\$\{.+?\}|^\$.+?$)")
+        # find first
+        m = regex.search(v)
+        if m and self.allow_vars is False:
+            offset = m.span()
+            raise NodeError(
+                start_pos=(self.start_pos[0], self.start_pos[1] + offset[0] + 1),
+                end_pos=(self.end_pos[0], self.end_pos[1] + offset[1] + 1),
+                message="Variables are not allowed here"
+            )
 
 
 @dataclass
