@@ -1,10 +1,11 @@
 from abc import ABC
 from dataclasses import dataclass, field
 from typing import Any, List, Optional, ClassVar, Tuple
+import re
 
 
 @dataclass
-class NodeError(ABC):
+class NodeError(Exception):
     start_pos: Tuple[int, int]
     end_pos: Tuple[int, int]
     message: str
@@ -55,7 +56,39 @@ class YamlNode(ABC):
 @dataclass
 # Could be extended by VariableNote (for $VAR), PathNode(for artifacts), DoubleQuoted, SingleQuoted etc
 class TextNode(YamlNode):
-    text: str = ""
+    allow_vars: ClassVar[bool] = True
+    _text: str = ""
+
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, v: str):
+        try:
+            self._validate(v)
+        except NodeError as e:
+            self.add_error(e)
+        self._text = v
+
+    def _validate(self, v: str):
+        pass
+
+
+class ScalarNode(TextNode):
+    allow_vars = False
+
+    def _validate(self, v: str):
+        regex = re.compile("(\$\{.+?\}|^\$.+?$)")
+        # find first
+        m = regex.search(v)
+        if m and self.allow_vars is False:
+            offset = m.span()
+            raise NodeError(
+                start_pos=(self.start_pos[0], self.start_pos[1] + offset[0]),
+                end_pos=(self.end_pos[0], self.end_pos[1] + offset[1]),
+                message="Variables are not allowed here"
+            )
 
 
 @dataclass
@@ -74,17 +107,21 @@ class SequenceNode(YamlNode):
 
 
 @dataclass
-class TextNodesSequence(SequenceNode):
+class ScalarNodesSequence(SequenceNode):
     """Container for simple text arrays
     like outputs, depends on """
+    node_type = ScalarNode
+
+
+@dataclass
+class TextNodesSequence(SequenceNode):
     node_type = TextNode
 
 
 @dataclass
 class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit this
-    key: YamlNode = None
+    key: ScalarNode = None
     value: YamlNode = None
-    allow_variable: bool = False
 
     def get_key(self):
         if self.key is None:
@@ -102,7 +139,7 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
             value_class = self.__dataclass_fields__['value'].type
 
             try:
-                possible_types = value_class.__args__ # check if it's union
+                possible_types = value_class.__args__  # check if it's union
 
             except AttributeError:
                 possible_types = None
@@ -123,7 +160,7 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
 
 @dataclass
 class ResourceMappingNode(MappingNode):
-    key: TextNode = None
+    key: ScalarNode = None
 
     @property
     def id(self):
@@ -132,7 +169,7 @@ class ResourceMappingNode(MappingNode):
 
 @dataclass
 class TextMapping(MappingNode):
-    key: TextNode = None
+    key: ScalarNode = None
     value: TextNode = None
 
 
@@ -148,7 +185,7 @@ class MapNode(YamlNode):
 
 @dataclass
 class InputNode(MappingNode):
-    key: TextNode = None
+    key: ScalarNode = None
     value: TextNode = None
     allow_variable = True
 
@@ -164,8 +201,8 @@ class InputsNode(SequenceNode):
 @dataclass
 class BaseTree(YamlNode):
     inputs_node: InputsNode = None
-    kind: TextNode = None
-    spec_version: TextNode = None
+    kind: ScalarNode = None
+    spec_version: ScalarNode = None
 
     def _get_field_mapping(self) -> {str: str}:
         mapping = super()._get_field_mapping()
@@ -177,4 +214,4 @@ class BaseTree(YamlNode):
 
 @dataclass
 class TreeWithOutputs(ABC):
-    outputs: TextNodesSequence = None
+    outputs: ScalarNodesSequence = None

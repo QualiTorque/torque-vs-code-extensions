@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from server.ats.trees.common import (BaseTree, InputsNode, MappingNode, SequenceNode,
-                                     TextMappingSequence, TextNode, TextNodesSequence, YamlNode)
+                                     TextMappingSequence, TextNode, ScalarNodesSequence, YamlNode, ScalarNode,
+                                     TextNodesSequence)
 from typing import Union
 
 
@@ -28,14 +29,14 @@ class InfrastructureNode(YamlNode):
 
 @dataclass
 class RuleNode(YamlNode):
-    path: TextNode = None
-    host: TextNode = None
-    application: TextNode = None
-    port: TextNode = None
-    color: TextNode = None
+    path: ScalarNode = None
+    host: ScalarNode = None
+    application: ScalarNode = None
+    port: TextNode = None  # yes, numeric
+    color: ScalarNode = None  # not green|blue
     shortcut: TextNode = None
-    default: TextNode = None
-    ignore_exposure: TextNode = None
+    default: ScalarNode = None  # not, true|false
+    ignore_exposure: ScalarNode = None
     # new/unsupported
     stickiness: TextNode = None
 
@@ -46,9 +47,9 @@ class ListenerNode(YamlNode):
     class RulesSequenceNode(SequenceNode):
         node_type = RuleNode
 
-    http: TextNode = None
-    redirect_to_listener: TextNode = None
-    https: TextNode = None
+    http: TextNode = None  # yes, numeric
+    redirect_to_listener: ScalarNode = None
+    https: TextNode = None  # yes, numeric
     certificate: TextNode = None
     rules: RulesSequenceNode = None
 
@@ -59,29 +60,29 @@ class IngressNode(YamlNode):
     class ListenersSequenceNode(SequenceNode):
         node_type = ListenerNode
 
-    enabled: TextNode = None
+    enabled: ScalarNode = None  # true|false
     listeners: ListenersSequenceNode = None
 
 
 @dataclass
 class BlueprintFullInputNode(YamlNode):
-    display_style: TextNode = None
-    description: TextNode = None
-    default_value: TextNode = None
-    optional: TextNode = None
+    display_style: ScalarNode = None
+    description: ScalarNode = None
+    default_value: ScalarNode = None
+    optional: ScalarNode = None
 
 
 @dataclass
 class BlueprintInputNode(MappingNode):
     key: TextNode = None
-    value: Union[BlueprintFullInputNode, TextNode] = None
+    value: Union[BlueprintFullInputNode, ScalarNode] = None
 
     @property
     def default_value(self):
         if isinstance(self.value, BlueprintFullInputNode):
             return self.value.default_value
 
-        if isinstance(self.value, TextNode):
+        if isinstance(self.value, ScalarNode):
             return self.value
 
 
@@ -93,18 +94,18 @@ class BlueprintInputsSequence(SequenceNode):
 @dataclass
 class ServiceResourceNode(YamlNode):
     input_values: InputsNode = None
-    depends_on: TextNodesSequence = None
+    depends_on: ScalarNodesSequence = None
 
 
 @dataclass
 class ApplicationResourceNode(ServiceResourceNode):
-    target: TextNode = None
-    instances: TextNode = None
+    target: ScalarNode = None
+    instances: TextNode = None  # yes, numeric
 
 
 @dataclass
 class BlueprintResourceMappingNode(MappingNode):
-    key: TextNode = None
+    key: ScalarNode = None
     value: ServiceResourceNode = None
 
     @property
@@ -130,8 +131,8 @@ class ServiceNode(BlueprintResourceMappingNode):
 class BlueprintTree(BaseTree):
     @dataclass
     class MetadataNode(YamlNode):
-        description: TextNode = None
-        tags: TextNodesSequence = None
+        description: ScalarNode = None
+        tags: ScalarNodesSequence = None
 
     @dataclass
     class AppsSequence(SequenceNode):
@@ -143,10 +144,10 @@ class BlueprintTree(BaseTree):
 
     @dataclass
     class DebuggingNode(YamlNode):
-        bastion_availability: TextNode = None
-        direct_access: TextNode = None
+        bastion_availability: ScalarNode = None
+        direct_access: ScalarNode = None
         # old syntax
-        availability: TextNode = None
+        availability: ScalarNode = None
 
     inputs_node: BlueprintInputsSequence = None
     applications: AppsSequence = None

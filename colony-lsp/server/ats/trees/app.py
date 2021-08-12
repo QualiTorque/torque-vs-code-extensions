@@ -1,13 +1,13 @@
 from abc import ABC
 from dataclasses import dataclass
 from server.ats.trees.common import (BaseTree, ResourceMappingNode, SequenceNode,
-                                     TextNode, TreeWithOutputs, YamlNode)
+                                     TextNode, TreeWithOutputs, YamlNode, ScalarNode)
 
 
 @dataclass
 class DebuggingNode(YamlNode):
-    allow_direct_access: TextNode = None
-    connection_protocol: TextNode = None
+    allow_direct_access: ScalarNode = None
+    connection_protocol: ScalarNode = None
 
 
 @dataclass
@@ -32,12 +32,12 @@ class SpecNode(YamlNode):
 
 @dataclass
 class IngressHealthCheckNode(YamlNode):
-    healthy_threshold: TextNode = None
-    interval: TextNode = None
-    path: TextNode = None
-    status_code: TextNode = None
-    timeout: TextNode = None
-    unhealthy_threshold = None
+    healthy_threshold: ScalarNode = None
+    interval: ScalarNode = None
+    path: ScalarNode = None
+    status_code: ScalarNode = None
+    timeout: ScalarNode = None
+    unhealthy_threshold: ScalarNode = None
 
     def _get_field_mapping(self) -> {str: str}:
         mapping = super()._get_field_mapping()
@@ -120,15 +120,15 @@ class InfrastructureNode(YamlNode):
 class ConfigurationNode(YamlNode):
     @dataclass
     class InitializationNode(YamlNode):
-        script: TextNode = None
+        script: ScalarNode = None
 
     @dataclass
     class StartNode(InitializationNode):
-        command: TextNode = None
+        command: ScalarNode = None
 
     @dataclass
     class HealthcheckNode(InitializationNode):
-        timeout: TextNode = None
+        timeout: ScalarNode = None
         wait_for_ports: TextNode = None
 
     initialization: InitializationNode = None
@@ -138,9 +138,9 @@ class ConfigurationNode(YamlNode):
 
 @dataclass
 class AmiImageNode(YamlNode):
-    id: TextNode = None
-    region: TextNode = None
-    username: TextNode = None
+    id: ScalarNode = None
+    region: ScalarNode = None
+    username: ScalarNode = None
 
 
 @dataclass
@@ -162,7 +162,7 @@ class AzureImageNode(YamlNode):
     class AzureCustomImageNode(AzureImageProps, YamlNode):
         image: TextNode = None
 
-    urn: TextNode = None
+    urn: ScalarNode = None
     username: TextNode = None
     custom_image: AzureCustomImageNode = None
     gallery: AzureGalleryImageNode = None
@@ -171,9 +171,9 @@ class AzureImageNode(YamlNode):
 
 @dataclass
 class DockerImageNode(YamlNode):
-    name: TextNode = None
+    name: ScalarNode = None
     pull_secret: TextNode = None
-    tag: TextNode = None
+    tag: ScalarNode = None
     username: TextNode = None
 
 
@@ -201,7 +201,7 @@ class SourceNode(YamlNode):
         docker_image: DockerImagesSequence = None
 
     image: ImageNode = None
-    os_type: TextNode = None
+    os_type: ScalarNode = None
 
 
 @dataclass
