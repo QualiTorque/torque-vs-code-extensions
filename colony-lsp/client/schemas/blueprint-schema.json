@@ -524,11 +524,7 @@
                     }
                 }
             },
-            "anyOf": [
-                {"required": ["gateway"]},
-                {"required": ["management"]},
-                {"required": ["application"]}
-            ],
+            "required": ["gateway", "management", "application"],
             "title": "Subnets"
         }
     }
