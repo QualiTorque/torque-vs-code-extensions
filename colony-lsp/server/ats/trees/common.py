@@ -85,8 +85,8 @@ class ScalarNode(TextNode):
         if m and self.allow_vars is False:
             offset = m.span()
             raise NodeError(
-                start_pos=(self.start_pos[0], self.start_pos[1] + offset[0] + 1),
-                end_pos=(self.end_pos[0], self.end_pos[1] + offset[1] + 1),
+                start_pos=(self.start_pos[0], self.start_pos[1] + offset[0]),
+                end_pos=(self.end_pos[0], self.end_pos[1] + offset[1]),
                 message="Variables are not allowed here"
             )
 
