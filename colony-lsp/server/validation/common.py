@@ -57,6 +57,19 @@ class ValidationHandler:
                         input_node.key,
                         message=message.format(input_node.key.text)
                     )
+    
+    def _validate_no_reserved_words_in_inputs_prefix(self):
+        if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
+            message = "input '{}' contains a reserved word '{}'"
+            reserved_words = ["colony", "torque"]
+
+            for input_node in self._tree.inputs_node.nodes:
+                for reserved in reserved_words:
+                    if input_node.key.text.lower().startswith(reserved):
+                        self._add_diagnostic(
+                            input_node.key,
+                            message=message.format(input_node.key.text, reserved)
+                        )
 
     def _validate_no_duplicates_in_outputs(self):
         if hasattr(self._tree, 'outputs') and self._tree.outputs:
@@ -74,5 +87,6 @@ class ValidationHandler:
         # errors
         self._validate_no_duplicates_in_inputs()
         self._validate_no_duplicates_in_outputs()
+        self._validate_no_reserved_words_in_inputs_prefix()
 
         return self._diagnostics
