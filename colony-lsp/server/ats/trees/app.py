@@ -120,15 +120,15 @@ class InfrastructureNode(YamlNode):
 class ConfigurationNode(YamlNode):
     @dataclass
     class InitializationNode(YamlNode):
-        script: TextNode = None
+        script: ScalarNode = None
 
     @dataclass
     class StartNode(InitializationNode):
-        command: TextNode = None
+        command: ScalarNode = None
 
     @dataclass
     class HealthcheckNode(InitializationNode):
-        timeout: TextNode = None
+        timeout: ScalarNode = None
         wait_for_ports: TextNode = None
 
     initialization: InitializationNode = None

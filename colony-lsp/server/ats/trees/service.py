@@ -11,7 +11,7 @@ class ModuleNode(YamlNode):
 
 @dataclass
 class VariablesNode(YamlNode):
-    var_file: TextNode = None
+    var_file: ScalarNode = None
     values: TextMappingSequence = None
 
 
