@@ -169,9 +169,9 @@
             "additionalProperties": false,
             "properties": {
                 "instances": {
-                    "type": "integer",
-                    "default": 1,                    
-                    "minimum": 1,
+                    "items": {
+                        "$ref": "#/definitions/InstancesElement"
+                    },
                     "description": "(Optional) If you want the application to be deployed on its own, specify the number of instances (one or more)."
                 },
                 "target": {
@@ -192,6 +192,19 @@
                 }
             },
             "title": "Application"
+        },
+        "InstancesElement": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1
+                }
+            ],
+            "title": "Blueprint Input"
         },
         "InputValuesElement": {
             "anyOf": [
@@ -356,7 +369,7 @@
             "additionalProperties": false,
             "properties": {
                 "http": {
-                    "type": "integer",
+                    "type": ["integer", "string"],
                     "description": "Listener type"
                 },
                 "redirect_to_listener": {
@@ -364,7 +377,7 @@
                     "description": "(Optional) Enables redirecting inbound traffic to another listener."
                 },
                 "https": {
-                    "type": "integer",
+                    "type": ["integer", "string"],
                     "description": "Listener type. When defining an https listener, you must also specify a certificate."
                 },
                 "certificate": {
@@ -402,7 +415,7 @@
                     "description": "(Optional) The name of the application that the traffic should be forwarded to."
                 },
                 "port": {
-                    "type": "integer",
+                    "type": ["integer", "string"],
                     "description": "(Optional) The application port to which traffic should be forwarded."
                 },
                 "color": {
@@ -511,11 +524,7 @@
                     }
                 }
             },
-            "anyOf": [
-                {"required": ["gateway"]},
-                {"required": ["management"]},
-                {"required": ["application"]}
-            ],
+            "required": ["gateway", "management", "application"],
             "title": "Subnets"
         }
     }
