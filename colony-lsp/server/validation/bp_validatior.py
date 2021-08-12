@@ -405,6 +405,20 @@ class BlueprintValidationHandler(ValidationHandler):
                             message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
                         )
 
+    def _validate_blueprint_networking_gateway_not_same_as_management_or_application(self):
+        if self._tree.infrastructure and self._tree.infrastructure.connectivity:
+            if self._tree.infrastructure.connectivity.virtual_network and self._tree.infrastructure.connectivity.virtual_network.subnets:
+                subs = self._tree.infrastructure.connectivity.virtual_network.subnets
+                if subs.gateway and subs.gateway.nodes and \
+                   subs.management and subs.management.nodes and \
+                   subs.application and subs.application.nodes:
+                    gw = subs.gateway.nodes[0]
+                    mgmt = subs.management.nodes[0]
+                    app = subs.application.nodes[0]
+                    if gw.text == mgmt.text or gw.text == app.text:
+                        self._add_diagnostic(gw, message="Blueprint Gateway subnet cannot be used as management or application subnet.")
+                    
+                    
     # def _validate_variables_being_used_where_it_is_allowed(self, tree):
     #     tree_nodes = vars(tree)
     #     for node_name, tree_node in tree_nodes.items():
@@ -454,6 +468,7 @@ class BlueprintValidationHandler(ValidationHandler):
             self._validate_services_inputs_exists()
             self._validate_used_apps_are_valid()
             self._validate_used_services_are_valid()
+            self._validate_blueprint_networking_gateway_not_same_as_management_or_application()
         except Exception as ex:
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
             logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
