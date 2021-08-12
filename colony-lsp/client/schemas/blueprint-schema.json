@@ -415,7 +415,7 @@
                     "description": "(Optional) The name of the application that the traffic should be forwarded to."
                 },
                 "port": {
-                    "type": "integer",
+                    "type": ["integer", "string"],
                     "description": "(Optional) The application port to which traffic should be forwarded."
                 },
                 "color": {
