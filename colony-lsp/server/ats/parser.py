@@ -328,3 +328,10 @@ class Parser:
             raise ValueError(f"Unable to initialize tree from document kind '{doc_type}'")
 
         return trees[doc_type]()
+
+
+import yaml
+with open("/Users/ddovbii/colony-demo-space-my/blueprints/promotions-manager-all-aws.yaml", "r") as f:
+    cont = f.read()
+    tree = Parser(cont).parse()
+    print(tree.get_children())

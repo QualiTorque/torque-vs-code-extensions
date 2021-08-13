@@ -13,6 +13,8 @@ class NodeError(Exception):
 
 @dataclass
 class YamlNode(ABC):
+    non_child_attributes: ClassVar[list] = ["start_pos", "end_pos", "parent", "errors"]
+
     start_pos: tuple = None
     end_pos: tuple = None
     parent: Optional[Any] = None  # TODO: must be Node, not any
@@ -23,6 +25,12 @@ class YamlNode(ABC):
         if self.parent is not None:
             self.parent.add_error(error)
 
+    def update_non_child_attributes(self) -> None:
+        return
+
+
+@dataclass
+class ObjectNode(YamlNode, ABC):
     def _get_field_mapping(self) -> {str: str}:
         return {}
 
@@ -47,10 +55,16 @@ class YamlNode(ABC):
             try:
                 child = child_cls(parent=self)
                 setattr(self, attr, child)
-            except Exception as e:
+            except Exception:
                 raise
 
         return child
+
+    def get_children(self):
+        """Returns all child nodes. Nodes are actually
+        attributes which are not excluded and do not equal None"""
+        fields = vars(self)
+        return [val for key,val in fields.items() if val and key not in self.non_child_attributes]
 
 
 @dataclass
@@ -92,7 +106,7 @@ class ScalarNode(TextNode):
 
 
 @dataclass
-class SequenceNode(YamlNode):
+class SequenceNode(ObjectNode):
     node_type: ClassVar[type] = YamlNode
 
     nodes: [node_type] = field(default_factory=list)
@@ -104,6 +118,9 @@ class SequenceNode(YamlNode):
         self.nodes.append(node)
 
         return self.nodes[-1]
+
+    def get_children(self):
+        return self.nodes
 
 
 @dataclass
@@ -119,7 +136,7 @@ class TextNodesSequence(SequenceNode):
 
 
 @dataclass
-class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit this
+class MappingNode(ObjectNode):  # TODO: actually all colony nodes must inherit this
     key: ScalarNode = None
     value: YamlNode = None
 
@@ -185,11 +202,6 @@ class TextMappingSequence(SequenceNode):
 
 
 @dataclass
-class MapNode(YamlNode):
-    items: [MappingNode] = field(default_factory=list)
-
-
-@dataclass
 class ScalarMappingNode(MappingNode):
     key: ScalarNode = None
     value: ScalarNode = None
@@ -204,7 +216,7 @@ class ScalarMappingsSequence(SequenceNode):
 
 
 @dataclass
-class BaseTree(YamlNode):
+class BaseTree(ObjectNode):
     inputs_node: ScalarMappingsSequence = None
     kind: ScalarNode = None
     spec_version: ScalarNode = None
