@@ -97,14 +97,14 @@ def _validate(ls, params):
     except ParserError as e:
         diagnostics.append(
             Diagnostic(
-                range = Range(
+                range=Range(
                     start=Position(line=e.start_pos[0], character=e.start_pos[1]),
                     end=Position(line=e.end_pos[0], character=e.end_pos[1])),
                 message=e.message))
     except ValueError as e:
         diagnostics.append(
             Diagnostic(
-                range = Range(
+                range=Range(
                     start=Position(line=0, character=0),
                     end=Position(line=0, character=0)),
                 message=str(e)))
