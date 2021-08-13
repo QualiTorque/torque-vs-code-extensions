@@ -193,7 +193,6 @@ class MapNode(YamlNode):
 class InputNode(MappingNode):
     key: ScalarNode = None
     value: ScalarNode = None
-    allow_variable = True
 
 
 @dataclass

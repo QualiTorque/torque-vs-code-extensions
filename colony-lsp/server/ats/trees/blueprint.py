@@ -93,7 +93,7 @@ class BlueprintInputsSequence(SequenceNode):
 
 @dataclass
 class ServiceResourceNode(YamlNode):
-    input_values: InputsNode = None
+    input_values: TextMappingSequence = None
     depends_on: ScalarNodesSequence = None
 
 
