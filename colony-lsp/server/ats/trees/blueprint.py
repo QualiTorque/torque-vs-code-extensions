@@ -74,7 +74,7 @@ class BlueprintFullInputNode(YamlNode):
 
 @dataclass
 class BlueprintInputNode(MappingNode):
-    key: TextNode = None
+    key: ScalarNode = None
     value: Union[BlueprintFullInputNode, ScalarNode] = None
 
     @property

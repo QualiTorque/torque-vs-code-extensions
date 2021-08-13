@@ -189,7 +189,7 @@ class MapNode(YamlNode):
 @dataclass
 class InputNode(MappingNode):
     key: ScalarNode = None
-    value: TextNode = None
+    value: ScalarNode = None
     allow_variable = True
 
 
