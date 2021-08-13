@@ -144,19 +144,22 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
             except AttributeError:
                 possible_types = None
 
+            result_class = None
             if expected_type is not None and expected_type != value_class:
                 if possible_types:
                     for pt in possible_types:
                         if issubclass(pt, expected_type):
-                            value_class = pt
+                            result_class = pt
                             break
+                elif isinstance(value_class, type) and issubclass(value_class, expected_type):
+                    result_class = value_class
                 else:
                     raise ValueError(f"Mapping value cannot be initiated with type '{expected_type}'")
 
             else:
-                value_class = value_class if not possible_types else possible_types[0]
+                result_class = value_class if not possible_types else possible_types[0]
 
-            self.value = value_class(parent=self)
+            self.value = result_class(parent=self)
 
         return self.value
 
