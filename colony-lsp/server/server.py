@@ -107,7 +107,7 @@ def _validate(ls, params):
                 range = Range(
                     start=Position(line=0, character=0),
                     end=Position(line=0, character=0)),
-                message=e))
+                message=str(e)))
     except Exception as ex:
         import sys
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)

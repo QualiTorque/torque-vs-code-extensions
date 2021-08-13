@@ -144,16 +144,22 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
             except AttributeError:
                 possible_types = None
 
+            result_class = None
             if expected_type is not None and expected_type != value_class:
-                if possible_types and expected_type in possible_types:
-                    value_class = expected_type
+                if possible_types:
+                    for pt in possible_types:
+                        if issubclass(pt, expected_type):
+                            result_class = pt
+                            break
+                elif isinstance(value_class, type) and issubclass(value_class, expected_type):
+                    result_class = value_class
                 else:
                     raise ValueError(f"Mapping value cannot be initiated with type '{expected_type}'")
 
             else:
-                value_class = value_class if not possible_types else possible_types[0]
+                result_class = value_class if not possible_types else possible_types[0]
 
-            self.value = value_class(parent=self)
+            self.value = result_class(parent=self)
 
         return self.value
 
@@ -184,23 +190,22 @@ class MapNode(YamlNode):
 
 
 @dataclass
-class InputNode(MappingNode):
+class ScalarMappingNode(MappingNode):
     key: ScalarNode = None
-    value: TextNode = None
-    allow_variable = True
+    value: ScalarNode = None
 
 
 @dataclass
-class InputsNode(SequenceNode):
+class ScalarMappingsSequence(SequenceNode):
     """
     Node representing the list of inputs
     """
-    node_type = InputNode
+    node_type = ScalarMappingNode
 
 
 @dataclass
 class BaseTree(YamlNode):
-    inputs_node: InputsNode = None
+    inputs_node: ScalarMappingsSequence = None
     kind: ScalarNode = None
     spec_version: ScalarNode = None
 
