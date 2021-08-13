@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from server.ats.trees.common import (BaseTree, InputsNode, MappingNode, SequenceNode,
+from server.ats.trees.common import (BaseTree, ScalarMappingsSequence, MappingNode, SequenceNode,
                                      TextMappingSequence, TextNode, ScalarNodesSequence, YamlNode, ScalarNode,
                                      TextNodesSequence)
 from typing import Union
@@ -153,7 +153,7 @@ class BlueprintTree(BaseTree):
     applications: AppsSequence = None
     services: ServicesSequence = None
     artifacts: TextMappingSequence = None
-    clouds: TextMappingSequence = None
+    clouds: ScalarMappingsSequence = None
     metadata: MetadataNode = None
     debugging: DebuggingNode = None
     ingress: IngressNode = None

@@ -190,22 +190,22 @@ class MapNode(YamlNode):
 
 
 @dataclass
-class InputNode(MappingNode):
+class ScalarMappingNode(MappingNode):
     key: ScalarNode = None
     value: ScalarNode = None
 
 
 @dataclass
-class InputsNode(SequenceNode):
+class ScalarMappingsSequence(SequenceNode):
     """
     Node representing the list of inputs
     """
-    node_type = InputNode
+    node_type = ScalarMappingNode
 
 
 @dataclass
 class BaseTree(YamlNode):
-    inputs_node: InputsNode = None
+    inputs_node: ScalarMappingsSequence = None
     kind: ScalarNode = None
     spec_version: ScalarNode = None
 
