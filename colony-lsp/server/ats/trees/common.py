@@ -145,8 +145,11 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
                 possible_types = None
 
             if expected_type is not None and expected_type != value_class:
-                if possible_types and expected_type in possible_types:
-                    value_class = expected_type
+                if possible_types:
+                    for pt in possible_types:
+                        if issubclass(pt, expected_type):
+                            value_class = pt
+                            break
                 else:
                     raise ValueError(f"Mapping value cannot be initiated with type '{expected_type}'")
 
