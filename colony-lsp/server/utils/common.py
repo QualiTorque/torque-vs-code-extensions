@@ -73,5 +73,5 @@ def preceding_words(document: Document, position: types.Position) -> Optional[Tu
     try:
         word = line[:col].strip().split()[-2:]
         return word
-    except (ValueError):
+    except ValueError:
         return None

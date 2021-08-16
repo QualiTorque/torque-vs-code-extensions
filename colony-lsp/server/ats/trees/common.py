@@ -5,6 +5,7 @@ import re
 
 from pygls.lsp import types
 
+
 # TODO: refactor all the code to use this class
 @dataclass
 class Position:

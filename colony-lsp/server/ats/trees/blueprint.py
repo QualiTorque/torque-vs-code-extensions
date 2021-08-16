@@ -160,17 +160,3 @@ class BlueprintTree(BaseTree):
     infrastructure: InfrastructureNode = None
     # old syntax
     environmentType: TextNode = None
-
-
-
-
-
-
-
-#
-#
-#
-#
-# class Visitor:
-#     def __init__(self):
-#
