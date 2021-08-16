@@ -139,6 +139,7 @@ class TextNodesSequence(SequenceNode):
 class MappingNode(ObjectNode):  # TODO: actually all colony nodes must inherit this
     key: ScalarNode = None
     value: YamlNode = None
+    allow_vars: ClassVar[bool] = False
 
     def get_key(self):
         if self.key is None:
@@ -176,7 +177,7 @@ class MappingNode(ObjectNode):  # TODO: actually all colony nodes must inherit t
             else:
                 result_class = value_class if not possible_types else possible_types[0]
 
-            self.value = result_class(parent=self)
+            self.value = result_class(parent=self.key)
 
         return self.value
 
@@ -194,6 +195,7 @@ class ResourceMappingNode(MappingNode):
 class TextMapping(MappingNode):
     key: ScalarNode = None
     value: TextNode = None
+    allow_vars = True
 
 
 @dataclass
