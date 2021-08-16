@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from pygls.lsp import types
 from pygls.workspace import Document, position_from_utf16
 
@@ -19,6 +19,21 @@ class Visitor:
             return True
 
         return False
+
+
+def get_path_to_pos(tree, pos):
+    v = Visitor(cursor_position=pos)
+    tree.accept(visitor=v)
+
+    if not v.found_node:
+        return []
+
+    path: List[YamlNode] = []
+    node = v.found_node
+    while node:
+        path.insert(0, node)
+        node = node.parent
+    return path
 
 
 def get_parent_word(document: Document, position: types.Position):
