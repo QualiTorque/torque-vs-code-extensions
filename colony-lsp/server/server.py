@@ -19,6 +19,7 @@ from dataclasses import dataclass
 import logging
 
 from server.ats.trees.common import BaseTree
+from server.utils.common import is_var_allowed
 from server.validation.factory import ValidatorFactory
 
 from pygls.lsp.types.language_features.completion import InsertTextMode
@@ -188,7 +189,6 @@ async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentPara
 #     return None
 
 
-
 @colony_server.feature(COMPLETION, CompletionOptions(resolve_provider=False, trigger_characters=['.']))
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
@@ -201,167 +201,176 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             return CompletionList(is_incomplete=True, items=[])
     except yaml.MarkedYAMLError as ex:
         return CompletionList(is_incomplete=True, items=[])
-    
-        
-    fdrs = colony_server.workspace.folders
-    root = colony_server.workspace.root_path
-    
-    if doc_type == "blueprint":
-        items=[]
-        if params.context.trigger_character == '.':
-            words = common.preceding_words(doc, params.position)
-            if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
-                cur_word = words[-1]
-                word_parts = cur_word.split('$')
-                if word_parts:
-                    if word_parts[-1].startswith('{colony.'):
-                        cur_word = word_parts[-1][1:]
-                    elif word_parts[-1].startswith('colony.'):
-                        cur_word = word_parts[-1]
-                    else:
-                        cur_word = ''
-                if cur_word:
-                    bp_tree = Parser(doc.source).parse()
-                                        
-                    options = []
-                    if cur_word.startswith('colony'):
-                        if cur_word == 'colony.':
-                            options = ['environment', 'repos']
-                            if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
-                                options.append('applications')
-                            if bp_tree.services and len(bp_tree.services.nodes) > 0:
-                                options.append('services')
-                        elif cur_word == 'colony.environment.':
-                            options = ['id', 'virtual_network_id', 'public_address']
-                        elif cur_word == 'colony.repos.':
-                            options = ['branch']
-                        elif cur_word == 'colony.repos.branch.':
-                            options = ['current']
-                        elif cur_word == 'colony.applications.':
-                            if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
-                                for app in bp_tree.applications.nodes:
-                                    options.append(app.id.text)
-                        elif cur_word == 'colony.services.':
-                            if bp_tree.services and len(bp_tree.services.nodes) > 0:
-                                for srv in bp_tree.services.nodes:
-                                    options.append(srv.id.text)
-                        elif cur_word.startswith('colony.applications.'):
-                            parts = cur_word.split('.')
-                            if len(parts) == 4 and parts[2] != '':
-                                options = ['outputs', 'dns']
-                            elif len(parts) == 5 and parts[3] == 'outputs':
-                                apps = applications.get_available_applications(root)
-                                for app in apps:
-                                    if app == parts[2]:
-                                        outputs = applications.get_app_outputs(app_name=parts[2])
-                                        if outputs:
-                                            options.extend(outputs)
-                                        break
-                        elif cur_word.startswith('colony.services.'):
-                            parts = cur_word.split('.')
-                            if len(parts) == 4 and parts[2] != '':
-                                options.append('outputs')
-                            elif len(parts) == 5 and parts[3] == 'outputs':
-                                apps = services.get_available_services(root)
-                                for app in apps:
-                                    if app == parts[2]:
-                                        outputs = services.get_service_outputs(srv_name=parts[2])
-                                        if outputs:
-                                            options.extend(outputs)
-                                        break
-                                                            
-                    line = params.position.line
-                    char = params.position.character
-                    for option in options:
-                        items.append(CompletionItem(label=option,
-                                                    kind=CompletionItemKind.Property,
-                                                    text_edit=TextEdit(
-                                                        range=Range(start=Position(line=line, character=char),
-                                                                    end=Position(line=line, character=char+len(option))),
-                                                                    new_text=option
-                                                    )))
-                                    
-        else:
-            parent = common.get_parent_word(doc, params.position)
-            line = params.position.line
-            char = params.position.character
-                
-            if parent == "applications":
-                apps = applications.get_available_applications(root)
-                for app in apps:
-                    if apps[app]['app_completion']:
-                        items.append(CompletionItem(label=app, 
-                                                    kind=CompletionItemKind.Reference, 
-                                                    text_edit=TextEdit(
-                                                                    range=Range(start=Position(line=line, character=char-2),
-                                                                                end=Position(line=line, character=char)),
-                                                                    new_text=apps[app]['app_completion'],
-                                                    )))
-            
-            if parent == "services":
-                srvs = services.get_available_services(root)
-                for srv in srvs:
-                    if srvs[srv]['srv_completion']:
-                        items.append(CompletionItem(label=srv, 
-                                                    kind=CompletionItemKind.Reference, 
-                                                    text_edit=TextEdit(
-                                                                    range=Range(start=Position(line=line, character=char-2),
-                                                                                end=Position(line=line, character=char)),
-                                                                    new_text=srvs[srv]['srv_completion'],
-                                                    )))
-            
-            # if parent == "input_values":
-            #     available_inputs = _get_file_inputs(doc.source)
-            #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs]
-            #     items.extend(inputs)
-            #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in PREDEFINED_COLONY_INPUTS]
-            #     items.extend(inputs)
-            #     # TODO: add output generated variables of apps/services in this blueprint ($colony.applications.app_name.outputs.output_name, $colony.services.service_name.outputs.output_name)
-        
-        return CompletionList(
-            is_incomplete=(len(items)==0),
-            items=items
-        )
-    elif doc_type == "application":
-        words = common.preceding_words(doc, params.position)
-        if words and len(words) == 1:
-            if words[0] == "script:":
-                scripts = applications.get_app_scripts(params.text_document.uri)
-                return CompletionList(
-                    is_incomplete=False,
-                    items=[CompletionItem(label=script,
-                                          kind=CompletionItemKind.File) for script in scripts],
-                )
-            # TODO: check based on allow_variable
-            # elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
-            #     available_inputs = _get_file_inputs(doc.source)
-            #     return CompletionList(
-            #         is_incomplete=False,
-            #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
-            #     )
 
-    if doc_type == "TerraForm":
-        words = common.preceding_words(doc, params.position)
-        if words and len(words) == 1:
-            if words[0] == "var_file:":
-                var_files = services.get_service_vars(params.text_document.uri)
-                return CompletionList(
-                    is_incomplete=False,
-                    items=[CompletionItem(label=var["file"],
-                                          insert_text=f"{var['file']}\r\nvalues:\r\n" + 
-                                                       "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
-                                          kind=CompletionItemKind.File
-                )
-            # TODO: check based on allow_variable
-            # elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
-            #     available_inputs = _get_file_inputs(doc.source)
-            #     return CompletionList(
-            #         is_incomplete=False,
-            #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
-            #     )
+    tree = Parser(doc.source).parse()
+    inputs_names_list = [i_node.key.text for i_node in tree.inputs_node.nodes] if tree.inputs_node else []
 
-    else:
-        return CompletionList(is_incomplete=True, items=[])
+    if is_var_allowed(tree, params.position):
+        suggested_vars = [
+            CompletionItem(label=f"${var}", kind=CompletionItemKind.Variable)
+            for var in inputs_names_list]
+
+        return CompletionList(is_incomplete=True, items=suggested_vars)
+
+    # fdrs = colony_server.workspace.folders
+    # root = colony_server.workspace.root_path
+    #
+    # if doc_type == "blueprint":
+    #     items=[]
+    #     if params.context.trigger_character == '.':
+    #         words = common.preceding_words(doc, params.position)
+    #         if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
+    #             cur_word = words[-1]
+    #             word_parts = cur_word.split('$')
+    #             if word_parts:
+    #                 if word_parts[-1].startswith('{colony.'):
+    #                     cur_word = word_parts[-1][1:]
+    #                 elif word_parts[-1].startswith('colony.'):
+    #                     cur_word = word_parts[-1]
+    #                 else:
+    #                     cur_word = ''
+    #             if cur_word:
+    #                 bp_tree = Parser(doc.source).parse()
+    #
+    #                 options = []
+    #                 if cur_word.startswith('colony'):
+    #                     if cur_word == 'colony.':
+    #                         options = ['environment', 'repos']
+    #                         if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
+    #                             options.append('applications')
+    #                         if bp_tree.services and len(bp_tree.services.nodes) > 0:
+    #                             options.append('services')
+    #                     elif cur_word == 'colony.environment.':
+    #                         options = ['id', 'virtual_network_id', 'public_address']
+    #                     elif cur_word == 'colony.repos.':
+    #                         options = ['branch']
+    #                     elif cur_word == 'colony.repos.branch.':
+    #                         options = ['current']
+    #                     elif cur_word == 'colony.applications.':
+    #                         if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
+    #                             for app in bp_tree.applications.nodes:
+    #                                 options.append(app.id.text)
+    #                     elif cur_word == 'colony.services.':
+    #                         if bp_tree.services and len(bp_tree.services.nodes) > 0:
+    #                             for srv in bp_tree.services.nodes:
+    #                                 options.append(srv.id.text)
+    #                     elif cur_word.startswith('colony.applications.'):
+    #                         parts = cur_word.split('.')
+    #                         if len(parts) == 4 and parts[2] != '':
+    #                             options = ['outputs', 'dns']
+    #                         elif len(parts) == 5 and parts[3] == 'outputs':
+    #                             apps = applications.get_available_applications(root)
+    #                             for app in apps:
+    #                                 if app == parts[2]:
+    #                                     outputs = applications.get_app_outputs(app_name=parts[2])
+    #                                     if outputs:
+    #                                         options.extend(outputs)
+    #                                     break
+    #                     elif cur_word.startswith('colony.services.'):
+    #                         parts = cur_word.split('.')
+    #                         if len(parts) == 4 and parts[2] != '':
+    #                             options.append('outputs')
+    #                         elif len(parts) == 5 and parts[3] == 'outputs':
+    #                             apps = services.get_available_services(root)
+    #                             for app in apps:
+    #                                 if app == parts[2]:
+    #                                     outputs = services.get_service_outputs(srv_name=parts[2])
+    #                                     if outputs:
+    #                                         options.extend(outputs)
+    #                                     break
+    #
+    #                 line = params.position.line
+    #                 char = params.position.character
+    #                 for option in options:
+    #                     items.append(CompletionItem(label=option,
+    #                                                 kind=CompletionItemKind.Property,
+    #                                                 text_edit=TextEdit(
+    #                                                     range=Range(start=Position(line=line, character=char),
+    #                                                                 end=Position(line=line, character=char+len(option))),
+    #                                                                 new_text=option
+    #                                                 )))
+    #
+    #     else:
+    #         parent = common.get_parent_word(doc, params.position)
+    #         line = params.position.line
+    #         char = params.position.character
+    #
+    #         if parent == "applications":
+    #             apps = applications.get_available_applications(root)
+    #             for app in apps:
+    #                 if apps[app]['app_completion']:
+    #                     items.append(CompletionItem(label=app,
+    #                                                 kind=CompletionItemKind.Reference,
+    #                                                 text_edit=TextEdit(
+    #                                                                 range=Range(start=Position(line=line, character=char-2),
+    #                                                                             end=Position(line=line, character=char)),
+    #                                                                 new_text=apps[app]['app_completion'],
+    #                                                 )))
+    #
+    #         if parent == "services":
+    #             srvs = services.get_available_services(root)
+    #             for srv in srvs:
+    #                 if srvs[srv]['srv_completion']:
+    #                     items.append(CompletionItem(label=srv,
+    #                                                 kind=CompletionItemKind.Reference,
+    #                                                 text_edit=TextEdit(
+    #                                                                 range=Range(start=Position(line=line, character=char-2),
+    #                                                                             end=Position(line=line, character=char)),
+    #                                                                 new_text=srvs[srv]['srv_completion'],
+    #                                                 )))
+    #
+    #         # if parent == "input_values":
+    #         #     available_inputs = _get_file_inputs(doc.source)
+    #         #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs]
+    #         #     items.extend(inputs)
+    #         #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in PREDEFINED_COLONY_INPUTS]
+    #         #     items.extend(inputs)
+    #         #     # TODO: add output generated variables of apps/services in this blueprint ($colony.applications.app_name.outputs.output_name, $colony.services.service_name.outputs.output_name)
+    #
+    #     return CompletionList(
+    #         is_incomplete=(len(items)==0),
+    #         items=items
+    #     )
+    # elif doc_type == "application":
+    #     words = common.preceding_words(doc, params.position)
+    #     if words and len(words) == 1:
+    #         if words[0] == "script:":
+    #             scripts = applications.get_app_scripts(params.text_document.uri)
+    #             return CompletionList(
+    #                 is_incomplete=False,
+    #                 items=[CompletionItem(label=script,
+    #                                       kind=CompletionItemKind.File) for script in scripts],
+    #             )
+    #         # TODO: check based on allow_variable
+    #         # elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
+    #         #     available_inputs = _get_file_inputs(doc.source)
+    #         #     return CompletionList(
+    #         #         is_incomplete=False,
+    #         #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
+    #         #     )
+    #
+    # if doc_type == "TerraForm":
+    #     words = common.preceding_words(doc, params.position)
+    #     if words and len(words) == 1:
+    #         if words[0] == "var_file:":
+    #             var_files = services.get_service_vars(params.text_document.uri)
+    #             return CompletionList(
+    #                 is_incomplete=False,
+    #                 items=[CompletionItem(label=var["file"],
+    #                                       insert_text=f"{var['file']}\r\nvalues:\r\n" +
+    #                                                    "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
+    #                                       kind=CompletionItemKind.File
+    #             )
+    #         # TODO: check based on allow_variable
+    #         # elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
+    #         #     available_inputs = _get_file_inputs(doc.source)
+    #         #     return CompletionList(
+    #         #         is_incomplete=False,
+    #         #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
+    #         #     )
+    #
+    # else:
+    #     return CompletionList(is_incomplete=True, items=[])
 
 
 # @colony_server.feature(DEFINITION)
