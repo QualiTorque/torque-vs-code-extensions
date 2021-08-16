@@ -109,7 +109,6 @@ class Parser:
             self.nodes_stack.append(UnprocessedNode())
 
     def _process_token(self, token: Token) -> None:
-        print(token, token.start_mark.line, token.start_mark.column, ";", token.end_mark.line, token.end_mark.column)
         # beginning of document
         if isinstance(token, StreamStartToken):
             self.tree.start_pos = self.get_token_start(token)
