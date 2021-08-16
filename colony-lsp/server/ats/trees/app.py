@@ -1,28 +1,28 @@
 from abc import ABC
 from dataclasses import dataclass
 from server.ats.trees.common import (BaseTree, ResourceMappingNode, SequenceNode,
-                                     TextNode, TreeWithOutputs, YamlNode, ScalarNode)
+                                     TextNode, TreeWithOutputs, ScalarNode, ObjectNode)
 
 
 @dataclass
-class DebuggingNode(YamlNode):
+class DebuggingNode(ObjectNode):
     allow_direct_access: ScalarNode = None
     connection_protocol: ScalarNode = None
 
 
 @dataclass
-class SpecNode(YamlNode):
+class SpecNode(ObjectNode):
     @dataclass
-    class KubernetesSpecNode(YamlNode):
+    class KubernetesSpecNode(ObjectNode):
         cpu: TextNode = None
         ram: TextNode = None
 
     @dataclass
-    class AwsSpecNode(YamlNode):
+    class AwsSpecNode(ObjectNode):
         instance_type: TextNode = None
 
     @dataclass
-    class AzureSpecNode(YamlNode):
+    class AzureSpecNode(ObjectNode):
         vm_size: TextNode = None
 
     azure: AzureSpecNode = None
@@ -31,7 +31,7 @@ class SpecNode(YamlNode):
 
 
 @dataclass
-class IngressHealthCheckNode(YamlNode):
+class IngressHealthCheckNode(ObjectNode):
     healthy_threshold: ScalarNode = None
     interval: ScalarNode = None
     path: ScalarNode = None
@@ -50,7 +50,7 @@ class IngressHealthCheckNode(YamlNode):
 
 
 @dataclass
-class PortInfoNode(YamlNode):
+class PortInfoNode(ObjectNode):
     port: TextNode = None
     path: TextNode = None
 
@@ -80,13 +80,13 @@ class InternalPortInfoMappingNode(ResourceMappingNode):
 
 
 @dataclass
-class InfrastructureNode(YamlNode):
+class InfrastructureNode(ObjectNode):
     @dataclass
-    class ComputeNode(YamlNode):
+    class ComputeNode(ObjectNode):
         spec: SpecNode = None
 
     @dataclass
-    class ConnectivityNode(YamlNode):
+    class ConnectivityNode(ObjectNode):
         @dataclass
         class ExternalPortsSequenceNode(SequenceNode):
             node_type = ExternalPortInfoMappingNode
@@ -99,13 +99,13 @@ class InfrastructureNode(YamlNode):
         internal: InternalPortsSequenceNode = None
 
     @dataclass
-    class InfraPermissionsNode(YamlNode):
+    class InfraPermissionsNode(ObjectNode):
         @dataclass
-        class InfraAwsPermissionsNode(YamlNode):
+        class InfraAwsPermissionsNode(ObjectNode):
             iam_instance_profile: TextNode = None
 
         @dataclass
-        class InfraAzurePermissionsNode(YamlNode):
+        class InfraAzurePermissionsNode(ObjectNode):
             managed_identity_id: TextNode = None
 
         aws: InfraAwsPermissionsNode = None
@@ -117,9 +117,9 @@ class InfrastructureNode(YamlNode):
 
 
 @dataclass
-class ConfigurationNode(YamlNode):
+class ConfigurationNode(ObjectNode):
     @dataclass
-    class InitializationNode(YamlNode):
+    class InitializationNode(ObjectNode):
         script: ScalarNode = None
 
     @dataclass
@@ -137,7 +137,7 @@ class ConfigurationNode(YamlNode):
 
 
 @dataclass
-class AmiImageNode(YamlNode):
+class AmiImageNode(ObjectNode):
     id: ScalarNode = None
     region: ScalarNode = None
     username: ScalarNode = None
@@ -151,15 +151,15 @@ class AzureImageProps(ABC):
 
 
 @dataclass
-class AzureImageNode(YamlNode):
+class AzureImageNode(ObjectNode):
     @dataclass
-    class AzureGalleryImageNode(AzureImageProps, YamlNode):
+    class AzureGalleryImageNode(AzureImageProps, ObjectNode):
         shared_image_gallery: TextNode = None
         image_definition: TextNode = None
         image_version: TextNode = None
 
     @dataclass
-    class AzureCustomImageNode(AzureImageProps, YamlNode):
+    class AzureCustomImageNode(AzureImageProps, ObjectNode):
         image: TextNode = None
 
     urn: ScalarNode = None
@@ -170,7 +170,7 @@ class AzureImageNode(YamlNode):
 
 
 @dataclass
-class DockerImageNode(YamlNode):
+class DockerImageNode(ObjectNode):
     name: ScalarNode = None
     pull_secret: TextNode = None
     tag: ScalarNode = None
@@ -193,9 +193,9 @@ class DockerImagesSequence(SequenceNode):
 
 
 @dataclass
-class SourceNode(YamlNode):
+class SourceNode(ObjectNode):
     @dataclass
-    class ImageNode(YamlNode):
+    class ImageNode(ObjectNode):
         ami: AmiSequenceNode = None
         azure_image: AzureSequenceNode = None
         docker_image: DockerImagesSequence = None

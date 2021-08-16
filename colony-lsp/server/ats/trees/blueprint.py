@@ -1,18 +1,18 @@
 from dataclasses import dataclass
 from server.ats.trees.common import (BaseTree, ScalarMappingsSequence, MappingNode, SequenceNode,
-                                     TextMappingSequence, TextNode, ScalarNodesSequence, YamlNode, ScalarNode,
-                                     TextNodesSequence)
+                                     TextMappingSequence, TextNode, ScalarNodesSequence, ScalarNode,
+                                     TextNodesSequence, ObjectNode)
 from typing import Union
 
 
 @dataclass
-class InfrastructureNode(YamlNode):
+class InfrastructureNode(ObjectNode):
     @dataclass
-    class ConnectivityNode(YamlNode):
+    class ConnectivityNode(ObjectNode):
         @dataclass
-        class VirtualNetwork(YamlNode):
+        class VirtualNetwork(ObjectNode):
             @dataclass
-            class SubnetsNode(YamlNode):
+            class SubnetsNode(ObjectNode):
                 gateway: TextNodesSequence = None
                 management: TextNodesSequence = None
                 application: TextNodesSequence = None
@@ -28,7 +28,7 @@ class InfrastructureNode(YamlNode):
 
 
 @dataclass
-class RuleNode(YamlNode):
+class RuleNode(ObjectNode):
     path: ScalarNode = None
     host: ScalarNode = None
     application: ScalarNode = None
@@ -42,7 +42,7 @@ class RuleNode(YamlNode):
 
 
 @dataclass
-class ListenerNode(YamlNode):
+class ListenerNode(ObjectNode):
     @dataclass
     class RulesSequenceNode(SequenceNode):
         node_type = RuleNode
@@ -55,7 +55,7 @@ class ListenerNode(YamlNode):
 
 
 @dataclass
-class IngressNode(YamlNode):
+class IngressNode(ObjectNode):
     @dataclass
     class ListenersSequenceNode(SequenceNode):
         node_type = ListenerNode
@@ -65,7 +65,7 @@ class IngressNode(YamlNode):
 
 
 @dataclass
-class BlueprintFullInputNode(YamlNode):
+class BlueprintFullInputNode(ObjectNode):
     display_style: ScalarNode = None
     description: ScalarNode = None
     default_value: ScalarNode = None
@@ -92,7 +92,7 @@ class BlueprintInputsSequence(SequenceNode):
 
 
 @dataclass
-class ServiceResourceNode(YamlNode):
+class ServiceResourceNode(ObjectNode):
     input_values: TextMappingSequence = None
     depends_on: ScalarNodesSequence = None
 
@@ -130,7 +130,7 @@ class ServiceNode(BlueprintResourceMappingNode):
 @dataclass
 class BlueprintTree(BaseTree):
     @dataclass
-    class MetadataNode(YamlNode):
+    class MetadataNode(ObjectNode):
         description: ScalarNode = None
         tags: ScalarNodesSequence = None
 
@@ -143,7 +143,7 @@ class BlueprintTree(BaseTree):
         node_type = ServiceNode
 
     @dataclass
-    class DebuggingNode(YamlNode):
+    class DebuggingNode(ObjectNode):
         bastion_availability: ScalarNode = None
         direct_access: ScalarNode = None
         # old syntax
