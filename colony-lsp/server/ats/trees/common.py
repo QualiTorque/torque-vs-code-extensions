@@ -3,6 +3,46 @@ from dataclasses import dataclass, field
 from typing import Any, List, Optional, ClassVar, Tuple
 import re
 
+from pygls.lsp import types
+
+# TODO: refactor all the code to use this class
+@dataclass
+class Position:
+    """
+    Describes a position in the document
+    """
+
+    line: int
+    col: int
+
+    def __lt__(self, other):
+        if not isinstance(other, Position):
+            return NotImplementedError
+        return (
+            self.line < other.line
+            or self.line == other.line
+            and self.col < other.col
+        )
+
+    def __gt__(self, other):
+        if not isinstance(other, Position):
+            return NotImplemented
+        return (
+            self.line > other.line
+            or self.line == other.line
+            and self.col > other.col
+        )
+
+    def __le__(self, other):
+        return self < other or self == other
+
+    def __ge__(self, other):
+        return self > other or self == other
+
+    def to_lsp_pos(self) -> types.Position:
+        """Convert this position to pygls' native Position type."""
+        return types.Position(line=self.line, character=self.col)
+
 
 @dataclass
 class NodeError(Exception):
