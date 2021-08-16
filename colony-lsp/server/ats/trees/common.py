@@ -28,6 +28,9 @@ class YamlNode(ABC):
     def update_non_child_attributes(self) -> None:
         return
 
+    def accept(self, visitor):
+        visitor.visit_node(self)
+
 
 @dataclass
 class ObjectNode(YamlNode, ABC):
@@ -64,7 +67,12 @@ class ObjectNode(YamlNode, ABC):
         """Returns all child nodes. Nodes are actually
         attributes which are not excluded and do not equal None"""
         fields = vars(self)
-        return [val for key,val in fields.items() if val and key not in self.non_child_attributes]
+        return [val for key, val in fields.items() if val and key not in self.non_child_attributes]
+
+    def accept(self, visitor):
+        if visitor.visit_node(self):
+            for child in self.get_children():
+                child.accept(visitor)
 
 
 @dataclass
