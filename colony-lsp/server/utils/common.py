@@ -2,7 +2,7 @@ from typing import Optional, Tuple, List
 from pygls.lsp import types
 from pygls.workspace import Document, position_from_utf16
 
-from server.ats.trees.common import YamlNode, Position
+from server.ats.trees.common import YamlNode, Position, MappingNode, TextNode, BaseTree
 
 
 class Visitor:
@@ -21,7 +21,7 @@ class Visitor:
         return False
 
 
-def get_path_to_pos(tree, pos):
+def get_path_to_pos(tree: BaseTree, pos: Position) -> List[YamlNode]:
     v = Visitor(cursor_position=pos)
     tree.accept(visitor=v)
 
@@ -34,6 +34,23 @@ def get_path_to_pos(tree, pos):
         path.insert(0, node)
         node = node.parent
     return path
+
+
+def is_var_allowed(tree: BaseTree, pos: Position) -> bool:
+    path = get_path_to_pos(tree, pos)
+
+    if not path:
+        return False
+
+    if isinstance(path[-1], MappingNode):
+        m_node: MappingNode = path[-1]
+        is_var = m_node.allow_vars
+        if m_node.value is None and m_node.key and is_var:
+            return True
+    elif isinstance(path[-1], TextNode):
+        return True
+    else:
+        return False
 
 
 def get_parent_word(document: Document, position: types.Position):
