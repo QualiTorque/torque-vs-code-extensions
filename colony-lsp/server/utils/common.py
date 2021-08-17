@@ -45,7 +45,7 @@ def is_var_allowed(tree: BaseTree, pos: Position) -> bool:
     if isinstance(path[-1], MappingNode):
         m_node: MappingNode = path[-1]
         is_var = m_node.allow_vars
-        if m_node.value is None and m_node.key and is_var:
+        if (m_node.value is None or m_node.value.text.endswith('$')) and m_node.key and is_var:
             return True
     elif isinstance(path[-1], TextNode):
         return True
