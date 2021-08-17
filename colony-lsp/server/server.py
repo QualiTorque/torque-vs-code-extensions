@@ -246,9 +246,9 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                         elif cur_word == 'colony.environment.':
                             options = ['id', 'virtual_network_id', 'public_address']
                         elif cur_word == 'colony.repos.':
-                            options = ['branch']
-                        elif cur_word == 'colony.repos.branch.':
                             options = ['current']
+                        elif cur_word == 'colony.repos.current.':
+                            options = ['branch']
                         elif cur_word == 'colony.applications.':
                             if tree.applications and len(tree.applications.nodes) > 0:
                                 for app in tree.applications.nodes:
@@ -285,7 +285,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                     line = params.position.line
                     char = params.position.character
                     for option in options:
-                        if option in ["applications", "services", "environment", "repos", "branch", "outputs"]:
+                        if option in ["applications", "services", "environment", "repos", "current", "outputs"]:
                             command = Command(command="editor.action.triggerSuggest", title=option)                            
                         else:
                             command = None
