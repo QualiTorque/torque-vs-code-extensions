@@ -33,11 +33,10 @@
                     "description": "Define the cloud account or Kubernetes compute service in which the environment will be deployed."
                 },
                 "artifacts": {
-                    "type": "array",
+                    "type": ["array", "null"],
                     "items": {
                         "$ref": "#/definitions/ArtifactElement"
                     },
-                    "minItems": 1,
                     "description": "Colony pulls these artifacts from your storage provider into your artifacts folder on the application’s compute instance(s)."
                 },
                 "applications": {
