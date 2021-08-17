@@ -234,9 +234,9 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                         elif cur_word == 'colony.environment.':
                             options = ['id', 'virtual_network_id', 'public_address']
                         elif cur_word == 'colony.repos.':
-                            options = ['branch']
-                        elif cur_word == 'colony.repos.branch.':
                             options = ['current']
+                        elif cur_word == 'colony.repos.current.':
+                            options = ['branch']
                         elif cur_word == 'colony.applications.':
                             if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
                                 for app in bp_tree.applications.nodes:
