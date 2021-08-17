@@ -3,7 +3,9 @@ from dataclasses import dataclass
 import logging
 import subprocess
 import sys
-
+import textwrap
+import tabulate
+        
 from server.ats.trees.common import BaseTree
 from server.validation.factory import ValidatorFactory
 
@@ -51,7 +53,6 @@ DEBOUNCE_DELAY = 0.3
 
 class ColonyLanguageServer(LanguageServer):
     CONFIGURATION_SECTION = 'colony'
-    # CMD_ADD_TORQUE_PROFILE = 'add_torque_profile'
     CMD_VALIDATE_BLUEPRINT = 'validate_torque_blueprint'
     CMD_START_SANDBOX = 'start_torque_sandbox'
 
@@ -379,7 +380,7 @@ def code_lens(server: ColonyLanguageServer, params: Optional[CodeLensParams] = N
                             end=Position(line=1, character=1),
                         ),
                         command=Command(
-                            title='Validate Blueprint on Server',
+                            title='Validate on Server',
                             command=ColonyLanguageServer.CMD_VALIDATE_BLUEPRINT,
                             arguments=[params.text_document.uri]                            
                         )
@@ -675,7 +676,15 @@ async def validate_blueprint(server: ColonyLanguageServer, *args):
     except Exception as ex:
         print(ex)
     if result.stderr:
-        server.show_message_log(result.stderr)        
+        lines = result.stderr.split('\n')
+        table = []
+        headers = ["Name", "Message"]
+        for line in lines[3:-1]:
+            cols = line.split('  ')
+            table.append(['\n'.join(textwrap.wrap(cols[0], width=30)), 
+                          '\n'.join(textwrap.wrap(cols[1], width=60))])
+        
+        server.show_message_log(tabulate.tabulate(table, headers, tablefmt="simple"))        
         server.show_message('Validation complete. Check the Problems view for any issues.')
     else:
         server.show_message('Validation completed. Blueprint is valid.')

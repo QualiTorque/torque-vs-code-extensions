@@ -27,12 +27,6 @@
 		"onLanguage:yaml"
 	],
 	"contributes": {
-		"commands": [
-			{
-				"title": "Add Torque Profile",
-				"command": "add_torque_profile"				
-			}
-		],
 		"configuration": {
 			"type": "object",
 			"title": "Colony Language Configuration",
