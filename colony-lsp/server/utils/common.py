@@ -14,7 +14,7 @@ class Visitor:
         start = Position(node.start_pos[0], node.start_pos[1])
         end = Position(node.end_pos[0], node.end_pos[1])
 
-        if start <= self.cursor_position < end:
+        if start <= self.cursor_position <= end:
             self.found_node = node
             return True
 
@@ -45,7 +45,8 @@ def is_var_allowed(tree: BaseTree, pos: Position) -> bool:
     if isinstance(path[-1], MappingNode):
         m_node: MappingNode = path[-1]
         is_var = m_node.allow_vars
-        if (m_node.value is None or m_node.value.text.endswith('$')) and m_node.key and is_var:
+        # if (m_node.value is None or m_node.value.text.endswith('$')) and m_node.key and is_var:
+        if m_node.value is None and m_node.key and is_var:
             return True
     elif isinstance(path[-1], TextNode):
         return True
