@@ -5,3 +5,5 @@ out/test/**
 **/tslint.json
 **/*.map
 node_modules/
+*.log
+**/*.pyc

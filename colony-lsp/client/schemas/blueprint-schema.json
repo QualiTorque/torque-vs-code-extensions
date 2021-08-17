@@ -140,7 +140,7 @@
                     "description": "In the relevant UI field, enter a description to be displayed to the user."
                 },
                 "default_value": {
-                    "type": ["integer", "string"],
+                    "type": ["integer", "string", "boolean"],
                     "description": "When the sandbox is created, Colony automatically populates the default value. The end-user can choose to edit the value or leave it as-is."
                 },
                 "optional": {
@@ -169,9 +169,9 @@
             "additionalProperties": false,
             "properties": {
                 "instances": {
-                    "type": "integer",
-                    "default": 1,                    
-                    "minimum": 1,
+                    "items": {
+                        "$ref": "#/definitions/InstancesElement"
+                    },
                     "description": "(Optional) If you want the application to be deployed on its own, specify the number of instances (one or more)."
                 },
                 "target": {
@@ -193,6 +193,19 @@
             },
             "title": "Application"
         },
+        "InstancesElement": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1
+                }
+            ],
+            "title": "Blueprint Input"
+        },
         "InputValuesElement": {
             "anyOf": [
                 {
@@ -202,14 +215,14 @@
                     "type": "string"
                 }
             ],
-            "title": "Input value"
+            "title": "Blueprint Input"
         },
         "InputValues": {
             "type": "object",
             "additionalProperties": false,
             "patternProperties": {
                 "^[\\w\\-]+$": { 
-                    "type": ["string", "integer", "null"]
+                    "type": ["string", "number", "boolean"]
                 }
             },
             "title": "Input Values"
@@ -252,11 +265,6 @@
                     "type": "string",
                     "enum": ["enabled-on", "enabled-off", "disabled"],
                     "description": "Bastion's default state in the sandbox: enabled-on: Bastion will be deployed and remain powered on. enabled-off: Bastion will be deployed and then powered off. Can be powered on easily by the user. disabled: Bastion will not be deployed, and debugging links will not be available for this blueprint."
-                },
-                "availability": {
-                    "type": "string",
-                    "enum": ["on", "off"],
-                    "description": "(Deprecated, use bastion_availability) Bastion's default state in the sandbox: enabled-on: Bastion will be deployed and remain powered on. enabled-off: Bastion will be deployed and then powered off. Can be powered on easily by the user. disabled: Bastion will not be deployed, and debugging links will not be available for this blueprint."
                 },
                 "direct_access": {
                     "type": "string",
@@ -361,7 +369,7 @@
             "additionalProperties": false,
             "properties": {
                 "http": {
-                    "type": "integer",
+                    "type": ["integer", "string"],
                     "description": "Listener type"
                 },
                 "redirect_to_listener": {
@@ -369,7 +377,7 @@
                     "description": "(Optional) Enables redirecting inbound traffic to another listener."
                 },
                 "https": {
-                    "type": "integer",
+                    "type": ["integer", "string"],
                     "description": "Listener type. When defining an https listener, you must also specify a certificate."
                 },
                 "certificate": {
@@ -395,7 +403,7 @@
             "properties": {
                 "path": {
                     "type": "string",
-                    "description": "Optional) The path rule indicates that only requests for a URL that has the defined path will be routed to the specified application. A rule can include both a host and a path."
+                    "description": "(Optional) The path rule indicates that only requests for a URL that has the defined path will be routed to the specified application. A rule can include both a host and a path."
                 },
                 "host": {
                     "type": "string",
@@ -407,7 +415,7 @@
                     "description": "(Optional) The name of the application that the traffic should be forwarded to."
                 },
                 "port": {
-                    "type": "integer",
+                    "type": ["integer", "string"],
                     "description": "(Optional) The application port to which traffic should be forwarded."
                 },
                 "color": {
@@ -422,6 +430,10 @@
                 "default": {
                     "type": "boolean",
                     "description": "(Optional) If true, this rule will be used for default routing to define on the ALB when no other rules apply."
+                },
+                "ignore_exposure": {
+                    "type": "boolean",
+                    "description": "(Optional - Applies to production environments, set on blue rules only) Allows routing traffic to blue rules regardless of exposure."
                 }
             },
             "anyOf": [
@@ -512,11 +524,7 @@
                     }
                 }
             },
-            "anyOf": [
-                {"required": ["gateway"]},
-                {"required": ["management"]},
-                {"required": ["application"]}
-            ],
+            "required": ["gateway", "management", "application"],
             "title": "Subnets"
         }
     }

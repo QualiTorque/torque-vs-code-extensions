@@ -4,29 +4,33 @@ import logging
 import subprocess
 import sys
 
+from server.ats.trees.common import BaseTree
+from server.validation.factory import ValidatorFactory
+
+from pygls.lsp.types.language_features.completion import InsertTextMode
+
 # from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
-from server.utils.validation import AppValidationHandler, BlueprintValidationHandler, ServiceValidationHandler
 from pygls.lsp import types
-from pygls.lsp.types.basic_structures import VersionedTextDocumentIdentifier
+from pygls.lsp.types.basic_structures import TextEdit, VersionedTextDocumentIdentifier
 from pygls.lsp import types, InitializeResult
 import yaml
 import time
 import uuid
 import os
 import glob
-import pathlib
 import re
+import pathlib
 from json import JSONDecodeError
 from typing import Any, Dict, Optional, Tuple, List, Union, cast
 
-from server.ats.parser import AppParser, BlueprintParser, BlueprintTree, ServiceParser
+from server.ats.parser import   BlueprintTree, Parser, ParserError
 
 from server.utils import services, applications, common
 from pygls.protocol import LanguageServerProtocol
 
 from pygls.lsp.methods import (CODE_LENS, COMPLETION, COMPLETION_ITEM_RESOLVE, DOCUMENT_LINK, TEXT_DOCUMENT_DID_CHANGE,
                                TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES, DEFINITION, 
-                               TEXT_DOCUMENT_SEMANTIC_TOKENS)
+                               TEXT_DOCUMENT_SEMANTIC_TOKENS, TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL, TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL_DELTA)
 from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              CompletionParams, ConfigurationItem,
                              ConfigurationParams, Diagnostic, Location,
@@ -45,157 +49,60 @@ DEBOUNCE_DELAY = 0.3
 
 
 
-# class ColonyWorkspace(Workspace):
-#     """
-#     Add colony-specific properties
-#     """
-
-#     def __init__(self, root_uri, sync_kind, workspace_folders):
-#         self._colony_objs = {}
-
-#         super().__init__(root_uri, sync_kind=sync_kind, workspace_folders=workspace_folders)
-
-#     @property
-#     def colony_objs(self):
-#         return self._colony_objs
-
-#     def _update_document(self, text_document: Union[types.TextDocumentItem, types.VersionedTextDocumentIdentifier]) -> None:
-#         self.logger.debug("updating document '%s'", text_document.uri)
-#         uri = text_document.uri
-#         colony_obj = yaml.load(self.get_document(uri).source, Loader=yaml.FullLoader)
-#         self._colony_objs[uri] = colony_obj
-
-#     def update_document(self, text_doc: VersionedTextDocumentIdentifier, change: workspace.TextDocumentContentChangeEvent):
-#         super().update_document(text_doc, change)
-#         self._update_document(text_doc)
-
-#     def put_document(self, text_document: types.TextDocumentItem) -> None:
-#         super().put_document(text_document)
-#         self._update_document(text_document)
-
-
-# class ColonyLspProtocol(LanguageServerProtocol):
-#     """Custom protocol that replaces the workspace with a ColonyWorkspace
-#     instance.
-#     """
-
-#     workspace: ColonyWorkspace
-
-#     def bf_initialize(self, *args, **kwargs) -> InitializeResult:
-#         res = super().bf_initialize(*args, **kwargs)
-#         ws = self.workspace
-#         self.workspace = ColonyWorkspace(
-#             ws.root_uri,
-#             self._server.sync_kind,
-#             ws.folders.values(),
-#         )
-#         return res
-
-
 class ColonyLanguageServer(LanguageServer):
     CONFIGURATION_SECTION = 'colony'
     # CMD_ADD_TORQUE_PROFILE = 'add_torque_profile'
     CMD_VALIDATE_BLUEPRINT = 'validate_torque_blueprint'
     CMD_START_SANDBOX = 'start_torque_sandbox'
 
-    # def __init__(self):
-    #     super().__init__(protocol_cls=ColonyLspProtocol)
-    
-    # @property
-    # def workspace(self) -> ColonyWorkspace:
-    #     return cast(ColonyWorkspace, super().workspace)
-
 
 colony_server = ColonyLanguageServer()
 
 
-# def _get_file_variables(source):
-#     vars = re.findall(r"(\$[\w\.\-]+)", source, re.MULTILINE)
-#     return vars  
-
-
-# def _get_file_inputs(source):
-#     yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
-#     inputs_obj = yaml_obj.get('inputs')
-#     inputs = []
-#     if inputs_obj:
-#         for input in inputs_obj:
-#             if isinstance(input, str):
-#                 inputs.append(f"${input}")
-#             elif isinstance(input, dict):
-#                 inputs.append(f"${list(input.keys())[0]}")
-    
-#     return inputs
+def _diagnose_tree_errors(tree: BaseTree) -> list:
+    diagnostics = []
+    for error in tree.errors:
+        d = Diagnostic(
+            range=Range(
+                start=Position(line=error.start_pos[0], character=error.start_pos[1]),
+                end=Position(line=error.end_pos[0], character=error.end_pos[1])
+            ),
+            message=error.message)
+        diagnostics.append(d)
+    return diagnostics
 
 
 def _validate(ls, params):
     text_doc = ls.workspace.get_document(params.text_document.uri)
-    root = ls.workspace.root_path
-    
+
     source = text_doc.source
     diagnostics = _validate_yaml(source) if source else []
 
-    if not diagnostics: 
-        yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
-        doc_type = yaml_obj.get('kind', '')
-        doc_lines = text_doc.lines
-        
+    try:
+        tree = Parser(source).parse()
+        diagnostics += _diagnose_tree_errors(tree)
+        cls_validator = ValidatorFactory.get_validator(tree)
+        validator = cls_validator(tree, text_doc)
+        diagnostics += validator.validate()
+    except ParserError as e:
+        diagnostics.append(
+            Diagnostic(
+                range = Range(
+                    start=Position(line=e.start_pos[0], character=e.start_pos[1]),
+                    end=Position(line=e.end_pos[0], character=e.end_pos[1])),
+                message=e.message))
+    except ValueError as e:
+        diagnostics.append(
+            Diagnostic(
+                range = Range(
+                    start=Position(line=0, character=0),
+                    end=Position(line=0, character=0)),
+                message=str(e)))
+    except Exception as ex:
+        import sys
+        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+        logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
 
-        if doc_type == "blueprint":
-            try:
-                bp_tree = BlueprintParser(source).parse()
-                validator = BlueprintValidationHandler(bp_tree, root)
-                diagnostics += validator.validate()
-            except Exception as ex:
-                import sys
-                print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-                logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-                return
-            
-
-        if doc_type == "application":
-            app_tree = AppParser(source).parse()
-            validator = AppValidationHandler(app_tree, root)
-            diagnostics += validator.validate()
-            scripts = applications.get_app_scripts(params.text_document.uri)
-                
-            for k, v in yaml_obj.get('configuration', []).items():
-                script_ref = v.get('script', None)
-                if script_ref and script_ref not in scripts:
-                    for i in range(len(doc_lines)):
-                        col_pos = doc_lines[i].find(script_ref)
-                        if col_pos == -1:
-                            continue
-                        d = Diagnostic(
-                            range=Range(
-                                start=Position(line=i, character=col_pos),
-                                end=Position(line=i, character=col_pos + 1 +len(script_ref))
-                            ),
-                            message=f"File {script_ref} doesn't exist"
-                        )
-                        diagnostics.append(d)
-        elif doc_type == "TerraForm":        
-            srv_tree = ServiceParser(source).parse()            
-            validator = ServiceValidationHandler(srv_tree, root)
-            diagnostics += validator.validate()
-                
-            vars = services.get_service_vars(params.text_document.uri)
-            vars_files = [var["file"] for var in vars]
-
-            for k, v in yaml_obj.get('variables', []).items():
-                if k == "var_file" and v not in vars_files:
-                    for i in range(len(doc_lines)):
-                        col_pos = doc_lines[i].find(v)
-                        if col_pos == -1:
-                            continue
-                        d = Diagnostic(
-                            range=Range(
-                                start=Position(line=i, character=col_pos),
-                                end=Position(line=i, character=col_pos + 1 +len(v))
-                            ),
-                            message=f"File {v} doesn't exist"
-                        )
-                        diagnostics.append(d)
     ls.publish_diagnostics(text_doc.uri, diagnostics)
 
 
@@ -228,7 +135,6 @@ def did_change(ls, params: DidChangeTextDocumentParams):
        '/services/' in params.text_document.uri:
         _validate(ls, params)
         text_doc = ls.workspace.get_document(params.text_document.uri)
-        root = ls.workspace.root_path
         
         source = text_doc.source
         yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
@@ -241,16 +147,6 @@ def did_change(ls, params: DidChangeTextDocumentParams):
         elif doc_type == "TerraForm":
             srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
             services.reload_service_details(srv_name, srv_source=source)
-
-
-# @colony_server.feature(TEXT_DOCUMENT_DID_CLOSE)
-# def did_close(server: ColonyLanguageServer, params: DidCloseTextDocumentParams):
-#     """Text document did close notification."""
-#     if '/blueprints/' in params.text_document.uri or \
-#        '/applications/' in params.text_document.uri or \
-#        '/services/' in params.text_document.uri:
-#         # server.show_message('Text Document Did Close')
-#         pass
 
 
 @colony_server.feature(TEXT_DOCUMENT_DID_OPEN)
@@ -278,122 +174,184 @@ async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentPara
 #         docstring = "some docstring" #convert_docstring(completion.docstring(), markup_kind)
 #         params.documentation = "documention"  #MarkupContent(kind=markup_kind, value=docstring)
 #         return params
-
-
-
-# @colony_server.feature(COMPLETION, CompletionOptions(resolve_provider=True))
-# def completions(params: Optional[CompletionParams] = None) -> CompletionList:
-#     """Returns completion items."""
-#     doc = colony_server.workspace.get_document(params.text_document.uri)
-#     fdrs = colony_server.workspace.folders
-#     root = colony_server.workspace.root_path
-#     print('completion')
-#     print(params)
-#     print('--------')
     
-#     if '/blueprints/' in params.text_document.uri:
-#         parent = _get_parent_word(colony_server.workspace.get_document(params.text_document.uri), params.position)
-#         items=[
-#                 # CompletionItem(label='applications'),
-#                 # CompletionItem(label='clouds'),
-#                 # CompletionItem(label='debugging'),
-#                 # CompletionItem(label='ingress'),
-#                 # CompletionItem(label='availability'),
-#             ]
+#     return None
+
+
+
+@colony_server.feature(COMPLETION, CompletionOptions(resolve_provider=False, trigger_characters=['.']))
+def completions(params: Optional[CompletionParams] = None) -> CompletionList:
+    """Returns completion items."""
+    doc = colony_server.workspace.get_document(params.text_document.uri)
+    try:
+        yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
+        if yaml_obj:
+            doc_type = yaml_obj.get('kind', '')
+        else:
+            return CompletionList(is_incomplete=True, items=[])
+    except yaml.MarkedYAMLError as ex:
+        return CompletionList(is_incomplete=True, items=[])
+    
         
-#         if parent == "applications":
-#             apps = _get_available_applications(root)
-#             for app in apps:
-#                 items.append(CompletionItem(label=app, kind=CompletionItemKind.Reference, insert_text=apps[app]))
-        
-#         if parent == "services":
-#             srvs = _get_available_services(root)
-#             for srv in srvs:
-#                 items.append(CompletionItem(label=srv, kind=CompletionItemKind.Reference, insert_text=srvs[srv]))
-        
-#         if parent == "input_values":
-#             available_inputs = _get_file_inputs(doc.source)
-#             inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs]
-#             items.extend(inputs)
-#             inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in PREDEFINED_COLONY_INPUTS]
-#             items.extend(inputs)
-#             # TODO: add output generated variables of apps/services in this blueprint ($colony.applications.app_name.outputs.output_name, $colony.services.service_name.outputs.output_name)
-        
-#         return CompletionList(
-#             is_incomplete=False,
-#             items=items
-#         )
-#     elif '/applications/' in params.text_document.uri:
-#         words = _preceding_words(
-#             colony_server.workspace.get_document(params.text_document.uri),
-#             params.position)
-#         # debug("words", words)
-#         if words:
-#             if words[0] == "script:":
-#                 scripts = _get_app_scripts(params.text_document.uri)
-#                 return CompletionList(
-#                     is_incomplete=False,
-#                     items=[CompletionItem(label=script) for script in scripts],
-#                 )
-#             elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
-#                 available_inputs = _get_file_inputs(doc.source)
-#                 return CompletionList(
-#                     is_incomplete=False,
-#                     items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
-#                 )
+    fdrs = colony_server.workspace.folders
+    root = colony_server.workspace.root_path
+    
+    if doc_type == "blueprint":
+        items=[]
+        if params.context.trigger_character == '.':
+            words = common.preceding_words(doc, params.position)
+            if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
+                cur_word = words[-1]
+                word_parts = cur_word.split('$')
+                if word_parts:
+                    if word_parts[-1].startswith('{colony.'):
+                        cur_word = word_parts[-1][1:]
+                    elif word_parts[-1].startswith('colony.'):
+                        cur_word = word_parts[-1]
+                    else:
+                        cur_word = ''
+                if cur_word:
+                    bp_tree = Parser(doc.source).parse()
+                                        
+                    options = []
+                    if cur_word.startswith('colony'):
+                        if cur_word == 'colony.':
+                            options = ['environment', 'repos']
+                            if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
+                                options.append('applications')
+                            if bp_tree.services and len(bp_tree.services.nodes) > 0:
+                                options.append('services')
+                        elif cur_word == 'colony.environment.':
+                            options = ['id', 'virtual_network_id', 'public_address']
+                        elif cur_word == 'colony.repos.':
+                            options = ['branch']
+                        elif cur_word == 'colony.repos.branch.':
+                            options = ['current']
+                        elif cur_word == 'colony.applications.':
+                            if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
+                                for app in bp_tree.applications.nodes:
+                                    options.append(app.id.text)
+                        elif cur_word == 'colony.services.':
+                            if bp_tree.services and len(bp_tree.services.nodes) > 0:
+                                for srv in bp_tree.services.nodes:
+                                    options.append(srv.id.text)
+                        elif cur_word.startswith('colony.applications.'):
+                            parts = cur_word.split('.')
+                            if len(parts) == 4 and parts[2] != '':
+                                options = ['outputs', 'dns']
+                            elif len(parts) == 5 and parts[3] == 'outputs':
+                                apps = applications.get_available_applications(root)
+                                for app in apps:
+                                    if app == parts[2]:
+                                        outputs = applications.get_app_outputs(app_name=parts[2])
+                                        if outputs:
+                                            options.extend(outputs)
+                                        break
+                        elif cur_word.startswith('colony.services.'):
+                            parts = cur_word.split('.')
+                            if len(parts) == 4 and parts[2] != '':
+                                options.append('outputs')
+                            elif len(parts) == 5 and parts[3] == 'outputs':
+                                apps = services.get_available_services(root)
+                                for app in apps:
+                                    if app == parts[2]:
+                                        outputs = services.get_service_outputs(srv_name=parts[2])
+                                        if outputs:
+                                            options.extend(outputs)
+                                        break
+                                                            
+                    line = params.position.line
+                    char = params.position.character
+                    for option in options:
+                        items.append(CompletionItem(label=option,
+                                                    kind=CompletionItemKind.Property,
+                                                    text_edit=TextEdit(
+                                                        range=Range(start=Position(line=line, character=char),
+                                                                    end=Position(line=line, character=char+len(option))),
+                                                                    new_text=option
+                                                    )))
+                                    
+        else:
+            parent = common.get_parent_word(doc, params.position)
+            line = params.position.line
+            char = params.position.character
                 
-#         return CompletionList(
-#             is_incomplete=False,
-#             items=[
-#                 #CompletionItem(label='configuration'),
-#                 #CompletionItem(label='healthcheck'),
-#                 #CompletionItem(label='debugging'),
-#                 #CompletionItem(label='infrastructure'),
-#                 #CompletionItem(label='inputs'),
-#                 #CompletionItem(label='source'),
-#                 #CompletionItem(label='kind'),
-#                 #CompletionItem(label='spec_version'),
-#             ]
-#         )
-#     elif '/services/' in params.text_document.uri:
-#         words = _preceding_words(
-#             colony_server.workspace.get_document(params.text_document.uri),
-#             params.position)
-#         # debug("words", words)
-#         if words:
-#             if words[0] == "var_file:":
-#                 var_files = _get_service_vars(params.text_document.uri)
-#                 return CompletionList(
-#                     is_incomplete=False,
-#                     items=[CompletionItem(label=var["file"],
-#                                           insert_text=f"{var['file']}\r\nvalues:\r\n" + 
-#                                                        "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
-#                                           kind=CompletionItemKind.File
-#                 )
-#             # TODO: when services should use inputs?
-#             elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
-#                 available_inputs = _get_file_inputs(doc.source)
-#                 return CompletionList(
-#                     is_incomplete=False,
-#                     items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
-#                 )
-                
-#         # we don't need the below if we use a schema file 
-#         return CompletionList(
-#             is_incomplete=False,
-#             items=[
-#                 # CompletionItem(label='permissions'),
-#                 # CompletionItem(label='outputs'),
-#                 # CompletionItem(label='variables'),
-#                 # CompletionItem(label='module'),
-#                 # CompletionItem(label='inputs'),
-#                 # CompletionItem(label='source'),
-#                 # CompletionItem(label='kind'),
-#                 # CompletionItem(label='spec_version'),
-#             ]
-#         )
-#     else:
-#         return CompletionList(is_incomplete=True, items=[])
+            if parent == "applications":
+                apps = applications.get_available_applications(root)
+                for app in apps:
+                    if apps[app]['app_completion']:
+                        items.append(CompletionItem(label=app, 
+                                                    kind=CompletionItemKind.Reference, 
+                                                    text_edit=TextEdit(
+                                                                    range=Range(start=Position(line=line, character=char-2),
+                                                                                end=Position(line=line, character=char)),
+                                                                    new_text=apps[app]['app_completion'],
+                                                    )))
+            
+            if parent == "services":
+                srvs = services.get_available_services(root)
+                for srv in srvs:
+                    if srvs[srv]['srv_completion']:
+                        items.append(CompletionItem(label=srv, 
+                                                    kind=CompletionItemKind.Reference, 
+                                                    text_edit=TextEdit(
+                                                                    range=Range(start=Position(line=line, character=char-2),
+                                                                                end=Position(line=line, character=char)),
+                                                                    new_text=srvs[srv]['srv_completion'],
+                                                    )))
+            
+            # if parent == "input_values":
+            #     available_inputs = _get_file_inputs(doc.source)
+            #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs]
+            #     items.extend(inputs)
+            #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in PREDEFINED_COLONY_INPUTS]
+            #     items.extend(inputs)
+            #     # TODO: add output generated variables of apps/services in this blueprint ($colony.applications.app_name.outputs.output_name, $colony.services.service_name.outputs.output_name)
+        
+        return CompletionList(
+            is_incomplete=(len(items)==0),
+            items=items
+        )
+    elif doc_type == "application":
+        words = common.preceding_words(doc, params.position)
+        if words and len(words) == 1:
+            if words[0] == "script:":
+                scripts = applications.get_app_scripts(params.text_document.uri)
+                return CompletionList(
+                    is_incomplete=False,
+                    items=[CompletionItem(label=script,
+                                          kind=CompletionItemKind.File) for script in scripts],
+                )
+            # TODO: check based on allow_variable
+            # elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
+            #     available_inputs = _get_file_inputs(doc.source)
+            #     return CompletionList(
+            #         is_incomplete=False,
+            #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
+            #     )
+
+    if doc_type == "TerraForm":
+        words = common.preceding_words(doc, params.position)
+        if words and len(words) == 1:
+            if words[0] == "var_file:":
+                var_files = services.get_service_vars(params.text_document.uri)
+                return CompletionList(
+                    is_incomplete=False,
+                    items=[CompletionItem(label=var["file"],
+                                          insert_text=f"{var['file']}\r\nvalues:\r\n" + 
+                                                       "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
+                                          kind=CompletionItemKind.File
+                )
+            # TODO: check based on allow_variable
+            # elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
+            #     available_inputs = _get_file_inputs(doc.source)
+            #     return CompletionList(
+            #         is_incomplete=False,
+            #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
+            #     )
+
+    else:
+        return CompletionList(is_incomplete=True, items=[])
 
 
 # @colony_server.feature(DEFINITION)
@@ -462,18 +420,123 @@ def code_lens(server: ColonyLanguageServer, params: Optional[CodeLensParams] = N
 #     return references
 
 
-# @colony_server.feature(DOCUMENT_LINK)
-# async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkParams,) -> List[DocumentLink]:
-#     print('---- document_link ----')
-#     print(locals())
-#     await asyncio.sleep(DEBOUNCE_DELAY)
-#     links: List[DocumentLink] = []
+@colony_server.feature(DOCUMENT_LINK)
+async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkParams,) -> List[DocumentLink]:
+    await asyncio.sleep(DEBOUNCE_DELAY)
+    links: List[DocumentLink] = []
     
-#     links.append(DocumentLink(range=Range(
-#                             start=Position(line=0, character=0),
-#                             end=Position(line=1, character=1),
-#                         ), target='file:///Users/yanivk/Projects/github/kalsky/samples/applications/mysql/mysql.sh'))
-#     return links
+    doc = colony_server.workspace.get_document(params.text_document.uri)
+    try:
+        yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
+        if yaml_obj:
+            doc_type = yaml_obj.get('kind', '')
+        else:
+            return links
+    except yaml.MarkedYAMLError as ex:
+        return links
+    
+    root = colony_server.workspace.root_path        
+    if doc_type == "blueprint":
+        try:
+            bp_tree = Parser(doc.source).parse()            
+        except Exception as ex:
+            import sys
+            logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+            return links
+        
+        if bp_tree.applications:
+            for app in bp_tree.applications.nodes:
+                target_path = os.path.join(root, "applications", app.id.text, app.id.text+".yaml")
+                if os.path.exists(target_path) and os.path.isfile(target_path):
+                    tooltip = "Open the application file at " + target_path
+                    links.append(DocumentLink(range=Range(
+                                              start=Position(line=app.id.start_pos[0], character=app.id.start_pos[1]),
+                                              end=Position(line=app.id.start_pos[0], character=app.start_pos[1]+len(app.id.text))), 
+                                              target=pathlib.Path(target_path).as_uri(), 
+                                              tooltip=tooltip))
+        
+        if bp_tree.services:
+            for srv in bp_tree.services.nodes:
+                target_path = os.path.join(root, "services", srv.id.text, srv.id.text+".yaml")
+                if os.path.exists(target_path) and os.path.isfile(target_path):
+                    tooltip = "Open the service file at " + target_path
+                    links.append(DocumentLink(range=Range(
+                                              start=Position(line=srv.id.start_pos[0], character=srv.id.start_pos[1]),
+                                              end=Position(line=srv.id.start_pos[0], character=srv.start_pos[1]+len(srv.id.text))), 
+                                              target=pathlib.Path(target_path).as_uri(), 
+                                              tooltip=tooltip))
+    
+    elif doc_type == "application":
+        try:
+            app_tree = Parser(doc.source).parse()        
+            app_name = doc.filename.replace('.yaml', '')    
+        except Exception as ex:
+            import sys
+            logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+            return links
+        
+        if app_tree.configuration:
+            if app_tree.configuration.healthcheck:
+                if app_tree.configuration.healthcheck.script:
+                    script = app_tree.configuration.healthcheck.script
+                    file_name = script.text
+                    target_path = os.path.join(root, "applications", app_name, file_name)
+                    if os.path.exists(target_path) and os.path.isfile(target_path):
+                        tooltip = "Open the script file at " + target_path
+                        links.append(DocumentLink(range=Range(
+                                                  start=Position(line=script.start_pos[0], character=script.start_pos[1]),
+                                                  end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text))), 
+                                                  target=pathlib.Path(target_path).as_uri(), 
+                                                  tooltip=tooltip))
+            
+            if app_tree.configuration.initialization:
+                if app_tree.configuration.initialization.script:
+                    script = app_tree.configuration.initialization.script
+                    file_name = script.text
+                    target_path = os.path.join(root, "applications", app_name, file_name)
+                    if os.path.exists(target_path) and os.path.isfile(target_path):
+                        tooltip = "Open the script file at " + target_path
+                        links.append(DocumentLink(range=Range(
+                                                  start=Position(line=script.start_pos[0], character=script.start_pos[1]),
+                                                  end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text))), 
+                                                  target=pathlib.Path(target_path).as_uri(), 
+                                                  tooltip=tooltip))
+            
+            if app_tree.configuration.start:
+                if app_tree.configuration.start.script:
+                    script = app_tree.configuration.start.script
+                    file_name = script.text
+                    target_path = os.path.join(root, "applications", app_name, file_name)
+                    if os.path.exists(target_path) and os.path.isfile(target_path):
+                        tooltip = "Open the script file at " + target_path
+                        links.append(DocumentLink(range=Range(
+                                                  start=Position(line=script.start_pos[0], character=script.start_pos[1]),
+                                                  end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text))), 
+                                                  target=pathlib.Path(target_path).as_uri(), 
+                                                  tooltip=tooltip))
+    elif doc_type == "TerraForm":
+        try:
+            srv_tree = Parser(doc.source).parse()        
+            srv_name = doc.filename.replace('.yaml', '')    
+        except Exception as ex:
+            import sys
+            logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+            return links
+        
+        if srv_tree.variables:
+            if srv_tree.variables.var_file:
+                script = srv_tree.variables.var_file
+                file_name = script.text
+                target_path = os.path.join(root, "services", srv_name, file_name)
+                if os.path.exists(target_path) and os.path.isfile(target_path):
+                    tooltip = "Open the variables file at " + target_path
+                    links.append(DocumentLink(range=Range(
+                                              start=Position(line=script.start_pos[0], character=script.start_pos[1]),
+                                              end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text))), 
+                                              target=pathlib.Path(target_path).as_uri(), 
+                                              tooltip=tooltip))             
+        
+    return links
 
 
 # @colony_server.feature(HOVER)
@@ -488,15 +551,17 @@ def code_lens(server: ColonyLanguageServer, params: Optional[CodeLensParams] = N
 #     return None
 
 
-# @colony_server.feature(TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL, SemanticTokensOptions(
-#                 work_done_progress=False,
-#                 legend=SemanticTokensLegend(
-#                     token_types=['property', 'type', 'class', 'variable'],
-#                     token_modifiers=['private', 'static']
-#                 ),
-#                 range=True,
-#                 # full={"delta": False}
-#             ))
+# @colony_server.feature(TEXT_DOCUMENT_SEMANTIC_TOKENS)
+#             #            , SemanticTokensOptions(
+#             #     # work_done_progress=True,
+#             #     legend=SemanticTokensLegend(
+#             #         token_types=['colonyVariable'],
+#             #         token_modifiers=[]
+#             #     ),
+#             #     # range=False,
+#             #     # full=True
+#             #     # full={"delta": True}
+#             # ))
 # def semantic_tokens_range(server: ColonyLanguageServer, params: SemanticTokensParams) -> Optional[Union[SemanticTokens, SemanticTokensPartialResult]]:
 #     print('---- TEXT_DOCUMENT_SEMANTIC_TOKENS_RANGE ----')
 #     print(locals())

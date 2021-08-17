@@ -1,9 +1,9 @@
 import argparse
 import logging
 
-from .server import colony_server
+logging.basicConfig(filename="colony_ls.log", level=logging.DEBUG, filemode="w")
 
-logging.basicConfig(filename="pygls.log", level=logging.DEBUG, filemode="w")
+from .server import colony_server
 
 
 def add_arguments(parser):
