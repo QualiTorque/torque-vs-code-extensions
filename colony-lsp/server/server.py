@@ -189,10 +189,11 @@ async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentPara
 #     return None
 
 
-@colony_server.feature(COMPLETION, CompletionOptions(resolve_provider=False, trigger_characters=['.', '$']))
+@colony_server.feature(COMPLETION, CompletionOptions(resolve_provider=False))
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
     doc = colony_server.workspace.get_document(params.text_document.uri)
+    
     try:
         yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
         if yaml_obj:
@@ -203,9 +204,10 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
         return CompletionList(is_incomplete=True, items=[])
 
     tree = Parser(doc.source).parse()
+    words = common.preceding_words(doc, params.position)
+    last_word = words[-1]
     
-    if params.context.trigger_kind == CompletionTriggerKind.TriggerCharacter and params.context.trigger_character == '$' or \
-       params.context.trigger_kind == CompletionTriggerKind.Invoked:
+    if last_word.endswith('$'):
         inputs_names_list = [i_node.key.text for i_node in tree.inputs_node.nodes] if tree.inputs_node else []
         inputs_names_list.append("colony")
 
@@ -215,17 +217,13 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                 for var in inputs_names_list]
 
             return CompletionList(is_incomplete=True, items=suggested_vars)
-        # when using the ctrl+space "manual trigger", keep checking the other completions
-        elif not params.context.trigger_kind == CompletionTriggerKind.Invoked: 
-            return CompletionList(is_incomplete=True, items=[])
 
     fdrs = colony_server.workspace.folders
     root = colony_server.workspace.root_path
     
     if doc_type == "blueprint":
         items=[]
-        if params.context.trigger_kind == CompletionTriggerKind.TriggerCharacter and params.context.trigger_character == '.':
-            words = common.preceding_words(doc, params.position)
+        if last_word.endswith('.'):
             if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
                 cur_word = words[-1]
                 word_parts = cur_word.split('$')
@@ -287,12 +285,17 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                     line = params.position.line
                     char = params.position.character
                     for option in options:
+                        if option in ["applications", "services", "environment", "repos", "branch", "outputs"]:
+                            command = Command(command="editor.action.triggerSuggest", title=option)                            
+                        else:
+                            command = None
                         items.append(CompletionItem(label=option,
+                                                    command=command,
                                                     kind=CompletionItemKind.Property,
                                                     text_edit=TextEdit(
                                                         range=Range(start=Position(line=line, character=char),
                                                                     end=Position(line=line, character=char+len(option))),
-                                                                    new_text=option
+                                                                    new_text=option + ("." if command else "")
                                                     )))
     
         else:
@@ -330,7 +333,6 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             items=items
         )
     elif doc_type == "application":
-        words = common.preceding_words(doc, params.position)
         if words and len(words) == 1:
             if words[0] == "script:":
                 scripts = applications.get_app_scripts(params.text_document.uri)
@@ -341,7 +343,6 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                 )
     
     if doc_type == "TerraForm":
-        words = common.preceding_words(doc, params.position)
         if words and len(words) == 1:
             if words[0] == "var_file:":
                 var_files = services.get_service_vars(params.text_document.uri)
