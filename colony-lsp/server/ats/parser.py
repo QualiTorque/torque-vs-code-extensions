@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-from abc import abstractmethod
-from server.ats.tree import *
-from typing import Generator, List, Tuple
+from typing import Tuple
 import yaml
 from yaml.tokens import (BlockEndToken, BlockEntryToken, BlockMappingStartToken,
                          BlockSequenceStartToken, KeyToken,
