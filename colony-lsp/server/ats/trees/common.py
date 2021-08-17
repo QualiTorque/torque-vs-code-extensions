@@ -121,7 +121,7 @@ class ScalarNode(TextNode):
 class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit this
     key: ScalarNode = None
     value: YamlNode = None
-    allow_vars: ClassVar[bool] = False
+    allow_vars: bool = False
 
     def accept(self, visitor):
         if visitor.visit_node(self):
@@ -169,6 +169,23 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
         return self.value
 
 
+class PropertyNode(MappingNode):
+    @property
+    def identifier(self):
+        if self.key:
+            return self.key.text
+
+    def __getattr__(self, name: str) -> Any:
+        val = getattr(self.value, name, None)
+        return val or self.__dict__.get(name, None)
+
+    # def __setattr__(self, name: str, value: Any) -> None:
+    #     if hasattr(self.value, name):
+    #         setattr(self.value, name, value)
+    #     else:
+    #         setattr(self, name, value)
+
+
 @dataclass
 class ObjectNode(YamlNode, ABC):
     def _get_field_mapping(self) -> {str: str}:
@@ -189,11 +206,17 @@ class ObjectNode(YamlNode, ABC):
 
         # obj has not been instantiated yet
         if child is None:
+            child = PropertyNode(parent=self)
+            child.get_key().text = attr
+
             # Get type of the child according to its annotation
             child_cls = self.__dataclass_fields__.get(attr).type
-
             try:
-                child = child_cls(parent=self)
+                val = child_cls(parent=child)
+                if isinstance(val, TextNode):
+                    child.allow_vars = val.allow_vars
+                child.value = val
+                child.end_pos = val.end_pos
                 setattr(self, attr, child)
             except Exception:
                 raise

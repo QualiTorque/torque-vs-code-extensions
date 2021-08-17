@@ -6,7 +6,7 @@ from yaml.tokens import (BlockEndToken, BlockEntryToken, BlockMappingStartToken,
 
 from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintTree
-from server.ats.trees.common import (YamlNode, TextNode, MappingNode, BaseTree,
+from server.ats.trees.common import (PropertyNode, YamlNode, TextNode, MappingNode, BaseTree,
                                      SequenceNode, NodeError, ObjectNode)
 from server.ats.trees.service import ServiceTree
 
@@ -98,16 +98,26 @@ class Parser:
         try:
             child_node = node.get_child(token.value)
             child_node.start_pos = self.get_token_start(token)
-            self.nodes_stack.append(child_node)
+
         # TODO: replace with parser exception
-        except Exception:
+        except Exception as e:
             node.add_error(NodeError(
                 start_pos=Parser.get_token_start(token),
                 end_pos=Parser.get_token_end(token),
                 message=f"Parent node doesn't have child with name '{token.value}'"
             ))
             self.nodes_stack.append(UnprocessedNode())
+            return
 
+        if not isinstance(child_node, MappingNode):
+            raise ParserError(message="Parsing error. Expected mapping", token=token)
+
+        child_node.key.start_pos = self.get_token_start(token)
+        child_node.key.end_pos = self.get_token_end(token)
+        self.nodes_stack.append(child_node)
+        self.nodes_stack.append(child_node.value)
+
+        
     def _process_token(self, token: Token) -> None:
         # beginning of document
         if isinstance(token, StreamStartToken):
@@ -168,8 +178,6 @@ class Parser:
                 node.end_pos = self.get_token_end(token)
                 self.tokens_stack.pop()
 
-                return
-
             elif isinstance(top, ValueToken):
                 if self.is_array_item:
                     # case when mapping didn't have value after ':'
@@ -188,8 +196,6 @@ class Parser:
                         raise Exception("Wrong structure of document")  # TODO: provide better message
                     self.tokens_stack.pop()
                     self.is_array_item = False
-
-                    return
 
                 elif isinstance(self.nodes_stack[-1], SequenceNode):
                     # In means that we just finished processing a sequence without indentation
@@ -215,7 +221,6 @@ class Parser:
                     if isinstance(self.tokens_stack[-1], ValueToken):
                         # remove value token opening it
                         self.tokens_stack.pop()
-                    return
 
                 else:
                     # We expected a value for property inside object but it wasn't found after ValueToken
@@ -227,6 +232,11 @@ class Parser:
                     self.nodes_stack[-1].end_pos = self.get_token_end(token)
                     self.nodes_stack.pop()
 
+            if self.nodes_stack and isinstance(self.nodes_stack[-1], PropertyNode):
+                self.nodes_stack[-1].end_pos = self.get_token_end(token)
+                self.nodes_stack.pop()
+
+
         if isinstance(token, KeyToken):
             # if sequence doesnt have indentation => there is no BlockEndToken at the end
             # and in such case KeyToken will go just after the ValueToken opening the sequence
@@ -236,6 +246,10 @@ class Parser:
                 node = self.nodes_stack.pop()
                 node.end_pos = self.get_token_start(token)
                 self.tokens_stack.pop()  # remove ValueToken
+
+            if isinstance(self.nodes_stack[-1], PropertyNode):
+                self.nodes_stack[-1].end_pos = self.get_token_start(token)
+                self.nodes_stack.pop()
 
             self.tokens_stack.append(token)
             return
@@ -259,6 +273,9 @@ class Parser:
 
             self._process_scalar_token(token)
             self.tokens_stack.pop()
+            if isinstance(self.nodes_stack[-1], PropertyNode):
+                self.nodes_stack[-1].end_pos = self.get_token_end(token)
+                self.nodes_stack.pop()
             return
 
         if isinstance(token, ScalarToken) and isinstance(self.tokens_stack[-1], (KeyToken, BlockEntryToken)):
