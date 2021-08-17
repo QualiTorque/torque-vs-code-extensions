@@ -8,7 +8,7 @@ from pygls.lsp import types
 
 # TODO: refactor all the code to use this class
 @dataclass
-class Position:
+class Position: 
     """
     Describes a position in the document
     """
@@ -72,48 +72,11 @@ class YamlNode(ABC):
     def accept(self, visitor):
         visitor.visit_node(self)
 
-
-@dataclass
-class ObjectNode(YamlNode, ABC):
-    def _get_field_mapping(self) -> {str: str}:
-        return {}
-
-    def get_child(self, child_name: str):
-        """Returns value of node attribute.
-        If the value is None, creates a child of type
-        specified in type annotations and returns it
-        """
-        attr = child_name if hasattr(self, child_name) else self._get_field_mapping().get(child_name, None)
-
-        # attribute could not be found in both object itself and mapping table
-        if attr is None:
-            raise AttributeError(f"There is no attribute with name {child_name}")
-
-        child = getattr(self, attr)
-
-        # obj has not been instantiated yet
-        if child is None:
-            # Get type of the child according to its annotation
-            child_cls = self.__dataclass_fields__.get(attr).type
-
-            try:
-                child = child_cls(parent=self)
-                setattr(self, attr, child)
-            except Exception:
-                raise
-
-        return child
-
     def get_children(self):
         """Returns all child nodes. Nodes are actually
         attributes which are not excluded and do not equal None"""
         fields = vars(self)
         return [val for key, val in fields.items() if val and key not in self.non_child_attributes]
-
-    def accept(self, visitor):
-        if visitor.visit_node(self):
-            for child in self.get_children():
-                child.accept(visitor)
 
 
 @dataclass
@@ -155,40 +118,15 @@ class ScalarNode(TextNode):
 
 
 @dataclass
-class SequenceNode(ObjectNode):
-    node_type: ClassVar[type] = YamlNode
-
-    nodes: [node_type] = field(default_factory=list)
-
-    def add(self, node: node_type = None):
-        if node is None:
-            node = self.node_type(parent=self)
-
-        self.nodes.append(node)
-
-        return self.nodes[-1]
-
-    def get_children(self):
-        return self.nodes
-
-
-@dataclass
-class ScalarNodesSequence(SequenceNode):
-    """Container for simple text arrays
-    like outputs, depends on """
-    node_type = ScalarNode
-
-
-@dataclass
-class TextNodesSequence(SequenceNode):
-    node_type = TextNode
-
-
-@dataclass
-class MappingNode(ObjectNode):  # TODO: actually all colony nodes must inherit this
+class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit this
     key: ScalarNode = None
     value: YamlNode = None
     allow_vars: ClassVar[bool] = False
+
+    def accept(self, visitor):
+        if visitor.visit_node(self):
+            self.key.accept()
+            self.value.accept()
 
     def get_key(self):
         if self.key is None:
@@ -229,6 +167,73 @@ class MappingNode(ObjectNode):  # TODO: actually all colony nodes must inherit t
             self.value = result_class(parent=self.key)
 
         return self.value
+
+
+@dataclass
+class ObjectNode(YamlNode, ABC):
+    def _get_field_mapping(self) -> {str: str}:
+        return {}
+
+    def get_child(self, child_name: str):
+        """Returns value of node attribute.
+        If the value is None, creates a child of type
+        specified in type annotations and returns it
+        """
+        attr = child_name if hasattr(self, child_name) else self._get_field_mapping().get(child_name, None)
+
+        # attribute could not be found in both object itself and mapping table
+        if attr is None:
+            raise AttributeError(f"There is no attribute with name {child_name}")
+
+        child = getattr(self, attr)
+
+        # obj has not been instantiated yet
+        if child is None:
+            # Get type of the child according to its annotation
+            child_cls = self.__dataclass_fields__.get(attr).type
+
+            try:
+                child = child_cls(parent=self)
+                setattr(self, attr, child)
+            except Exception:
+                raise
+
+        return child
+
+    def accept(self, visitor):
+        if visitor.visit_node(self):
+            for child in self.get_children():
+                child.accept(visitor)
+
+
+@dataclass
+class SequenceNode(ObjectNode):
+    node_type: ClassVar[type] = YamlNode
+
+    nodes: [node_type] = field(default_factory=list)
+
+    def add(self, node: node_type = None):
+        if node is None:
+            node = self.node_type(parent=self)
+
+        self.nodes.append(node)
+
+        return self.nodes[-1]
+
+    def get_children(self):
+        return self.nodes
+
+
+@dataclass
+class ScalarNodesSequence(SequenceNode):
+    """Container for simple text arrays
+    like outputs, depends on """
+    node_type = ScalarNode
+
+
+@dataclass
+class TextNodesSequence(SequenceNode):
+    node_type = TextNode
 
 
 @dataclass
