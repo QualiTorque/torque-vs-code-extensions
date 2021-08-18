@@ -1,28 +1,28 @@
 from dataclasses import dataclass
-from server.ats.trees.common import (BaseTree, TreeWithOutputs, YamlNode,
+from server.ats.trees.common import (BaseTree, ObjectNode, TreeWithOutputs, YamlNode,
                                      TextNode, ScalarNodesSequence, TextMappingSequence, ScalarNode)
 
 
 @dataclass
-class ModuleNode(YamlNode):
+class ModuleNode(ObjectNode):
     source: TextNode = None
     exclude_from_tagging: ScalarNodesSequence = None
 
 
 @dataclass
-class VariablesNode(YamlNode):
+class VariablesNode(ObjectNode):
     var_file: ScalarNode = None
     values: TextMappingSequence = None
 
 
 @dataclass
-class PermissionsNode(YamlNode):
+class PermissionsNode(ObjectNode):
     @dataclass
-    class AzurePermissionsNode(YamlNode):
+    class AzurePermissionsNode(ObjectNode):
         managed_identity_id: TextNode = None
 
     @dataclass
-    class AwsPermissionsNode(YamlNode):
+    class AwsPermissionsNode(ObjectNode):
         role_arn: TextNode = None
         external_id: TextNode = None
 
