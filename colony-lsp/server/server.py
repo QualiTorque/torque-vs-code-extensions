@@ -237,6 +237,10 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                             options = ['current']
                         elif cur_word == 'colony.repos.current.':
                             options = ['branch']
+                        elif cur_word.startswith('colony.repos.'):
+                            parts = cur_word.split('.')
+                            if len(parts) == 4 and parts[2] != '':
+                                options = ["token", "url"]
                         elif cur_word == 'colony.applications.':
                             if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
                                 for app in bp_tree.applications.nodes:
