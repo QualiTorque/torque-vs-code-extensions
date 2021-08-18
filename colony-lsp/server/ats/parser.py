@@ -1,4 +1,5 @@
 from typing import Tuple
+from pygls.lsp.types.basic_structures import T
 import yaml
 from yaml.tokens import (BlockEndToken, BlockEntryToken, BlockMappingStartToken,
                          BlockSequenceStartToken, KeyToken,
@@ -79,15 +80,20 @@ class Parser:
         node.start_pos = self.get_token_start(token)
         node.end_pos = self.get_token_end(token)
 
-        if isinstance(node, UnprocessedNode):
-            return
+        # if isinstance(node, UnprocessedNode):
+        #      return
 
-        elif isinstance(node, TextNode):
+        if isinstance(node, TextNode):
             node.text = token.value
 
         else:
             # TODO: replace with parser exception
             raise Exception("Wrong node. Expected TextNode")
+
+    def _check_for_property(self, token: Token):
+        if self.nodes_stack and isinstance(self.nodes_stack[-1], PropertyNode):
+            self.nodes_stack[-1].end_pos = self.get_token_end(token)
+            self.nodes_stack.pop()
 
     def _process_object_child(self, token: ScalarToken):
         """Gets the property of the last Node in a stack and puts
@@ -115,10 +121,22 @@ class Parser:
         child_node.key.start_pos = self.get_token_start(token)
         child_node.key.end_pos = self.get_token_end(token)
         self.nodes_stack.append(child_node)
-        self.nodes_stack.append(child_node.value)
+        # self.nodes_stack.append(child_node.value)
 
         
     def _process_token(self, token: Token) -> None:
+        print("Processing token ", token)
+        if (self.nodes_stack and isinstance(self.nodes_stack[-1], PropertyNode) 
+                             and isinstance(token, (KeyToken, BlockEndToken))):
+            
+            self.nodes_stack[-1].end_pos = self.get_token_end(token)
+            self.nodes_stack.pop()
+
+            # case with empty value:
+            if isinstance(self.tokens_stack[-1], ValueToken):
+                self.tokens_stack.pop()
+
+            print("Token: ", token)
         # beginning of document
         if isinstance(token, StreamStartToken):
             self.tree.start_pos = self.get_token_start(token)
@@ -130,6 +148,12 @@ class Parser:
             if isinstance(self.tokens_stack[-1], BlockEntryToken):
                 extra_token = self.tokens_stack.pop()
                 self._handle_hanging_dash(extra_token)
+
+            if isinstance(self.nodes_stack[-1], MappingNode):
+                # We are processing the first element of array but sequence wasn't created yet
+                val: YamlNode = self.nodes_stack[-1].get_value()
+                val.start_pos = self.get_token_start(token)
+                self.nodes_stack.append(val)
 
             self.tokens_stack.append(token)
 
@@ -148,14 +172,18 @@ class Parser:
         # the beginning of the object or mapping
         if isinstance(token, BlockMappingStartToken):
             last_node = self.nodes_stack[-1]
-            if (self.is_array_item and isinstance(last_node, MappingNode)
-                    and not isinstance(self.tokens_stack[-1], BlockEntryToken)):
+
+            if isinstance(last_node, MappingNode) and not isinstance(self.tokens_stack[-1], BlockEntryToken):
                 self.tokens_stack.append(token)
                 value_node = last_node.get_value()
                 self.nodes_stack.append(value_node)
                 value_node.start_pos = self.get_token_start(token)
-                self.is_array_item = False
+
+                if self.is_array_item:
+                    self.is_array_item = False
+
                 return
+
             self.tokens_stack.append(token)
             last_node.start_pos = self.get_token_start(token)
 
@@ -212,6 +240,8 @@ class Parser:
                     if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
                         raise Exception("Wrong structure of document")  # TODO: provide better message
 
+                    # self._check_for_property(token)
+
                     # and remove it from the token stack
                     self.tokens_stack.pop()
                     # and node itself as well
@@ -232,9 +262,7 @@ class Parser:
                     self.nodes_stack[-1].end_pos = self.get_token_end(token)
                     self.nodes_stack.pop()
 
-            if self.nodes_stack and isinstance(self.nodes_stack[-1], PropertyNode):
-                self.nodes_stack[-1].end_pos = self.get_token_end(token)
-                self.nodes_stack.pop()
+            # self._check_for_property(token)
 
 
         if isinstance(token, KeyToken):
@@ -247,35 +275,55 @@ class Parser:
                 node.end_pos = self.get_token_start(token)
                 self.tokens_stack.pop()  # remove ValueToken
 
-            if isinstance(self.nodes_stack[-1], PropertyNode):
-                self.nodes_stack[-1].end_pos = self.get_token_start(token)
-                self.nodes_stack.pop()
+                # snd also handle property if exist
+                if isinstance(self.nodes_stack[-1], PropertyNode):
+                    prop = self.nodes_stack.pop()
+                    prop.end_pos = self.get_token_end(token)
+
+            # self._check_for_property(token)
 
             self.tokens_stack.append(token)
             return
 
         if isinstance(token, ValueToken):
+            # node = self.nodes_stack[-1]
+            # if isinstance(node, MappingNode):
+            #     node_value = node.get_value()
+            #     self.nodes_stack.append(node_value)
             self.tokens_stack.append(token)
             return
 
         if isinstance(token, ScalarToken) and isinstance(self.tokens_stack[-1], ValueToken):
-            if self.is_array_item:
-                # it means on the top of the stack we must always have MappingNode or it inheritors
-                node = self.nodes_stack[-1]
+            node = self.nodes_stack[-1]
+            if isinstance(node, UnprocessedNode):
+                self.nodes_stack.pop()
+                self.tokens_stack.pop()
+                return
 
-                if not isinstance(node, MappingNode):
-                    raise Exception(f"Expected MappingNode, got {type(node)}")
+            if not isinstance(node, MappingNode):
+                raise ParserError(message="Expected mapping value here", token=token)
 
-                value_node = node.get_value(expected_type=TextNode)
-                self.nodes_stack.append(value_node)
+            value_node = node.get_value(expected_type=TextNode)
+            self.nodes_stack.append(value_node)
 
-                self.is_array_item = False
+            # if self.is_array_item:
+            #     # it means on the top of the stack we must always have MappingNode or it inheritors
+            #     node = self.nodes_stack[-1]
+
+            #     if not isinstance(node, MappingNode):
+            #         raise Exception(f"Expected MappingNode, got {type(node)}")
+
+            #     value_node = node.get_value(expected_type=TextNode)
+            #     self.nodes_stack.append(value_node)
+
+            #     self.is_array_item = False
 
             self._process_scalar_token(token)
             self.tokens_stack.pop()
-            if isinstance(self.nodes_stack[-1], PropertyNode):
-                self.nodes_stack[-1].end_pos = self.get_token_end(token)
-                self.nodes_stack.pop()
+
+            if self.is_array_item:
+                self.is_array_item = False
+            # self._check_for_property(token)
             return
 
         if isinstance(token, ScalarToken) and isinstance(self.tokens_stack[-1], (KeyToken, BlockEntryToken)):

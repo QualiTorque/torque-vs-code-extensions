@@ -142,31 +142,34 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
         If expected_type is not provided, first type from Union will be used"""
         if self.value is None:
             value_class = self.__dataclass_fields__['value'].type
-
-            try:
-                possible_types = value_class.__args__  # check if it's union
-
-            except AttributeError:
-                possible_types = None
-
-            result_class = None
-            if expected_type is not None and expected_type != value_class:
-                if possible_types:
-                    for pt in possible_types:
-                        if issubclass(pt, expected_type):
-                            result_class = pt
-                            break
-                elif isinstance(value_class, type) and issubclass(value_class, expected_type):
-                    result_class = value_class
-                else:
-                    raise ValueError(f"Mapping value cannot be initiated with type '{expected_type}'")
-
-            else:
-                result_class = value_class if not possible_types else possible_types[0]
-
+            result_class = self._get_annotated_class(value_class=value_class, expected=expected_type)
             self.value = result_class(parent=self.key)
 
         return self.value
+
+    def _get_annotated_class(self, value_class: type, expected: type = None) -> type:
+        try:
+            possible_types = value_class.__args__  # check if it's union
+
+        except AttributeError:
+            possible_types = None
+
+        result_class = None
+        if expected is not None and expected != value_class:
+            if possible_types:
+                for pt in possible_types:
+                    if issubclass(pt, expected):
+                        result_class = pt
+                        break
+            elif isinstance(value_class, type) and issubclass(value_class, expected):
+                result_class = value_class
+            else:
+                raise ValueError(f"Mapping value cannot be initiated with type '{expected}'")
+
+        else:
+            result_class = value_class if not possible_types else possible_types[0]
+
+        return result_class
 
 
 class PropertyNode(MappingNode):
@@ -174,6 +177,14 @@ class PropertyNode(MappingNode):
     def identifier(self):
         if self.key:
             return self.key.text
+
+    def get_value(self, expected_type: type = None):
+        if self.value is None:
+            value_class = self.parent.__dataclass_fields__[self.identifier].type
+            result_class = self._get_annotated_class(value_class=value_class, expected=expected_type)
+            self.value = result_class(parent=self.key)
+
+        return self.value
 
     def __getattr__(self, name: str) -> Any:
         val = getattr(self.value, name, None)
@@ -211,12 +222,10 @@ class ObjectNode(YamlNode, ABC):
 
             # Get type of the child according to its annotation
             child_cls = self.__dataclass_fields__.get(attr).type
-            try:
-                val = child_cls(parent=child)
-                if isinstance(val, TextNode):
-                    child.allow_vars = val.allow_vars
-                child.value = val
-                child.end_pos = val.end_pos
+        
+            if issubclass(child_cls, TextNode):
+                child.allow_vars = child_cls.allow_vars
+            try:    
                 setattr(self, attr, child)
             except Exception:
                 raise
