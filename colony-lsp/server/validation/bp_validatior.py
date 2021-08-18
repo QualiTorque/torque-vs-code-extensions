@@ -182,11 +182,7 @@ class BlueprintValidationHandler(ValidationHandler):
         if not parts[0].lower() == "$colony":
             return False, f"{var_name} is not a valid colony-generated variable"
 
-<<<<<<< HEAD
-        if not parts[1].lower() in ["applications", "services", "parameters"]:
-=======
         if not parts[1].lower() in ["applications", "services", "parameters", "repos"]:
->>>>>>> develop
             return False, f"{var_name} is not a valid colony-generated variable"
 
         if len(parts) == 3:
