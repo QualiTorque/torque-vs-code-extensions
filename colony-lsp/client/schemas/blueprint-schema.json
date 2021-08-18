@@ -33,11 +33,10 @@
                     "description": "Define the cloud account or Kubernetes compute service in which the environment will be deployed."
                 },
                 "artifacts": {
-                    "type": "array",
+                    "type": ["array", "null"],
                     "items": {
                         "$ref": "#/definitions/ArtifactElement"
                     },
-                    "minItems": 1,
                     "description": "Colony pulls these artifacts from your storage provider into your artifacts folder on the application’s compute instance(s)."
                 },
                 "applications": {
@@ -169,10 +168,7 @@
             "additionalProperties": false,
             "properties": {
                 "instances": {
-                    "items": {
-                        "$ref": "#/definitions/InstancesElement"
-                    },
-                    "description": "(Optional) If you want the application to be deployed on its own, specify the number of instances (one or more)."
+                        "$ref": "#/definitions/InstancesElement"                                        
                 },
                 "target": {
                     "type": "string",
@@ -194,17 +190,18 @@
             "title": "Application"
         },
         "InstancesElement": {
-            "anyOf": [
-                {
-                    "type": "string"
-                },
+            "oneOf": [
                 {
                     "type": "integer",
                     "minimum": 1,
                     "default": 1
-                }
+                },
+                {
+                    "type": "string"
+                }                
             ],
-            "title": "Blueprint Input"
+            "title": "Number of instances to deploy",
+            "description": "(Optional) If you want the application to be deployed on its own, specify the number of instances (one or more)."
         },
         "InputValuesElement": {
             "anyOf": [
