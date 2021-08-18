@@ -236,6 +236,11 @@ class Parser:
                     # in this case it's ok the end pos will be the same for both objects
                     seq_node.end_pos = self.get_token_end(token)
 
+                    # check if we have property on top
+                    if isinstance(self.nodes_stack[-1], PropertyNode):
+                        self.nodes_stack[-1].end_pos = self.get_token_end(token)
+                        self.nodes_stack.pop()
+
                     # then check if after ValueToken removal we have any start token on the top of the tokens stack
                     if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
                         raise Exception("Wrong structure of document")  # TODO: provide better message
