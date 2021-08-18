@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from server.ats.trees.common import (BaseTree, ScalarMappingsSequence, MappingNode, SequenceNode,
+from server.ats.trees.common import (BaseTree, PropertyNode, ScalarMappingsSequence, MappingNode, SequenceNode,
                                      TextMappingSequence, TextNode, ScalarNodesSequence, ScalarNode,
                                      TextNodesSequence, ObjectNode)
-from typing import Union
+from typing import List, Union
 
 
 @dataclass
@@ -96,6 +96,15 @@ class ServiceResourceNode(ObjectNode):
     input_values: TextMappingSequence = None
     depends_on: ScalarNodesSequence = None
 
+    def get_dependencies(self) -> List[ScalarNode]:
+        deps: PropertyNode = self.depends_on
+
+        if deps is None or deps.value is None:
+            return []
+
+        seq: ScalarNodesSequence = deps.value
+        return seq.nodes 
+        
 
 @dataclass
 class ApplicationResourceNode(ServiceResourceNode):
@@ -115,6 +124,10 @@ class BlueprintResourceMappingNode(MappingNode):
     @property
     def details(self):
         return self.value
+
+    @property
+    def depends_on(self):
+        return self.value.get_dependencies()
 
 
 @dataclass
@@ -160,3 +173,19 @@ class BlueprintTree(BaseTree):
     infrastructure: InfrastructureNode = None
     # old syntax
     environmentType: TextNode = None
+
+    def get_applications(self) -> List[ApplicationResourceNode]:
+        apps: PropertyNode = self.applications
+
+        if apps is None or apps.value is None:
+            return []
+
+        return [node for node in apps.value.nodes]
+
+    def get_services(self) -> List[ServiceResourceNode]:
+        srvs: PropertyNode = self.services
+
+        if srvs is None or srvs.value is None:
+            return []
+
+        return [node for node in srvs.value.nodes]
