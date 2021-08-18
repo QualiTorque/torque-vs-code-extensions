@@ -168,10 +168,7 @@
             "additionalProperties": false,
             "properties": {
                 "instances": {
-                    "items": {
-                        "$ref": "#/definitions/InstancesElement"
-                    },
-                    "description": "(Optional) If you want the application to be deployed on its own, specify the number of instances (one or more)."
+                        "$ref": "#/definitions/InstancesElement"                                        
                 },
                 "target": {
                     "type": "string",
@@ -193,17 +190,18 @@
             "title": "Application"
         },
         "InstancesElement": {
-            "anyOf": [
-                {
-                    "type": "string"
-                },
+            "oneOf": [
                 {
                     "type": "integer",
                     "minimum": 1,
                     "default": 1
-                }
+                },
+                {
+                    "type": "string"
+                }                
             ],
-            "title": "Blueprint Input"
+            "title": "Number of instances to deploy",
+            "description": "(Optional) If you want the application to be deployed on its own, specify the number of instances (one or more)."
         },
         "InputValuesElement": {
             "anyOf": [
