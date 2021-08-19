@@ -212,7 +212,7 @@ class Parser:
                     self.tokens_stack.pop()
                     self.is_array_item = False
 
-                elif isinstance(self.nodes_stack[-1], SequenceNode):
+                elif isinstance(self.nodes_stack[-1], (UnprocessedNode, SequenceNode)):
                     # In means that we just finished processing a sequence without indentation
                     # which means document didn't have BlockSequenceStartToken at the beginning of the block
                     # So, this BlockEndToken is related to previous object => we need to remove not only the
@@ -232,15 +232,13 @@ class Parser:
                     if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
                         raise Exception("Wrong structure of document")  # TODO: provide better message
 
-                    # self._check_for_property(token)
-
                     # and remove it from the token stack
                     self.tokens_stack.pop()
                     # and node itself as well
                     prev_node = self.nodes_stack.pop()
                     prev_node.end_pos = self.get_token_end(token)
 
-                    if isinstance(self.tokens_stack[-1], ValueToken):
+                    if isinstance(self.tokens_stack[-1], (ValueToken, BlockEntryToken)):
                         # remove value token opening it
                         self.tokens_stack.pop()
 
