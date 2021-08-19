@@ -35,7 +35,7 @@ class IngressHealthCheckNode(ObjectNode):
     healthy_threshold: ScalarNode = None
     interval: ScalarNode = None
     path: ScalarNode = None
-    status_code: ScalarNode = None
+    status_codes: ScalarNode = None
     timeout: ScalarNode = None
     unhealthy_threshold: ScalarNode = None
 
@@ -43,7 +43,7 @@ class IngressHealthCheckNode(ObjectNode):
         mapping = super()._get_field_mapping()
         mapping.update({
             "healthy-threshold": "healthy_threshold",
-            "status-code": "status_code",
+            "status-codes": "status_codes",
             "unhealthy-threshold": "unhealthy_threshold"
         })
         return mapping
@@ -138,7 +138,7 @@ class ConfigurationNode(ObjectNode):
 
 @dataclass
 class AmiImageNode(ObjectNode):
-    id: ScalarNode = None
+    id: TextNode = None
     region: ScalarNode = None
     username: ScalarNode = None
 
@@ -162,7 +162,7 @@ class AzureImageNode(ObjectNode):
     class AzureCustomImageNode(AzureImageProps, ObjectNode):
         image: TextNode = None
 
-    urn: ScalarNode = None
+    urn: TextNode = None
     username: TextNode = None
     custom_image: AzureCustomImageNode = None
     gallery: AzureGalleryImageNode = None
@@ -171,9 +171,9 @@ class AzureImageNode(ObjectNode):
 
 @dataclass
 class DockerImageNode(ObjectNode):
-    name: ScalarNode = None
+    name: TextNode = None
     pull_secret: TextNode = None
-    tag: ScalarNode = None
+    tag: TextNode = None
     username: TextNode = None
 
 
