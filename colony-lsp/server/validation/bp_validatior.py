@@ -180,58 +180,58 @@ class BlueprintValidationHandler(ValidationHandler):
 
         parts = var_name.split('.')
         if not parts[0].lower() == "$torque":
-            return False, f"{var_name} is not a valid torque-generated variable"
+            return False, f"{var_name} is not a valid Torque-generated variable"
 
         if not parts[1].lower() in ["applications", "services", "parameters", "repos"]:
-            return False, f"{var_name} is not a valid torque-generated variable"
+            return False, f"{var_name} is not a valid Torque-generated variable"
 
         if len(parts) == 3:
             if not parts[1] == "parameters":
-                return False, f"{var_name} is not a valid colony-generated variable"
+                return False, f"{var_name} is not a valid Torque-generated variable"
             else:
                 # currently no other validation for parameter store inputs
                 return True, ""
         
         if len(parts) == 4:
             if parts[1] == "repos" and parts[3] not in ["token", "url"]:
-                return False, f"{var_name} is not a valid torque-generated variable"
+                return False, f"{var_name} is not a valid Torque-generated variable"
             elif parts[1] == "applications" and not parts[3] == "dns":
-                return False, f"{var_name} is not a valid torque-generated variable"
+                return False, f"{var_name} is not a valid Torque-generated variable"
             else:
                 return True, ""
 
         if len(parts) == 5:
             if parts[1].lower() == "applications" and (not parts[3].lower() == "outputs" and
                                                        not parts[3].lower() == "dns"):
-                return False, f"{var_name} is not a valid torque-generated variable"
+                return False, f"{var_name} is not a valid Torque-generated variable"
 
             if parts[1].lower() == "services" and not parts[3].lower() == "outputs":
-                return False, f"{var_name} is not a valid torque-generated variable"
+                return False, f"{var_name} is not a valid Torque-generated variable"
 
             if parts[1] == "applications":
                 apps = self.blueprint_apps
                 if not parts[2] in apps:
-                    return False, f"{var_name} is not a valid torque-generated variable (no such app in the blueprint)"
+                    return False, f"{var_name} is not a valid Torque-generated variable (no such app in the blueprint)"
 
                 # TODO: check that the app is in the depends_on section
 
                 app_outputs = applications.get_app_outputs(app_name=parts[2])
                 if parts[4] not in app_outputs:
-                    return False, f"{var_name} is not a valid torque-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
+                    return False, f"{var_name} is not a valid Torque-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
 
             if parts[1] == "services":
                 srvs = self.blueprint_services
                 if not parts[2] in srvs:
-                    return False, f"{var_name} is not a valid torque-generated variable (no such service in the blueprint)"
+                    return False, f"{var_name} is not a valid Torque-generated variable (no such service in the blueprint)"
 
                 # TODO: check that the service is in the depends_on section
 
                 srv_outputs = services.get_service_outputs(srv_name=parts[2])
                 if parts[4] not in srv_outputs:
-                    return False, f"{var_name} is not a valid torque-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
+                    return False, f"{var_name} is not a valid Torque-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
 
         else:
-            return False, f"{var_name} is not a valid torque-generated variable (too many parts)"
+            return False, f"{var_name} is not a valid Torque-generated variable (too many parts)"
 
         return True, ""
 
