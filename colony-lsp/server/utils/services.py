@@ -1,4 +1,3 @@
-
 import logging
 import os
 import re
@@ -7,11 +6,10 @@ import yaml
 from server.ats.parser import Parser, ParserError
 from server.utils.yaml_utils import format_yaml
 
-
 SERVICES = {}
 
 
-def get_available_services(root_folder: str=None):
+def get_available_services(root_folder: str = None):
     if SERVICES:
         return SERVICES
     else:
@@ -24,9 +22,9 @@ def get_available_services(root_folder: str=None):
                         files = os.listdir(srv_dir)
                         if f'{dir}.yaml' in files:
                             f = open(os.path.join(srv_dir, f'{dir}.yaml'), "r")
-                            source = f.read() 
-                            load_service_details(srv_name=dir, srv_source=source)                           
-                            
+                            source = f.read()
+                            load_service_details(srv_name=dir, srv_source=source)
+
             return SERVICES
         else:
             return None
@@ -44,7 +42,7 @@ def load_service_details(srv_name: str, srv_source):
     output = None
     try:
         srv_tree = Parser(document=srv_source).parse()
-        
+
         output = f"- {srv_name}:\n"
         if srv_tree.inputs_node:
             inputs = srv_tree.inputs_node.nodes
@@ -56,10 +54,10 @@ def load_service_details(srv_name: str, srv_source):
                     else:
                         output += f"      - {input.key.text}: \n"
     except ParserError as e:
-        logging.warning(f"Unable to load service '{dir}.yaml' due to error: {e.message}")        
+        logging.warning(f"Unable to load service '{dir}.yaml' due to error: {e.message}")
     except Exception as e:
         logging.warning(f"Unable to load service '{dir}.yaml' due to error: {str(e)}")
-    
+
     SERVICES[srv_name] = {
         "srv_tree": srv_tree,
         "srv_completion": format_yaml(output) if output else None
@@ -67,7 +65,7 @@ def load_service_details(srv_name: str, srv_source):
 
 
 def reload_service_details(srv_name, srv_source):
-    if SERVICES: # if there is already a cache, add this file
+    if SERVICES:  # if there is already a cache, add this file
         load_service_details(srv_name, srv_source)
 
 
@@ -76,18 +74,18 @@ def get_vars_from_tfvars(file_path: str):
     with open(file_path, "r") as f:
         content = f.read()
         vars = re.findall(r"(^.+?)\s*=", content, re.MULTILINE)
-        
+
     return vars
 
 
 def get_service_vars(service_dir_path: str):
     with open(service_dir_path.replace("file://", ""), 'r') as stream:
         try:
-            yaml_obj = yaml.load(stream, Loader=yaml.FullLoader) # todo: refactor
+            yaml_obj = yaml.load(stream, Loader=yaml.FullLoader)  # todo: refactor
             doc_type = yaml_obj.get('kind', '')
         except yaml.YAMLError as exc:
             return []
-    
+
     if doc_type == "TerraForm":
         tfvars = []
         files = pathlib.Path(service_dir_path.replace("file://", "")).parent.glob("./*")
@@ -100,7 +98,7 @@ def get_service_vars(service_dir_path: str):
                 tfvars.append(item)
 
         return tfvars
-    
+
     return []
 
 
@@ -124,4 +122,3 @@ def get_service_outputs(srv_name):
             return outputs
 
     return []
-    

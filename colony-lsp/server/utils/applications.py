@@ -98,4 +98,3 @@ def get_app_outputs(app_name):
             return outputs
     
     return []
-    

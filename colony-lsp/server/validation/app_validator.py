@@ -36,7 +36,6 @@ class AppValidationHandler(ValidationHandler):
             if node.script.text not in scripts:
                 self._add_diagnostic(node.script.value, f"File {node.script.text} doesn't exist")
 
-
     def _get_repo_root_path(self):
         path = pathlib.Path(self._document.path).absolute()
         if path.parents[1].name == "applications":
@@ -63,5 +62,3 @@ class AppValidationHandler(ValidationHandler):
                                                    range_end_tupple=(line_num, col+len(prop)),
                                                    diag_severity=DiagnosticSeverity.Warning)                    
             line_num += 1
-
-    
