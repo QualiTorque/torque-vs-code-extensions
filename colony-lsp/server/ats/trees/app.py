@@ -35,7 +35,7 @@ class IngressHealthCheckNode(ObjectNode):
     healthy_threshold: ScalarNode = None
     interval: ScalarNode = None
     path: ScalarNode = None
-    status_code: ScalarNode = None
+    status_codes: ScalarNode = None
     timeout: ScalarNode = None
     unhealthy_threshold: ScalarNode = None
 
@@ -43,7 +43,7 @@ class IngressHealthCheckNode(ObjectNode):
         mapping = super()._get_field_mapping()
         mapping.update({
             "healthy-threshold": "healthy_threshold",
-            "status-code": "status_code",
+            "status-codes": "status_codes",
             "unhealthy-threshold": "unhealthy_threshold"
         })
         return mapping
