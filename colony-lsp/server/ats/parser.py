@@ -6,7 +6,8 @@ from yaml.tokens import (BlockEndToken, BlockEntryToken, BlockMappingStartToken,
 
 from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintTree
-from server.ats.trees.common import YamlNode, TextNode, MappingNode, BaseTree, SequenceNode, NodeError
+from server.ats.trees.common import (PropertyNode, YamlNode, TextNode, MappingNode, BaseTree,
+                                     SequenceNode, NodeError, ObjectNode)
 from server.ats.trees.service import ServiceTree
 
 
@@ -58,7 +59,7 @@ class Parser:
     def _handle_hanging_dash(self, token):
         # remove unnecessary empty element added to sequence
         self.nodes_stack.pop()
-        
+
         seq: SequenceNode = self.nodes_stack[-1]
         if not isinstance(seq, SequenceNode):
             raise ParserError(message="Wrong structure of sequence", token=token)
@@ -78,10 +79,7 @@ class Parser:
         node.start_pos = self.get_token_start(token)
         node.end_pos = self.get_token_end(token)
 
-        if isinstance(node, UnprocessedNode):
-            return
-
-        elif isinstance(node, TextNode):
+        if isinstance(node, TextNode):
             node.text = token.value
 
         else:
@@ -92,12 +90,12 @@ class Parser:
         """Gets the property of the last Node in a stack and puts
         it to the stack (where property name equals scalar token's value)"""
         self.tokens_stack.pop()
-        node: YamlNode = self.nodes_stack[-1]
+        node: ObjectNode = self.nodes_stack[-1]
 
         try:
             child_node = node.get_child(token.value)
             child_node.start_pos = self.get_token_start(token)
-            self.nodes_stack.append(child_node)
+
         # TODO: replace with parser exception
         except Exception:
             node.add_error(NodeError(
@@ -106,8 +104,26 @@ class Parser:
                 message=f"Parent node doesn't have child with name '{token.value}'"
             ))
             self.nodes_stack.append(UnprocessedNode())
+            return
+
+        if not isinstance(child_node, MappingNode):
+            raise ParserError(message="Parsing error. Expected mapping", token=token)
+
+        child_node.key.start_pos = self.get_token_start(token)
+        child_node.key.end_pos = self.get_token_end(token)
+        self.nodes_stack.append(child_node)
 
     def _process_token(self, token: Token) -> None:
+        if (self.nodes_stack and isinstance(self.nodes_stack[-1], PropertyNode)
+                and isinstance(token, (KeyToken, BlockEndToken))):
+
+            self.nodes_stack[-1].end_pos = self.get_token_end(token)
+            self.nodes_stack.pop()
+
+            # case with empty value:
+            if isinstance(self.tokens_stack[-1], ValueToken):
+                self.tokens_stack.pop()
+
         # beginning of document
         if isinstance(token, StreamStartToken):
             self.tree.start_pos = self.get_token_start(token)
@@ -119,6 +135,12 @@ class Parser:
             if isinstance(self.tokens_stack[-1], BlockEntryToken):
                 extra_token = self.tokens_stack.pop()
                 self._handle_hanging_dash(extra_token)
+
+            if isinstance(self.nodes_stack[-1], MappingNode):
+                # We are processing the first element of array but sequence wasn't created yet
+                val: YamlNode = self.nodes_stack[-1].get_value()
+                val.start_pos = self.get_token_start(token)
+                self.nodes_stack.append(val)
 
             self.tokens_stack.append(token)
 
@@ -137,14 +159,18 @@ class Parser:
         # the beginning of the object or mapping
         if isinstance(token, BlockMappingStartToken):
             last_node = self.nodes_stack[-1]
-            if (self.is_array_item and isinstance(last_node, MappingNode)
-                    and not isinstance(self.tokens_stack[-1], BlockEntryToken)):
+
+            if isinstance(last_node, MappingNode) and not isinstance(self.tokens_stack[-1], BlockEntryToken):
                 self.tokens_stack.append(token)
                 value_node = last_node.get_value()
                 self.nodes_stack.append(value_node)
                 value_node.start_pos = self.get_token_start(token)
-                self.is_array_item = False
+
+                if self.is_array_item:
+                    self.is_array_item = False
+
                 return
+
             self.tokens_stack.append(token)
             last_node.start_pos = self.get_token_start(token)
 
@@ -167,8 +193,6 @@ class Parser:
                 node.end_pos = self.get_token_end(token)
                 self.tokens_stack.pop()
 
-                return
-
             elif isinstance(top, ValueToken):
                 if self.is_array_item:
                     # case when mapping didn't have value after ':'
@@ -188,9 +212,7 @@ class Parser:
                     self.tokens_stack.pop()
                     self.is_array_item = False
 
-                    return
-
-                elif isinstance(self.nodes_stack[-1], SequenceNode):
+                elif isinstance(self.nodes_stack[-1], (UnprocessedNode, SequenceNode)):
                     # In means that we just finished processing a sequence without indentation
                     # which means document didn't have BlockSequenceStartToken at the beginning of the block
                     # So, this BlockEndToken is related to previous object => we need to remove not only the
@@ -200,6 +222,11 @@ class Parser:
                     seq_node = self.nodes_stack.pop()
                     # in this case it's ok the end pos will be the same for both objects
                     seq_node.end_pos = self.get_token_end(token)
+
+                    # check if we have property on top
+                    if isinstance(self.nodes_stack[-1], PropertyNode):
+                        self.nodes_stack[-1].end_pos = self.get_token_end(token)
+                        self.nodes_stack.pop()
 
                     # then check if after ValueToken removal we have any start token on the top of the tokens stack
                     if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
@@ -211,10 +238,9 @@ class Parser:
                     prev_node = self.nodes_stack.pop()
                     prev_node.end_pos = self.get_token_end(token)
 
-                    if isinstance(self.tokens_stack[-1], ValueToken):
+                    if isinstance(self.tokens_stack[-1], (ValueToken, BlockEntryToken)):
                         # remove value token opening it
                         self.tokens_stack.pop()
-                    return
 
                 else:
                     # We expected a value for property inside object but it wasn't found after ValueToken
@@ -236,6 +262,11 @@ class Parser:
                 node.end_pos = self.get_token_start(token)
                 self.tokens_stack.pop()  # remove ValueToken
 
+                # snd also handle property if exist
+                if isinstance(self.nodes_stack[-1], PropertyNode):
+                    prop = self.nodes_stack.pop()
+                    prop.end_pos = self.get_token_end(token)
+
             self.tokens_stack.append(token)
             return
 
@@ -244,20 +275,23 @@ class Parser:
             return
 
         if isinstance(token, ScalarToken) and isinstance(self.tokens_stack[-1], ValueToken):
-            if self.is_array_item:
-                # it means on the top of the stack we must always have MappingNode or it inheritors
-                node = self.nodes_stack[-1]
+            node = self.nodes_stack[-1]
+            if isinstance(node, UnprocessedNode):
+                self.nodes_stack.pop()
+                self.tokens_stack.pop()
+                return
 
-                if not isinstance(node, MappingNode):
-                    raise Exception(f"Expected MappingNode, got {type(node)}")
+            if not isinstance(node, MappingNode):
+                raise ParserError(message="Expected mapping value here", token=token)
 
-                value_node = node.get_value(expected_type=TextNode)
-                self.nodes_stack.append(value_node)
-
-                self.is_array_item = False
+            value_node = node.get_value(expected_type=TextNode)
+            self.nodes_stack.append(value_node)
 
             self._process_scalar_token(token)
             self.tokens_stack.pop()
+
+            if self.is_array_item:
+                self.is_array_item = False
             return
 
         if isinstance(token, ScalarToken) and isinstance(self.tokens_stack[-1], (KeyToken, BlockEntryToken)):

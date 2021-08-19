@@ -4,5 +4,5 @@ PREDEFINED_COLONY_INPUTS = [
     "$colony.environment.public_address",
     "$colony.repos.current.branch",
     "$colony.repos.current.url",
-    "$colony.repos.current.token",
+    "$colony.repos.current.token"
 ]
