@@ -26,7 +26,7 @@ class AppValidationHandler(ValidationHandler):
         for prop in ['initialization', 'start', 'healthcheck']:
             node = getattr(tree.configuration, prop, None)
 
-            if not node or not node.value:
+            if not node or not node.script:
                 continue
 
             if not node.script.value:
