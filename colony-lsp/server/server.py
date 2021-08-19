@@ -497,7 +497,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                 script: PropertyNode = state_block.script
                 if not script.value:
                     continue
-                
+
                 file_name = script.text
                 target_path = os.path.join(root, "applications", app_name, file_name)
                 if os.path.exists(target_path) and os.path.isfile(target_path):
@@ -519,18 +519,19 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
             return links
         
         if srv_tree.variables:
-            if srv_tree.variables.var_file:
-                script = srv_tree.variables.var_file
+            script: PropertyNode = srv_tree.variables.var_file
+            if script and script.value:
                 file_name = script.text
                 target_path = os.path.join(root, "services", srv_name, file_name)
                 if os.path.exists(target_path) and os.path.isfile(target_path):
                     tooltip = "Open the variables file at " + target_path
-                    links.append(DocumentLink(range=Range(
-                                              start=Position(line=script.start_pos[0], character=script.start_pos[1]),
-                                              end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text))), 
-                                              target=pathlib.Path(target_path).as_uri(), 
-                                              tooltip=tooltip))             
-        
+                    links.append(DocumentLink(
+                                    range=Range(
+                                        start=Position(line=script.start_pos[0], character=script.start_pos[1]),
+                                        end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text))), 
+                                    target=pathlib.Path(target_path).as_uri(), 
+                                    tooltip=tooltip))             
+    
     return links
 
 
