@@ -209,18 +209,25 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     words = common.preceding_words(doc, params.position)
     last_word = words[-1]
     
-    if last_word.endswith('$'):
-        inputs_names_list = [i_node.key.text for i_node in tree.inputs_node.nodes] if tree.inputs_node else []
-        inputs_names_list.append("colony")
-
+    if last_word.endswith('$') or last_word.endswith(':'):
         if is_var_allowed(tree, params.position):
+            inputs_names_list = [i_node.key.text for i_node in tree.inputs_node.nodes] if tree.inputs_node else []
+            inputs_names_list.append("colony")
+
+            line = params.position.line
+            char = params.position.character
             suggested_vars = [
-                CompletionItem(label=f"${var}", kind=CompletionItemKind.Variable)
+                CompletionItem(label=f"${var}", 
+                                kind=CompletionItemKind.Variable,
+                                text_edit=TextEdit(
+                                    range=Range(start=Position(line=line, character=char-(1 if last_word.endswith('$') else 0)),
+                                                end=Position(line=line, character=char)),
+                                    new_text=f"${var}" if last_word == '$' or last_word.endswith(':') else f"${{{var}}}",
+                                ))
                 for var in inputs_names_list]
 
-            return CompletionList(is_incomplete=True, items=suggested_vars)
+            return CompletionList(is_incomplete=(len(suggested_vars)==0), items=suggested_vars)
 
-    fdrs = colony_server.workspace.folders
     root = colony_server.workspace.root_path
     
     if doc_type == "blueprint":
