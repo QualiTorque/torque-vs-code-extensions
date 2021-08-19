@@ -171,9 +171,9 @@ class AzureImageNode(ObjectNode):
 
 @dataclass
 class DockerImageNode(ObjectNode):
-    name: ScalarNode = None
+    name: TextNode = None
     pull_secret: TextNode = None
-    tag: ScalarNode = None
+    tag: TextNode = None
     username: TextNode = None
 
 
