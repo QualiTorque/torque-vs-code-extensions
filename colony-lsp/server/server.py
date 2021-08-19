@@ -17,6 +17,7 @@
 import asyncio
 from dataclasses import dataclass
 import logging
+from server.ats.trees.app import AppTree
 
 from server.ats.trees.common import BaseTree
 from server.utils.common import is_var_allowed
@@ -479,7 +480,7 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
     
     elif doc_type == "application":
         try:
-            app_tree = Parser(doc.source).parse()        
+            app_tree: AppTree = Parser(doc.source).parse()        
             app_name = doc.filename.replace('.yaml', '')    
         except Exception as ex:
             import sys
@@ -487,44 +488,24 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
             return links
         
         if app_tree.configuration:
-            if app_tree.configuration.healthcheck:
-                if app_tree.configuration.healthcheck.script:
-                    script = app_tree.configuration.healthcheck.script
-                    file_name = script.text
-                    target_path = os.path.join(root, "applications", app_name, file_name)
-                    if os.path.exists(target_path) and os.path.isfile(target_path):
-                        tooltip = "Open the script file at " + target_path
-                        links.append(DocumentLink(range=Range(
-                                                  start=Position(line=script.value.start_pos[0], character=script.value.start_pos[1]),
-                                                  end=Position(line=script.value.start_pos[0], character=script.value.start_pos[1]+len(script.text))), 
-                                                  target=pathlib.Path(target_path).as_uri(), 
-                                                  tooltip=tooltip))
-            
-            if app_tree.configuration.initialization:
-                if app_tree.configuration.initialization.script:
-                    script = app_tree.configuration.initialization.script
-                    file_name = script.text
-                    target_path = os.path.join(root, "applications", app_name, file_name)
-                    if os.path.exists(target_path) and os.path.isfile(target_path):
-                        tooltip = "Open the script file at " + target_path
-                        links.append(DocumentLink(range=Range(
-                                                  start=Position(line=script.value.start_pos[0], character=script.value.start_pos[1]),
-                                                  end=Position(line=script.value.start_pos[0], character=script.value.start_pos[1]+len(script.text))), 
-                                                  target=pathlib.Path(target_path).as_uri(), 
-                                                  tooltip=tooltip))
-            
-            if app_tree.configuration.start:
-                if app_tree.configuration.start.script:
-                    script = app_tree.configuration.start.script
-                    file_name = script.text
-                    target_path = os.path.join(root, "applications", app_name, file_name)
-                    if os.path.exists(target_path) and os.path.isfile(target_path):
-                        tooltip = "Open the script file at " + target_path
-                        links.append(DocumentLink(range=Range(
-                                                  start=Position(line=script.value.start_pos[0], character=script.value.start_pos[1]),
-                                                  end=Position(line=script.value.start_pos[0], character=script.value.start_pos[1]+len(script.text))), 
-                                                  target=pathlib.Path(target_path).as_uri(), 
-                                                  tooltip=tooltip))
+            for state in ['healthcheck', 'initialization', 'start']:
+                state_block = getattr(app_tree.configuration, state, None)
+
+                if state_block is None or state_block.script is None:
+                    continue
+
+                script = state_block.script
+                file_name = script.text
+                target_path = os.path.join(root, "applications", app_name, file_name)
+                if os.path.exists(target_path) and os.path.isfile(target_path):
+                    tooltip = "Open the script file at " + target_path
+                    links.append(DocumentLink(
+                        range=Range(
+                            start=Position(line=script.value.start_pos[0], character=script.value.start_pos[1]),
+                            end=Position(line=script.value.start_pos[0], character=script.value.start_pos[1]+len(script.text))), 
+                        target=pathlib.Path(target_path).as_uri(), 
+                        tooltip=tooltip))
+
     elif doc_type == "TerraForm":
         try:
             srv_tree = Parser(doc.source).parse()        
