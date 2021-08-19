@@ -162,7 +162,7 @@ class AzureImageNode(ObjectNode):
     class AzureCustomImageNode(AzureImageProps, ObjectNode):
         image: TextNode = None
 
-    urn: ScalarNode = None
+    urn: TextNode = None
     username: TextNode = None
     custom_image: AzureCustomImageNode = None
     gallery: AzureGalleryImageNode = None
