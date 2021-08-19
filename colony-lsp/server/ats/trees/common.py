@@ -188,7 +188,14 @@ class PropertyNode(MappingNode):
 
     def __getattr__(self, name: str) -> Any:
         val = getattr(self.value, name, None)
-        return val or self.__dict__.get(name, None)
+        if val:
+            return val
+        else:
+            if name in self.__dict__:
+                return self.__dict__.get(name)
+            else:
+                raise AttributeError(f"Value of PropertyNode '{self.identifier}' doesn't not have attribute '{name}'")
+
 
     # def __setattr__(self, name: str, value: Any) -> None:
     #     if hasattr(self.value, name):

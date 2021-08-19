@@ -19,7 +19,7 @@ from dataclasses import dataclass
 import logging
 from server.ats.trees.app import AppTree
 
-from server.ats.trees.common import BaseTree
+from server.ats.trees.common import BaseTree, PropertyNode
 from server.utils.common import is_var_allowed
 from server.validation.factory import ValidatorFactory
 
@@ -494,7 +494,10 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                 if state_block is None or state_block.script is None:
                     continue
 
-                script = state_block.script
+                script: PropertyNode = state_block.script
+                if not script.value:
+                    continue
+                
                 file_name = script.text
                 target_path = os.path.join(root, "applications", app_name, file_name)
                 if os.path.exists(target_path) and os.path.isfile(target_path):
