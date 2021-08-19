@@ -339,12 +339,21 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                                                                                 end=Position(line=line, character=char)),
                                                                     new_text=srvs[srv]['srv_completion'],
                                                     )))
-    
-            
-        return CompletionList(
-            is_incomplete=(len(items)==0),
-            items=items
-        )
+        
+        if items:
+            return CompletionList(
+                is_incomplete=False,
+                items=items
+            )
+        else:
+            line = params.position.line
+            char = params.position.character
+            return CompletionList(is_incomplete=False, 
+                                  items=[CompletionItem(label=f"No suggestions.", 
+                                                        kind=CompletionItemKind.Text, 
+                                                        text_edit=TextEdit(new_text="", 
+                                                                           range=Range(start=Position(line=line, character=char-(1 if last_word.endswith('$') else 0)),
+                                                                                       end=Position(line=line, character=char))))])
     elif doc_type == "application":
         if words and len(words) == 1:
             if words[0] == "script:":
@@ -368,7 +377,14 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                 )            
     
     else:
-        return CompletionList(is_incomplete=True, items=[])
+        line = params.position.line
+        char = params.position.character
+        return CompletionList(is_incomplete=False, 
+                                items=[CompletionItem(label=f"No suggestions.", 
+                                                    kind=CompletionItemKind.Text, 
+                                                    text_edit=TextEdit(new_text="", 
+                                                                        range=Range(start=Position(line=line, character=char-(1 if last_word.endswith('$') else 0)),
+                                                                                    end=Position(line=line, character=char))))])        
 
 
 # @colony_server.feature(DEFINITION)
