@@ -87,7 +87,7 @@ class BlueprintValidationHandler(ValidationHandler):
         for srv in tree_srvs:
             deps = srv.depends_on
 
-            for dep in srv.details.depends_on.nodes:
+            for dep in deps:
                 if dep.text not in apps_n_srvs:
                     self._add_diagnostic(dep, message=message.format(dep.text))
                 elif dep.text == srv.id.text:
