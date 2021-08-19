@@ -24,17 +24,17 @@ class AppValidationHandler(ValidationHandler):
             return
             
         for prop in ['initialization', 'start', 'healthcheck']:
-            node = getattr(tree.configuration, prop)
+            node = getattr(tree.configuration, prop, None)
 
-            if not node or not node.script:
+            if not node or not node.value:
                 continue
-            
-            if not node.script.text:
-                self._add_diagnostic(node.script, "No filename provided")
+
+            if not node.script.value:
+                self._add_diagnostic(node.script.key, "No filename provided")
                 continue
 
             if node.script.text not in scripts:
-                self._add_diagnostic(node.script, f"File {node.script.text} doesn't exist")
+                self._add_diagnostic(node.script.value, f"File {node.script.text} doesn't exist")
 
 
     def _get_repo_root_path(self):
