@@ -44,7 +44,7 @@ function getClientOptions(): LanguageClientOptions {
         outputChannelName: "ColonyLanguageServer",
         synchronize: {
             // Notify the server about file changes to '.yaml files contain in the workspace
-            fileEvents: workspace.createFileSystemWatcher("**/*.?yaml"),
+            fileEvents: workspace.createFileSystemWatcher("**/*.yaml"),
         },
     };
 }
