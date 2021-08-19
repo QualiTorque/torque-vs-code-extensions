@@ -89,30 +89,31 @@ def _validate(ls, params):
     source = text_doc.source
     diagnostics = _validate_yaml(source) if source else []
 
-    try:
-        tree = Parser(source).parse()
-        diagnostics += _diagnose_tree_errors(tree)
-        cls_validator = ValidatorFactory.get_validator(tree)
-        validator = cls_validator(tree, text_doc)
-        diagnostics += validator.validate()
-    except ParserError as e:
-        diagnostics.append(
-            Diagnostic(
-                range=Range(
-                    start=Position(line=e.start_pos[0], character=e.start_pos[1]),
-                    end=Position(line=e.end_pos[0], character=e.end_pos[1])),
-                message=e.message))
-    except ValueError as e:
-        diagnostics.append(
-            Diagnostic(
-                range=Range(
-                    start=Position(line=0, character=0),
-                    end=Position(line=0, character=0)),
-                message=str(e)))
-    except Exception as ex:
-        import sys
-        print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-        logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+    if not diagnostics:
+        try:
+            tree = Parser(source).parse()
+            diagnostics += _diagnose_tree_errors(tree)
+            cls_validator = ValidatorFactory.get_validator(tree)
+            validator = cls_validator(tree, text_doc)
+            diagnostics += validator.validate()
+        except ParserError as e:
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(line=e.start_pos[0], character=e.start_pos[1]),
+                        end=Position(line=e.end_pos[0], character=e.end_pos[1])),
+                    message=e.message))
+        except ValueError as e:
+            diagnostics.append(
+                Diagnostic(
+                    range=Range(
+                        start=Position(line=0, character=0),
+                        end=Position(line=0, character=0)),
+                    message=str(e)))
+        except Exception as ex:
+            import sys
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+            logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
 
     ls.publish_diagnostics(text_doc.uri, diagnostics)
 
