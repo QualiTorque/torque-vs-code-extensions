@@ -527,8 +527,8 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
                     tooltip = "Open the variables file at " + target_path
                     links.append(DocumentLink(
                                     range=Range(
-                                        start=Position(line=script.start_pos[0], character=script.start_pos[1]),
-                                        end=Position(line=script.start_pos[0], character=script.start_pos[1]+len(script.text))), 
+                                        start=Position(line=script.value.start_pos[0], character=script.value.start_pos[1]),
+                                        end=Position(line=script.value.start_pos[0], character=script.value.start_pos[1]+len(script.text))), 
                                     target=pathlib.Path(target_path).as_uri(), 
                                     tooltip=tooltip))             
     
