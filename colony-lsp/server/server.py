@@ -19,9 +19,10 @@ from dataclasses import dataclass
 import logging
 
 from server.ats.trees.common import BaseTree
+from server.utils.common import is_var_allowed
 from server.validation.factory import ValidatorFactory
 
-from pygls.lsp.types.language_features.completion import InsertTextMode
+from pygls.lsp.types.language_features.completion import CompletionTriggerKind, InsertTextMode
 
 # from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
 from pygls.lsp import types
@@ -97,17 +98,17 @@ def _validate(ls, params):
     except ParserError as e:
         diagnostics.append(
             Diagnostic(
-                range = Range(
+                range=Range(
                     start=Position(line=e.start_pos[0], character=e.start_pos[1]),
                     end=Position(line=e.end_pos[0], character=e.end_pos[1])),
                 message=e.message))
     except ValueError as e:
         diagnostics.append(
             Diagnostic(
-                range = Range(
+                range=Range(
                     start=Position(line=0, character=0),
                     end=Position(line=0, character=0)),
-                message=e))
+                message=str(e)))
     except Exception as ex:
         import sys
         print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
@@ -188,11 +189,11 @@ async def did_open(server: TorqueLanguageServer, params: DidOpenTextDocumentPara
 #     return None
 
 
-
-@torque_ls.feature(COMPLETION, CompletionOptions(resolve_provider=False, trigger_characters=['.']))
+@torque_ls.feature(COMPLETION, CompletionOptions(resolve_provider=False))
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
     doc = torque_ls.workspace.get_document(params.text_document.uri)
+    
     try:
         yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
         if yaml_obj:
@@ -201,15 +202,28 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             return CompletionList(is_incomplete=True, items=[])
     except yaml.MarkedYAMLError as ex:
         return CompletionList(is_incomplete=True, items=[])
+
+    tree = Parser(doc.source).parse()
+    words = common.preceding_words(doc, params.position)
+    last_word = words[-1]
     
-        
+    if last_word.endswith('$'):
+        inputs_names_list = [i_node.key.text for i_node in tree.inputs_node.nodes] if tree.inputs_node else []
+        inputs_names_list.append("colony")
+
+        if is_var_allowed(tree, params.position):
+            suggested_vars = [
+                CompletionItem(label=f"${var}", kind=CompletionItemKind.Variable)
+                for var in inputs_names_list]
+
+            return CompletionList(is_incomplete=True, items=suggested_vars)
+
     fdrs = torque_ls.workspace.folders
     root = torque_ls.workspace.root_path
     
     if doc_type == "blueprint":
         items=[]
-        if params.context.trigger_character == '.':
-            words = common.preceding_words(doc, params.position)
+        if last_word.endswith('.'):
             if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
                 cur_word = words[-1]
                 word_parts = cur_word.split('$')
@@ -221,29 +235,31 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                     else:
                         cur_word = ''
                 if cur_word:
-                    bp_tree = Parser(doc.source).parse()
-                                        
                     options = []
                     if cur_word.startswith('torque'):
                         if cur_word == 'torque.':
                             options = ['environment', 'repos']
-                            if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
+                            if tree.applications and len(tree.applications.nodes) > 0:
                                 options.append('applications')
-                            if bp_tree.services and len(bp_tree.services.nodes) > 0:
+                            if tree.services and len(tree.services.nodes) > 0:
                                 options.append('services')
                         elif cur_word == 'torque.environment.':
                             options = ['id', 'virtual_network_id', 'public_address']
                         elif cur_word == 'torque.repos.':
-                            options = ['branch']
-                        elif cur_word == 'torque.repos.branch.':
                             options = ['current']
+                        elif cur_word == 'torque.repos.current.':
+                            options = ['branch']
+                        elif cur_word.startswith('torque.repos.'):
+                            parts = cur_word.split('.')
+                            if len(parts) == 4 and parts[2] != '':
+                                options = ["token", "url"]
                         elif cur_word == 'torque.applications.':
-                            if bp_tree.applications and len(bp_tree.applications.nodes) > 0:
-                                for app in bp_tree.applications.nodes:
+                            if tree.applications and len(tree.applications.nodes) > 0:
+                                for app in tree.applications.nodes:
                                     options.append(app.id.text)
                         elif cur_word == 'torque.services.':
-                            if bp_tree.services and len(bp_tree.services.nodes) > 0:
-                                for srv in bp_tree.services.nodes:
+                            if tree.services and len(tree.services.nodes) > 0:
+                                for srv in tree.services.nodes:
                                     options.append(srv.id.text)
                         elif cur_word.startswith('torque.applications.'):
                             parts = cur_word.split('.')
@@ -269,61 +285,58 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                                         if outputs:
                                             options.extend(outputs)
                                         break
-                                                            
+    
                     line = params.position.line
                     char = params.position.character
                     for option in options:
+                        if option in ["applications", "services", "environment", "repos", "current", "outputs"]:
+                            command = Command(command="editor.action.triggerSuggest", title=option)                            
+                        else:
+                            command = None
                         items.append(CompletionItem(label=option,
+                                                    command=command,
                                                     kind=CompletionItemKind.Property,
                                                     text_edit=TextEdit(
                                                         range=Range(start=Position(line=line, character=char),
                                                                     end=Position(line=line, character=char+len(option))),
-                                                                    new_text=option
+                                                                    new_text=option + ("." if command else "")
                                                     )))
-                                    
+    
         else:
             parent = common.get_parent_word(doc, params.position)
             line = params.position.line
             char = params.position.character
-                
+    
             if parent == "applications":
                 apps = applications.get_available_applications(root)
                 for app in apps:
                     if apps[app]['app_completion']:
-                        items.append(CompletionItem(label=app, 
-                                                    kind=CompletionItemKind.Reference, 
+                        items.append(CompletionItem(label=app,
+                                                    kind=CompletionItemKind.Reference,
                                                     text_edit=TextEdit(
                                                                     range=Range(start=Position(line=line, character=char-2),
                                                                                 end=Position(line=line, character=char)),
                                                                     new_text=apps[app]['app_completion'],
                                                     )))
-            
+    
             if parent == "services":
                 srvs = services.get_available_services(root)
                 for srv in srvs:
                     if srvs[srv]['srv_completion']:
-                        items.append(CompletionItem(label=srv, 
-                                                    kind=CompletionItemKind.Reference, 
+                        items.append(CompletionItem(label=srv,
+                                                    kind=CompletionItemKind.Reference,
                                                     text_edit=TextEdit(
                                                                     range=Range(start=Position(line=line, character=char-2),
                                                                                 end=Position(line=line, character=char)),
                                                                     new_text=srvs[srv]['srv_completion'],
                                                     )))
+    
             
-            # if parent == "input_values":
-            #     available_inputs = _get_file_inputs(doc.source)
-            #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs]
-            #     items.extend(inputs)
-            #     inputs = [CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in PREDEFINED_TORQUE_INPUTS]
-            #     items.extend(inputs)
-            #     # TODO: add output generated variables of apps/services in this blueprint ($torque.applications.app_name.outputs.output_name, $torque.services.service_name.outputs.output_name)
-        
         return CompletionList(
             is_incomplete=(len(items)==0),
             items=items
         )
     elif doc_type == "application":
-        words = common.preceding_words(doc, params.position)
         if words and len(words) == 1:
             if words[0] == "script:":
                 scripts = applications.get_app_scripts(params.text_document.uri)
@@ -332,34 +345,19 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                     items=[CompletionItem(label=script,
                                           kind=CompletionItemKind.File) for script in scripts],
                 )
-            # TODO: check based on allow_variable
-            # elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
-            #     available_inputs = _get_file_inputs(doc.source)
-            #     return CompletionList(
-            #         is_incomplete=False,
-            #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
-            #     )
-
+    
     if doc_type == "TerraForm":
-        words = common.preceding_words(doc, params.position)
         if words and len(words) == 1:
             if words[0] == "var_file:":
                 var_files = services.get_service_vars(params.text_document.uri)
                 return CompletionList(
                     is_incomplete=False,
                     items=[CompletionItem(label=var["file"],
-                                          insert_text=f"{var['file']}\r\nvalues:\r\n" + 
+                                          insert_text=f"{var['file']}\r\nvalues:\r\n" +
                                                        "\r\n".join([f"  - {var_name}: " for var_name in var["variables"]])) for var in var_files],
                                           kind=CompletionItemKind.File
-                )
-            # TODO: check based on allow_variable
-            # elif words[0] in ["vm_size:", "instance_type:", "pull_secret:", "port:", "port-range:"]:
-            #     available_inputs = _get_file_inputs(doc.source)
-            #     return CompletionList(
-            #         is_incomplete=False,
-            #         items=[CompletionItem(label=option, kind=CompletionItemKind.Variable) for option in available_inputs],
-            #     )
-
+                )            
+    
     else:
         return CompletionList(is_incomplete=True, items=[])
 

@@ -71,29 +71,27 @@ class BlueprintValidationHandler(ValidationHandler):
         srvs = self.blueprint_services
         apps_n_srvs = set(apps + srvs)
 
-        if self._tree.applications:
+        tree_apps = self._tree.get_applications()
             
-            for app in self._tree.applications.nodes:
-                if not app.details or not app.details.depends_on:
-                    continue
-
-                for dep in app.details.depends_on.nodes:
-                    if dep.text not in apps_n_srvs:
-                        self._add_diagnostic(dep, message=message.format(dep.text))
-                    elif dep.text == app.id.text:
-                        self._add_diagnostic(dep, message=f"The app '{app.id.text}' cannot be dependent of itself")
-
-        if self._tree.services:
+        for app in tree_apps:
+            deps = app.depends_on
             
-            for srv in self._tree.services.nodes:
-                if not srv.details or not srv.details.depends_on:
-                    continue
+            for dep in deps:
+                if dep.text not in apps_n_srvs:
+                    self._add_diagnostic(dep, message=message.format(dep.text))
+                elif dep.text == app.id.text:
+                    self._add_diagnostic(dep, message=f"The app '{app.id.text}' cannot be dependent of itself")
 
-                for dep in srv.details.depends_on.nodes:
-                    if dep.text not in apps_n_srvs:
-                        self._add_diagnostic(dep, message=message.format(dep.text))
-                    elif dep.text == srv.id.text:
-                        self._add_diagnostic(dep, message=f"The service '{srv.id.text}' cannot be dependent of itself")
+        tree_srvs = self._tree.get_services()
+        
+        for srv in tree_srvs:
+            deps = srv.depends_on
+
+            for dep in srv.details.depends_on.nodes:
+                if dep.text not in apps_n_srvs:
+                    self._add_diagnostic(dep, message=message.format(dep.text))
+                elif dep.text == srv.id.text:
+                    self._add_diagnostic(dep, message=f"The service '{srv.id.text}' cannot be dependent of itself")
 
     def _validate_non_existing_app_is_used(self):
         if self._tree.applications:
@@ -184,11 +182,20 @@ class BlueprintValidationHandler(ValidationHandler):
         if not parts[0].lower() == "$torque":
             return False, f"{var_name} is not a valid torque-generated variable"
 
-        if not parts[1].lower() == "applications" and not parts[1].lower() == "services":
+        if not parts[1].lower() in ["applications", "services", "parameters", "repos"]:
             return False, f"{var_name} is not a valid torque-generated variable"
 
+        if len(parts) == 3:
+            if not parts[1] == "parameters":
+                return False, f"{var_name} is not a valid colony-generated variable"
+            else:
+                # currently no other validation for parameter store inputs
+                return True, ""
+        
         if len(parts) == 4:
-            if not parts[3] == "dns":
+            if parts[1] == "repos" and parts[3] not in ["token", "url"]:
+                return False, f"{var_name} is not a valid torque-generated variable"
+            elif parts[1] == "applications" and not parts[3] == "dns":
                 return False, f"{var_name} is not a valid torque-generated variable"
             else:
                 return True, ""
@@ -405,6 +412,20 @@ class BlueprintValidationHandler(ValidationHandler):
                             message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
                         )
 
+    def _validate_blueprint_networking_gateway_not_same_as_management_or_application(self):
+        if self._tree.infrastructure and self._tree.infrastructure.connectivity:
+            if self._tree.infrastructure.connectivity.virtual_network and self._tree.infrastructure.connectivity.virtual_network.subnets:
+                subs = self._tree.infrastructure.connectivity.virtual_network.subnets
+                if subs.gateway and subs.gateway.nodes and \
+                   subs.management and subs.management.nodes and \
+                   subs.application and subs.application.nodes:
+                    gw = subs.gateway.nodes[0]
+                    mgmt = subs.management.nodes[0]
+                    app = subs.application.nodes[0]
+                    if gw.text == mgmt.text or gw.text == app.text:
+                        self._add_diagnostic(gw, message="Blueprint Gateway subnet cannot be used as management or application subnet.")
+                    
+                    
     # def _validate_variables_being_used_where_it_is_allowed(self, tree):
     #     tree_nodes = vars(tree)
     #     for node_name, tree_node in tree_nodes.items():
@@ -454,6 +475,7 @@ class BlueprintValidationHandler(ValidationHandler):
             self._validate_services_inputs_exists()
             self._validate_used_apps_are_valid()
             self._validate_used_services_are_valid()
+            self._validate_blueprint_networking_gateway_not_same_as_management_or_application()
         except Exception as ex:
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
             logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
