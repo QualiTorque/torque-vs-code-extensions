@@ -126,7 +126,9 @@ class BlueprintResourceMappingNode(MappingNode):
         return self.value
 
     @property
-    def depends_on(self):
+    def depends_on(self) -> List[ScalarNode]:
+        if self.value is None:
+            return []
         return self.value.get_dependencies()
 
 
