@@ -6,6 +6,7 @@ from server.ats.trees.common import (BaseTree, TreeWithOutputs, YamlNode,
 @dataclass
 class ModuleNode(YamlNode):
     source: TextNode = None
+    enable_auto_tagging: ScalarNode = None
     exclude_from_tagging: ScalarNodesSequence = None
 
 
