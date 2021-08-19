@@ -71,6 +71,12 @@ def reload_service_details(srv_name, srv_source):
         load_service_details(srv_name, srv_source)
 
 
+def remove_service_details(srv_name):
+    if SERVICES: # if there is already a cache, remove this file
+        if srv_name in SERVICES:
+            SERVICES.pop(srv_name)
+            
+
 def get_vars_from_tfvars(file_path: str):
     vars = []
     with open(file_path, "r") as f:

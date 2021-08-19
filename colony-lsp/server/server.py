@@ -25,7 +25,7 @@ from pygls.lsp.types.language_features.completion import InsertTextMode
 
 # from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
 from pygls.lsp import types
-from pygls.lsp.types.basic_structures import TextEdit, VersionedTextDocumentIdentifier
+from pygls.lsp.types.basic_structures import TextDocumentItem, TextEdit, VersionedTextDocumentIdentifier
 from pygls.lsp import types, InitializeResult
 import yaml
 import time
@@ -44,7 +44,7 @@ from pygls.protocol import LanguageServerProtocol
 
 from pygls.lsp.methods import (CODE_LENS, COMPLETION, COMPLETION_ITEM_RESOLVE, DOCUMENT_LINK, TEXT_DOCUMENT_DID_CHANGE,
                                TEXT_DOCUMENT_DID_CLOSE, TEXT_DOCUMENT_DID_OPEN, HOVER, REFERENCES, DEFINITION, 
-                               TEXT_DOCUMENT_SEMANTIC_TOKENS, TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL, TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL_DELTA)
+                               TEXT_DOCUMENT_SEMANTIC_TOKENS, TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL, TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL_DELTA, WORKSPACE_DID_CHANGE_WATCHED_FILES)
 from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              CompletionParams, ConfigurationItem,
                              ConfigurationParams, Diagnostic, Location,
@@ -55,7 +55,7 @@ from pygls.lsp.types import (CompletionItem, CompletionList, CompletionOptions,
                              Unregistration, UnregistrationParams, 
                              DocumentLink, DocumentLinkParams,
                              CodeLens, CodeLensOptions, CodeLensParams,
-                             workspace, CompletionItemKind)
+                             workspace, CompletionItemKind, DidChangeWorkspaceFoldersParams)
 from pygls.server import LanguageServer
 from pygls.workspace import Document, Workspace, position_from_utf16
 
@@ -64,6 +64,7 @@ DEBOUNCE_DELAY = 0.3
 
 class ColonyLanguageServer(LanguageServer):
     CONFIGURATION_SECTION = 'colonyServer'
+    latest_opened_document = None
 
 
 colony_server = ColonyLanguageServer()
@@ -138,13 +139,13 @@ def _validate_yaml(source):
     return diagnostics
 
 @colony_server.feature(TEXT_DOCUMENT_DID_CHANGE)
-def did_change(ls, params: DidChangeTextDocumentParams):
+def did_change(server: ColonyLanguageServer, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
     if '/blueprints/' in params.text_document.uri or \
        '/applications/' in params.text_document.uri or \
        '/services/' in params.text_document.uri:
-        _validate(ls, params)
-        text_doc = ls.workspace.get_document(params.text_document.uri)
+        _validate(server, params)
+        text_doc = server.workspace.get_document(params.text_document.uri)
         
         source = text_doc.source
         yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
@@ -165,10 +166,49 @@ async def did_open(server: ColonyLanguageServer, params: DidOpenTextDocumentPara
     if '/blueprints/' in params.text_document.uri or \
        '/applications/' in params.text_document.uri or \
        '/services/' in params.text_document.uri:
+        server.latest_opened_document = params.text_document
         server.show_message('Detected a Colony file', msg_type=MessageType.Log)
         server.workspace.put_document(params.text_document)
         _validate(server, params)
 
+
+
+@colony_server.feature(WORKSPACE_DID_CHANGE_WATCHED_FILES)
+async def workspace_changed(server: ColonyLanguageServer, params: DidChangeWorkspaceFoldersParams):
+    """Workspace changed notification."""
+    current_file_changed = False
+    for change in params.changes:
+        if change.uri != server.latest_opened_document.uri:
+            if '/applications/' in change.uri or '/services/' in change.uri:        
+                if change.type != workspace.FileChangeType.Deleted:
+                    text_doc = server.workspace.get_document(change.uri)
+                    source = text_doc.source
+                    yaml_obj = yaml.load(source, Loader=yaml.FullLoader) # todo: refactor
+                    doc_type = yaml_obj.get('kind', '')
+                    
+                    if doc_type == "application":
+                        app_name = pathlib.Path(change.uri).name.replace(".yaml", "")
+                        applications.reload_app_details(app_name=app_name, app_source=source)
+                        
+                    elif doc_type == "TerraForm":
+                        srv_name = pathlib.Path(change.uri).name.replace(".yaml", "")
+                        services.reload_service_details(srv_name, srv_source=source)
+                else:
+                    if '/applications/' in change.uri:
+                        app_name = pathlib.Path(change.uri).name.replace(".yaml", "")
+                        applications.remove_app_details(app_name=app_name)
+                        
+                    elif '/services/' in change.uri:
+                        srv_name = pathlib.Path(change.uri).name.replace(".yaml", "")
+                        services.remove_service_details(srv_name)
+        else:
+            current_file_changed = True
+    try:
+        if '/blueprints/' in server.latest_opened_document.uri and not current_file_changed:
+            print('validating')
+            _validate(server, DidOpenTextDocumentParams(text_document=server.latest_opened_document))
+    except Exception as ex:
+        logging.error(ex)
 
 
 # @colony_server.feature(COMPLETION_ITEM_RESOLVE, CompletionOptions())
