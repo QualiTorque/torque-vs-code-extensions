@@ -71,29 +71,27 @@ class BlueprintValidationHandler(ValidationHandler):
         srvs = self.blueprint_services
         apps_n_srvs = set(apps + srvs)
 
-        if self._tree.applications:
+        tree_apps = self._tree.get_applications()
             
-            for app in self._tree.applications.nodes:
-                if not app.details or not app.details.depends_on:
-                    continue
-
-                for dep in app.details.depends_on.nodes:
-                    if dep.text not in apps_n_srvs:
-                        self._add_diagnostic(dep, message=message.format(dep.text))
-                    elif dep.text == app.id.text:
-                        self._add_diagnostic(dep, message=f"The app '{app.id.text}' cannot be dependent of itself")
-
-        if self._tree.services:
+        for app in tree_apps:
+            deps = app.depends_on
             
-            for srv in self._tree.services.nodes:
-                if not srv.details or not srv.details.depends_on:
-                    continue
+            for dep in deps:
+                if dep.text not in apps_n_srvs:
+                    self._add_diagnostic(dep, message=message.format(dep.text))
+                elif dep.text == app.id.text:
+                    self._add_diagnostic(dep, message=f"The app '{app.id.text}' cannot be dependent of itself")
 
-                for dep in srv.details.depends_on.nodes:
-                    if dep.text not in apps_n_srvs:
-                        self._add_diagnostic(dep, message=message.format(dep.text))
-                    elif dep.text == srv.id.text:
-                        self._add_diagnostic(dep, message=f"The service '{srv.id.text}' cannot be dependent of itself")
+        tree_srvs = self._tree.get_services()
+        
+        for srv in tree_srvs:
+            deps = srv.depends_on
+
+            for dep in srv.details.depends_on.nodes:
+                if dep.text not in apps_n_srvs:
+                    self._add_diagnostic(dep, message=message.format(dep.text))
+                elif dep.text == srv.id.text:
+                    self._add_diagnostic(dep, message=f"The service '{srv.id.text}' cannot be dependent of itself")
 
     def _validate_non_existing_app_is_used(self):
         if self._tree.applications:
@@ -184,7 +182,7 @@ class BlueprintValidationHandler(ValidationHandler):
         if not parts[0].lower() == "$colony":
             return False, f"{var_name} is not a valid colony-generated variable"
 
-        if not parts[1].lower() in ["applications", "services", "parameters"]:
+        if not parts[1].lower() in ["applications", "services", "parameters", "repos"]:
             return False, f"{var_name} is not a valid colony-generated variable"
 
         if len(parts) == 3:
@@ -195,7 +193,9 @@ class BlueprintValidationHandler(ValidationHandler):
                 return True, ""
         
         if len(parts) == 4:
-            if not parts[3] == "dns":
+            if parts[1] == "repos" and parts[3] not in ["token", "url"]:
+                return False, f"{var_name} is not a valid colony-generated variable"
+            elif parts[1] == "applications" and not parts[3] == "dns":
                 return False, f"{var_name} is not a valid colony-generated variable"
             else:
                 return True, ""

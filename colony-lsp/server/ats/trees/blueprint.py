@@ -1,18 +1,18 @@
 from dataclasses import dataclass
-from server.ats.trees.common import (BaseTree, ScalarMappingsSequence, MappingNode, SequenceNode,
-                                     TextMappingSequence, TextNode, ScalarNodesSequence, YamlNode, ScalarNode,
-                                     TextNodesSequence)
-from typing import Union
+from server.ats.trees.common import (BaseTree, PropertyNode, ScalarMappingsSequence, MappingNode, SequenceNode,
+                                     TextMappingSequence, TextNode, ScalarNodesSequence, ScalarNode,
+                                     TextNodesSequence, ObjectNode)
+from typing import List, Union
 
 
 @dataclass
-class InfrastructureNode(YamlNode):
+class InfrastructureNode(ObjectNode):
     @dataclass
-    class ConnectivityNode(YamlNode):
+    class ConnectivityNode(ObjectNode):
         @dataclass
-        class VirtualNetwork(YamlNode):
+        class VirtualNetwork(ObjectNode):
             @dataclass
-            class SubnetsNode(YamlNode):
+            class SubnetsNode(ObjectNode):
                 gateway: TextNodesSequence = None
                 management: TextNodesSequence = None
                 application: TextNodesSequence = None
@@ -28,7 +28,7 @@ class InfrastructureNode(YamlNode):
 
 
 @dataclass
-class RuleNode(YamlNode):
+class RuleNode(ObjectNode):
     path: ScalarNode = None
     host: ScalarNode = None
     application: ScalarNode = None
@@ -42,7 +42,7 @@ class RuleNode(YamlNode):
 
 
 @dataclass
-class ListenerNode(YamlNode):
+class ListenerNode(ObjectNode):
     @dataclass
     class RulesSequenceNode(SequenceNode):
         node_type = RuleNode
@@ -55,7 +55,7 @@ class ListenerNode(YamlNode):
 
 
 @dataclass
-class IngressNode(YamlNode):
+class IngressNode(ObjectNode):
     @dataclass
     class ListenersSequenceNode(SequenceNode):
         node_type = ListenerNode
@@ -65,7 +65,7 @@ class IngressNode(YamlNode):
 
 
 @dataclass
-class BlueprintFullInputNode(YamlNode):
+class BlueprintFullInputNode(ObjectNode):
     display_style: ScalarNode = None
     description: ScalarNode = None
     default_value: ScalarNode = None
@@ -92,10 +92,19 @@ class BlueprintInputsSequence(SequenceNode):
 
 
 @dataclass
-class ServiceResourceNode(YamlNode):
+class ServiceResourceNode(ObjectNode):
     input_values: TextMappingSequence = None
     depends_on: ScalarNodesSequence = None
 
+    def get_dependencies(self) -> List[ScalarNode]:
+        deps: PropertyNode = self.depends_on
+
+        if deps is None or deps.value is None:
+            return []
+
+        seq: ScalarNodesSequence = deps.value
+        return seq.nodes 
+        
 
 @dataclass
 class ApplicationResourceNode(ServiceResourceNode):
@@ -116,6 +125,10 @@ class BlueprintResourceMappingNode(MappingNode):
     def details(self):
         return self.value
 
+    @property
+    def depends_on(self):
+        return self.value.get_dependencies()
+
 
 @dataclass
 class ApplicationNode(BlueprintResourceMappingNode):
@@ -130,7 +143,7 @@ class ServiceNode(BlueprintResourceMappingNode):
 @dataclass
 class BlueprintTree(BaseTree):
     @dataclass
-    class MetadataNode(YamlNode):
+    class MetadataNode(ObjectNode):
         description: ScalarNode = None
         tags: ScalarNodesSequence = None
 
@@ -143,7 +156,7 @@ class BlueprintTree(BaseTree):
         node_type = ServiceNode
 
     @dataclass
-    class DebuggingNode(YamlNode):
+    class DebuggingNode(ObjectNode):
         bastion_availability: ScalarNode = None
         direct_access: ScalarNode = None
         # old syntax
@@ -160,3 +173,19 @@ class BlueprintTree(BaseTree):
     infrastructure: InfrastructureNode = None
     # old syntax
     environmentType: TextNode = None
+
+    def get_applications(self) -> List[ApplicationResourceNode]:
+        apps: PropertyNode = self.applications
+
+        if apps is None or apps.value is None:
+            return []
+
+        return [node for node in apps.value.nodes]
+
+    def get_services(self) -> List[ServiceResourceNode]:
+        srvs: PropertyNode = self.services
+
+        if srvs is None or srvs.value is None:
+            return []
+
+        return [node for node in srvs.value.nodes]

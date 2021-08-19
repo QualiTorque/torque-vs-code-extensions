@@ -1,9 +1,7 @@
 from server.validation.srv_validator import ServiceValidationHandler
 from server.validation.app_validator import AppValidationHandler
 from server.validation.bp_validatior import BlueprintValidationHandler
-from typing import List
 from server.ats.trees.common import BaseTree
-from server.constants import PREDEFINED_COLONY_INPUTS
 
 
 class ValidatorFactory:
@@ -12,6 +10,7 @@ class ValidatorFactory:
         'application': AppValidationHandler,
         'terraform': ServiceValidationHandler
     }
+
     @classmethod
     def get_validator(cls, tree: BaseTree):
         if tree.kind is None:
