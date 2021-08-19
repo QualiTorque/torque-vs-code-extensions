@@ -121,12 +121,14 @@ class ScalarNode(TextNode):
 class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit this
     key: ScalarNode = None
     value: YamlNode = None
-    allow_vars: bool = False
+    allow_vars: ClassVar[bool] = False
 
     def accept(self, visitor):
         if visitor.visit_node(self):
-            self.key.accept()
-            self.value.accept()
+            if self.key:
+                self.key.accept(visitor)
+            if self.value:
+                self.value.accept(visitor)
 
     def get_key(self):
         if self.key is None:
