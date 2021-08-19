@@ -56,7 +56,7 @@ class ServiceValidationHandler(ValidationHandler):
         node = tree.variables.var_file
         if node:
             if not node.value:
-                self._add_diagnostic(node, f"Provide a filename")
+                self._add_diagnostic(node.key, f"Provide a filename")
                 return
 
             if node.text not in vars_files:
