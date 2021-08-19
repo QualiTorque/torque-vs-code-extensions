@@ -209,7 +209,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     
     if last_word.endswith('$'):
         inputs_names_list = [i_node.key.text for i_node in tree.inputs_node.nodes] if tree.inputs_node else []
-        inputs_names_list.append("colony")
+        inputs_names_list.append("torque")
 
         if is_var_allowed(tree, params.position):
             suggested_vars = [

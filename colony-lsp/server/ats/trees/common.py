@@ -118,7 +118,7 @@ class ScalarNode(TextNode):
 
 
 @dataclass
-class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit this
+class MappingNode(YamlNode):  # TODO: actually all torque nodes must inherit this
     key: ScalarNode = None
     value: YamlNode = None
     allow_vars: bool = False
