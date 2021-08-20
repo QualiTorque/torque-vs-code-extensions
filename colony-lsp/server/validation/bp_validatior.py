@@ -79,9 +79,9 @@ class BlueprintValidationHandler(ValidationHandler):
             
             for dep in deps:
                 if dep.text not in apps_n_srvs:
-                    self._add_diagnostic(dep.text, message=message.format(dep.text))
+                    self._add_diagnostic(dep, message=message.format(dep.text))
                 elif dep.text == app.id.text:
-                    self._add_diagnostic(dep.text, message=f"The app '{app.id.text}' cannot be dependent of itself")
+                    self._add_diagnostic(dep, message=f"The app '{app.id.text}' cannot be dependent of itself")
 
             inputs = app.value.input_values.value.nodes
             for input in inputs:
