@@ -140,7 +140,7 @@ class ConfigurationNode(ObjectNode):
 class AmiImageNode(ObjectNode):
     id: TextNode = None
     region: ScalarNode = None
-    username: ScalarNode = None
+    username: TextNode = None
 
 
 @dataclass
