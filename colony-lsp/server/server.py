@@ -247,7 +247,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
 
     tree = Parser(doc.source).parse()
     words = common.preceding_words(doc, params.position)
-    last_word = words[-1]
+    last_word = words[-1] if words else ""
     
     if last_word.endswith('$') or last_word.endswith(':'):
         if is_var_allowed(tree, params.position):
