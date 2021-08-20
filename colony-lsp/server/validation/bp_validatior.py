@@ -231,8 +231,6 @@ class BlueprintValidationHandler(ValidationHandler):
                 if not parts[2] in apps:
                     return False, f"{var_name} is not a valid colony-generated variable (no such app in the blueprint)"
 
-                # TODO: check that the app is in the depends_on section
-
                 app_outputs = applications.get_app_outputs(app_name=parts[2])
                 if parts[4] not in app_outputs:
                     return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
@@ -242,8 +240,6 @@ class BlueprintValidationHandler(ValidationHandler):
                 if not parts[2] in srvs:
                     return False, (f"{var_name} is not a valid colony-generated "
                                    f"variable (no such service in the blueprint)")
-
-                # TODO: check that the service is in the depends_on section
 
                 srv_outputs = services.get_service_outputs(srv_name=parts[2])
                 if parts[4] not in srv_outputs:
