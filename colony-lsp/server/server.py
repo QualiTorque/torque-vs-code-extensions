@@ -55,7 +55,7 @@ DEBOUNCE_DELAY = 0.3
 
 
 class ColonyLanguageServer(LanguageServer):
-    CONFIGURATION_SECTION = 'colonyServer'
+    CONFIGURATION_SECTION = 'colony'
     CMD_VALIDATE_BLUEPRINT = 'validate_torque_blueprint'
     CMD_START_SANDBOX = 'start_torque_sandbox'
     latest_opened_document = None
