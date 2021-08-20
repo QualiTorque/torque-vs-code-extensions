@@ -83,9 +83,9 @@ class BlueprintValidationHandler(ValidationHandler):
                 elif dep.text == app.id.text:
                     self._add_diagnostic(dep, message=f"The app '{app.id.text}' cannot be dependent of itself")
 
-            inputs = app.value.input_values.value.nodes
+            inputs = app.value.input_values.value.nodes if app.value.input_values else []
             for input in inputs:
-                if 'colony.applications.' in input.value.text or 'colony.services.' in input.value.text:
+                if input.value and ('colony.applications.' in input.value.text or 'colony.services.' in input.value.text):
                     found = re.findall('colony\.(applications|services)\.(.+?)\.', input.value.text)
                     for f in found:
                         if f[1] not in deps_names:
@@ -103,9 +103,9 @@ class BlueprintValidationHandler(ValidationHandler):
                 elif dep.text == srv.id.text:
                     self._add_diagnostic(dep, message=f"The service '{srv.id.text}' cannot be dependent of itself")
 
-            inputs = srv.value.input_values.value.nodes
+            inputs = srv.value.input_values.value.nodes if srv.value.input_values else []
             for input in inputs:
-                if 'colony.applications.' in input.value.text or 'colony.services.' in input.value.text:
+                if input.value and ('colony.applications.' in input.value.text or 'colony.services.' in input.value.text):
                     found = re.findall('colony\.(applications|services)\.(.+?)\.', input.value.text)
                     for f in found:
                         if f[1] not in deps_names:
