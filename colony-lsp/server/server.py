@@ -728,8 +728,9 @@ async def validate_blueprint(server: ColonyLanguageServer, *args):
         table = []
         headers = ["Name", "Message"]
         for line in lines[3:-1]:
-            cols = line.split('  ')
-            table.append(['\n'.join(textwrap.wrap(cols[0], width=30)), 
+            #cols = line.split('  ')
+            cols = re.split(r'\s{2,}', line)
+            table.append(['\n'.join(textwrap.wrap(cols[0], width=40)), 
                           '\n'.join(textwrap.wrap(cols[1], width=60))])
         
         server.show_message_log(tabulate.tabulate(table, headers, tablefmt="simple"))        
