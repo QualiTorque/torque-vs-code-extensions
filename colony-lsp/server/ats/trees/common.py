@@ -121,12 +121,14 @@ class ScalarNode(TextNode):
 class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit this
     key: ScalarNode = None
     value: YamlNode = None
-    allow_vars: bool = False
+    allow_vars: ClassVar[bool] = False
 
     def accept(self, visitor):
         if visitor.visit_node(self):
-            self.key.accept()
-            self.value.accept()
+            if self.key:
+                self.key.accept(visitor)
+            if self.value:
+                self.value.accept(visitor)
 
     def get_key(self):
         if self.key is None:
@@ -188,7 +190,15 @@ class PropertyNode(MappingNode):
 
     def __getattr__(self, name: str) -> Any:
         val = getattr(self.value, name, None)
-        return val or self.__dict__.get(name, None)
+
+        if val:
+            return val
+        else:
+            value_class = self.parent.__dataclass_fields__[self.identifier].type
+            if name not in value_class.__dataclass_fields__:
+                raise AttributeError(f"Value of PropertyNode '{self.identifier}' doesn't not have attribute '{name}'")
+            
+            return None
 
     # def __setattr__(self, name: str, value: Any) -> None:
     #     if hasattr(self.value, name):

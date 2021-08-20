@@ -76,6 +76,10 @@
                 "source": {
                     "type": "string"
                 },
+                "enable_auto_tagging": {
+                    "type": "boolean",
+                    "default": true
+                },
                 "exclude_from_tagging": {
                     "type": "array",
                     "description": "If you must use a Terraform module containing resources that use these 'tag' definitions, you will need to explicitly tell Colony NOT to tag those resource types.",

@@ -1,5 +1,4 @@
 from typing import Tuple
-from pygls.lsp.types.basic_structures import T
 import yaml
 from yaml.tokens import (BlockEndToken, BlockEntryToken, BlockMappingStartToken,
                          BlockSequenceStartToken, KeyToken,
@@ -60,7 +59,7 @@ class Parser:
     def _handle_hanging_dash(self, token):
         # remove unnecessary empty element added to sequence
         self.nodes_stack.pop()
-        
+
         seq: SequenceNode = self.nodes_stack[-1]
         if not isinstance(seq, SequenceNode):
             raise ParserError(message="Wrong structure of sequence", token=token)
@@ -80,20 +79,12 @@ class Parser:
         node.start_pos = self.get_token_start(token)
         node.end_pos = self.get_token_end(token)
 
-        # if isinstance(node, UnprocessedNode):
-        #      return
-
         if isinstance(node, TextNode):
             node.text = token.value
 
         else:
             # TODO: replace with parser exception
             raise Exception("Wrong node. Expected TextNode")
-
-    def _check_for_property(self, token: Token):
-        if self.nodes_stack and isinstance(self.nodes_stack[-1], PropertyNode):
-            self.nodes_stack[-1].end_pos = self.get_token_end(token)
-            self.nodes_stack.pop()
 
     def _process_object_child(self, token: ScalarToken):
         """Gets the property of the last Node in a stack and puts
@@ -106,7 +97,7 @@ class Parser:
             child_node.start_pos = self.get_token_start(token)
 
         # TODO: replace with parser exception
-        except Exception as e:
+        except Exception:
             node.add_error(NodeError(
                 start_pos=Parser.get_token_start(token),
                 end_pos=Parser.get_token_end(token),
@@ -121,14 +112,11 @@ class Parser:
         child_node.key.start_pos = self.get_token_start(token)
         child_node.key.end_pos = self.get_token_end(token)
         self.nodes_stack.append(child_node)
-        # self.nodes_stack.append(child_node.value)
 
-        
     def _process_token(self, token: Token) -> None:
-        print("Processing token ", token)
-        if (self.nodes_stack and isinstance(self.nodes_stack[-1], PropertyNode) 
-                             and isinstance(token, (KeyToken, BlockEndToken))):
-            
+        if (self.nodes_stack and isinstance(self.nodes_stack[-1], PropertyNode)
+                and isinstance(token, (KeyToken, BlockEndToken))):
+
             self.nodes_stack[-1].end_pos = self.get_token_end(token)
             self.nodes_stack.pop()
 
@@ -136,7 +124,6 @@ class Parser:
             if isinstance(self.tokens_stack[-1], ValueToken):
                 self.tokens_stack.pop()
 
-            print("Token: ", token)
         # beginning of document
         if isinstance(token, StreamStartToken):
             self.tree.start_pos = self.get_token_start(token)
@@ -225,7 +212,7 @@ class Parser:
                     self.tokens_stack.pop()
                     self.is_array_item = False
 
-                elif isinstance(self.nodes_stack[-1], SequenceNode):
+                elif isinstance(self.nodes_stack[-1], (UnprocessedNode, SequenceNode)):
                     # In means that we just finished processing a sequence without indentation
                     # which means document didn't have BlockSequenceStartToken at the beginning of the block
                     # So, this BlockEndToken is related to previous object => we need to remove not only the
@@ -245,15 +232,13 @@ class Parser:
                     if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
                         raise Exception("Wrong structure of document")  # TODO: provide better message
 
-                    # self._check_for_property(token)
-
                     # and remove it from the token stack
                     self.tokens_stack.pop()
                     # and node itself as well
                     prev_node = self.nodes_stack.pop()
                     prev_node.end_pos = self.get_token_end(token)
 
-                    if isinstance(self.tokens_stack[-1], ValueToken):
+                    if isinstance(self.tokens_stack[-1], (ValueToken, BlockEntryToken)):
                         # remove value token opening it
                         self.tokens_stack.pop()
 
@@ -266,9 +251,6 @@ class Parser:
                     # Close parent node
                     self.nodes_stack[-1].end_pos = self.get_token_end(token)
                     self.nodes_stack.pop()
-
-            # self._check_for_property(token)
-
 
         if isinstance(token, KeyToken):
             # if sequence doesnt have indentation => there is no BlockEndToken at the end
@@ -285,16 +267,10 @@ class Parser:
                     prop = self.nodes_stack.pop()
                     prop.end_pos = self.get_token_end(token)
 
-            # self._check_for_property(token)
-
             self.tokens_stack.append(token)
             return
 
         if isinstance(token, ValueToken):
-            # node = self.nodes_stack[-1]
-            # if isinstance(node, MappingNode):
-            #     node_value = node.get_value()
-            #     self.nodes_stack.append(node_value)
             self.tokens_stack.append(token)
             return
 
@@ -311,24 +287,11 @@ class Parser:
             value_node = node.get_value(expected_type=TextNode)
             self.nodes_stack.append(value_node)
 
-            # if self.is_array_item:
-            #     # it means on the top of the stack we must always have MappingNode or it inheritors
-            #     node = self.nodes_stack[-1]
-
-            #     if not isinstance(node, MappingNode):
-            #         raise Exception(f"Expected MappingNode, got {type(node)}")
-
-            #     value_node = node.get_value(expected_type=TextNode)
-            #     self.nodes_stack.append(value_node)
-
-            #     self.is_array_item = False
-
             self._process_scalar_token(token)
             self.tokens_stack.pop()
 
             if self.is_array_item:
                 self.is_array_item = False
-            # self._check_for_property(token)
             return
 
         if isinstance(token, ScalarToken) and isinstance(self.tokens_stack[-1], (KeyToken, BlockEntryToken)):

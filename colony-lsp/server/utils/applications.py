@@ -40,6 +40,12 @@ def reload_app_details(app_name, app_source):
         load_app_details(app_name, app_source)
 
 
+def remove_app_details(app_name):
+    if APPLICATIONS: # if there is already a cache, remove this file
+        if app_name in APPLICATIONS:
+            APPLICATIONS.pop(app_name)
+        
+
 def get_available_applications(root_folder: str=None):
     if APPLICATIONS:
         return APPLICATIONS
@@ -98,4 +104,3 @@ def get_app_outputs(app_name):
             return outputs
     
     return []
-    

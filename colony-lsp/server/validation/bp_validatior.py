@@ -74,24 +74,42 @@ class BlueprintValidationHandler(ValidationHandler):
         tree_apps = self._tree.get_applications()
             
         for app in tree_apps:
+            deps_names = [dep.text for dep in app.depends_on]
             deps = app.depends_on
             
             for dep in deps:
                 if dep.text not in apps_n_srvs:
-                    self._add_diagnostic(dep, message=message.format(dep.text))
+                    self._add_diagnostic(dep.text, message=message.format(dep.text))
                 elif dep.text == app.id.text:
-                    self._add_diagnostic(dep, message=f"The app '{app.id.text}' cannot be dependent of itself")
+                    self._add_diagnostic(dep.text, message=f"The app '{app.id.text}' cannot be dependent of itself")
 
+            inputs = app.value.input_values.value.nodes
+            for input in inputs:
+                if 'colony.applications.' in input.value.text or 'colony.services.' in input.value.text:
+                    found = re.findall('colony\.(applications|services)\.(.+?)\.', input.value.text)
+                    for f in found:
+                        if f[1] not in deps_names:
+                            self._add_diagnostic(input.value, message=f"The app '{app.id.text}' is missing a dependency to '{f[1]}'.")
+                
         tree_srvs = self._tree.get_services()
         
         for srv in tree_srvs:
+            deps_names = [dep.text for dep in srv.depends_on]
             deps = srv.depends_on
 
-            for dep in srv.details.depends_on.nodes:
+            for dep in deps:
                 if dep.text not in apps_n_srvs:
                     self._add_diagnostic(dep, message=message.format(dep.text))
                 elif dep.text == srv.id.text:
                     self._add_diagnostic(dep, message=f"The service '{srv.id.text}' cannot be dependent of itself")
+
+            inputs = srv.value.input_values.value.nodes
+            for input in inputs:
+                if 'colony.applications.' in input.value.text or 'colony.services.' in input.value.text:
+                    found = re.findall('colony\.(applications|services)\.(.+?)\.', input.value.text)
+                    for f in found:
+                        if f[1] not in deps_names:
+                            self._add_diagnostic(input.value, message=f"The service '{srv.id.text}' is missing a dependency to '{f[1]}'.")
 
     def _validate_non_existing_app_is_used(self):
         if self._tree.applications:
@@ -213,8 +231,6 @@ class BlueprintValidationHandler(ValidationHandler):
                 if not parts[2] in apps:
                     return False, f"{var_name} is not a valid colony-generated variable (no such app in the blueprint)"
 
-                # TODO: check that the app is in the depends_on section
-
                 app_outputs = applications.get_app_outputs(app_name=parts[2])
                 if parts[4] not in app_outputs:
                     return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
@@ -222,13 +238,13 @@ class BlueprintValidationHandler(ValidationHandler):
             if parts[1] == "services":
                 srvs = self.blueprint_services
                 if not parts[2] in srvs:
-                    return False, f"{var_name} is not a valid colony-generated variable (no such service in the blueprint)"
-
-                # TODO: check that the service is in the depends_on section
+                    return False, (f"{var_name} is not a valid colony-generated "
+                                   f"variable (no such service in the blueprint)")
 
                 srv_outputs = services.get_service_outputs(srv_name=parts[2])
                 if parts[4] not in srv_outputs:
-                    return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
+                    return False, (f"{var_name} is not a valid colony-generated variable ('{parts[2]}' "
+                                   f"does not have the output '{parts[4]}')")
 
         else:
             return False, f"{var_name} is not a valid colony-generated variable (too many parts)"
@@ -333,7 +349,8 @@ class BlueprintValidationHandler(ValidationHandler):
 
                 # check that there is no app with this name
                 if srv.id.text in apps:
-                    msg = "There is already an application with the same name in this blueprint. Make sure the names are unique."
+                    msg = ("There is already an application with the same name in this blueprint. "
+                           "Make sure the names are unique.")
                     self._add_diagnostic(srv.id, message=msg)
 
                     prev_app = apps[srv.id.text]
@@ -374,7 +391,8 @@ class BlueprintValidationHandler(ValidationHandler):
                             if input.key.text not in app_inputs:
                                 self._add_diagnostic(
                                     input.key,
-                                    message=f"The application '{app.id.text}' does not have an input named '{input.key.text}'"
+                                    message=f"The application '{app.id.text}' does not have "
+                                            f"an input named '{input.key.text}'"
                                 )
                     missing_inputs = []
                     for input in app_inputs:
@@ -400,7 +418,8 @@ class BlueprintValidationHandler(ValidationHandler):
                             if input.key.text not in srv_inputs:
                                 self._add_diagnostic(
                                     input.key,
-                                    message=f"The service '{srv.id.text}' does not have an input named '{input.key.text}'"
+                                    message=f"The service '{srv.id.text}' does not have an "
+                                            f"input named '{input.key.text}'"
                                 )
                     missing_inputs = []
                     for input in srv_inputs:
@@ -414,7 +433,8 @@ class BlueprintValidationHandler(ValidationHandler):
 
     def _validate_blueprint_networking_gateway_not_same_as_management_or_application(self):
         if self._tree.infrastructure and self._tree.infrastructure.connectivity:
-            if self._tree.infrastructure.connectivity.virtual_network and self._tree.infrastructure.connectivity.virtual_network.subnets:
+            if (self._tree.infrastructure.connectivity.virtual_network
+                    and self._tree.infrastructure.connectivity.virtual_network.subnets):
                 subs = self._tree.infrastructure.connectivity.virtual_network.subnets
                 if subs.gateway and subs.gateway.nodes and \
                    subs.management and subs.management.nodes and \
@@ -423,29 +443,8 @@ class BlueprintValidationHandler(ValidationHandler):
                     mgmt = subs.management.nodes[0]
                     app = subs.application.nodes[0]
                     if gw.text == mgmt.text or gw.text == app.text:
-                        self._add_diagnostic(gw, message="Blueprint Gateway subnet cannot be used as management or application subnet.")
-                    
-                    
-    # def _validate_variables_being_used_where_it_is_allowed(self, tree):
-    #     tree_nodes = vars(tree)
-    #     for node_name, tree_node in tree_nodes.items():
-    #         if tree_node and node_name not in ['parent', 'start', 'end', 'key', 'id']:
-    #             if isinstance(tree_node, MappingNode):
-    #                 allow_var = tree_node.allow_variable
-    #                 if item.value:
-    #                     print(allow_var, item.value.text)
-    #             elif isinstance(tree_node, YamlNode):
-    #                 self._validate_variables_being_used_where_it_is_allowed(tree_node)
-    #             elif isinstance(tree_node, List):
-    #                 for item in tree_node:
-    #                     if isinstance(item, MappingNode):
-    #                         allow_var = item.allow_variable
-    #                         if item.value:
-    #                             print(allow_var, item.value.text)
-    #                     else:
-    #                         self._validate_variables_being_used_where_it_is_allowed(item)
-
-
+                        self._add_diagnostic(gw, message="Blueprint Gateway subnet cannot "
+                                                         "be used as management or application subnet.")
 
     def validate(self):
         super().validate()
@@ -463,7 +462,6 @@ class BlueprintValidationHandler(ValidationHandler):
             # errors
             self._validate_blueprint_apps_have_input_values()
             self._validate_blueprint_services_have_input_values()
-            # self._validate_variables_being_used_where_it_is_allowed(self._tree)
             self._validate_dependency_exists()
             self._validate_var_being_used_is_defined()
             self._validate_non_existing_app_is_used()

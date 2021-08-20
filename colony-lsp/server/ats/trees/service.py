@@ -1,11 +1,12 @@
 from dataclasses import dataclass
-from server.ats.trees.common import (BaseTree, ObjectNode, TreeWithOutputs, YamlNode,
+from server.ats.trees.common import (BaseTree, ObjectNode, TreeWithOutputs,
                                      TextNode, ScalarNodesSequence, TextMappingSequence, ScalarNode)
 
 
 @dataclass
 class ModuleNode(ObjectNode):
     source: TextNode = None
+    enable_auto_tagging: ScalarNode = None
     exclude_from_tagging: ScalarNodesSequence = None
 
 
