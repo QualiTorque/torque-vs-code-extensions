@@ -47,29 +47,27 @@ class ValidationHandler:
                 ))
 
     def _validate_no_duplicates_in_inputs(self):
-        if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
-            message = "Multiple declarations of input '{}'"
+        message = "Multiple declarations of input '{}'"
 
-            inputs_names_list = [input.key.text for input in self._tree.inputs_node.nodes]
-            for input_node in self._tree.inputs_node.nodes:
-                if inputs_names_list.count(input_node.key.text) > 1:
-                    self._add_diagnostic(
-                        input_node.key,
-                        message=message.format(input_node.key.text)
-                    )
+        inputs_names_list = [input.key.text for input in self._tree.get_inputs()]
+        for input_node in self._tree.get_inputs():
+            if inputs_names_list.count(input_node.key.text) > 1:
+                self._add_diagnostic(
+                    input_node.key,
+                    message=message.format(input_node.key.text)
+                )
     
     def _validate_no_reserved_words_in_inputs_prefix(self):
-        if hasattr(self._tree, 'inputs_node') and self._tree.inputs_node:
-            message = "input '{}' contains a reserved word '{}'"
-            reserved_words = ["colony", "torque"]
+        message = "input '{}' contains a reserved word '{}'"
+        reserved_words = ["colony", "torque"]
 
-            for input_node in self._tree.inputs_node.nodes:
-                for reserved in reserved_words:
-                    if input_node.key.text.lower().startswith(reserved):
-                        self._add_diagnostic(
-                            input_node.key,
-                            message=message.format(input_node.key.text, reserved)
-                        )
+        for input_node in self._tree.get_inputs():
+            for reserved in reserved_words:
+                if input_node.key.text.lower().startswith(reserved):
+                    self._add_diagnostic(
+                        input_node.key,
+                        message=message.format(input_node.key.text, reserved)
+                    )
 
     def _validate_no_duplicates_in_outputs(self):
         if hasattr(self._tree, 'outputs') and self._tree.outputs:

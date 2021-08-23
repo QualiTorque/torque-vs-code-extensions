@@ -110,22 +110,20 @@ class BlueprintValidationHandler(ValidationHandler):
                         self._add_diagnostic(app.id, message=message.format(app.id.text))
             
     def _validate_blueprint_apps_have_input_values(self):
-        if self._tree.applications and self._tree.inputs_node:
-            blueprint_inputs = {input.key.text: 1 for input in self._tree.inputs_node.nodes}
-            for app in self._tree.get_applications():
-                if app.value and app.value.input_values:
-                    for var in app.value.input_values.nodes:
-                        if not var.value and var.key.text not in blueprint_inputs:
-                            self._add_diagnostic(var.key, message="Application input must have a value or a blueprint input with the same name should be defined")
+        blueprint_inputs = {input.key.text: 1 for input in self._tree.get_inputs()}
+        for app in self._tree.get_applications():
+            if app.value and app.value.input_values:
+                for var in app.value.input_values.nodes:
+                    if not var.value and var.key.text not in blueprint_inputs:
+                        self._add_diagnostic(var.key, message="Application input must have a value or a blueprint input with the same name should be defined")
 
     def _validate_blueprint_services_have_input_values(self):
-        if self._tree.services and self._tree.inputs_node:
-            blueprint_inputs = {input.key.text: 1 for input in self._tree.inputs_node.nodes}
-            for srv in self._tree.get_services():
-                if srv.value and srv.value.input_values:
-                    for var in srv.value.input_values.nodes:
-                        if not var.value and var.key.text not in blueprint_inputs:
-                            self._add_diagnostic(var.key, message="Service input must have a value or a blueprint input with the same name should be defined")
+        blueprint_inputs = {input.key.text: 1 for input in self._tree.get_inputs()}
+        for srv in self._tree.get_services():
+            if srv.value and srv.value.input_values:
+                for var in srv.value.input_values.nodes:
+                    if not var.value and var.key.text not in blueprint_inputs:
+                        self._add_diagnostic(var.key, message="Service input must have a value or a blueprint input with the same name should be defined")
 
     def _validate_non_existing_service_is_used(self):
         if self._tree.services:
@@ -163,7 +161,7 @@ class BlueprintValidationHandler(ValidationHandler):
                         if var.value is None and var.key.text not in name_only_inputs:
                             name_only_inputs[var.key.text] = 1
         # search if used as a variable
-            for input in self._tree.inputs_node.nodes:
+            for input in self._tree.get_inputs():
                 if input.key.text not in name_only_inputs:
                     found = re.findall('^[^#\\n]*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
                     if len(found) == 0:
@@ -233,7 +231,7 @@ class BlueprintValidationHandler(ValidationHandler):
         return True, ""
 
     def _validate_var_being_used_is_defined(self):
-        bp_inputs = {input.key.text for input in self._tree.inputs_node.nodes} if self._tree.inputs_node else {}
+        bp_inputs = {input.key.text for input in self._tree.get_inputs()} if self._tree.inputs_node else {}
 
         for app in self._tree.get_applications():
             if not app.details or not app.details.input_values:

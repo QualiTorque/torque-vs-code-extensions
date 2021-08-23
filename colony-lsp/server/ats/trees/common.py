@@ -331,6 +331,9 @@ class BaseTree(ObjectNode):
         )
         return mapping
 
+    def get_inputs(self) -> List[ScalarMappingNode]:
+        return self._get_seq_nodes("inputs_node")
+
 
 @dataclass
 class TreeWithOutputs(ABC):
