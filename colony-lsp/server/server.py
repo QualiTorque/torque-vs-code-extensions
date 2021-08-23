@@ -251,7 +251,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     
     if last_word.endswith('$') or last_word.endswith(':'):
         if is_var_allowed(tree, params.position):
-            inputs_names_list = [i_node.key.text for i_node in tree.inputs_node.nodes] if tree.inputs_node else []
+            inputs_names_list = [i_node.key.text for i_node in tree.get_inputs()]
             inputs_names_list.append("colony")
 
             line = params.position.line
@@ -303,13 +303,11 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                             if len(parts) == 4 and parts[2] != '':
                                 options = ["token", "url"]
                         elif cur_word == 'colony.applications.':
-                            if tree.applications and len(tree.applications.nodes) > 0:
-                                for app in tree.applications.nodes:
-                                    options.append(app.id.text)
+                            for app in tree.get_applications():
+                                options.append(app.id.text)
                         elif cur_word == 'colony.services.':
-                            if tree.services and len(tree.services.nodes) > 0:
-                                for srv in tree.services.nodes:
-                                    options.append(srv.id.text)
+                            for srv in tree.get_services():
+                                options.append(srv.id.text)
                         elif cur_word.startswith('colony.applications.'):
                             parts = cur_word.split('.')
                             if len(parts) == 4 and parts[2] != '':

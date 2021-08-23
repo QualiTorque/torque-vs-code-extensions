@@ -112,7 +112,7 @@ def get_service_inputs(srv_name):
         srv_tree = SERVICES[srv_name]["srv_tree"]
         if srv_tree and srv_tree.inputs_node:
             inputs = {}
-            for input in srv_tree.inputs_node.nodes:
+            for input in srv_tree.get_inputs():
                 inputs[input.key.text] = input.value.text if input.value else None
             return inputs
 
@@ -122,8 +122,7 @@ def get_service_inputs(srv_name):
 def get_service_outputs(srv_name):
     if srv_name in SERVICES:
         srv_tree = SERVICES[srv_name]["srv_tree"]
-        if srv_tree and srv_tree.outputs:
-            outputs = [out.text for out in srv_tree.outputs.nodes]
-            return outputs
+        outputs = [out.text for out in srv_tree.get_outputs()]
+        return outputs
 
     return []

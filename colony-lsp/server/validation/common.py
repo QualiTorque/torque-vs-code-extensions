@@ -70,11 +70,11 @@ class ValidationHandler:
                     )
 
     def _validate_no_duplicates_in_outputs(self):
-        if hasattr(self._tree, 'outputs') and self._tree.outputs:
+        if hasattr(self._tree, 'outputs'):
             message = "Multiple declarations of output '{}'. Outputs are not case sensitive."
 
-            outputs_names_list = [output.text.lower() for output in self._tree.outputs.nodes]
-            for output_node in self._tree.outputs.nodes:
+            outputs_names_list = [output.text.lower() for output in self._tree.get_outputs()]
+            for output_node in self._tree.get_outputs():
                 if outputs_names_list.count(output_node.text.lower()) > 1:
                     self._add_diagnostic(
                         output_node,

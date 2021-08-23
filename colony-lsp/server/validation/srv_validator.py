@@ -37,13 +37,13 @@ class ServiceValidationHandler(ValidationHandler):
             message = "Unused variable {}"
             source = self._document.source
             name_only_var_values = []
-            try:
-                for var in self._tree.variables.value.values.value.nodes:
+
+            if self._tree.variables:
+                for var in self._tree.variables.get_values():
                     if not var.value:
                         name_only_var_values.append(var.key.text)
-            except:
-                pass
-            for input in self._tree.inputs_node.nodes:
+
+            for input in self._tree.get_inputs():
                 found = re.findall('^[^#\\n]*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
                 if len(found) == 0 and input.key.text not in name_only_var_values:
                     self._add_diagnostic(

@@ -98,8 +98,7 @@ def get_app_inputs(app_name):
 def get_app_outputs(app_name):
     if app_name in APPLICATIONS:
         app_tree = APPLICATIONS[app_name]["app_tree"]
-        if app_tree and app_tree.outputs:
-            outputs = [out.text for out in app_tree.outputs.nodes]
-            return outputs
+        outputs = [out.text for out in app_tree.get_outputs()]
+        return outputs
     
     return []
