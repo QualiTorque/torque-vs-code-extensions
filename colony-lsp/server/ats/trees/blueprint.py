@@ -150,7 +150,7 @@ class BlueprintTree(BaseTree):
     @dataclass
     class MetadataNode(ObjectNode):
         description: ScalarNode = None
-        tags: ScalarNodesSequence = None
+        tags: ScalarMappingsSequence = None
 
     @dataclass
     class AppsSequence(SequenceNode):
