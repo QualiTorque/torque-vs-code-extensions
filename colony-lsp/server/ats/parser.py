@@ -284,8 +284,10 @@ class Parser:
 
             if not isinstance(node, MappingNode):
                 raise ParserError(message="Expected mapping value here", token=token)
-
-            value_node = node.get_value(expected_type=TextNode)
+            try:
+                value_node = node.get_value(expected_type=TextNode)
+            except ValueError as e:
+                raise ParserError(message=f"Scalar cannot be accepted here. Object expected", token=token)
             self.nodes_stack.append(value_node)
 
             self._process_scalar_token(token)
