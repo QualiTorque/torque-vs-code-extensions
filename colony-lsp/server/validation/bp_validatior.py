@@ -69,47 +69,28 @@ class BlueprintValidationHandler(ValidationHandler):
         message = "The application/service '{}' is not defined in the applications/services section"
         apps = self.blueprint_apps
         srvs = self.blueprint_services
+
         apps_n_srvs = set(apps + srvs)
+        tree_resources = self._tree.get_applications() + self._tree.get_services()
 
-        tree_apps = self._tree.get_applications()
-            
-        for app in tree_apps:
-            deps_names = [dep.text for dep in app.depends_on]
-            deps = app.depends_on
+        for res in tree_resources:
+            deps_names = [dep.text for dep in res.deps]
+            deps = res.deps
             
             for dep in deps:
                 if dep.text not in apps_n_srvs:
                     self._add_diagnostic(dep, message=message.format(dep.text))
-                elif dep.text == app.id.text:
-                    self._add_diagnostic(dep, message=f"The app '{app.id.text}' cannot be dependent of itself")
+                elif dep.text == res.id.text:
+                    self._add_diagnostic(dep, message=f"The resource '{res.id.text}' cannot be dependent of itself")
 
-            inputs = app.value.input_values.value.nodes if app.value.input_values else []
-            for input in inputs:
+            for input in res.inputs:
+                if input.value is None:
+                    continue
                 if input.value and ('colony.applications.' in input.value.text or 'colony.services.' in input.value.text):
                     found = re.findall('colony\.(applications|services)\.(.+?)\.', input.value.text)
                     for f in found:
                         if f[1] not in deps_names:
-                            self._add_diagnostic(input.value, message=f"The app '{app.id.text}' is missing a dependency to '{f[1]}'.")
-                
-        tree_srvs = self._tree.get_services()
-        
-        for srv in tree_srvs:
-            deps_names = [dep.text for dep in srv.depends_on]
-            deps = srv.depends_on
-
-            for dep in deps:
-                if dep.text not in apps_n_srvs:
-                    self._add_diagnostic(dep, message=message.format(dep.text))
-                elif dep.text == srv.id.text:
-                    self._add_diagnostic(dep, message=f"The service '{srv.id.text}' cannot be dependent of itself")
-
-            inputs = srv.value.input_values.value.nodes if srv.value.input_values else []
-            for input in inputs:
-                if input.value and ('colony.applications.' in input.value.text or 'colony.services.' in input.value.text):
-                    found = re.findall('colony\.(applications|services)\.(.+?)\.', input.value.text)
-                    for f in found:
-                        if f[1] not in deps_names:
-                            self._add_diagnostic(input.value, message=f"The service '{srv.id.text}' is missing a dependency to '{f[1]}'.")
+                            self._add_diagnostic(input.value, message=f"The app '{res.id.text}' is missing a dependency to '{f[1]}'.")
 
     def _validate_non_existing_app_is_used(self):
         if self._tree.applications:
