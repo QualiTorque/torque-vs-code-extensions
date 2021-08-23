@@ -93,54 +93,48 @@ class BlueprintValidationHandler(ValidationHandler):
                             self._add_diagnostic(input.value, message=f"The app '{res.id.text}' is missing a dependency to '{f[1]}'.")
 
     def _validate_non_existing_app_is_used(self):
-        if self._tree.applications:
-            message = "The app '{}' could not be found in the /applications folder"
-            available_apps = applications.get_available_applications_names()
-            for app in self._tree.get_applications():
-                if app.id.text not in available_apps:
-                    self._add_diagnostic(app.id, message=message.format(app.id.text))
+        message = "The app '{}' could not be found in the /applications folder"
+        available_apps = applications.get_available_applications_names()
+        for app in self._tree.get_applications():
+            if app.id.text not in available_apps:
+                self._add_diagnostic(app.id, message=message.format(app.id.text))
     
     def _validate_used_apps_are_valid(self):
-        if self._tree.applications:
-            message = "The app '{}' is not valid. Open the file to get more details."
-            available_apps = applications.get_available_applications()
-            for app in self._tree.get_applications():
-                if app.id.text in available_apps:
-                    if available_apps[app.id.text]["app_tree"] is None:
-                        self._add_diagnostic(app.id, message=message.format(app.id.text))
+        message = "The app '{}' is not valid. Open the file to get more details."
+        available_apps = applications.get_available_applications()
+        for app in self._tree.get_applications():
+            if app.id.text in available_apps:
+                if available_apps[app.id.text]["app_tree"] is None:
+                    self._add_diagnostic(app.id, message=message.format(app.id.text))
             
     def _validate_blueprint_apps_have_input_values(self):
         blueprint_inputs = {input.key.text: 1 for input in self._tree.get_inputs()}
         for app in self._tree.get_applications():
-            if app.value and app.value.input_values:
-                for var in app.value.input_values.nodes:
-                    if not var.value and var.key.text not in blueprint_inputs:
-                        self._add_diagnostic(var.key, message="Application input must have a value or a blueprint input with the same name should be defined")
+            for var in app.inputs:
+                if not var.value and var.key.text not in blueprint_inputs:
+                    self._add_diagnostic(var.key, message="Application input must have a value or a blueprint input with the same name should be defined")
 
     def _validate_blueprint_services_have_input_values(self):
         blueprint_inputs = {input.key.text: 1 for input in self._tree.get_inputs()}
         for srv in self._tree.get_services():
-            if srv.value and srv.value.input_values:
-                for var in srv.value.input_values.nodes:
-                    if not var.value and var.key.text not in blueprint_inputs:
-                        self._add_diagnostic(var.key, message="Service input must have a value or a blueprint input with the same name should be defined")
+            for var in srv.inputs:
+                if not var.value and var.key.text not in blueprint_inputs:
+                    self._add_diagnostic(var.key, message="Service input must have a value or a blueprint input with the same name should be defined")
 
     def _validate_non_existing_service_is_used(self):
-        if self._tree.services:
-            message = "The service '{}' could not be found in the /services folder"
-            available_srvs = services.get_available_services_names()
-            for srv in self._tree.get_services():
-                if srv.id.text not in available_srvs:
-                    self._add_diagnostic(srv.id, message=message.format(srv.id.text))
+        message = "The service '{}' could not be found in the /services folder"
+        available_srvs = services.get_available_services_names()
+        for srv in self._tree.get_services():
+            if srv.id.text not in available_srvs:
+                self._add_diagnostic(srv.id, message=message.format(srv.id.text))
     
     def _validate_used_services_are_valid(self):
-        if self._tree.services:
-            message = "The service '{}' is not valid. Open the file to get more details."
-            available_srvs = services.get_available_services()
-            for srv in self._tree.get_services():
-                if srv.id.text in available_srvs:
-                    if available_srvs[srv.id.text]["srv_tree"] is None:
-                        self._add_diagnostic(srv.id, message=message.format(srv.id.text))
+        message = "The service '{}' is not valid. Open the file to get more details."
+        available_srvs = services.get_available_services()
+        for srv in self._tree.get_services():
+            if srv.id.text in available_srvs:
+                if available_srvs[srv.id.text]["srv_tree"] is None:
+                    self._add_diagnostic(srv.id, message=message.format(srv.id.text))
 
     def _check_for_unused_blueprint_inputs(self):
         if self._tree.inputs_node:
@@ -150,17 +144,15 @@ class BlueprintValidationHandler(ValidationHandler):
             name_only_inputs = {}
             
             for app in self._tree.get_applications():
-                if app.value and app.value.input_values:
-                    for var in app.value.input_values.nodes:
-                        if var.value is None and var.key.text not in name_only_inputs:
-                            name_only_inputs[var.key.text] = 1
+                for var in app.inputs:
+                    if var.value is None and var.key.text not in name_only_inputs:
+                        name_only_inputs[var.key.text] = 1
             
             for srv in self._tree.get_services():
-                if srv.value and srv.value.input_values:
-                    for var in srv.value.input_values.nodes:
-                        if var.value is None and var.key.text not in name_only_inputs:
-                            name_only_inputs[var.key.text] = 1
-        # search if used as a variable
+                for var in srv.inputs:
+                    if var.value is None and var.key.text not in name_only_inputs:
+                        name_only_inputs[var.key.text] = 1
+            # search if used as a variable
             for input in self._tree.get_inputs():
                 if input.key.text not in name_only_inputs:
                     found = re.findall('^[^#\\n]*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
@@ -233,18 +225,12 @@ class BlueprintValidationHandler(ValidationHandler):
     def _validate_var_being_used_is_defined(self):
         bp_inputs = {input.key.text for input in self._tree.get_inputs()} if self._tree.inputs_node else {}
 
-        for app in self._tree.get_applications():
-            if not app.details or not app.details.input_values:
-                continue
-            
-            for input in app.details.input_values.nodes:
+        for app in self._tree.get_applications():            
+            for input in app.inputs:
                 self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
 
         for srv in self._tree.get_services():
-            if not srv.details or not srv.details.input_values:
-                continue
-
-            for input in srv.details.input_values.nodes:
+            for input in srv.inputs:
                 self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
 
         for art in self._tree.get_artifacts():
@@ -333,10 +319,9 @@ class BlueprintValidationHandler(ValidationHandler):
                     self._add_diagnostic(prev_app.id, message=msg)
 
     def _validate_artifacts_apps_are_defined(self):
-        if self._tree.artifacts:
-            for art in self._tree.get_artifacts():
-                if art.key.text not in self.blueprint_apps:
-                    self._add_diagnostic(art.key, message="This application is not defined in this blueprint.")
+        for art in self._tree.get_artifacts():
+            if art.key.text not in self.blueprint_apps:
+                self._add_diagnostic(art.key, message="This application is not defined in this blueprint.")
 
     def _validate_artifacts_are_unique(self):
         if self._tree.artifacts:
@@ -355,57 +340,53 @@ class BlueprintValidationHandler(ValidationHandler):
                         duplicated[prev_art.key.text] = 1
 
     def _validate_apps_inputs_exists(self):
-        if self._tree.applications:
-            apps = applications.get_available_applications_names()
-            for app in self._tree.get_applications():
-                if app.id.text in apps:
-                    app_inputs = applications.get_app_inputs(app.id.text)
-                    used_inputs = []
-                    if app.details and app.details.input_values:
-                        for input in app.details.input_values.nodes:    
-                            used_inputs.append(input.key.text)
-                            if input.key.text not in app_inputs:
-                                self._add_diagnostic(
-                                    input.key,
-                                    message=f"The application '{app.id.text}' does not have "
-                                            f"an input named '{input.key.text}'"
-                                )
-                    missing_inputs = []
-                    for input in app_inputs:
-                        if app_inputs[input] is None and input not in used_inputs:
-                            missing_inputs.append(input)
-                    if missing_inputs:
+        apps = applications.get_available_applications_names()
+        for app in self._tree.get_applications():
+            if app.id.text in apps:
+                app_inputs = applications.get_app_inputs(app.id.text)
+                used_inputs = []
+                for input in app.inputs:   
+                    used_inputs.append(input.key.text)
+                    if input.key.text not in app_inputs:
                         self._add_diagnostic(
-                            app.id,
-                            message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
+                            input.key,
+                            message=f"The application '{app.id.text}' does not have "
+                                    f"an input named '{input.key.text}'"
                         )
+                missing_inputs = []
+                for input in app_inputs:
+                    if app_inputs[input] is None and input not in used_inputs:
+                        missing_inputs.append(input)
+                if missing_inputs:
+                    self._add_diagnostic(
+                        app.id,
+                        message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
+                    )
 
     def _validate_services_inputs_exists(self):
-        if self._tree.services:
-            srvs = services.get_available_services_names()
-            for srv in self._tree.get_services():
-                if srv.id.text in srvs:
-                    srv_inputs = services.get_service_inputs(srv.id.text)
-                    used_inputs = []
+        srvs = services.get_available_services_names()
+        for srv in self._tree.get_services():
+            if srv.id.text in srvs:
+                srv_inputs = services.get_service_inputs(srv.id.text)
+                used_inputs = []
 
-                    if srv.details and srv.details.input_values:
-                        for input in srv.details.input_values.nodes:
-                            used_inputs.append(input.key.text)
-                            if input.key.text not in srv_inputs:
-                                self._add_diagnostic(
-                                    input.key,
-                                    message=f"The service '{srv.id.text}' does not have an "
-                                            f"input named '{input.key.text}'"
-                                )
-                    missing_inputs = []
-                    for input in srv_inputs:
-                        if srv_inputs[input] is None and input not in used_inputs:
-                            missing_inputs.append(input)
-                    if missing_inputs:
+                for input in srv.inputs:
+                    used_inputs.append(input.key.text)
+                    if input.key.text not in srv_inputs:
                         self._add_diagnostic(
-                            srv.id,
-                            message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
+                            input.key,
+                            message=f"The service '{srv.id.text}' does not have an "
+                                    f"input named '{input.key.text}'"
                         )
+                missing_inputs = []
+                for input in srv_inputs:
+                    if srv_inputs[input] is None and input not in used_inputs:
+                        missing_inputs.append(input)
+                if missing_inputs:
+                    self._add_diagnostic(
+                        srv.id,
+                        message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
+                    )
 
     def _validate_blueprint_networking_gateway_not_same_as_management_or_application(self):
         if self._tree.infrastructure and self._tree.infrastructure.connectivity:

@@ -44,15 +44,14 @@ def load_service_details(srv_name: str, srv_source):
         srv_tree = Parser(document=srv_source).parse()
 
         output = f"- {srv_name}:\n"
-        if srv_tree.inputs_node:
-            inputs = srv_tree.inputs_node.nodes
-            if inputs:
-                output += "    input_values:\n"
-                for input in inputs:
-                    if input.value:
-                        output += f"      - {input.key.text}: {input.value.text}\n"
-                    else:
-                        output += f"      - {input.key.text}: \n"
+        inputs = srv_tree.get_inputs()
+        if inputs:
+            output += "    input_values:\n"
+            for input in inputs:
+                if input.value:
+                    output += f"      - {input.key.text}: {input.value.text}\n"
+                else:
+                    output += f"      - {input.key.text}: \n"
     except ParserError as e:
         logging.warning(f"Unable to load service '{dir}.yaml' due to error: {e.message}")
     except Exception as e:
