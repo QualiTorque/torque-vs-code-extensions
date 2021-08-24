@@ -149,8 +149,9 @@ class Parser:
             try:
                 node = self.nodes_stack[-1].add()
                 self.nodes_stack.append(node)
-            except Exception as e:
-                raise Exception(f"Unable to add item to the node's container : {e}")
+            except Exception:
+                raise ParserError(f"Wrong stucture of document", token=token)
+                # raise Exception(f"Unable to add item to the node's container : {e}")
 
         if isinstance(token, StreamEndToken):
             self.tree.end_pos = self.get_token_start(token)
@@ -283,8 +284,10 @@ class Parser:
 
             if not isinstance(node, MappingNode):
                 raise ParserError(message="Expected mapping value here", token=token)
-
-            value_node = node.get_value(expected_type=TextNode)
+            try:
+                value_node = node.get_value(expected_type=TextNode)
+            except ValueError as e:
+                raise ParserError(message=f"Scalar cannot be accepted here. Object expected", token=token)
             self.nodes_stack.append(value_node)
 
             self._process_scalar_token(token)

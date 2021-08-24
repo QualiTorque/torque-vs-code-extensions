@@ -15,6 +15,9 @@ class VariablesNode(ObjectNode):
     var_file: ScalarNode = None
     values: TextMappingSequence = None
 
+    def get_values(self):
+        return self._get_seq_nodes("values")
+
 
 @dataclass
 class PermissionsNode(ObjectNode):

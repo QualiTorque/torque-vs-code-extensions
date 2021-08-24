@@ -251,7 +251,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     
     if last_word.endswith('$') or last_word.endswith(':'):
         if is_var_allowed(tree, params.position):
-            inputs_names_list = [i_node.key.text for i_node in tree.inputs_node.nodes] if tree.inputs_node else []
+            inputs_names_list = [i_node.key.text for i_node in tree.get_inputs()]
             inputs_names_list.append("colony")
 
             line = params.position.line
@@ -303,13 +303,11 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                             if len(parts) == 4 and parts[2] != '':
                                 options = ["token", "url"]
                         elif cur_word == 'colony.applications.':
-                            if tree.applications and len(tree.applications.nodes) > 0:
-                                for app in tree.applications.nodes:
-                                    options.append(app.id.text)
+                            for app in tree.get_applications():
+                                options.append(app.id.text)
                         elif cur_word == 'colony.services.':
-                            if tree.services and len(tree.services.nodes) > 0:
-                                for srv in tree.services.nodes:
-                                    options.append(srv.id.text)
+                            for srv in tree.get_services():
+                                options.append(srv.id.text)
                         elif cur_word.startswith('colony.applications.'):
                             parts = cur_word.split('.')
                             if len(parts) == 4 and parts[2] != '':
@@ -519,27 +517,25 @@ async def lsp_document_link(server: ColonyLanguageServer, params: DocumentLinkPa
             logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
             return links
         
-        if bp_tree.applications:
-            for app in bp_tree.applications.nodes:
-                target_path = os.path.join(root, "applications", app.id.text, app.id.text+".yaml")
-                if os.path.exists(target_path) and os.path.isfile(target_path):
-                    tooltip = "Open the application file at " + target_path
-                    links.append(DocumentLink(range=Range(
-                                              start=Position(line=app.id.start_pos[0], character=app.id.start_pos[1]),
-                                              end=Position(line=app.id.start_pos[0], character=app.start_pos[1]+len(app.id.text))), 
-                                              target=pathlib.Path(target_path).as_uri(), 
-                                              tooltip=tooltip))
+        for app in bp_tree.get_applications():
+            target_path = os.path.join(root, "applications", app.id.text, app.id.text+".yaml")
+            if os.path.exists(target_path) and os.path.isfile(target_path):
+                tooltip = "Open the application file at " + target_path
+                links.append(DocumentLink(range=Range(
+                                            start=Position(line=app.id.start_pos[0], character=app.id.start_pos[1]),
+                                            end=Position(line=app.id.start_pos[0], character=app.start_pos[1]+len(app.id.text))), 
+                                            target=pathlib.Path(target_path).as_uri(), 
+                                            tooltip=tooltip))
         
-        if bp_tree.services:
-            for srv in bp_tree.services.nodes:
-                target_path = os.path.join(root, "services", srv.id.text, srv.id.text+".yaml")
-                if os.path.exists(target_path) and os.path.isfile(target_path):
-                    tooltip = "Open the service file at " + target_path
-                    links.append(DocumentLink(range=Range(
-                                              start=Position(line=srv.id.start_pos[0], character=srv.id.start_pos[1]),
-                                              end=Position(line=srv.id.start_pos[0], character=srv.start_pos[1]+len(srv.id.text))), 
-                                              target=pathlib.Path(target_path).as_uri(), 
-                                              tooltip=tooltip))
+        for srv in bp_tree.get_services():
+            target_path = os.path.join(root, "services", srv.id.text, srv.id.text+".yaml")
+            if os.path.exists(target_path) and os.path.isfile(target_path):
+                tooltip = "Open the service file at " + target_path
+                links.append(DocumentLink(range=Range(
+                                            start=Position(line=srv.id.start_pos[0], character=srv.id.start_pos[1]),
+                                            end=Position(line=srv.id.start_pos[0], character=srv.start_pos[1]+len(srv.id.text))), 
+                                            target=pathlib.Path(target_path).as_uri(), 
+                                            tooltip=tooltip))
     
     elif doc_type == "application":
         try:

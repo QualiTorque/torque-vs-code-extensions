@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from server.ats.trees.common import (BaseTree, PropertyNode, ScalarMappingsSequence, MappingNode, SequenceNode,
+from server.ats.trees.common import (BaseTree, ScalarMappingsSequence, MappingNode, SequenceNode, TextMapping,
                                      TextMappingSequence, TextNode, ScalarNodesSequence, ScalarNode,
                                      TextNodesSequence, ObjectNode)
 from typing import List, Union
@@ -97,13 +97,10 @@ class ServiceResourceNode(ObjectNode):
     depends_on: ScalarNodesSequence = None
 
     def get_dependencies(self) -> List[ScalarNode]:
-        deps: PropertyNode = self.depends_on
+        return self._get_seq_nodes("depends_on")
 
-        if deps is None or deps.value is None:
-            return []
-
-        seq: ScalarNodesSequence = deps.value
-        return seq.nodes 
+    def get_inputs(self) -> List[TextMapping]:
+        return self._get_seq_nodes("input_values")
         
 
 @dataclass
@@ -126,10 +123,16 @@ class BlueprintResourceMappingNode(MappingNode):
         return self.value
 
     @property
-    def depends_on(self) -> List[ScalarNode]:
+    def deps(self) -> List[ScalarNode]:
         if self.value is None:
             return []
         return self.value.get_dependencies()
+
+    @property
+    def inputs(self) -> List[TextMapping]:
+        if self.value is None:
+            return []
+        return self.value.get_inputs()
 
 
 @dataclass
@@ -147,7 +150,7 @@ class BlueprintTree(BaseTree):
     @dataclass
     class MetadataNode(ObjectNode):
         description: ScalarNode = None
-        tags: ScalarNodesSequence = None
+        tags: ScalarMappingsSequence = None
 
     @dataclass
     class AppsSequence(SequenceNode):
@@ -176,18 +179,14 @@ class BlueprintTree(BaseTree):
     # old syntax
     environmentType: TextNode = None
 
+    def get_inputs(self) -> List[BlueprintInputsSequence]:
+        return self._get_seq_nodes("inputs_node")
+
+    def get_artifacts(self) -> List[TextMappingSequence]:
+        return self._get_seq_nodes("artifacts")
+
     def get_applications(self) -> List[ApplicationResourceNode]:
-        apps: PropertyNode = self.applications
-
-        if apps is None or apps.value is None:
-            return []
-
-        return [node for node in apps.value.nodes]
+        return self._get_seq_nodes("applications")
 
     def get_services(self) -> List[ServiceResourceNode]:
-        srvs: PropertyNode = self.services
-
-        if srvs is None or srvs.value is None:
-            return []
-
-        return [node for node in srvs.value.nodes]
+        return self._get_seq_nodes("services")
