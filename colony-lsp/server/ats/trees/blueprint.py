@@ -1,17 +1,18 @@
 from dataclasses import dataclass
-from server.ats.trees.common import (BaseTree, InputsNode, MappingNode, SequenceNode,
-                                     TextMappingSequence, TextNode, TextNodesSequence, YamlNode)
-from typing import Union
+from server.ats.trees.common import (BaseTree, ScalarMappingsSequence, MappingNode, SequenceNode, TextMapping,
+                                     TextMappingSequence, TextNode, ScalarNodesSequence, ScalarNode,
+                                     TextNodesSequence, ObjectNode)
+from typing import List, Union
 
 
 @dataclass
-class InfrastructureNode(YamlNode):
+class InfrastructureNode(ObjectNode):
     @dataclass
-    class ConnectivityNode(YamlNode):
+    class ConnectivityNode(ObjectNode):
         @dataclass
-        class VirtualNetwork(YamlNode):
+        class VirtualNetwork(ObjectNode):
             @dataclass
-            class SubnetsNode(YamlNode):
+            class SubnetsNode(ObjectNode):
                 gateway: TextNodesSequence = None
                 management: TextNodesSequence = None
                 application: TextNodesSequence = None
@@ -27,61 +28,61 @@ class InfrastructureNode(YamlNode):
 
 
 @dataclass
-class RuleNode(YamlNode):
-    path: TextNode = None
-    host: TextNode = None
-    application: TextNode = None
-    port: TextNode = None
-    color: TextNode = None
+class RuleNode(ObjectNode):
+    path: ScalarNode = None
+    host: ScalarNode = None
+    application: ScalarNode = None
+    port: TextNode = None  # yes, numeric
+    color: ScalarNode = None  # not green|blue
     shortcut: TextNode = None
-    default: TextNode = None
-    ignore_exposure: TextNode = None
+    default: ScalarNode = None  # not, true|false
+    ignore_exposure: ScalarNode = None
     # new/unsupported
     stickiness: TextNode = None
 
 
 @dataclass
-class ListenerNode(YamlNode):
+class ListenerNode(ObjectNode):
     @dataclass
     class RulesSequenceNode(SequenceNode):
         node_type = RuleNode
 
-    http: TextNode = None
-    redirect_to_listener: TextNode = None
-    https: TextNode = None
+    http: TextNode = None  # yes, numeric
+    redirect_to_listener: ScalarNode = None
+    https: TextNode = None  # yes, numeric
     certificate: TextNode = None
     rules: RulesSequenceNode = None
 
 
 @dataclass
-class IngressNode(YamlNode):
+class IngressNode(ObjectNode):
     @dataclass
     class ListenersSequenceNode(SequenceNode):
         node_type = ListenerNode
 
-    enabled: TextNode = None
+    enabled: ScalarNode = None  # true|false
     listeners: ListenersSequenceNode = None
 
 
 @dataclass
-class BlueprintFullInputNode(YamlNode):
-    display_style: TextNode = None
-    description: TextNode = None
-    default_value: TextNode = None
-    optional: TextNode = None
+class BlueprintFullInputNode(ObjectNode):
+    display_style: ScalarNode = None
+    description: ScalarNode = None
+    default_value: ScalarNode = None
+    optional: ScalarNode = None
 
 
 @dataclass
 class BlueprintInputNode(MappingNode):
-    key: TextNode = None
-    value: Union[BlueprintFullInputNode, TextNode] = None
+    key: ScalarNode = None
+    value: Union[BlueprintFullInputNode, ScalarNode] = None
 
     @property
     def default_value(self):
         if isinstance(self.value, BlueprintFullInputNode):
             return self.value.default_value
 
-        if isinstance(self.value, TextNode):
+        if isinstance(self.value, ScalarNode):
             return self.value
 
 
@@ -91,20 +92,26 @@ class BlueprintInputsSequence(SequenceNode):
 
 
 @dataclass
-class ServiceResourceNode(YamlNode):
-    input_values: InputsNode = None
-    depends_on: TextNodesSequence = None
+class ServiceResourceNode(ObjectNode):
+    input_values: TextMappingSequence = None
+    depends_on: ScalarNodesSequence = None
 
+    def get_dependencies(self) -> List[ScalarNode]:
+        return self._get_seq_nodes("depends_on")
+
+    def get_inputs(self) -> List[TextMapping]:
+        return self._get_seq_nodes("input_values")
+        
 
 @dataclass
 class ApplicationResourceNode(ServiceResourceNode):
-    target: TextNode = None
-    instances: TextNode = None
+    target: ScalarNode = None
+    instances: TextNode = None  # yes, numeric
 
 
 @dataclass
 class BlueprintResourceMappingNode(MappingNode):
-    key: TextNode = None
+    key: ScalarNode = None
     value: ServiceResourceNode = None
 
     @property
@@ -114,6 +121,18 @@ class BlueprintResourceMappingNode(MappingNode):
     @property
     def details(self):
         return self.value
+
+    @property
+    def deps(self) -> List[ScalarNode]:
+        if self.value is None:
+            return []
+        return self.value.get_dependencies()
+
+    @property
+    def inputs(self) -> List[TextMapping]:
+        if self.value is None:
+            return []
+        return self.value.get_inputs()
 
 
 @dataclass
@@ -129,9 +148,9 @@ class ServiceNode(BlueprintResourceMappingNode):
 @dataclass
 class BlueprintTree(BaseTree):
     @dataclass
-    class MetadataNode(YamlNode):
-        description: TextNode = None
-        tags: TextNodesSequence = None
+    class MetadataNode(ObjectNode):
+        description: ScalarNode = None
+        tags: ScalarMappingsSequence = None
 
     @dataclass
     class AppsSequence(SequenceNode):
@@ -142,20 +161,32 @@ class BlueprintTree(BaseTree):
         node_type = ServiceNode
 
     @dataclass
-    class DebuggingNode(YamlNode):
-        bastion_availability: TextNode = None
-        direct_access: TextNode = None
+    class DebuggingNode(ObjectNode):
+        bastion_availability: ScalarNode = None
+        direct_access: ScalarNode = None
         # old syntax
-        availability: TextNode = None
+        availability: ScalarNode = None
 
     inputs_node: BlueprintInputsSequence = None
     applications: AppsSequence = None
     services: ServicesSequence = None
     artifacts: TextMappingSequence = None
-    clouds: TextMappingSequence = None
+    clouds: ScalarMappingsSequence = None
     metadata: MetadataNode = None
     debugging: DebuggingNode = None
     ingress: IngressNode = None
     infrastructure: InfrastructureNode = None
     # old syntax
     environmentType: TextNode = None
+
+    def get_inputs(self) -> List[BlueprintInputsSequence]:
+        return self._get_seq_nodes("inputs_node")
+
+    def get_artifacts(self) -> List[TextMappingSequence]:
+        return self._get_seq_nodes("artifacts")
+
+    def get_applications(self) -> List[ApplicationResourceNode]:
+        return self._get_seq_nodes("applications")
+
+    def get_services(self) -> List[ServiceResourceNode]:
+        return self._get_seq_nodes("services")

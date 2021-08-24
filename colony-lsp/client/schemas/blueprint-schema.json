@@ -33,11 +33,10 @@
                     "description": "Define the cloud account or Kubernetes compute service in which the environment will be deployed."
                 },
                 "artifacts": {
-                    "type": "array",
+                    "type": ["array", "null"],
                     "items": {
                         "$ref": "#/definitions/ArtifactElement"
                     },
-                    "minItems": 1,
                     "description": "Colony pulls these artifacts from your storage provider into your artifacts folder on the application’s compute instance(s)."
                 },
                 "applications": {
@@ -169,10 +168,7 @@
             "additionalProperties": false,
             "properties": {
                 "instances": {
-                    "type": "integer",
-                    "default": 1,                    
-                    "minimum": 1,
-                    "description": "(Optional) If you want the application to be deployed on its own, specify the number of instances (one or more)."
+                        "$ref": "#/definitions/InstancesElement"                                        
                 },
                 "target": {
                     "type": "string",
@@ -192,6 +188,20 @@
                 }
             },
             "title": "Application"
+        },
+        "InstancesElement": {
+            "oneOf": [
+                {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1
+                },
+                {
+                    "type": "string"
+                }                
+            ],
+            "title": "Number of instances to deploy",
+            "description": "(Optional) If you want the application to be deployed on its own, specify the number of instances (one or more)."
         },
         "InputValuesElement": {
             "anyOf": [
@@ -356,7 +366,7 @@
             "additionalProperties": false,
             "properties": {
                 "http": {
-                    "type": "integer",
+                    "type": ["integer", "string"],
                     "description": "Listener type"
                 },
                 "redirect_to_listener": {
@@ -364,7 +374,7 @@
                     "description": "(Optional) Enables redirecting inbound traffic to another listener."
                 },
                 "https": {
-                    "type": "integer",
+                    "type": ["integer", "string"],
                     "description": "Listener type. When defining an https listener, you must also specify a certificate."
                 },
                 "certificate": {
@@ -402,7 +412,7 @@
                     "description": "(Optional) The name of the application that the traffic should be forwarded to."
                 },
                 "port": {
-                    "type": "integer",
+                    "type": ["integer", "string"],
                     "description": "(Optional) The application port to which traffic should be forwarded."
                 },
                 "color": {
@@ -511,11 +521,7 @@
                     }
                 }
             },
-            "anyOf": [
-                {"required": ["gateway"]},
-                {"required": ["management"]},
-                {"required": ["application"]}
-            ],
+            "required": ["gateway", "management", "application"],
             "title": "Subnets"
         }
     }

@@ -15,15 +15,14 @@ def load_app_details(app_name: str, app_source: str):
         
         output = f"- {app_name}:\n"
         output += "    instances: 1\n"
-        if app_tree.inputs_node:                        
-            inputs = app_tree.inputs_node.nodes
-            if inputs:
-                output += "    input_values:\n"
-                for input in inputs:
-                    if input.value:
-                        output += f"      - {input.key.text}: {input.value.text}\n"
-                    else:
-                        output += f"      - {input.key.text}: \n"
+        inputs = app_tree.get_inputs()
+        if inputs:
+            output += "    input_values:\n"
+            for input in inputs:
+                if input.value:
+                    output += f"      - {input.key.text}: {input.value.text}\n"
+                else:
+                    output += f"      - {input.key.text}: \n"
     except ParserError as e:
         logging.warning(f"Unable to load application '{dir}.yaml' due to error: {e.message}")        
     except Exception as e:
@@ -39,6 +38,12 @@ def reload_app_details(app_name, app_source):
     if APPLICATIONS: # if there is already a cache, add this file
         load_app_details(app_name, app_source)
 
+
+def remove_app_details(app_name):
+    if APPLICATIONS: # if there is already a cache, remove this file
+        if app_name in APPLICATIONS:
+            APPLICATIONS.pop(app_name)
+        
 
 def get_available_applications(root_folder: str=None):
     if APPLICATIONS:
@@ -83,7 +88,7 @@ def get_app_inputs(app_name):
         app_tree = APPLICATIONS[app_name]["app_tree"]
         if app_tree and app_tree.inputs_node:
             inputs = {}            
-            for input in app_tree.inputs_node.nodes:
+            for input in app_tree.get_inputs():
                 inputs[input.key.text] = input.value.text if input.value else None
             return inputs
     
@@ -93,9 +98,7 @@ def get_app_inputs(app_name):
 def get_app_outputs(app_name):
     if app_name in APPLICATIONS:
         app_tree = APPLICATIONS[app_name]["app_tree"]
-        if app_tree and app_tree.outputs:
-            outputs = [out.text for out in app_tree.outputs.nodes]
-            return outputs
+        outputs = [out.text for out in app_tree.get_outputs()]
+        return outputs
     
     return []
-    
