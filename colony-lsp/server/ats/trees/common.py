@@ -71,7 +71,8 @@ class YamlNode(ABC):
 
         if v and self.get_children():
             for child in self.get_children():
-                child.accept(visitor)
+                if getattr(child, "accept", None):
+                    child.accept(visitor)
 
     def get_children(self):
         """Returns all child nodes. Nodes are actually
