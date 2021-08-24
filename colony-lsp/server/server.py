@@ -252,7 +252,8 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     if last_word.endswith('$') or last_word.endswith(':'):
         if is_var_allowed(tree, params.position):
             inputs_names_list = [i_node.key.text for i_node in tree.get_inputs()]
-            inputs_names_list.append("colony")
+            if doc_type == "blueprint":
+                inputs_names_list.append("colony")
 
             line = params.position.line
             char = params.position.character
