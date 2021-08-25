@@ -8,7 +8,7 @@
 	"publisher": "Quali",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/qualisystemslab/colony-vs-code-extensions"
+		"url": "https://github.com/qualisystemslab/torque-vs-code-extensions"
 	},
 	"engines": {
 		"vscode": "^1.55.0"
