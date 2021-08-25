@@ -256,14 +256,26 @@ class Parser:
         if isinstance(token, KeyToken):
             # if sequence doesnt have indentation => there is no BlockEndToken at the end
             # and in such case KeyToken will go just after the ValueToken opening the sequence
-            # It will also covers issues when object has empty property
+            # It also covers issues when object has empty property
             if isinstance(self.tokens_stack[-1], ValueToken):
                 # in this case we need first correctly finalize sequence node
                 node = self.nodes_stack.pop()
                 node.end_pos = self.get_token_start(token)
                 self.tokens_stack.pop()  # remove ValueToken
 
-                # snd also handle property if exist
+                # and also handle property if exist
+                if isinstance(self.nodes_stack[-1], PropertyNode):
+                    prop = self.nodes_stack.pop()
+                    prop.end_pos = self.get_token_end(token)
+
+            # Case when key followed after sequence with no indentation
+            # and the last element of this sequence was empty
+            if self.is_array_item and isinstance(self.tokens_stack[-1], BlockEntryToken):
+                self._handle_hanging_dash(self.tokens_stack[-1])
+                self.tokens_stack.pop()  # remove BlockEntryToken
+                self.nodes_stack.pop()  # remove sequence
+
+                # and also handle property if exist
                 if isinstance(self.nodes_stack[-1], PropertyNode):
                     prop = self.nodes_stack.pop()
                     prop.end_pos = self.get_token_end(token)
