@@ -12,6 +12,7 @@ class StringYAML(YAML):
         if inefficient:
             return stream.getvalue()
 
+
 def format_yaml(input):
     yaml = StringYAML()
     data = yaml.load(input)

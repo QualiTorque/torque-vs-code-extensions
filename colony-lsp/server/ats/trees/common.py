@@ -66,17 +66,33 @@ class YamlNode(ABC):
         if self.parent is not None:
             self.parent.add_error(error)
 
-    def update_non_child_attributes(self) -> None:
-        return
-
     def accept(self, visitor):
-        visitor.visit_node(self)
+        v = visitor.visit_node(self)
+
+        if v and self.get_children():
+            for child in self.get_children():
+                child.accept(visitor)
 
     def get_children(self):
-        """Returns all child nodes. Nodes are actually
-        attributes which are not excluded and do not equal None"""
-        fields = vars(self)
-        return [val for key, val in fields.items() if val and key not in self.non_child_attributes]
+        return []
+        
+
+@dataclass
+class SequenceNode(YamlNode):
+    node_type: ClassVar[type] = YamlNode
+
+    nodes: [node_type] = field(default_factory=list)
+
+    def add(self, node: node_type = None):
+        if node is None:
+            node = self.node_type(parent=self)
+
+        self.nodes.append(node)
+
+        return self.nodes[-1]
+
+    def get_children(self):
+        return self.nodes
 
 
 @dataclass
@@ -121,12 +137,7 @@ class ScalarNode(TextNode):
 class MappingNode(YamlNode):  # TODO: actually all torque nodes must inherit this
     key: ScalarNode = None
     value: YamlNode = None
-    allow_vars: bool = False
-
-    def accept(self, visitor):
-        if visitor.visit_node(self):
-            self.key.accept()
-            self.value.accept()
+    allow_vars: ClassVar[bool] = False
 
     def get_key(self):
         if self.key is None:
@@ -146,6 +157,15 @@ class MappingNode(YamlNode):  # TODO: actually all torque nodes must inherit thi
             self.value = result_class(parent=self.key)
 
         return self.value
+
+    def get_children(self):
+        children = []
+        if self.key:
+            children.append(self.key)
+        if self.value:
+            children.append(self.value)
+
+        return children
 
     def _get_annotated_class(self, value_class: type, expected: type = None) -> type:
         try:
@@ -188,7 +208,15 @@ class PropertyNode(MappingNode):
 
     def __getattr__(self, name: str) -> Any:
         val = getattr(self.value, name, None)
-        return val or self.__dict__.get(name, None)
+
+        if val:
+            return val
+        else:
+            value_class = self.parent.__dataclass_fields__[self.identifier].type
+            if name not in value_class.__dataclass_fields__:
+                raise AttributeError(f"Value of PropertyNode '{self.identifier}' doesn't not have attribute '{name}'")
+            
+            return None
 
     # def __setattr__(self, name: str, value: Any) -> None:
     #     if hasattr(self.value, name):
@@ -196,7 +224,7 @@ class PropertyNode(MappingNode):
     #     else:
     #         setattr(self, name, value)
 
-
+    
 @dataclass
 class ObjectNode(YamlNode, ABC):
     def _get_field_mapping(self) -> {str: str}:
@@ -232,29 +260,27 @@ class ObjectNode(YamlNode, ABC):
 
         return child
 
-    def accept(self, visitor):
-        if visitor.visit_node(self):
-            for child in self.get_children():
-                child.accept(visitor)
-
-
-@dataclass
-class SequenceNode(ObjectNode):
-    node_type: ClassVar[type] = YamlNode
-
-    nodes: [node_type] = field(default_factory=list)
-
-    def add(self, node: node_type = None):
-        if node is None:
-            node = self.node_type(parent=self)
-
-        self.nodes.append(node)
-
-        return self.nodes[-1]
-
     def get_children(self):
-        return self.nodes
+        """Returns all child nodes. Nodes are actually
+        attributes which are not excluded and do not equal None"""
+        fields = vars(self)
+        return [val for key, val in fields.items() if val and key not in self.non_child_attributes]
 
+    def _get_seq_nodes(self, property_name) -> List[Any]:
+        if not hasattr(self, property_name):
+            raise AttributeError
+
+        if not issubclass(self.__dataclass_fields__[property_name].type, SequenceNode):
+            return ValueError(f"Property '{property_name}' is not sequence")
+        
+        prop: PropertyNode = getattr(self, property_name, None)
+
+        if prop is None or prop.value is None:
+            return []
+
+        seq: SequenceNode = prop.value
+        return seq.nodes 
+                
 
 @dataclass
 class ScalarNodesSequence(SequenceNode):
@@ -316,7 +342,13 @@ class BaseTree(ObjectNode):
         )
         return mapping
 
+    def get_inputs(self) -> List[ScalarMappingNode]:
+        return self._get_seq_nodes("inputs_node")
+
 
 @dataclass
-class TreeWithOutputs(ABC):
+class TreeWithOutputs(ObjectNode, ABC):
     outputs: ScalarNodesSequence = None
+
+    def get_outputs(self) -> List[ScalarNode]:
+        return self._get_seq_nodes("outputs")
