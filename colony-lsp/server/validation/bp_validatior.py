@@ -86,8 +86,8 @@ class BlueprintValidationHandler(ValidationHandler):
             for input in res.inputs:
                 if input.value is None:
                     continue
-                if input.value and ('colony.applications.' in input.value.text or 'colony.services.' in input.value.text):
-                    found = re.findall('colony\.(applications|services)\.(.+?)\.', input.value.text)
+                if input.value and ('torque.applications.' in input.value.text or 'torque.services.' in input.value.text):
+                    found = re.findall('torque\.(applications|services)\.(.+?)\.', input.value.text)
                     for f in found:
                         if f[1] not in deps_names:
                             self._add_diagnostic(input.value, message=f"The app '{res.id.text}' is missing a dependency to '{f[1]}'.")
