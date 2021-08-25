@@ -1,7 +1,7 @@
 import { existsSync } from "fs";
 import { join } from "path";
 import { ExtensionContext, ProgressLocation, window, workspace } from "vscode";
-import { IS_WIN, LS_VENV_NAME, LS_VENV_PATH, COLONY_LS_SERVER } from "./constants";
+import { IS_WIN, LS_VENV_NAME, LS_VENV_PATH, TORQUE_LS_SERVER } from "./constants";
 import { execAsync, readdirAsync } from "./utils";
 
 async function checkPythonVersion(python: string): Promise<boolean> {
@@ -95,11 +95,6 @@ export async function installLSWithProgress(context: ExtensionContext): Promise<
   {
     return Promise.resolve(venvPython);
   }
-//   const isServerPackageInstalled = !!(await getVenvPackageVersion(venvPython, COLONY_LS_SERVER));
-
-//   if (isServerPackageInstalled) {
-//     return Promise.resolve(venvPython);
-//   }
   
   // Install with progress bar
   return window.withProgress({
@@ -107,7 +102,7 @@ export async function installLSWithProgress(context: ExtensionContext): Promise<
   }, (progress): Promise<string> => {
     return new Promise<string>(async (resolve, reject) => {
       try {
-        progress.report({ message: "First-time Colony language server initialization" });
+        progress.report({ message: "First-time Torque language server initialization" });
 
         // Get python interpreter
         const python = await getPython();
@@ -120,7 +115,7 @@ export async function installLSWithProgress(context: ExtensionContext): Promise<
         const requirementsPath = join(context.extensionPath, "out", "server");
         await installRequirements(venvPython, requirementsPath);
 
-        window.showInformationMessage("Colony extension is ready! :)");
+        window.showInformationMessage("Torque extension is ready! :)");
         resolve(venvPython);
       } catch (err) {
         reject(err);

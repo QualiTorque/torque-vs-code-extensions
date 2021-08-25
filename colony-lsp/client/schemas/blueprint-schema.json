@@ -1,8 +1,8 @@
 {
     "$schema": "http://json-schema.org/draft-06/schema#",
-    "$ref": "#/definitions/Colony-Blueprint",
+    "$ref": "#/definitions/Torque-Blueprint",
     "definitions": {
-        "Colony-Blueprint": {
+        "Torque-Blueprint": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
@@ -37,7 +37,7 @@
                     "items": {
                         "$ref": "#/definitions/ArtifactElement"
                     },
-                    "description": "Colony pulls these artifacts from your storage provider into your artifacts folder on the application’s compute instance(s)."
+                    "description": "Torque pulls these artifacts from your storage provider into your artifacts folder on the application’s compute instance(s)."
                 },
                 "applications": {
                     "type": "array",
@@ -89,7 +89,7 @@
                 "spec_version",
                 "clouds"                
             ],
-            "title": "Colony Blueprint"
+            "title": "Torque Blueprint"
         },
         "BlueprintInputElement": {
             "anyOf": [
@@ -140,7 +140,7 @@
                 },
                 "default_value": {
                     "type": ["integer", "string", "boolean"],
-                    "description": "When the sandbox is created, Colony automatically populates the default value. The end-user can choose to edit the value or leave it as-is."
+                    "description": "When the sandbox is created, Torque automatically populates the default value. The end-user can choose to edit the value or leave it as-is."
                 },
                 "optional": {
                     "type": "boolean",
@@ -455,7 +455,7 @@
                 "connectivity"
             ],
             "title": "Infrastructure",
-            "description": "(Mandatory for production blueprints) Colony supports two deployment modes for an environment – dedicated and shared. In dedicated mode, Colony creates all the cloud infrastructure such as virtual network (VPC or VNET), subnets, security groups etc. specifically for the sandbox, and when the sandbox duration ends all of this cloud infrastructure is deleted. In shared mode, the administrator specifies, at the space level, the details of an existing virtual network and subnets as well as the cloud region to use, and Colony will deploy the sandbox's infrastructure in accordance. The above is true for sandbox (pre-production) environments. For production environments, Colony supports only the shared mode, in which all the infrastructure already exists in the cloud account and is provided to Colony in the production blueprint YAML."
+            "description": "(Mandatory for production blueprints) Torque supports two deployment modes for an environment – dedicated and shared. In dedicated mode, Torque creates all the cloud infrastructure such as virtual network (VPC or VNET), subnets, security groups etc. specifically for the sandbox, and when the sandbox duration ends all of this cloud infrastructure is deleted. In shared mode, the administrator specifies, at the space level, the details of an existing virtual network and subnets as well as the cloud region to use, and Torque will deploy the sandbox's infrastructure in accordance. The above is true for sandbox (pre-production) environments. For production environments, Torque supports only the shared mode, in which all the infrastructure already exists in the cloud account and is provided to Torque in the production blueprint YAML."
         },
         "Connectivity": {
             "type": "object",
