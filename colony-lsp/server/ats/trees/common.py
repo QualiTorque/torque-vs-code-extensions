@@ -71,14 +71,10 @@ class YamlNode(ABC):
 
         if v and self.get_children():
             for child in self.get_children():
-                if hasattr(child, "accept"):
-                    child.accept(visitor)
+                child.accept(visitor)
 
     def get_children(self):
-        """Returns all child nodes. Nodes are actually
-        attributes which are not excluded and do not equal None"""
-        fields = vars(self)
-        return [val for key, val in fields.items() if val and key not in self.non_child_attributes]
+        return []
         
 
 @dataclass
@@ -142,7 +138,6 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
     key: ScalarNode = None
     value: YamlNode = None
     allow_vars: ClassVar[bool] = False
-    non_child_attributes: ClassVar[list] = ["start_pos", "end_pos", "parent", "errors", "allow_vars"]
 
     def get_key(self):
         if self.key is None:
@@ -162,6 +157,15 @@ class MappingNode(YamlNode):  # TODO: actually all colony nodes must inherit thi
             self.value = result_class(parent=self.key)
 
         return self.value
+
+    def get_children(self):
+        children = []
+        if self.key:
+            children.append(self.key)
+        if self.value:
+            children.append(self.value)
+
+        return children
 
     def _get_annotated_class(self, value_class: type, expected: type = None) -> type:
         try:
@@ -255,6 +259,12 @@ class ObjectNode(YamlNode, ABC):
                 raise
 
         return child
+
+    def get_children(self):
+        """Returns all child nodes. Nodes are actually
+        attributes which are not excluded and do not equal None"""
+        fields = vars(self)
+        return [val for key, val in fields.items() if val and key not in self.non_child_attributes]
 
     def _get_seq_nodes(self, property_name) -> List[Any]:
         if not hasattr(self, property_name):
