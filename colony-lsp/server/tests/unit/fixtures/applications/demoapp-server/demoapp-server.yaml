@@ -1,0 +1,42 @@
+kind: application
+inputs:
+  - PORT: 3001
+  - INSTANCETYPE: t3.small,t3.medium,c5.large,m5.large,m4.large
+  - AZURE_VM_SIZE: Basic_A1
+  - WELCOME_STRING: Welcome to Quali Torque!
+infrastructure:
+  connectivity:
+    internal:
+      - api:
+          port: $PORT
+          path: ''
+  compute:
+    spec:
+      aws:
+        instance_type: $INSTANCETYPE
+      azure:
+        vm_size: $AZURE_VM_SIZE
+configuration:
+  start:
+    script: demoapp-server-command.sh
+  initialization:
+    script: demoapp-server.sh
+  healthcheck:
+    timeout: 1000
+    script: demoapp-server-hc.sh
+source:
+  image:
+    ami:
+      - id: ami-0f2ed58082cb08a4d
+        region: eu-west-1
+      - id: ami-0b1912235a9e70540
+        region: eu-west-2
+      - id: ami-00e3060e4cb84a493
+        region: us-west-1
+    docker_image:
+      - tag: demo_client
+        name: quali/node
+    azure_image:
+      - urn: Canonical:UbuntuServer:16.04-LTS:latest
+  os_type: linux
+spec_version: 1
