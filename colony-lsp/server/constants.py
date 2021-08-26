@@ -1,8 +1,8 @@
-PREDEFINED_COLONY_INPUTS = [
-    "$colony.environment.id",
-    "$colony.environment.virtual_network_id",
-    "$colony.environment.public_address",
-    "$colony.repos.current.branch",
-    "$colony.repos.current.url",
-    "$colony.repos.current.token"
+PREDEFINED_TORQUE_INPUTS = [
+    "$torque.environment.id",
+    "$torque.environment.virtual_network_id",
+    "$torque.environment.public_address",
+    "$torque.repos.current.current",
+    "$torque.repos.current.url",
+    "$torque.repos.current.token"
 ]
