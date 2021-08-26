@@ -3,9 +3,8 @@ from posixpath import dirname
 from server.ats.parser import Parser, ParserError
 from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintTree, ApplicationNode, ApplicationResourceNode
-from server.ats.trees.common import PropertyNode, ScalarNode, ScalarMappingsSequence, ScalarMappingNode, TextNode
 from server.ats.trees.service import ServiceTree
-from server.tests.unit.trees import demoapp_tree, azuresimple_bp_tree
+from server.tests.unit.trees import demoapp_tree, azuresimple_bp_tree, sleep_srv_tree
 
 import unittest
 
@@ -64,3 +63,10 @@ class TestParser(unittest.TestCase):
         tree = parser.parse()
 
         self.assertEqual(tree, demoapp_tree.tree)
+
+    def test_parse_service(self):
+        doc = self._get_content('services', 'sleep-2')
+        parser = Parser(doc)
+        tree = parser.parse()
+
+        self.assertEqual(tree, sleep_srv_tree.tree)
