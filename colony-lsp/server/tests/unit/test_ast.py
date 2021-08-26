@@ -1,6 +1,7 @@
 import os
 from posixpath import dirname
 from server.ats.trees.common import (
+    BaseTree,
     PropertyNode,
     ScalarMappingNode,
     ScalarMappingsSequence,
@@ -42,6 +43,11 @@ class TestParser(unittest.TestCase):
             content = f.read()
             return content
 
+    def _parse(self, doc: str) -> BaseTree:
+        parser = Parser(doc)
+        tree = parser.parse()
+        return tree
+
     def test_parser_resolve_tree_by_kind(self):
         cls_map = {
             "application": AppTree,
@@ -63,22 +69,19 @@ class TestParser(unittest.TestCase):
 
     def test_parse_blueprint(self):
         doc = self._get_content("blueprints", "azure-simple")
-        parser = Parser(doc)
-        tree = parser.parse()
+        tree = self._parse(doc)
 
         self.assertEqual(tree, azuresimple_bp_tree.tree)
 
     def test_parse_app(self):
         doc = self._get_content("applications", "demoapp-server")
-        parser = Parser(doc)
-        tree = parser.parse()
+        tree = self._parse(doc)
 
         self.assertEqual(tree, demoapp_tree.tree)
 
     def test_parse_service(self):
         doc = self._get_content("services", "sleep-2")
-        parser = Parser(doc)
-        tree = parser.parse()
+        tree = self._parse(doc)
 
         self.assertEqual(tree, sleep_srv_tree.tree)
 
@@ -88,7 +91,17 @@ inputs:
 - DURATION
 - PATH
 spec_version: 1"""
-        parser = Parser(doc)
-        tree = parser.parse()
+        tree = self._parse(doc)
         self.assertEqual(tree, no_indent.simple)
         self.assertEqual(tree.errors, [])
+
+    def test_no_value_in_list_without_indentation(self):
+        doc = """kind: TerraForm
+inputs: 
+- DURATION:
+spec_version: 1"""
+        tree = self._parse(doc)
+        self.assertEqual(tree, no_indent.no_indent_colon)
+        self.assertEqual(tree.errors, [])
+
+
