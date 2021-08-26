@@ -43,5 +43,5 @@ jobs:
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.node-version == '14.x' }}
         with:
-          name: colony-lsp.vsix.zip
-          path: colony-lsp-*.vsix
+          name: torque-lsp.vsix.zip
+          path: torque-lsp-*.vsix
