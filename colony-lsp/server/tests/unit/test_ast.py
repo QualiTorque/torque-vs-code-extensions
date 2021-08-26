@@ -1,19 +1,11 @@
 import os
 from posixpath import dirname
-from server.ats.trees.common import (
-    BaseTree,
-    PropertyNode,
-    ScalarMappingNode,
-    ScalarMappingsSequence,
-    ScalarNode,
-)
+from server.ats.trees.common import BaseTree
+
 from server.ats.parser import Parser, ParserError
 from server.ats.trees.app import AppTree
-from server.ats.trees.blueprint import (
-    BlueprintTree,
-    ApplicationNode,
-    ApplicationResourceNode,
-)
+from server.ats.trees.blueprint import BlueprintTree
+
 from server.ats.trees.service import ServiceTree
 from server.tests.unit import trees
 from server.tests.unit.trees import demoapp_tree, azuresimple_bp_tree, sleep_srv_tree, no_indent
@@ -85,7 +77,7 @@ class TestParser(unittest.TestCase):
 
         self.assertEqual(tree, sleep_srv_tree.tree)
 
-    def test_simple_array_without_indent(self):
+    def test_simple_array_without_indent_parsed_correctly(self):
         doc = """kind: TerraForm
 inputs:
 - DURATION
@@ -95,7 +87,7 @@ spec_version: 1"""
         self.assertEqual(tree, no_indent.simple)
         self.assertEqual(tree.errors, [])
 
-    def test_no_value_in_list_without_indentation(self):
+    def test_no_value_in_list_without_indent_parsed_correctly(self):
         doc = """kind: TerraForm
 inputs: 
 - DURATION:
@@ -104,4 +96,17 @@ spec_version: 1"""
         self.assertEqual(tree, no_indent.no_indent_colon)
         self.assertEqual(tree.errors, [])
 
-
+    def test_no_indent_inside_no_indent_parsed_correctly(self):
+        doc = """kind: blueprint
+applications:
+- basic-app:
+    instances: 1
+- advanced-app:
+    instances: 4
+    depends_on:
+    - basic-app
+spec_version: 1
+"""
+        tree = self._parse(doc)
+        self.assertEqual(tree, no_indent.no_indent_inside_no_indent)
+        self.assertEqual(tree.errors, [])
