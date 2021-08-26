@@ -19,7 +19,7 @@ import logging
 
 logging.basicConfig(filename="torque_ls.log", level=logging.DEBUG, filemode="w")
 
-from .server import torque_server
+from .server import torque_ls
 
 
 def add_arguments(parser):
@@ -45,9 +45,9 @@ def main():
     args = parser.parse_args()
 
     if args.tcp:
-        torque_server.start_tcp(args.host, args.port)
+        torque_ls.start_tcp(args.host, args.port)
     else:
-        torque_server.start_io()
+        torque_ls.start_io()
 
 
 if __name__ == '__main__':
