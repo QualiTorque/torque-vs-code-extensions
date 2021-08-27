@@ -7,7 +7,6 @@ from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintTree
 
 from server.ats.trees.service import ServiceTree
-from server.tests.unit import trees
 from server.tests.unit.trees import demoapp_tree, azuresimple_bp_tree, sleep_srv_tree, no_indent
 
 import unittest

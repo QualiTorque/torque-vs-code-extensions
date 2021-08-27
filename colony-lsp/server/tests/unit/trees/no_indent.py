@@ -4,8 +4,6 @@ from server.ats.trees.common import (
     ScalarMappingsSequence,
     ScalarNode,
     ScalarNodesSequence,
-    TextMapping,
-    TextMappingSequence,
     TextNode,
 )
 from server.ats.trees.service import ServiceTree
@@ -15,6 +13,7 @@ from server.ats.trees.blueprint import (
     BlueprintTree,
 )
 
+##########################################################################
 simple = ServiceTree(
     start_pos=(0, 0),
     end_pos=(4, 15),
