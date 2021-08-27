@@ -7,7 +7,13 @@ from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintTree
 
 from server.ats.trees.service import ServiceTree
-from server.tests.unit.trees import demoapp_tree, azuresimple_bp_tree, sleep_srv_tree, no_indent
+from server.tests.unit.trees import (
+    demoapp_tree,
+    azuresimple_bp_tree,
+    sleep_srv_tree,
+    no_indent,
+    no_child,
+)
 
 import unittest
 
@@ -109,3 +115,81 @@ spec_version: 1
         tree = self._parse(doc)
         self.assertEqual(tree, no_indent.no_indent_inside_no_indent)
         self.assertEqual(tree.errors, [])
+
+    def test_tree_has_error_on_empty_item_in_the_middle_without_indent(self):
+        doc = """kind: blueprint
+applications:
+- basic-app:
+    instances: 1
+- 
+- advanced-app:
+spec_version: 1
+"""
+        tree = self._parse(doc)
+        self.assertEqual(len(tree.errors), 1)
+        self.assertEqual(tree.errors[0].start_pos, (4, 0))
+        self.assertEqual(tree.errors[0].end_pos, (4, 1))
+        self.assertEqual(tree, no_indent.empty_item_middle_no_indent)
+
+    def test_tree_has_error_on_empty_item_at_the_end_without_indent(self):
+        doc = """kind: blueprint
+applications:
+- basic-app:
+    instances: 1
+- advanced-app:
+- 
+spec_version: 1
+"""
+        tree = self._parse(doc)
+        self.assertEqual(len(tree.errors), 1)
+        self.assertEqual(tree.errors[0].start_pos, (5, 0))
+        self.assertEqual(tree.errors[0].end_pos, (5, 1))
+        self.assertEqual(tree, no_indent.empty_item_end_no_indent)
+
+    def test_tree_has_error_on_empty_item_at_the_end_wit_indent(self):
+        doc = """kind: blueprint
+applications:
+    - basic-app:
+        instances: 1
+    - advanced-app:
+    - 
+spec_version: 1"""
+        tree = self._parse(doc)
+        self.assertEqual(len(tree.errors), 1)
+        self.assertEqual(tree.errors[0].start_pos, (5, 4))
+        self.assertEqual(tree.errors[0].end_pos, (5, 5))
+
+    def test_tree_has_error_on_empty_item_in_the_middle_with_indent(self):
+        doc = """kind: blueprint
+applications:
+    - basic-app:
+        instances: 1
+    -     
+    - advanced-app:
+spec_version: 1"""
+        tree = self._parse(doc)
+        self.assertEqual(len(tree.errors), 1)
+        self.assertEqual(tree.errors[0].start_pos, (4, 4))
+        self.assertEqual(tree.errors[0].end_pos, (4, 5))
+
+    def test_ignore_unknown_child_simple(self):
+        doc = """kind: blueprint
+test: value
+spec_version: 1
+"""
+        tree = self._parse(doc)
+        self.assertEqual(len(tree.errors), 1)
+        self.assertEqual(tree, no_child.no_child_simple)
+
+    def test_ignore_unknown_child_object(self):
+        doc = """kind: blueprint
+iInfrastructure:
+  stackS: $infra_stack
+  conNectivity:
+    green_host: green.test.com
+    virtual_network:
+spec_version: 1
+"""
+        tree = self._parse(doc)
+        self.assertEqual(len(tree.errors), 1)
+        self.assertEqual(tree, no_child.no_child_object)
