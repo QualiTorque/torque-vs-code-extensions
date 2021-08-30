@@ -27,7 +27,7 @@ complex dynamic checks. Some of them are the following:
 
 ### Document Links
 
-In some parts of Torque documents you have links, and you can jump tp the referenced files when ctrl(cmd) + click on them.
+In some parts of Torque documents you have links, and you can jump to the referenced files when ctrl(cmd) + click on them.
 - In a blueprint file it opens relevant application/service YAML when clicking on their names.
 - In service/application file you jump to referenced scripts
 
