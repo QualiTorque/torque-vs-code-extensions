@@ -6,7 +6,7 @@ import sys
 import logging
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
 from server.ats.trees.blueprint import BlueprintTree
-from server.constants import PREDEFINED_COLONY_INPUTS
+from server.constants import PREDEFINED_TORQUE_INPUTS
 from server.utils import applications, services
 
 
@@ -46,10 +46,10 @@ class BlueprintValidationHandler(ValidationHandler):
 
     def _check_for_deprecated_syntax(self):
         deprecated_syntax = {
-            "outputs\..+": "colony.[app_name|service_name].outputs.[output_name]",
-            "colony.sandboxid": "colony.environment.id",
-            "colony.publicaddress": "colony.environment.public_address",
-            "colony.virtualnetworkid": "colony.environment.virtual_network_id"
+            "outputs\..+": "torque.[app_name|service_name].outputs.[output_name]",
+            "torque.sandboxid": "torque.environment.id",
+            "torque.publicaddress": "torque.environment.public_address",
+            "torque.virtualnetworkid": "torque.environment.virtual_network_id"
                             }
         message = "Deprecated syntax '{}'. Please use '{}' instead."
         line_num = 0
@@ -86,8 +86,8 @@ class BlueprintValidationHandler(ValidationHandler):
             for input in res.inputs:
                 if input.value is None:
                     continue
-                if input.value and ('colony.applications.' in input.value.text or 'colony.services.' in input.value.text):
-                    found = re.findall('colony\.(applications|services)\.(.+?)\.', input.value.text)
+                if input.value and ('torque.applications.' in input.value.text or 'torque.services.' in input.value.text):
+                    found = re.findall('torque\.(applications|services)\.(.+?)\.', input.value.text)
                     for f in found:
                         if f[1] not in deps_names:
                             self._add_diagnostic(input.value, message=f"The app '{res.id.text}' is missing a dependency to '{f[1]}'.")
@@ -164,61 +164,61 @@ class BlueprintValidationHandler(ValidationHandler):
                         )
                 
     def _is_valid_auto_var(self, var_name):
-        if var_name.lower() in PREDEFINED_COLONY_INPUTS:
+        if var_name.lower() in PREDEFINED_TORQUE_INPUTS:
             return True, ""
 
         parts = var_name.split('.')
-        if not parts[0].lower() == "$colony":
-            return False, f"{var_name} is not a valid colony-generated variable"
+        if not parts[0].lower() == "$torque":
+            return False, f"{var_name} is not a valid Torque-generated variable"
 
         if not parts[1].lower() in ["applications", "services", "parameters", "repos"]:
-            return False, f"{var_name} is not a valid colony-generated variable"
+            return False, f"{var_name} is not a valid Torque-generated variable"
 
         if len(parts) == 3:
             if not parts[1] == "parameters":
-                return False, f"{var_name} is not a valid colony-generated variable"
+                return False, f"{var_name} is not a valid Torque-generated variable"
             else:
                 # currently no other validation for parameter store inputs
                 return True, ""
         
         if len(parts) == 4:
             if parts[1] == "repos" and parts[3] not in ["token", "url"]:
-                return False, f"{var_name} is not a valid colony-generated variable"
+                return False, f"{var_name} is not a valid Torque-generated variable"
             elif parts[1] == "applications" and not parts[3] == "dns":
-                return False, f"{var_name} is not a valid colony-generated variable"
+                return False, f"{var_name} is not a valid Torque-generated variable"
             else:
                 return True, ""
 
         if len(parts) == 5:
             if parts[1].lower() == "applications" and (not parts[3].lower() == "outputs" and
                                                        not parts[3].lower() == "dns"):
-                return False, f"{var_name} is not a valid colony-generated variable"
+                return False, f"{var_name} is not a valid Torque-generated variable"
 
             if parts[1].lower() == "services" and not parts[3].lower() == "outputs":
-                return False, f"{var_name} is not a valid colony-generated variable"
+                return False, f"{var_name} is not a valid Torque-generated variable"
 
             if parts[1] == "applications":
                 apps = self.blueprint_apps
                 if not parts[2] in apps:
-                    return False, f"{var_name} is not a valid colony-generated variable (no such app in the blueprint)"
+                    return False, f"{var_name} is not a valid Torque-generated variable (no such app in the blueprint)"
 
                 app_outputs = applications.get_app_outputs(app_name=parts[2])
                 if parts[4] not in app_outputs:
-                    return False, f"{var_name} is not a valid colony-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
+                    return False, f"{var_name} is not a valid Torque-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
 
             if parts[1] == "services":
                 srvs = self.blueprint_services
                 if not parts[2] in srvs:
-                    return False, (f"{var_name} is not a valid colony-generated "
+                    return False, (f"{var_name} is not a valid Torque-generated "
                                    f"variable (no such service in the blueprint)")
 
                 srv_outputs = services.get_service_outputs(srv_name=parts[2])
                 if parts[4] not in srv_outputs:
-                    return False, (f"{var_name} is not a valid colony-generated variable ('{parts[2]}' "
+                    return False, (f"{var_name} is not a valid Torque-generated variable ('{parts[2]}' "
                                    f"does not have the output '{parts[4]}')")
 
         else:
-            return False, f"{var_name} is not a valid colony-generated variable (too many parts)"
+            return False, f"{var_name} is not a valid Torque-generated variable (too many parts)"
 
         return True, ""
 
@@ -263,7 +263,7 @@ class BlueprintValidationHandler(ValidationHandler):
                                 ),
                                 message=message.format(cur_var),
                             ))
-                    elif cur_var.lower().startswith("$colony"):
+                    elif cur_var.lower().startswith("$torque"):
                         valid_var, error_message = self._is_valid_auto_var(cur_var)
                         if not valid_var:
                             self._diagnostics.append(Diagnostic(
@@ -274,6 +274,16 @@ class BlueprintValidationHandler(ValidationHandler):
                                                  character=input.value.start_pos[1] + pos[1]),
                                 ),
                                 message=error_message
+                            ))
+                    else:
+                        self._diagnostics.append(Diagnostic(
+                                range=Range(
+                                    start=Position(line=input.value.start_pos[0],
+                                                   character=input.value.start_pos[1] + pos[0]),
+                                    end=Position(line=input.value.end_pos[0],
+                                                 character=input.value.start_pos[1] + pos[1]),
+                                ),
+                                message=message.format(cur_var)
                             ))
         except Exception as ex:
             print(ex)

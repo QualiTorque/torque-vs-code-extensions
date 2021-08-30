@@ -17,13 +17,13 @@
 import argparse
 import logging
 
-logging.basicConfig(filename="colony_ls.log", level=logging.DEBUG, filemode="w")
+logging.basicConfig(filename="torque_ls.log", level=logging.DEBUG, filemode="w")
 
-from .server import colony_server
+from .server import torque_ls
 
 
 def add_arguments(parser):
-    parser.description = "simple colony server example"
+    parser.description = "A torque language server"
 
     parser.add_argument(
         "--tcp", action="store_true",
@@ -45,9 +45,9 @@ def main():
     args = parser.parse_args()
 
     if args.tcp:
-        colony_server.start_tcp(args.host, args.port)
+        torque_ls.start_tcp(args.host, args.port)
     else:
-        colony_server.start_io()
+        torque_ls.start_io()
 
 
 if __name__ == '__main__':

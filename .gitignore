@@ -1,2 +1,27 @@
 .DS_Store
+settings.json
+node_modules/
+venv/
+*.log
+*/out/
+*/out/*
+*/.idea/*
+/.idea/*
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.hypothesis/
+
 *.zip
+*.vsix
