@@ -27,7 +27,7 @@ complex dynamic checks. Some of them are the following:
 
 ### Document Links
 
-In some parts of Torque documents you have links, and you can jump the referenced files when ctrl(cmd) + click on them.
+In some parts of Torque documents you have links, and you can jump tp the referenced files when ctrl(cmd) + click on them.
 - In a blueprint file it opens relevant application/service YAML when clicking on their names.
 - In service/application file you jump to referenced scripts
 
@@ -39,9 +39,3 @@ In some parts of Torque documents you have links, and you can jump the reference
 
 The extension should be triggered automatically when loading YAML files and it should avoid parsing
 non-Torque YAML files.
-
-
-
-
-
-
