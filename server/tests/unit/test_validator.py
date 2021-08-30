@@ -1,8 +1,3 @@
-import os
-from posixpath import dirname
-
-from pygls.workspace import Document
-
 from server.validation.app_validator import AppValidationHandler
 from server.validation.bp_validatior import BlueprintValidationHandler
 from server.validation.srv_validator import ServiceValidationHandler
@@ -22,27 +17,26 @@ from unittest.mock import MagicMock
 
 
 class TestValidator(unittest.TestCase):
-    # def setUp(self) -> None:
-    #     self.test_dir = os.path.join((dirname(os.path.abspath(__file__))), "fixtures")
+    def setUp(self) -> None:
+        self.test_doc = MagicMock()
+
     def test_factory_returns_correct_validator(self):
-        test_doc = MagicMock()
         self.assertIsInstance(
-            ValidatorFactory.get_validator(demoapp_tree.tree, test_doc),
+            ValidatorFactory.get_validator(demoapp_tree.tree, self.test_doc),
             AppValidationHandler,
         )
 
         self.assertIsInstance(
-            ValidatorFactory.get_validator(azuresimple_bp_tree.tree, test_doc),
+            ValidatorFactory.get_validator(azuresimple_bp_tree.tree, self.test_doc),
             BlueprintValidationHandler,
         )
 
         self.assertIsInstance(
-            ValidatorFactory.get_validator(sleep_srv_tree.tree, test_doc),
+            ValidatorFactory.get_validator(sleep_srv_tree.tree, self.test_doc),
             ServiceValidationHandler,
         )
 
     def test_factory_raise_error(self):
-        test_doc = MagicMock()
         tree = BlueprintTree(
             kind=PropertyNode(
                 key=ScalarNode(
@@ -55,4 +49,4 @@ class TestValidator(unittest.TestCase):
         )
 
         with self.assertRaises(ValueError):
-            _ = ValidatorFactory.get_validator(tree, test_doc)
+            _ = ValidatorFactory.get_validator(tree, self.test_doc)
