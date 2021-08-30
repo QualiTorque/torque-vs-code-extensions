@@ -28,18 +28,6 @@
 		"onLanguage:yaml"
 	],
 	"contributes": {
-		"configuration": {
-			"type": "object",
-			"title": "Torque Server Configuration",
-			"properties": {
-				"Platform Name": {
-					"type": "string",
-					"description": "The platform name you use",
-					"default": "torque",
-					"scope": "application"
-				}
-			}
-		},
 		"languages": [
 			{
 				"id": "yaml",
