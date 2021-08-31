@@ -29,8 +29,8 @@ jobs:
           npm run webpack 
           npm run vscepack
 
-      - name: upload vsix as artifact
-        uses: actions/upload-artifact@v1
-        with:
-          name: torque-lsp.vsix.zip
-          path: client/torque-language-extension-0.0.6.vsix
+#       - name: upload vsix as artifact
+#         uses: actions/upload-artifact@v1
+#         with:
+#           name: torque-lsp.vsix.zip
+#           path: client/torque-language-extension-0.0.6.vsix
