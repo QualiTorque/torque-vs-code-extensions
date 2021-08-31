@@ -33,4 +33,4 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: torque-lsp.vsix.zip
-          path: client/torque-*.vsix
+          path: client/*.vsix
