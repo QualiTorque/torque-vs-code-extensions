@@ -21,10 +21,15 @@ jobs:
         run: npm ci    
       
       - name: compile and create vsix
-        run: npm run package -- -o torque-lsp.vsix
+        run: |
+          cd client
+          npm install
+          npm run compile 
+          npm run webpack 
+          npm run vscepack
 
       - name: upload vsix as artifact
         uses: actions/upload-artifact@v1
         with:
           name: torque-lsp.vsix.zip
-          path: ${{github.workspace}}/torque-lsp-*.vsix
+          path: client/torque-*.vsix
