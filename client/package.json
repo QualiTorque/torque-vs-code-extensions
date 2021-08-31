@@ -1,11 +1,11 @@
 {
 	"name": "torque-language-extension",
-	"displayName": "Torque Language Extension",
+	"displayName": "Quali Torque",
 	"description": "A VS Code extension for the Torque yaml syntax. Provides YAML schema verification, auto-complete, highlight problems and much more.",
 	"author": "Quali",
 	"license": "MIT",
 	"version": "0.0.6",
-	"publisher": "Quali",
+	"publisher": "Quali-Torque",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/QualiTorque/torque-vs-code-extensions"
@@ -22,7 +22,8 @@
 		"validation"
 	],
 	"categories": [
-		"Other"
+		"Programming Languages",
+		"Linters"
 	],
 	"activationEvents": [
 		"onLanguage:yaml"
@@ -51,7 +52,7 @@
 	],
 	"main": "./out/extension",
 	"scripts": {
-		"vscode:prepublish": "npm run compile && echo copying server && cp -R ../server out/server",
+		"vscode:prepublish": "npm run compile && echo copying server && cp -R ../server out/server && cp ../README.md ./README.md",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"webpack": "webpack --mode development",
