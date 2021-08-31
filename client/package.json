@@ -14,6 +14,10 @@
 		"vscode": "^1.55.0"
 	},
 	"icon": "icon/icon_q_square.png",
+	"galleryBanner": {
+		"color": "#009bda",
+		"theme": "dark"
+	},
 	"keywords": [
 		"quali",
 		"torque",
