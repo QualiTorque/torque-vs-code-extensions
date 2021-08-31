@@ -98,13 +98,7 @@ export async function activate(context: ExtensionContext) {
     } else {
         // Production - Client is going to run the server (for use within `.vsix` package)
         const cwd = path.join(__dirname, "..", "out", "server");
-        const pythonPath = workspace
-            .getConfiguration("python")
-            .get<string>("pythonPath");
-
-        if (!pythonPath) {
-            throw new Error("`python.pythonPath` is not set");
-        }
+        
         const python = await installLSWithProgress(context);
         client = startLangServer(python, ["-m", "server"], cwd);
     }
