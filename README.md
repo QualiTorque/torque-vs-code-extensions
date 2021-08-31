@@ -14,6 +14,8 @@ The Quali Torque language extension aims to ease life of Torque content creators
   service file.
 - When designing a blueprint/app/service, allow the auto-completion of inputs defined in this file 
 
+![auto-completions](https://user-images.githubusercontent.com/8643801/131506679-8726c8cc-701d-421c-bd8a-64fe8dc1fc5e.gif)
+
 ### Validation
 
 There is quite a long list of things being validated by this extension including general yaml schema validation and more
@@ -25,11 +27,15 @@ complex dynamic checks. Some of them are the following:
 - Check existence of referenced files (scripts, terraform files)
 - ... and many others
 
+![validation](https://user-images.githubusercontent.com/8643801/131506669-7285ca9e-e3a6-4ded-831f-caf926e79752.gif)
+
 ### Document Links
 
 In some parts of Torque documents you have links, and you can jump to the referenced files when ctrl(cmd) + click on them.
 - In a blueprint file it opens relevant application/service YAML when clicking on their names.
 - In service/application file you jump to referenced scripts
+
+![links](https://user-images.githubusercontent.com/8643801/131506656-c63860a7-6828-4b8d-afd0-4ea51c1d36b5.gif)
 
 ## Getting Started
 
