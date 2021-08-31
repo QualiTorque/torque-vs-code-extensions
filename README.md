@@ -1,8 +1,8 @@
-# VS Code Extension for Quali Torque
+# VS Code Extension for Torque
+
+The Quali Torque language extension aims to ease the life of the Torque content creators by providing file validations, code completions and other editing tools available.
 
 ## Features
-
-The Quali Torque language extension aims to ease life of Torque content creators by providing file validations, code completions and other editing tools available.
 
 ### Code auto-completion
 
@@ -18,11 +18,11 @@ The Quali Torque language extension aims to ease life of Torque content creators
 
 ### Validation
 
-There is quite a long list of things being validated by this extension including general yaml schema validation and more
+There is quite a long list of things being validated by this extension including general YAML schema validation and more
 complex dynamic checks. Some of them are the following:
 
-- Validate if app/service mentioned in a blueprint exists
-- Validate that variables mentioned in Torque files are defined in inputs section
+- Validate if an app/service mentioned in a blueprint exists
+- Validate that variables mentioned in Torque files are defined in the inputs section
 - Allow accepting variables to specific nodes only
 - Check existence of referenced files (scripts, terraform files)
 - ... and many others
@@ -32,8 +32,8 @@ complex dynamic checks. Some of them are the following:
 ### Document Links
 
 In some parts of Torque documents you have links, and you can jump to the referenced files when ctrl(cmd) + click on them.
-- In a blueprint file it opens relevant application/service YAML when clicking on their names.
-- In service/application file you jump to referenced scripts
+- In a blueprint file, it opens the relevant application/service YAML when clicking on their names.
+- In a service/application file you can jump to the referenced scripts
 
 ![links](https://user-images.githubusercontent.com/8643801/131506656-c63860a7-6828-4b8d-afd0-4ea51c1d36b5.gif)
 
@@ -42,10 +42,9 @@ In some parts of Torque documents you have links, and you can jump to the refere
 **Prerequisite:** you need to have **python>=3.6** installed on your system
 
 - Install the extension from the Marketplace
-- VS Code may require reload, make sure you do that
-- If VS Code doesn't know where to find python you will need to previde its path in the appeared popup or
-  directly in VS Code settings
-- Open any folder with a Torque blueprint repo and enjoy developing with new features ;)
+- VS Code may require you to reload it. Make sure you do that.
+- If VS Code can't find the python you have installed, you will need to provide its path in the appeared popup 
+  or directly in VS Code settings (under pyhon.pythonPath)
+- Open any folder with a Torque blueprint repository and get an enhanced experience working on your Torque files!
 
-The extension should be triggered automatically when loading Torque's applications, blueprints or services YAMLs and it should avoid parsing
-non-Torque YAML files.
+The extension should be triggered automatically when loading Torque's blueprints, applications, or services YAMLs located in a [blueprint repository folder structure](https://community.qtorque.io/developing-blueprints-61/setting-up-a-blueprint-repository-258).
