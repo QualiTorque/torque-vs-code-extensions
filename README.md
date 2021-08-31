@@ -39,6 +39,8 @@ In some parts of Torque documents you have links, and you can jump to the refere
 
 ## Getting Started
 
+**Prerequisite:** you need to have **python>=3.6** installed on your system
+
 - Install the extension from the Marketplace
 - VS Code may require reload, make sure you do that
 - Make sure VS code knows the path to the python environment
