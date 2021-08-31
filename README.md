@@ -45,7 +45,7 @@ In some parts of Torque documents you have links, and you can jump to the refere
 - VS Code may require reload, make sure you do that
 - If VS Code doesn't know where to find python you will need to previde its path in the appeared popup or
   directly in VS Code settings
-- Open any folder with a Torque blueprint repo and enjoy developong with new features ;)
+- Open any folder with a Torque blueprint repo and enjoy developing with new features ;)
 
 The extension should be triggered automatically when loading Torque's applications, blueprints or services YAMLs and it should avoid parsing
 non-Torque YAML files.
