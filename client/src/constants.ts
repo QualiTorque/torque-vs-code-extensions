@@ -3,7 +3,7 @@ import { join } from "path";
 import { extensions } from "vscode";
 
 // Extension info
-export const EXTENSION_JSON = extensions.getExtension("Quali.torque-language-extension").packageJSON;
+export const EXTENSION_JSON = extensions.getExtension("quali-torque.torque-language-extension").packageJSON;
 export const EXTENSION_NAME = EXTENSION_JSON.displayName;
 export const EXTENSION_PATH = EXTENSION_JSON.extensionLocation.fsPath;
 

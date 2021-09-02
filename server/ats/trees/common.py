@@ -58,7 +58,7 @@ class YamlNode(ABC):
 
     start_pos: tuple = None
     end_pos: tuple = None
-    parent: Optional[Any] = None  # TODO: must be Node, not any
+    parent: Optional[Any] = field(compare=False, default=None, repr=False)
     errors: List[NodeError] = field(default_factory=list)
 
     def add_error(self, error: NodeError) -> None:

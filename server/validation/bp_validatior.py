@@ -275,6 +275,16 @@ class BlueprintValidationHandler(ValidationHandler):
                                 ),
                                 message=error_message
                             ))
+                    else:
+                        self._diagnostics.append(Diagnostic(
+                                range=Range(
+                                    start=Position(line=input.value.start_pos[0],
+                                                   character=input.value.start_pos[1] + pos[0]),
+                                    end=Position(line=input.value.end_pos[0],
+                                                 character=input.value.start_pos[1] + pos[1]),
+                                ),
+                                message=message.format(cur_var)
+                            ))
         except Exception as ex:
             print(ex)
 

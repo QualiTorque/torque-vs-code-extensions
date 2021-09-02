@@ -78,6 +78,9 @@ class TorqueLanguageServer(LanguageServer):
 
 torque_ls = TorqueLanguageServer()
 
+def _is_torque_file(file_uri):
+    return '/blueprints/' in file_uri or '/applications/' in file_uri or '/services/' in file_uri
+
 
 def _diagnose_tree_errors(tree: BaseTree) -> list:
     diagnostics = []
@@ -102,8 +105,7 @@ def _validate(ls, params):
         try:
             tree = Parser(source).parse()
             diagnostics += _diagnose_tree_errors(tree)
-            cls_validator = ValidatorFactory.get_validator(tree)
-            validator = cls_validator(tree, text_doc)
+            validator = ValidatorFactory.get_validator(tree, text_doc)
             diagnostics += validator.validate()
         except ParserError as e:
             diagnostics.append(
@@ -151,9 +153,7 @@ def _validate_yaml(source):
 @torque_ls.feature(TEXT_DOCUMENT_DID_CHANGE)
 def did_change(server: TorqueLanguageServer, params: DidChangeTextDocumentParams):
     """Text document did change notification."""
-    if '/blueprints/' in params.text_document.uri or \
-       '/applications/' in params.text_document.uri or \
-       '/services/' in params.text_document.uri:
+    if _is_torque_file(params.text_document.uri):
         _validate(server, params)
         text_doc = server.workspace.get_document(params.text_document.uri)
         
@@ -173,9 +173,7 @@ def did_change(server: TorqueLanguageServer, params: DidChangeTextDocumentParams
 @torque_ls.feature(TEXT_DOCUMENT_DID_OPEN)
 async def did_open(server: TorqueLanguageServer, params: DidOpenTextDocumentParams):
     """Text document did open notification."""
-    if '/blueprints/' in params.text_document.uri or \
-       '/applications/' in params.text_document.uri or \
-       '/services/' in params.text_document.uri:
+    if _is_torque_file(params.text_document.uri):
         server.latest_opened_document = params.text_document
         server.show_message('Detected a Torque file', msg_type=MessageType.Log)
         server.workspace.put_document(params.text_document)
@@ -241,6 +239,9 @@ async def workspace_changed(server: TorqueLanguageServer, params: DidChangeWorks
 @torque_ls.feature(COMPLETION, CompletionOptions(resolve_provider=False))
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
+    if not _is_torque_file(params.text_document.uri):
+        return CompletionList(is_incomplete=True, items=[])
+    
     doc = torque_ls.workspace.get_document(params.text_document.uri)
     
     try:
@@ -532,8 +533,11 @@ def code_lens(server: TorqueLanguageServer, params: Optional[CodeLensParams] = N
 
 @torque_ls.feature(DOCUMENT_LINK)
 async def lsp_document_link(server: TorqueLanguageServer, params: DocumentLinkParams,) -> List[DocumentLink]:
+    links: List[DocumentLink] = []    
+    if not _is_torque_file(params.text_document.uri):
+        return links
+    
     await asyncio.sleep(DEBOUNCE_DELAY)
-    links: List[DocumentLink] = []
     
     doc = torque_ls.workspace.get_document(params.text_document.uri)
     try:
