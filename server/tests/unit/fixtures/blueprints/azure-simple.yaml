@@ -1,0 +1,10 @@
+kind: blueprint
+clouds:
+  - azure-staging: westus
+applications:
+  - azure-ubuntu:
+      instances: 1
+spec_version: 1
+environmentType: sandbox
+debugging:
+  bastion_availability: disabled

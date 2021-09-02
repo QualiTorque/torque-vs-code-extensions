@@ -98,8 +98,7 @@ def _validate(ls, params):
         try:
             tree = Parser(source).parse()
             diagnostics += _diagnose_tree_errors(tree)
-            cls_validator = ValidatorFactory.get_validator(tree)
-            validator = cls_validator(tree, text_doc)
+            validator = ValidatorFactory.get_validator(tree, text_doc)
             diagnostics += validator.validate()
         except ParserError as e:
             diagnostics.append(

@@ -1,0 +1,22 @@
+spec_version: 1
+kind: TerraForm
+
+inputs:
+  - DURATION
+
+outputs:
+  - hostname
+
+module:
+  source: github.com/amiros89/terraform-modules/terraform/sleep-2
+
+terraform_version: 0.11.11
+
+variables:
+  values:
+    - DURATION: $DURATION
+
+permissions:  #optional
+  aws:
+    role_arn: PowerUserAccess     #role assumed by service
+    external_id: 'torque'
