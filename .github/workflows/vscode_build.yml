@@ -1,8 +1,5 @@
 name: Build
-on:
-  push:
-    branches:
-      - unit-tests
+on: [push, pull_request]
 
 jobs:
   build:
