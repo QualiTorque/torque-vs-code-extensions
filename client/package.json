@@ -33,6 +33,25 @@
 		"onLanguage:yaml"
 	],
 	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "blueprints-explorer",
+					"title": "Blueprints Explorer",
+					"icon": "icon/Quali_Q_white.svg"
+				}
+			]
+		},
+		"views": {
+			"blueprints-explorer": [
+				{
+					"id": "blueprintsExplorerView",
+					"name": "Blueprints Explorer",
+					"icon": "icon/Quali_Q_white.svg",
+					"contextualTitle": "Blueprints Explorer"
+				}
+			]
+		},
 		"configuration": {
 			"type": "object",
 			"title": "Torque Server Configuration",

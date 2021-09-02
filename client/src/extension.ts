@@ -20,7 +20,7 @@
 
 import * as net from "net";
 import * as path from "path";
-import { ExtensionContext, workspace, languages } from "vscode";
+import { ExtensionContext, workspace, window, commands, Uri } from "vscode";
 import { installLSWithProgress } from "./setup";
 import {
     LanguageClient,
@@ -31,6 +31,8 @@ import {
     activateYamlExtension,
     addSchemasToYamlConfig
 } from './yamlHelper';
+import { BlueprintsProvider } from './blueprintsExplorer';
+
 
 let client: LanguageClient;
 
@@ -105,6 +107,15 @@ export async function activate(context: ExtensionContext) {
 
     activateYamlFeatures(context);    
     context.subscriptions.push(client.start());
+
+    const rootPath = (workspace.workspaceFolders && (workspace.workspaceFolders.length > 0))
+		? workspace.workspaceFolders[0].uri.fsPath : undefined;
+
+	// Samples of `window.registerTreeDataProvider`
+	const blueprintsProvider = new BlueprintsProvider();
+	window.registerTreeDataProvider('blueprints', blueprintsProvider);
+	commands.registerCommand('blueprints.refreshEntry', () => blueprintsProvider.refresh());
+	commands.registerCommand('extension.openPackageOnNpm', moduleName => commands.executeCommand('vscode.open', Uri.parse(`https://www.npmjs.com/package/${moduleName}`)));
 }
 
 export function deactivate(): Thenable<void> {
