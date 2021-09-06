@@ -1,7 +1,13 @@
+from typing import Tuple
+
+from server.ats.trees.app import AppTree
+from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
 from server.validation.app_validator import AppValidationHandler
 from server.validation.bp_validatior import BlueprintValidationHandler
 from server.validation.srv_validator import ServiceValidationHandler
-from server.ats.trees.common import PropertyNode, ScalarNode
+from server.validation.common import ValidationHandler
+from server.ats.trees.common import PropertyNode, ScalarNode, ScalarMappingNode, ScalarMappingsSequence, BaseTree, \
+    ScalarNodesSequence, TreeWithOutputs
 
 from server.ats.trees.blueprint import BlueprintTree
 from server.validation.factory import ValidatorFactory
@@ -16,7 +22,7 @@ import unittest
 from unittest.mock import MagicMock
 
 
-class TestValidator(unittest.TestCase):
+class TestValidationFactory(unittest.TestCase):
     def setUp(self) -> None:
         self.test_doc = MagicMock()
 
@@ -50,3 +56,56 @@ class TestValidator(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             _ = ValidatorFactory.get_validator(tree, self.test_doc)
+
+
+class TestValidationHandler(unittest.TestCase):
+    def setUp(self) -> None:
+        self.test_doc = MagicMock()
+
+    @staticmethod
+    def _get_range(start: Tuple[int, int], end: Tuple[int, int]):
+        return Range(start=Position(line=start[0], character=start[1]),
+                     end=Position(line=end[0], character=end[1]))
+
+    def test_validate_inputs_duplicates(self):
+        word = "PORT"
+
+        tree = BaseTree(
+            inputs_node=PropertyNode(
+                key=ScalarNode(start_pos=(1, 0), end_pos=(1, 6), _text="inputs_node"),
+                value=ScalarMappingsSequence(
+                    nodes=[ScalarMappingNode(key=ScalarNode(start_pos=(2, 4), end_pos=(2, 8), _text=word),
+                                             value=ScalarNode(start_pos=(2, 10), end_pos=(2, 14), _text="3001")
+                                             ),
+                           ScalarMappingNode(key=ScalarNode(start_pos=(3, 4), end_pos=(3, 16), _text=word),
+                                             value=ScalarNode(start_pos=(3, 18), end_pos=(3, 63), _text="3002"))])),
+        )
+        validator = ValidationHandler(tree, self.test_doc)
+        validator._validate_no_duplicates_in_inputs()
+        diags = validator._diagnostics
+
+        for d in diags:
+            self.assertEqual(d.message, f"Multiple declarations of input '{word}'")
+        self.assertEqual(len(diags), 2)
+        self.assertEqual(diags[0].range, self._get_range((2, 4), (2, 8)))
+        self.assertEqual(diags[1].range, self._get_range((3, 4), (3, 16)))
+
+    def test_validate_duplicates_in_outputs(self):
+        word = "test"
+
+        tree = TreeWithOutputs(
+            outputs=PropertyNode(
+                key=ScalarNode(_text="inputs_node"),
+                value=ScalarNodesSequence(
+                    nodes=[ScalarNode(start_pos=(5, 2), end_pos=(5, 6), _text=word),
+                           ScalarNode(start_pos=(6, 2), end_pos=(6, 6), _text=word)]))
+        )
+        validator = ValidationHandler(tree, self.test_doc)
+        validator._validate_no_duplicates_in_outputs()
+        diags = validator._diagnostics
+
+        self.assertEqual(len(diags), 2)
+        for d in diags:
+            self.assertEqual(d.message, f"Multiple declarations of output '{word}'. Outputs are not case sensitive.")
+        self.assertEqual(diags[0].range, self._get_range((5, 2), (5, 6)))
+        self.assertEqual(diags[1].range, self._get_range((6, 2), (6, 6)))
