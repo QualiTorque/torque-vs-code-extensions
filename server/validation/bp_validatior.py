@@ -39,8 +39,8 @@ class BlueprintValidationHandler(ValidationHandler):
                     if deprecated_properties[prop]:
                         message += " " + message_replace.format(deprecated_properties[prop])
                     self._add_diagnostic_for_range(message,
-                                                   range_start_tupple=(line_num, col),
-                                                   range_end_tupple=(line_num, col+len(prop)),
+                                                   range_start_tuple=(line_num, col),
+                                                   range_end_tuple=(line_num, col + len(prop)),
                                                    diag_severity=DiagnosticSeverity.Warning)                    
             line_num += 1
 
@@ -59,8 +59,8 @@ class BlueprintValidationHandler(ValidationHandler):
                     col = match.span(1)
                     old_syntax = match.group(1).replace('$', '').replace('{', '').replace('}', '')
                     self._add_diagnostic_for_range(message.format(old_syntax, deprecated_syntax[prop]),
-                                                   range_start_tupple=(line_num, col[0]),
-                                                   range_end_tupple=(line_num, col[1]),
+                                                   range_start_tuple=(line_num, col[0]),
+                                                   range_end_tuple=(line_num, col[1]),
                                                    diag_severity=DiagnosticSeverity.Warning)
 
             line_num += 1
