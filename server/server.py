@@ -464,7 +464,11 @@ def code_lens(server: TorqueLanguageServer, params: Optional[CodeLensParams] = N
         inputs = []
         bp_inputs = bp_tree.get_inputs()
         for inp in bp_inputs:
-            inputs.append({"name": inp.key.text, "default_value": inp.default_value.text if inp.default_value else ""})            
+            inputs.append({"name": inp.key.text, 
+                           "default_value": inp.default_value.text if inp.default_value else "",
+                           "optional": True if inp.value and hasattr(inp.value, 'optional') and inp.value.optional else False,
+                           "display_style": 'masked' if inp.value and hasattr(inp.value, 'display_style') and inp.value.display_style and inp.value.display_style.text else 'text',
+                           })            
                 
                 
         return [
@@ -673,11 +677,12 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         server.show_message('Please define your connections in the settings first.', MessageType.Error)
         return
 
+    connection = None
     if len(connections) == 1:
         connection = connections[0]
     else:
         for con in connections:
-            if "default" in con and con["default"].lower() == "true":
+            if "default" in con and con["default"] == True:
                 connection = con
                 break
 
