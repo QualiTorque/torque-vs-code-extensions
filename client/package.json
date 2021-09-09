@@ -30,7 +30,8 @@
 		"Linters"
 	],
 	"activationEvents": [
-		"onLanguage:yaml"
+		"onLanguage:yaml",
+		"onView:blueprintsExplorerView"
 	],
 	"contributes": {
 		"viewsContainers": {
@@ -49,6 +50,24 @@
 					"name": "Blueprints Explorer",
 					"icon": "icon/Quali_Q_white.svg",
 					"contextualTitle": "Blueprints Explorer"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "blueprintsExplorerView.refreshEntry",
+				"title": "Refresh",
+				"icon": {
+					"light": "resources/light/refresh.svg",
+					"dark": "resources/dark/refresh.svg"
+				}
+			}
+		],
+		"menus": {
+			"view/title": [
+				{
+					"command": "blueprintsExplorerView.refreshEntry",
+					"group": "navigation"
 				}
 			]
 		},

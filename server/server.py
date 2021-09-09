@@ -16,6 +16,7 @@
 ############################################################################
 import asyncio
 from dataclasses import dataclass
+import json
 import logging
 import subprocess
 import sys
@@ -70,7 +71,7 @@ DEBOUNCE_DELAY = 0.3
 
 
 class TorqueLanguageServer(LanguageServer):
-    CONFIGURATION_SECTION = 'torqueServer'
+    CONFIGURATION_SECTION = 'torque'
     CMD_VALIDATE_BLUEPRINT = 'validate_torque_blueprint'
     CMD_START_SANDBOX = 'start_torque_sandbox'
     latest_opened_document = None
@@ -449,40 +450,23 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
 #         # )
 
 
-# @torque_ls.feature(CODE_LENS, CodeLensOptions(resolve_provider=False),)
-# def code_lens(server: TorqueLanguageServer, params: Optional[CodeLensParams] = None) -> Optional[List[CodeLens]]:
-#     print('------- code lens -----')
-#     print(locals())
-#     if '/applications/' in params.text_document.uri:
-#         return [
-#                     # CodeLens(
-#                     #     range=Range(
-#                     #         start=Position(line=0, character=0),
-#                     #         end=Position(line=1, character=1),
-#                     #     ),
-#                     #     command=Command(
-#                     #         title='cmd1',
-#                     #         command=TorqueLanguageServer.CMD_COUNT_DOWN_BLOCKING,
-#                     #     ),
-#                     #     data='some data 1',
-#                     # ),
-#                     CodeLens(
-#                         range=Range(
-#                             start=Position(line=0, character=0),
-#                             end=Position(line=1, character=1),
-#                         ),
-#                         command=Command(
-#                             title='cmd2',
-#                             command='',
-#                         ),
-#                         data='some data 2',
-#                     ),
-#                 ]
-#     else:
-#         return None
 @torque_ls.feature(CODE_LENS, CodeLensOptions(resolve_provider=False),)
 def code_lens(server: TorqueLanguageServer, params: Optional[CodeLensParams] = None) -> Optional[List[CodeLens]]:
     if '/blueprints/' in params.text_document.uri:
+        doc = torque_ls.workspace.get_document(params.text_document.uri)
+        try:
+            bp_tree = Parser(doc.source).parse()            
+        except Exception as ex:
+            import sys
+            logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+            return None
+        
+        inputs = []
+        bp_inputs = bp_tree.get_inputs()
+        for inp in bp_inputs:
+            inputs.append({"name": inp.key.text, "default_value": inp.default_value.text if inp.default_value else ""})            
+                
+                
         return [
                     CodeLens(
                         range=Range(
@@ -502,8 +486,10 @@ def code_lens(server: TorqueLanguageServer, params: Optional[CodeLensParams] = N
                         ),
                         command=Command(
                             title='Start Sandbox',
-                            command=TorqueLanguageServer.CMD_START_SANDBOX,
-                            arguments=[params.text_document.uri]
+                            # command=TorqueLanguageServer.CMD_START_SANDBOX,
+                            # arguments=[params.text_document.uri]
+                            command="extension.openReserveForm",
+                            arguments=[params.text_document.uri, 30, inputs]
                         )
                     ),
                 ]
@@ -695,17 +681,41 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                 connection = con
                 break
 
-    blueprint_name = pathlib.Path(args[0][0]).name.replace(".yaml", "")
+    blueprint_name = args[0][0]
+    dev_mode = False
+    if blueprint_name.endswith(".yaml"):
+        dev_mode = True
+        blueprint_name = pathlib.Path(args[0][0]).name.replace(".yaml", "")
+        duration = 30
+        inputs = ""
+    else:
+        duration = args[0][1]
+        inputs_args = args[0][2]
+        if inputs_args:
+            idx = 0
+            inputs = ""
+            for inp in list(inputs_args._fields):
+                inputs += inp + "=" + inputs_args[idx] + ", "
+                idx += 1
+            inputs = inputs[:-2]
+        else:
+            inputs = ""            
+        
     account = connection["account"]
     space = connection["space"]
     token = connection["token"]
     server.show_message('Starting sandbox from blueprint: ' + blueprint_name)
     try:
-        process = subprocess.Popen([sys.prefix + '/bin/colony',
+        command = [sys.prefix + '/bin/colony',
                                     '--token', token,
                                     '--account', account,
                                     '--space', space,
-                                    'sb', 'start', blueprint_name, '-d', '30'],
+                                    'sb', 'start', blueprint_name, '-d', duration]
+        if inputs:
+            command.extend(['-i', inputs])
+        # if not dev_mode:
+        #     command.extend(['-w', '0'])
+        process = subprocess.Popen(command,
                                    cwd=server.workspace.root_path,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         for line in process.stdout:

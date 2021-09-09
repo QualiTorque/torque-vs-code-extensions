@@ -32,7 +32,7 @@ import {
     addSchemasToYamlConfig
 } from './yamlHelper';
 import { BlueprintsProvider } from './blueprintsExplorer';
-
+import { SandboxStartPanel } from './startSandboxWebview';
 
 let client: LanguageClient;
 
@@ -113,9 +113,14 @@ export async function activate(context: ExtensionContext) {
 
 	// Samples of `window.registerTreeDataProvider`
 	const blueprintsProvider = new BlueprintsProvider();
-	window.registerTreeDataProvider('blueprints', blueprintsProvider);
-	commands.registerCommand('blueprints.refreshEntry', () => blueprintsProvider.refresh());
-	commands.registerCommand('extension.openPackageOnNpm', moduleName => commands.executeCommand('vscode.open', Uri.parse(`https://www.npmjs.com/package/${moduleName}`)));
+	window.registerTreeDataProvider('blueprintsExplorerView', blueprintsProvider);
+	commands.registerCommand('blueprintsExplorerView.refreshEntry', () => blueprintsProvider.refresh());
+    context.subscriptions.push(
+		commands.registerCommand('extension.openReserveForm', (bpname:string, space:string, inputs:Array<string>) => {
+            SandboxStartPanel.createOrShow(context.extensionUri, bpname, space, inputs);
+        })
+	);
+    
 }
 
 export function deactivate(): Thenable<void> {
