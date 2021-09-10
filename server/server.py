@@ -17,10 +17,13 @@
 import asyncio
 from dataclasses import dataclass
 import logging
+
+from yaml.tokens import BlockEndToken
+from server.ats.trees.blueprint import ApplicationNode
 from server.ats.trees.app import AppTree
 
-from server.ats.trees.common import BaseTree, PropertyNode
-from server.utils.common import is_var_allowed
+from server.ats.trees.common import BaseTree, PropertyNode, ScalarNode, YamlNode
+from server.utils.common import get_line_before_position, is_var_allowed, get_path_to_pos
 from server.validation.factory import ValidatorFactory
 
 from pygls.lsp.types.language_features.completion import CompletionTriggerKind, InsertTextMode
@@ -229,12 +232,56 @@ async def workspace_changed(server: TorqueLanguageServer, params: DidChangeWorks
 #     return None
 
 
+# def get_completions_from_path(path: List[YamlNode]):
+#     completions: List[CompletionItem] = []
+
+#     cur_node = path[-1]
+#     node_end: Tuple[int,int] = cur_node.end_pos
+
+#     while node_end == cur_node.end_pos:
+#         try:
+#             cur_node.get_compitor()
+#         except NotImplementedError:
+#             cur_node.pop
+    
+def build_app_completion(app_name, root_folder, offset=0):
+    tab = "  "
+    apps = applications.get_available_applications(root_folder)
+    if app_name not in apps:
+        return ""
+    
+    app_tree = apps[app_name].get("app_tree", None)
+    
+    if not app_tree:
+        return ""
+
+    output = f"{app_name}:\n"
+    output += tab * 2  + "instances: 1\n"
+
+    # output += " "* offset + tab  + "instances: 1\n"
+    inputs = app_tree.get_inputs()
+    if inputs:
+        output +=  tab * 2 + "input_values:\n"
+        for input in inputs:
+            if input.value:
+                output += tab * 3 + f"- {input.key.text}: {input.value.text}\n"
+            else:
+                output += tab * 3 + f"- {input.key.text}: \n"
+
+    return output
+
+def get_offset(seq):
+    if not seq:
+        return 4
+    else:
+        return seq[0].start_pos[1]
+
 @torque_ls.feature(COMPLETION, CompletionOptions(resolve_provider=False))
 def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     """Returns completion items."""
     if not _is_torque_file(params.text_document.uri):
         return CompletionList(is_incomplete=True, items=[])
-    
+
     doc = torque_ls.workspace.get_document(params.text_document.uri)
     
     try:
@@ -273,6 +320,8 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     root = torque_ls.workspace.root_path
     
     if doc_type == "blueprint":
+        path = get_path_to_pos(tree, params.position)
+
         items=[]
         if last_word.endswith('.'):
             if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
@@ -355,19 +404,91 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             parent = common.get_parent_word(doc, params.position)
             line = params.position.line
             char = params.position.character
-    
-            if parent == "applications":
-                apps = applications.get_available_applications(root)
-                for app in apps:
-                    if apps[app]['app_completion']:
-                        items.append(CompletionItem(label=app,
-                                                    kind=CompletionItemKind.Reference,
-                                                    text_edit=TextEdit(
-                                                                    range=Range(start=Position(line=line, character=char-2),
-                                                                                end=Position(line=line, character=char)),
-                                                                    new_text=apps[app]['app_completion'],
-                                                    )))
-    
+            line_before_pos = get_line_before_position(doc, params.position)
+            if any(isinstance(item, BlueprintTree.AppsSequence) for item in path):
+                if isinstance(path[-1], BlueprintTree.AppsSequence):
+                    apps = applications.get_available_applications(root)
+                    for app in apps:
+                        if apps[app]["app_tree"]:
+                            # offset = get_offset(path[-1])
+                            if line_before_pos.endswith("-"):
+                                app_props = "- " + build_app_completion(app, root, offset=char)
+                                label = f"- {app}"
+                            else:
+                                app_props = build_app_completion(app, root, offset=char)
+                                label = app
+                            items.append(CompletionItem(label=label,
+                                                        kind=CompletionItemKind.Reference,
+                                                        insert_text=app_props
+                                                        # filter_text=path[-1].text,
+                                                        # text_edit=TextEdit(
+                                                        #                 range=Range(start=Position(line=line, character=1),
+                                                        #                             end=Position(line=line, character=char-1)),
+                                                        #                 # range=Range(start=Position(line=line, character=col),
+                                                        #                 #             end=Position(line=line, character=col)),
+                                                        #                 new_text=app_props#   apps[app]['app_completion'],)
+                                                        ))
+
+                if isinstance(path[-1], ScalarNode) and isinstance(path[-2], ApplicationNode):
+        
+                # if parent == "applications":
+                    apps = applications.get_available_applications(root)
+                    for app in apps:
+                        if apps[app]["app_tree"]: # and app.startswith(path[-1].text):
+
+                            # if last_word == "-":
+                            #     col = char - 1
+                            # else:
+                            #     col = char
+                            app_props = build_app_completion(app, root, offset=char)
+                            items.append(CompletionItem(label=app,
+                                                        kind=CompletionItemKind.Reference,
+                                                        insert_text=app_props
+                                                        # filter_text=path[-1].text,
+                                                        # text_edit=TextEdit(
+                                                        #                 range=Range(start=Position(line=line, character=char),
+                                                        #                             end=Position(line=line, character=char)),
+
+                                                        #                 # range=Range(start=Position(line=line, character=col),
+                                                        #                 #             end=Position(line=line, character=col)),
+                                                        #                 new_text=build_app_completion(app, root, offset=char),#   apps[app]['app_completion'],)
+                                                        ))
+                
+                else:
+                    seq: BlueprintTree.AppsSequence = None
+                    # find a sequence
+                    for item in path:
+                        if isinstance(item, BlueprintTree.AppsSequence):
+                            seq = item
+                            break
+                    
+                    # get start position of its nodes
+                    if seq.nodes:
+                        col = seq.nodes[0].start_pos[1]
+
+                    if char == col-2 and char != 0:
+                        apps = applications.get_available_applications(root)
+                        for app in apps:
+                            if apps[app]["app_tree"]: # and app.startswith(path[-1].text):
+
+                                # if last_word == "-":
+                                #     col = char - 1
+                                # else:
+                                #     col = char
+                                app_props = "- " + build_app_completion(app, root, offset=char)
+                                items.append(CompletionItem(label=app,
+                                                            kind=CompletionItemKind.Reference,
+                                                            insert_text=app_props
+                                                            # filter_text=path[-1].text,
+                                                            # text_edit=TextEdit(
+                                                            #                 range=Range(start=Position(line=line, character=char),
+                                                            #                             end=Position(line=line, character=char)),
+
+                                                            #                 # range=Range(start=Position(line=line, character=col),
+                                                            #                 #             end=Position(line=line, character=col)),
+                                                            #                 new_text=build_app_completion(app, root, offset=char),#   apps[app]['app_completion'],)
+                                                            ))
+        
             if parent == "services":
                 srvs = services.get_available_services(root)
                 for srv in srvs:
