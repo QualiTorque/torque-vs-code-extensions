@@ -116,8 +116,8 @@ export async function activate(context: ExtensionContext) {
 	window.registerTreeDataProvider('blueprintsExplorerView', blueprintsProvider);
 	commands.registerCommand('blueprintsExplorerView.refreshEntry', () => blueprintsProvider.refresh());
     context.subscriptions.push(
-		commands.registerCommand('extension.openReserveForm', (bpname:string, space:string, inputs:Array<string>) => {
-            SandboxStartPanel.createOrShow(context.extensionUri, bpname, space, inputs);
+		commands.registerCommand('extension.openReserveForm', (bpname:string, space:string, inputs:Array<string>, artifacts: object) => {
+            SandboxStartPanel.createOrShow(context.extensionUri, bpname, space, inputs, artifacts);
         })
 	);
     

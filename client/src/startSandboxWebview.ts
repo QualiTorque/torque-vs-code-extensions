@@ -28,16 +28,17 @@ export class SandboxStartPanel {
     private _bpname: string;
     private _space: string;
     private _inputs: Array<string>;
+    private _artifacts: object;
 	private _disposables: vscode.Disposable[] = [];
 
-	public static createOrShow(extensionUri: vscode.Uri, bpname:string, space:string, inputs:Array<string>) {
+	public static createOrShow(extensionUri: vscode.Uri, bpname:string, space:string, inputs:Array<string>, artifacts: object) {
         const column = vscode.window.activeTextEditor
 			? vscode.window.activeTextEditor.viewColumn
 			: undefined;
 
 		// If we already have a panel, show it.
 		if (SandboxStartPanel.currentPanel) {
-			SandboxStartPanel.currentPanel.updatePanel(bpname, space, inputs);
+			SandboxStartPanel.currentPanel.updatePanel(bpname, space, inputs, artifacts);
             SandboxStartPanel.currentPanel._panel.reveal(column);
             return;
 		}
@@ -50,15 +51,16 @@ export class SandboxStartPanel {
 			getWebviewOptions(extensionUri),
 		);
 
-		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, space, inputs);
+		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, space, inputs, artifacts);
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, space:string, inputs:Array<string>) {
+	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, space:string, inputs:Array<string>, artifacts: object) {
 		this._panel = panel;
 		this._extensionUri = extensionUri;
         this._bpname = decodeURI(bpname);
         this._space = space;
         this._inputs = inputs;
+        this._artifacts = artifacts;
 
 		// Set the webview's initial html content
 		this._update();
@@ -76,7 +78,7 @@ export class SandboxStartPanel {
 						return;
                     case 'run-command':
                         if (message.name == 'start-sandbox') {
-                            vscode.commands.executeCommand('start_torque_sandbox', bpname, message.duration, message.inputs)
+                            vscode.commands.executeCommand('start_torque_sandbox', bpname, message.duration, message.inputs, message.artifacts)
                         }
                         return;
 				}
@@ -86,10 +88,11 @@ export class SandboxStartPanel {
 		);
 	}
 
-    public updatePanel(bpname:string, space:string, inputs:Array<string>) {
+    public updatePanel(bpname:string, space:string, inputs:Array<string>, artifacts: object) {
         this._bpname = decodeURI(bpname);
         this._space = space;
         this._inputs = inputs;
+        this._artifacts = artifacts;
 
 		// Set the webview's initial html content
 		this._update();
@@ -116,6 +119,11 @@ export class SandboxStartPanel {
 		this._panel.webview.html = this._getHtmlForWebview(webview);
 	}
 
+    private _isEmpty(obj) {
+        for (var j in obj) { return false }
+        return true;
+    }
+
 	private _getHtmlForWebview(webview: vscode.Webview) {
 		// Local path to main script run in the webview
 		// const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js');
@@ -134,19 +142,48 @@ export class SandboxStartPanel {
 		// Use a nonce to only allow specific scripts to be run
 		const nonce = getNonce();
 		const nonce2 = getNonce();
-        var inputsHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-        inputsHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='30' min='10' max='3600'></td></tr>";
-        var postMessageProperties = "duration: document.getElementById('duration').value, inputs: {";        
-        for (var i=0; i<this._inputs.length; i++)
-        {
-            inputsHtml += "<tr><td>" + this._inputs[i]['name'] + (!this._inputs[i]['optional']? ' *': '') + "</td><td>" + "<input type=" + (this._inputs[i]['display_style']=='masked'?'password':'text') + " id='" + this._inputs[i]['name'] + "' value='" + (this._inputs[i]['default_value'] ? this._inputs[i]['default_value'] : '') + "'></td></tr>";
-            postMessageProperties += this._inputs[i]['name'] + ": document.getElementById('" + this._inputs[i]['name'] + "').value,";
+        var durationHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+        durationHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='30' min='10' max='3600'></td></tr>";
+        durationHtml += "</table>";
+
+        if (this._inputs.length > 0) {
+            var inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+            var postMessageProperties = "duration: document.getElementById('duration').value, inputs: {";        
+            for (var i=0; i<this._inputs.length; i++)
+            {
+                inputsHtml += "<tr><td width='180px'>" + this._inputs[i]['name'] + (!this._inputs[i]['optional']? ' *': '') + "</td><td>" + "<input type=" + (this._inputs[i]['display_style']=='masked'?'password':'text') + " id='" + this._inputs[i]['name'] + "' value='" + (this._inputs[i]['default_value'] ? this._inputs[i]['default_value'] : '') + "'></td></tr>";
+                postMessageProperties += `"${this._inputs[i]['name']}": document.getElementById('${this._inputs[i]['name']}').value,`;
+            }
+            inputsHtml += "</table>";
+            postMessageProperties += "}";            
         }
-        postMessageProperties += "}"
-        inputsHtml += "<tr><td width='180px'><br/><input type='button' id='start-btn' value='Start'></td><td></td></tr>"
-        inputsHtml += "</table>"
+        else {
+            var inputsHtml = "";
+            var postMessageProperties = "duration: document.getElementById('duration').value, inputs: {}";   
+        }
+
+        if (!this._isEmpty(this._artifacts)) {
+            var artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+            postMessageProperties += ", artifacts: {";        
+            for (const [key, value] of Object.entries(this._artifacts)) {
+                artifactsHtml += "<tr><td width='180px'>" + key + ' *' + "</td><td>" + "<input type='text' id='art_" + key + "' value='" + (value ? value : '') + "'></td></tr>";
+                postMessageProperties += `"${key}": document.getElementById('art_${key}').value,`;
+            }
+            artifactsHtml += "</table>";
+            postMessageProperties += "}";
+            if (this._inputs.length > 0)
+                artifactsHtml = "<br/>" + artifactsHtml;
+        }
+        else {
+            var artifactsHtml = "";
+            postMessageProperties += ", artifacts: {}";
+        }
         
-		return `<!DOCTYPE html>
+        var startHtml = "<br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+        startHtml += "<tr><td width='180px'><input type='button' id='start-btn' value='Start'></td><td></td></tr>";
+        startHtml += "</table>";
+        
+		var html = `<!DOCTYPE html>
 			<html lang="en">
 			<head>
 				<meta charset="UTF-8">
@@ -167,27 +204,28 @@ export class SandboxStartPanel {
                 <br/>
 				<h2>Launch a New Sandbox</h2>
 				<h3>Blueprint: ${this._bpname}</h3>
-
+                <br/>
+				${durationHtml}
+                <br/>
 				${inputsHtml}
-                    
-                
+                ${artifactsHtml}
+                ${startHtml}
 			</body>
             <script nonce="${nonce}">
-            document.getElementById("start-btn").addEventListener("click", function() {
-                startSandbox();
-            });
-            function startSandbox() {
                 const vscode = acquireVsCodeApi();
-                
-                vscode.postMessage({
-                    command: 'run-command',
-                    name: 'start-sandbox',
-                    ${postMessageProperties}                    
+                document.getElementById("start-btn").addEventListener("click", function() {
+                    startSandbox();
                 });
-                
-            }
+                function startSandbox() {                
+                    vscode.postMessage({
+                        command: 'run-command',
+                        name: 'start-sandbox',
+                        ${postMessageProperties}                    
+                    });
+                }
             </script>
 			</html>`;
+        return html;
 	}
 }
 

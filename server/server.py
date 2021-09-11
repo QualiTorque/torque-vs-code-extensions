@@ -468,8 +468,11 @@ def code_lens(server: TorqueLanguageServer, params: Optional[CodeLensParams] = N
                            "default_value": inp.default_value.text if inp.default_value else "",
                            "optional": True if inp.value and hasattr(inp.value, 'optional') and inp.value.optional else False,
                            "display_style": 'masked' if inp.value and hasattr(inp.value, 'display_style') and inp.value.display_style and inp.value.display_style.text else 'text',
-                           })            
-                
+                           })
+        artifacts = {}
+        bp_arts = bp_tree.get_artifacts()
+        for art in bp_arts:
+            artifacts[art.key.text] = art.value.text if art.value else ""
                 
         return [
                     CodeLens(
@@ -493,7 +496,7 @@ def code_lens(server: TorqueLanguageServer, params: Optional[CodeLensParams] = N
                             # command=TorqueLanguageServer.CMD_START_SANDBOX,
                             # arguments=[params.text_document.uri]
                             command="extension.openReserveForm",
-                            arguments=[params.text_document.uri, 30, inputs]
+                            arguments=[params.text_document.uri, 30, inputs, artifacts]
                         )
                     ),
                 ]
@@ -687,24 +690,35 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                 break
 
     blueprint_name = args[0][0]
-    dev_mode = False
+    
     if blueprint_name.endswith(".yaml"):
         dev_mode = True
         blueprint_name = pathlib.Path(args[0][0]).name.replace(".yaml", "")
-        duration = 30
-        inputs = ""
     else:
-        duration = args[0][1]
-        inputs_args = args[0][2]
-        if inputs_args:
-            idx = 0
-            inputs = ""
-            for inp in list(inputs_args._fields):
-                inputs += inp + "=" + inputs_args[idx] + ", "
-                idx += 1
-            inputs = inputs[:-2]
-        else:
-            inputs = ""            
+        dev_mode = False
+
+    duration = args[0][1]
+    inputs_args = args[0][2]
+    if inputs_args:
+        idx = 0
+        inputs = ""
+        for inp in list(inputs_args._fields):
+            inputs += inp + "=" + inputs_args[idx] + ", "
+            idx += 1
+        inputs = inputs[:-2]
+    else:
+        inputs = ""
+    
+    artifacts_args = args[0][3]
+    if artifacts_args:
+        idx = 0
+        artifacts = ""
+        for art in list(artifacts_args._fields):
+            artifacts += art + "=" + artifacts_args[idx] + ", "
+            idx += 1
+        artifacts = artifacts[:-2]
+    else:
+        artifacts = ""       
         
     account = connection["account"]
     space = connection["space"]
@@ -718,10 +732,12 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                                     'sb', 'start', blueprint_name, '-d', duration]
         if inputs:
             command.extend(['-i', inputs])
+        if artifacts:
+            command.extend(['-a', artifacts])
         # if not dev_mode:
         #     command.extend(['-w', '0'])
         process = subprocess.Popen(command,
-                                   cwd=server.workspace.root_path,
+                                   cwd=server.workspace.root_path if dev_mode else None,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         for line in process.stdout:
             line_dec = line.decode().strip()
