@@ -365,23 +365,13 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                 completions = completer(torque_ls.workspace, params, tree).get_completions()
                 items += completions
             except ValueError:
-                pass
+                logging.error("Unable to build a completions list")
             
-        
         if items:
-            return CompletionList(
-                is_incomplete=False,
-                items=items
-            )
+            return CompletionList(is_incomplete=False, items=items)
         else:
-            line = params.position.line
-            char = params.position.character
-            return CompletionList(is_incomplete=False, 
-                                  items=[CompletionItem(label=f"No suggestions.", 
-                                                        kind=CompletionItemKind.Text, 
-                                                        text_edit=TextEdit(new_text="", 
-                                                                           range=Range(start=Position(line=line, character=char-(1 if last_word.endswith('$') else 0)),
-                                                                                       end=Position(line=line, character=char))))])
+            return CompletionList(is_incomplete=True, items=[])
+
     elif doc_type == "application":
         if words and len(words) == 1:
             if words[0] == "script:":
