@@ -1,4 +1,3 @@
-from os import path
 from server.ats.trees.common import BaseTree, ScalarNode, TreeWithOutputs
 from typing import List
 from server.utils import applications, services
@@ -7,6 +6,7 @@ from server.ats.trees.blueprint import BlueprintResourceMappingNode, BlueprintTr
 from pygls.lsp.types.language_features.completion import CompletionItem, CompletionItemKind, CompletionParams
 from pygls.workspace import Workspace
 from server.completers.base import Completer
+
 
 class BlueprintResourceCompleter(Completer):
     def __init__(self, workspace: Workspace, params: CompletionParams, tree: BlueprintTree) -> None:
@@ -40,17 +40,18 @@ class BlueprintResourceCompleter(Completer):
                 props = "- " + props
                 label = "- " + res
 
-            elif not (isinstance(self.path[-1], ScalarNode) and isinstance(self.path[-2], BlueprintResourceMappingNode)):
+            elif not (isinstance(self.path[-1], ScalarNode)
+                      and isinstance(self.path[-2], BlueprintResourceMappingNode)):
                 seq = self._get_resource_sequence()
-                col = seq.nodes[0].start_pos[1] if seq.nodes else 4 # get default
-                char = self.params.position.character 
+                col = seq.nodes[0].start_pos[1] if seq.nodes else 4  # get default
+                char = self.params.position.character
 
-                if char != col-2 or char == 0:
+                if char != col - 2 or char == 0:
                     return []
 
                 else:
                     props = "- " + props
-            
+
             items.append(CompletionItem(
                 label=label,
                 kind=CompletionItemKind.Reference,
@@ -69,18 +70,20 @@ class BlueprintResourceCompleter(Completer):
             seq = self._get_resource_sequence()
         except ValueError:
             raise
-        root = self.workspace.root_path #  TODO: workspace's root could not be a root of blueprint repo. Handle
-        return applications.get_available_applications(root) if isinstance(seq, BlueprintTree.AppsSequence) else services.get_available_services(root)
+        root = self.workspace.root_path  # TODO: workspace's root could not be a root of blueprint repo. Handle
+        return (applications.get_available_applications(root)
+                if isinstance(seq, BlueprintTree.AppsSequence)
+                else services.get_available_services(root))
 
     def _build_resource_completion(self, resource_name: str, tree: BaseTree) -> str:
         tab = "  "
         output = f"{resource_name}:\n"
         if tree.kind.text == "application":
-            output += tab * 2  + "instances: 1\n"
+            output += tab * 2 + "instances: 1\n"
 
         inputs = tree.get_inputs()
         if inputs:
-            output +=  tab * 2 + "input_values:\n"
+            output += tab * 2 + "input_values:\n"
             for input in inputs:
                 if input.value:
                     output += tab * 3 + f"- {input.key.text}: {input.value.text}\n"
