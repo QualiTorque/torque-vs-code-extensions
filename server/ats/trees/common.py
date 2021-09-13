@@ -347,7 +347,7 @@ class BaseTree(ObjectNode):
 
 
 @dataclass
-class TreeWithOutputs(BaseTree, ABC):
+class TreeWithOutputs(ObjectNode, ABC):
     outputs: ScalarNodesSequence = None
 
     def get_outputs(self) -> List[ScalarNode]:
