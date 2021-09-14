@@ -95,7 +95,7 @@ class BlueprintValidationHandler(ValidationHandler):
         available_apps = applications.get_available_applications()
         for app in self._tree.get_applications():
             if app.id.text in available_apps:
-                if available_apps[app.id.text]["app_tree"] is None:
+                if available_apps[app.id.text]["tree"] is None:
                     self._add_diagnostic(app.id, message=message.format(app.id.text))
             
     def _validate_blueprint_apps_have_input_values(self):
@@ -124,7 +124,7 @@ class BlueprintValidationHandler(ValidationHandler):
         available_srvs = services.get_available_services()
         for srv in self._tree.get_services():
             if srv.id.text in available_srvs:
-                if available_srvs[srv.id.text]["srv_tree"] is None:
+                if available_srvs[srv.id.text]["tree"] is None:
                     self._add_diagnostic(srv.id, message=message.format(srv.id.text))
 
     def _check_for_unused_blueprint_inputs(self):
