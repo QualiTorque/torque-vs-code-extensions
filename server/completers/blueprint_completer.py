@@ -36,9 +36,10 @@ class BlueprintResourceCompleter(Completer):
             props = self._build_resource_completion(res, tree)
             label = res
 
-            if self.path[-1] == self._get_resource_sequence() and line_before_pos.endswith("-"):
-                props = "- " + props
-                label = "- " + res
+            if self.path[-1] == self._get_resource_sequence():
+                if line_before_pos.endswith("-"):
+                    props = "- " + props
+                    label = "- " + res
 
             elif not (isinstance(self.path[-1], ScalarNode)
                       and isinstance(self.path[-2], BlueprintResourceMappingNode)):
