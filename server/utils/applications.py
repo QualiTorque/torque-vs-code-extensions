@@ -29,8 +29,8 @@ def load_app_details(app_name: str, app_source: str):
         logging.warning(f"Unable to load appliiation '{dir}.yaml' due to error: {str(e)}")
                         
     APPLICATIONS[app_name] = {
-        'app_tree': app_tree,
-        'app_completion': format_yaml(output) if output else None
+        'tree': app_tree,
+        'completion': format_yaml(output) if output else None
     }
 
 
@@ -85,7 +85,7 @@ def get_app_scripts(app_path: str):
 
 def get_app_inputs(app_name):
     if app_name in APPLICATIONS:
-        app_tree = APPLICATIONS[app_name]["app_tree"]
+        app_tree = APPLICATIONS[app_name]["tree"]
         if app_tree and app_tree.inputs_node:
             inputs = {}            
             for input in app_tree.get_inputs():
@@ -97,7 +97,7 @@ def get_app_inputs(app_name):
 
 def get_app_outputs(app_name):
     if app_name in APPLICATIONS:
-        app_tree = APPLICATIONS[app_name]["app_tree"]
+        app_tree = APPLICATIONS[app_name]["tree"]
         outputs = [out.text for out in app_tree.get_outputs()]
         return outputs
     
