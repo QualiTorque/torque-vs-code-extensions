@@ -1,4 +1,3 @@
-import pathlib
 import re
 
 from pygls.lsp.types.basic_structures import DiagnosticSeverity
@@ -36,14 +35,6 @@ class AppValidationHandler(ValidationHandler):
             if node.script.text not in scripts:
                 self._add_diagnostic(node.script.value, f"File {node.script.text} doesn't exist")
 
-    def _get_repo_root_path(self):
-        path = pathlib.Path(self._document.path).absolute()
-        if path.parents[1].name == "applications":
-            return path.parents[2].absolute().as_posix()
-
-        else:
-            raise ValueError(f"Wrong document path of application file: {path.as_posix()}")
-    
     def _check_for_deprecated_properties(self):
         deprecated_properties = {"ostype": "os_type under source"}
         message_dep = "Deprecated property '{}'."

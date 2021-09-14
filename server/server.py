@@ -26,8 +26,8 @@ from yaml.tokens import BlockEndToken
 from server.ats.trees.blueprint import ApplicationNode
 from server.ats.trees.app import AppTree
 
-from server.ats.trees.common import BaseTree, PropertyNode, ScalarNode, YamlNode
-from server.utils.common import get_line_before_position, is_var_allowed, get_path_to_pos
+from server.ats.trees.common import BaseTree, PropertyNode
+from server.utils.common import get_repo_root_path, get_line_before_position, is_var_allowed, get_path_to_pos
 from server.validation.factory import ValidatorFactory
 
 from pygls.lsp.types.language_features.completion import CompletionTriggerKind, InsertTextMode
@@ -276,7 +276,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
 
             return CompletionList(is_incomplete=(len(suggested_vars)==0), items=suggested_vars)
 
-    root = torque_ls.workspace.root_path
+    root = get_repo_root_path(doc.path)
     
     if doc_type == "blueprint":
         path = get_path_to_pos(tree, params.position)
@@ -491,7 +491,7 @@ async def lsp_document_link(server: TorqueLanguageServer, params: DocumentLinkPa
     except yaml.MarkedYAMLError as ex:
         return links
 
-    root = torque_ls.workspace.root_path        
+    root = get_repo_root_path(doc.path)
 
     if doc_type == "blueprint":
         try:
