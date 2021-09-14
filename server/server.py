@@ -20,7 +20,7 @@ import logging
 from server.ats.trees.app import AppTree
 
 from server.ats.trees.common import BaseTree, PropertyNode
-from server.utils.common import is_var_allowed
+from server.utils.common import get_repo_root_path, is_var_allowed
 from server.validation.factory import ValidatorFactory
 
 from pygls.lsp.types.language_features.completion import CompletionTriggerKind, InsertTextMode
@@ -270,7 +270,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
 
             return CompletionList(is_incomplete=(len(suggested_vars)==0), items=suggested_vars)
 
-    root = torque_ls.workspace.root_path
+    root = get_repo_root_path(doc.path)
     
     if doc_type == "blueprint":
         items=[]
@@ -513,7 +513,7 @@ async def lsp_document_link(server: TorqueLanguageServer, params: DocumentLinkPa
     except yaml.MarkedYAMLError as ex:
         return links
 
-    root = torque_ls.workspace.root_path        
+    root = get_repo_root_path(doc.path)
 
     if doc_type == "blueprint":
         try:

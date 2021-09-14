@@ -1,3 +1,4 @@
+import pathlib
 from typing import Optional, Tuple, List
 from pygls.lsp import types
 from pygls.workspace import Document, position_from_utf16
@@ -93,3 +94,14 @@ def preceding_words(document: Document, position: types.Position) -> Optional[Tu
         return word
     except ValueError:
         return None
+
+def get_repo_root_path(path: str) -> str:
+    full_path = pathlib.Path(path).absolute()
+    if full_path.parents[0].name == "blueprints":
+        return full_path.parents[1].absolute().as_posix()
+
+    elif full_path.parents[1].name in ["services", "applications"]:
+        return full_path.parents[2].absolute().as_posix()
+
+    else:
+        raise ValueError(f"Wrong document path of blueprint file: {full_path.as_posix()}")  
