@@ -131,13 +131,6 @@ class BlueprintValidationHandler(ValidationHandler):
                             message=f"{name} input must have a value or a blueprint input with the same name should be defined",
                         )
 
-    # def _validate_blueprint_services_have_input_values(self):
-    #     blueprint_inputs = {input.key.text: 1 for input in self._tree.get_inputs()}
-    #     for srv in self._tree.get_services():
-    #         for var in srv.inputs:
-    #             if not var.value and var.key.text not in blueprint_inputs:
-    #                 self._add_diagnostic(var.key, message="Service input must have a value or a blueprint input with the same name should be defined")
-
     def _validate_non_existing_service_is_used(self):
         message = "The service '{}' could not be found in the /services folder"
         available_srvs = services.get_available_services_names()
@@ -468,8 +461,6 @@ class BlueprintValidationHandler(ValidationHandler):
             self._check_for_deprecated_syntax()
             # errors
             self._validate_blueprint_resources_have_input_values()
-            # self._validate_blueprint_apps_have_input_values()
-            # self._validate_blueprint_services_have_input_values()
             self._validate_dependency_exists()
             self._validate_var_being_used_is_defined()
             self._validate_non_existing_app_is_used()

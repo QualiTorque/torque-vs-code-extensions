@@ -1,7 +1,6 @@
 from typing import Tuple
 
-from server.ats.trees.app import AppTree
-from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
+from pygls.lsp.types.basic_structures import Position, Range
 from server.validation.app_validator import AppValidationHandler
 from server.validation.bp_validatior import BlueprintValidationHandler
 from server.validation.srv_validator import ServiceValidationHandler
