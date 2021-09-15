@@ -37,18 +37,17 @@
 		"viewsContainers": {
 			"activitybar": [
 				{
-					"id": "blueprints-explorer",
-					"title": "Blueprints Explorer",
+					"id": "torque-view-container",
+					"title": "Torque",
 					"icon": "icon/Quali_Q_white.svg"
 				}
 			]
 		},
 		"views": {
-			"blueprints-explorer": [
+			"torque-view-container": [
 				{
 					"id": "blueprintsExplorerView",
 					"name": "Blueprints Explorer",
-					"icon": "icon/Quali_Q_white.svg",
 					"contextualTitle": "Blueprints Explorer"
 				}
 			]
