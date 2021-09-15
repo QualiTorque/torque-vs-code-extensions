@@ -534,7 +534,7 @@ empty_item_end_no_indent = BlueprintTree(
         ),
         value=BlueprintTree.AppsSequence(
             start_pos=(2, 0),
-            end_pos=None,
+            end_pos=(6, 0),
             parent=ScalarNode(
                 start_pos=(1, 0),
                 end_pos=(1, 12),

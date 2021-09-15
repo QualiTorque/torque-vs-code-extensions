@@ -58,8 +58,8 @@ def load_service_details(srv_name: str, srv_source):
         logging.warning(f"Unable to load service '{dir}.yaml' due to error: {str(e)}")
 
     SERVICES[srv_name] = {
-        "srv_tree": srv_tree,
-        "srv_completion": format_yaml(output) if output else None
+        "tree": srv_tree,
+        "completion": format_yaml(output) if output else None
     }
 
 
@@ -109,7 +109,7 @@ def get_service_vars(service_dir_path: str):
 
 def get_service_inputs(srv_name):
     if srv_name in SERVICES:
-        srv_tree = SERVICES[srv_name]["srv_tree"]
+        srv_tree = SERVICES[srv_name]["tree"]
         if srv_tree and srv_tree.inputs_node:
             inputs = {}
             for input in srv_tree.get_inputs():
@@ -121,7 +121,7 @@ def get_service_inputs(srv_name):
 
 def get_service_outputs(srv_name):
     if srv_name in SERVICES:
-        srv_tree = SERVICES[srv_name]["srv_tree"]
+        srv_tree = SERVICES[srv_name]["tree"]
         outputs = [out.text for out in srv_tree.get_outputs()]
         return outputs
 
