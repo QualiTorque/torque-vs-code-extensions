@@ -6,10 +6,13 @@ from server.validation.app_validator import AppValidationHandler
 from server.validation.bp_validatior import BlueprintValidationHandler
 from server.validation.srv_validator import ServiceValidationHandler
 from server.validation.common import ValidationHandler
-from server.ats.trees.common import PropertyNode, ScalarNode, ScalarMappingNode, ScalarMappingsSequence, BaseTree, \
-    ScalarNodesSequence, TreeWithOutputs
+from server.ats.trees.common import (
+    PropertyNode, ScalarNode, ScalarMappingNode, ScalarMappingsSequence, BaseTree,
+    ScalarNodesSequence, TreeWithOutputs, TextMappingSequence, TextMapping
+)
 
-from server.ats.trees.blueprint import BlueprintTree
+from server.ats.trees.blueprint import BlueprintTree, ApplicationNode, ServiceNode, ApplicationResourceNode, \
+    ServiceResourceNode
 from server.validation.factory import ValidatorFactory
 
 from server.tests.unit.trees import (
@@ -109,3 +112,47 @@ class TestValidationHandler(unittest.TestCase):
             self.assertEqual(d.message, f"Multiple declarations of output '{word}'. Outputs are not case sensitive.")
         self.assertEqual(diags[0].range, self._get_range((5, 2), (5, 6)))
         self.assertEqual(diags[1].range, self._get_range((6, 2), (6, 6)))
+
+
+class TestBlueprintValidationHandler(TestValidationHandler):
+    def test_validate_resources_have_inputs(self):
+        tree = BlueprintTree(
+            inputs_node=None,
+            applications=PropertyNode(
+                key=ScalarNode(_text="applications"), value=BlueprintTree.AppsSequence(
+                    nodes=[ApplicationNode(
+                        key=ScalarNode(_text="azure-ubuntu"),
+                        value=ApplicationResourceNode(
+                            input_values=PropertyNode(
+                                key=ScalarNode(_text='input_values'),
+                                value=TextMappingSequence(
+                                    nodes=[
+                                        TextMapping(
+                                            key=ScalarNode(start_pos=(7, 10), end_pos=(7, 23), _text='instance_type'),
+                                            value=None)])))
+                    )])),
+            services=PropertyNode(
+                key=ScalarNode(_text="services"),
+                value=BlueprintTree.ServicesSequence(
+                    nodes=[ServiceNode(
+                        key=ScalarNode(_text="sleep",),
+                        value=ServiceResourceNode(
+                            input_values=PropertyNode(
+                                key=ScalarNode(_text='input_values'),
+                                value=TextMappingSequence(
+                                    nodes=[
+                                        TextMapping(
+                                            key=ScalarNode(start_pos=(9, 10), end_pos=(9, 15), _text='seconds'),
+                                            value=None)]))
+                        ))])))
+        validator = BlueprintValidationHandler(tree, self.test_doc)
+        validator._validate_blueprint_resources_have_input_values()
+
+        self.assertEqual(len(validator._diagnostics), 2)
+        if validator._diagnostics:
+            for d in validator._diagnostics:
+                self.assertTrue(d.message.endswith("input must have a value or a blueprint input "
+                                                   "with the same name should be defined"))
+                self.assertTrue(d.range in [self._get_range((7, 10), (7, 23)),
+                                            self._get_range((9, 10), (9, 15))]
+                                )
