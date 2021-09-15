@@ -3,7 +3,12 @@ from server.utils.common import get_repo_root_path
 from server.validation.common import ValidationHandler
 import sys
 import logging
-from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
+from pygls.lsp.types.basic_structures import (
+    Diagnostic,
+    DiagnosticSeverity,
+    Position,
+    Range,
+)
 from server.ats.trees.blueprint import BlueprintTree
 from server.constants import PREDEFINED_TORQUE_INPUTS
 from server.utils import applications, services
@@ -16,8 +21,10 @@ class BlueprintValidationHandler(ValidationHandler):
         self.blueprint_services = [srv.id.text for srv in self._tree.get_services()]
 
     def _check_for_deprecated_properties(self):
-        deprecated_properties = {"availability": "bastion_availability",
-                                 "environmentType": None}
+        deprecated_properties = {
+            "availability": "bastion_availability",
+            "environmentType": None,
+        }
         message_dep = "Deprecated property '{}'."
         message_replace = "Please use '{}' instead."
         line_num = 0
@@ -28,11 +35,15 @@ class BlueprintValidationHandler(ValidationHandler):
                     col = line.find(prop)
                     message = message_dep.format(prop)
                     if deprecated_properties[prop]:
-                        message += " " + message_replace.format(deprecated_properties[prop])
-                    self._add_diagnostic_for_range(message,
-                                                   range_start_tuple=(line_num, col),
-                                                   range_end_tuple=(line_num, col + len(prop)),
-                                                   diag_severity=DiagnosticSeverity.Warning)                    
+                        message += " " + message_replace.format(
+                            deprecated_properties[prop]
+                        )
+                    self._add_diagnostic_for_range(
+                        message,
+                        range_start_tuple=(line_num, col),
+                        range_end_tuple=(line_num, col + len(prop)),
+                        diag_severity=DiagnosticSeverity.Warning,
+                    )
             line_num += 1
 
     def _check_for_deprecated_syntax(self):
@@ -40,8 +51,8 @@ class BlueprintValidationHandler(ValidationHandler):
             "outputs\..+": "torque.[app_name|service_name].outputs.[output_name]",
             "torque.sandboxid": "torque.environment.id",
             "torque.publicaddress": "torque.environment.public_address",
-            "torque.virtualnetworkid": "torque.environment.virtual_network_id"
-                            }
+            "torque.virtualnetworkid": "torque.environment.virtual_network_id",
+        }
         message = "Deprecated syntax '{}'. Please use '{}' instead."
         line_num = 0
         for line in self._document.lines:
@@ -67,12 +78,15 @@ class BlueprintValidationHandler(ValidationHandler):
         for res in tree_resources:
             deps_names = [dep.text for dep in res.deps]
             deps = res.deps
-            
+
             for dep in deps:
                 if dep.text not in apps_n_srvs:
                     self._add_diagnostic(dep, message=message.format(dep.text))
                 elif dep.text == res.id.text:
-                    self._add_diagnostic(dep, message=f"The resource '{res.id.text}' cannot be dependent of itself")
+                    self._add_diagnostic(
+                        dep,
+                        message=f"The resource '{res.id.text}' cannot be dependent of itself",
+                    )
 
             for input in res.inputs:
                 if input.value is None:
@@ -81,7 +95,10 @@ class BlueprintValidationHandler(ValidationHandler):
                     found = re.findall('torque\.(applications|services)\.(.+?)\.', input.value.text)
                     for f in found:
                         if f[1] not in deps_names:
-                            self._add_diagnostic(input.value, message=f"The app '{res.id.text}' is missing a dependency to '{f[1]}'.")
+                            self._add_diagnostic(
+                                input.value,
+                                message=f"The app '{res.id.text}' is missing a dependency to '{f[1]}'.",
+                            )
 
     def _validate_non_existing_app_is_used(self):
         message = "The app '{}' could not be found in the /applications folder"
@@ -97,20 +114,29 @@ class BlueprintValidationHandler(ValidationHandler):
             if app.id.text in available_apps:
                 if available_apps[app.id.text]["tree"] is None:
                     self._add_diagnostic(app.id, message=message.format(app.id.text))
-            
-    def _validate_blueprint_apps_have_input_values(self):
-        blueprint_inputs = {input.key.text: 1 for input in self._tree.get_inputs()}
-        for app in self._tree.get_applications():
-            for var in app.inputs:
-                if not var.value and var.key.text not in blueprint_inputs:
-                    self._add_diagnostic(var.key, message="Application input must have a value or a blueprint input with the same name should be defined")
 
-    def _validate_blueprint_services_have_input_values(self):
+    def _validate_blueprint_resources_have_input_values(self):
+        resources = {
+            "Application": self._tree.get_applications(),
+            "Service": self._tree.get_services(),
+        }
         blueprint_inputs = {input.key.text: 1 for input in self._tree.get_inputs()}
-        for srv in self._tree.get_services():
-            for var in srv.inputs:
-                if not var.value and var.key.text not in blueprint_inputs:
-                    self._add_diagnostic(var.key, message="Service input must have a value or a blueprint input with the same name should be defined")
+
+        for name, container in resources.items():
+            for res in container:
+                for var in res.inputs:
+                    if not var.value and var.key.text not in blueprint_inputs:
+                        self._add_diagnostic(
+                            var.key,
+                            message=f"{name} input must have a value or a blueprint input with the same name should be defined",
+                        )
+
+    # def _validate_blueprint_services_have_input_values(self):
+    #     blueprint_inputs = {input.key.text: 1 for input in self._tree.get_inputs()}
+    #     for srv in self._tree.get_services():
+    #         for var in srv.inputs:
+    #             if not var.value and var.key.text not in blueprint_inputs:
+    #                 self._add_diagnostic(var.key, message="Service input must have a value or a blueprint input with the same name should be defined")
 
     def _validate_non_existing_service_is_used(self):
         message = "The service '{}' could not be found in the /services folder"
@@ -153,12 +179,12 @@ class BlueprintValidationHandler(ValidationHandler):
                             message=message.format(input.key.text),
                             diag_severity=DiagnosticSeverity.Warning
                         )
-                
+
     def _is_valid_auto_var(self, var_name):
         if var_name.lower() in PREDEFINED_TORQUE_INPUTS:
             return True, ""
 
-        parts = var_name.split('.')
+        parts = var_name.split(".")
         if not parts[0].lower() == "$torque":
             return False, f"{var_name} is not a valid Torque-generated variable"
 
@@ -171,7 +197,7 @@ class BlueprintValidationHandler(ValidationHandler):
             else:
                 # currently no other validation for parameter store inputs
                 return True, ""
-        
+
         if len(parts) == 4:
             if parts[1] == "repos" and parts[3] not in ["token", "url"]:
                 return False, f"{var_name} is not a valid Torque-generated variable"
@@ -228,11 +254,11 @@ class BlueprintValidationHandler(ValidationHandler):
             self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, art)
 
     def _confirm_variable_defined_in_blueprint_or_auto_var(self, bp_inputs, input):
-        # need to break value to parts to handle variables in {} like: 
+        # need to break value to parts to handle variables in {} like:
         # abcd/${some_var}/asfsd/${var2}
-        # and highlight these portions      
+        # and highlight these portions
         message = "Variable '{}' is not defined"
-        regex = re.compile('(\$\{.+?\}|^\$.+?$)')
+        regex = re.compile("(\$\{.+?\}|^\$.+?$)")
         try:
             if input.value:
                 iterator = regex.finditer(input.value.text)
@@ -245,37 +271,55 @@ class BlueprintValidationHandler(ValidationHandler):
                     if cur_var.startswith("$") and "." not in cur_var:
                         var = cur_var.replace("$", "")
                         if var not in bp_inputs:
-                            self._diagnostics.append(Diagnostic(
-                                range=Range(
-                                    start=Position(line=input.value.start_pos[0],
-                                                   character=input.value.start_pos[1] + pos[0]),
-                                    end=Position(line=input.value.end_pos[0],
-                                                 character=input.value.start_pos[1] + pos[1]),
-                                ),
-                                message=message.format(cur_var),
-                            ))
+                            self._diagnostics.append(
+                                Diagnostic(
+                                    range=Range(
+                                        start=Position(
+                                            line=input.value.start_pos[0],
+                                            character=input.value.start_pos[1] + pos[0],
+                                        ),
+                                        end=Position(
+                                            line=input.value.end_pos[0],
+                                            character=input.value.start_pos[1] + pos[1],
+                                        ),
+                                    ),
+                                    message=message.format(cur_var),
+                                )
+                            )
                     elif cur_var.lower().startswith("$torque"):
                         valid_var, error_message = self._is_valid_auto_var(cur_var)
                         if not valid_var:
-                            self._diagnostics.append(Diagnostic(
-                                range=Range(
-                                    start=Position(line=input.value.start_pos[0],
-                                                   character=input.value.start_pos[1] + pos[0]),
-                                    end=Position(line=input.value.end_pos[0],
-                                                 character=input.value.start_pos[1] + pos[1]),
-                                ),
-                                message=error_message
-                            ))
+                            self._diagnostics.append(
+                                Diagnostic(
+                                    range=Range(
+                                        start=Position(
+                                            line=input.value.start_pos[0],
+                                            character=input.value.start_pos[1] + pos[0],
+                                        ),
+                                        end=Position(
+                                            line=input.value.end_pos[0],
+                                            character=input.value.start_pos[1] + pos[1],
+                                        ),
+                                    ),
+                                    message=error_message,
+                                )
+                            )
                     else:
-                        self._diagnostics.append(Diagnostic(
+                        self._diagnostics.append(
+                            Diagnostic(
                                 range=Range(
-                                    start=Position(line=input.value.start_pos[0],
-                                                   character=input.value.start_pos[1] + pos[0]),
-                                    end=Position(line=input.value.end_pos[0],
-                                                 character=input.value.start_pos[1] + pos[1]),
+                                    start=Position(
+                                        line=input.value.start_pos[0],
+                                        character=input.value.start_pos[1] + pos[0],
+                                    ),
+                                    end=Position(
+                                        line=input.value.end_pos[0],
+                                        character=input.value.start_pos[1] + pos[1],
+                                    ),
                                 ),
-                                message=message.format(cur_var)
-                            ))
+                                message=message.format(cur_var),
+                            )
+                        )
         except Exception as ex:
             print(ex)
 
@@ -283,7 +327,7 @@ class BlueprintValidationHandler(ValidationHandler):
         # check that there are no duplicate names in the apps being used
         duplicated = {}
         apps = {}
-       
+
         for app in self._tree.get_applications():
             if app.id.text not in apps:
                 apps[app.id.text] = app
@@ -312,8 +356,10 @@ class BlueprintValidationHandler(ValidationHandler):
 
                 # check that there is no app with this name
                 if srv.id.text in apps:
-                    msg = ("There is already an application with the same name in this blueprint. "
-                           "Make sure the names are unique.")
+                    msg = (
+                        "There is already an application with the same name in this blueprint. "
+                        "Make sure the names are unique."
+                    )
                     self._add_diagnostic(srv.id, message=msg)
 
                     prev_app = apps[srv.id.text]
@@ -322,7 +368,10 @@ class BlueprintValidationHandler(ValidationHandler):
     def _validate_artifacts_apps_are_defined(self):
         for art in self._tree.get_artifacts():
             if art.key.text not in self.blueprint_apps:
-                self._add_diagnostic(art.key, message="This application is not defined in this blueprint.")
+                self._add_diagnostic(
+                    art.key,
+                    message="This application is not defined in this blueprint.",
+                )
 
     def _validate_artifacts_are_unique(self):
         if self._tree.artifacts:
@@ -346,7 +395,7 @@ class BlueprintValidationHandler(ValidationHandler):
             if app.id.text in apps:
                 app_inputs = applications.get_app_inputs(app.id.text)
                 used_inputs = []
-                for input in app.inputs:   
+                for input in app.inputs:
                     used_inputs.append(input.key.text)
                     if input.key.text not in app_inputs:
                         self._add_diagnostic(
@@ -418,8 +467,9 @@ class BlueprintValidationHandler(ValidationHandler):
             self._check_for_deprecated_properties()
             self._check_for_deprecated_syntax()
             # errors
-            self._validate_blueprint_apps_have_input_values()
-            self._validate_blueprint_services_have_input_values()
+            self._validate_blueprint_resources_have_input_values()
+            # self._validate_blueprint_apps_have_input_values()
+            # self._validate_blueprint_services_have_input_values()
             self._validate_dependency_exists()
             self._validate_var_being_used_is_defined()
             self._validate_non_existing_app_is_used()

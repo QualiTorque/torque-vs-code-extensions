@@ -10,9 +10,6 @@ class ValidationHandler:
         self._diagnostics: List[Diagnostic] = []
         self._document = document
 
-    def _get_repo_root_path(self):
-        raise NotImplementedError()
-
     def _add_diagnostic(
             self,
             node: YamlNode,
