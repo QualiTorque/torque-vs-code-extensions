@@ -10,28 +10,27 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
     }
 
     getTreeItem(element: Profile): vscode.TreeItem {
-        console.log('item');
-		return element;
+        return element;
 	}
 
     getChildren(element?: Profile): Thenable<Profile[]> {
-        var profiles = []
- 
+        return new Promise(async (resolve) => {
+            if (element) {
+                return []
+            }
+            else {
+                var profiles = []
+                vscode.commands.executeCommand('list_torque_profiles')
+                .then((result:Array<string>) => 
+                {
+                    for (var profile of result) {  
+                        profiles.push(new Profile(profile['profile'], vscode.TreeItemCollapsibleState.None))
+                    }
+                    resolve(profiles)
 
-        console.log('children');
-        vscode.commands.executeCommand('list_torque_profiles')
-
-            .then((result) =>
-            {
-                console.log(result)
-                for (var profile of result) {  // (TODO): not sure how to use typecasting here
-                    profiles.push(new Profile(profile['profile'], vscode.TreeItemCollapsibleState.Collapsed))
-                }
-                // return Promise.resolve(result)
-                return Promise.resolve(profiles)
-
-            });
-        return Promise.resolve(profiles)
+                })
+            }
+        });
     }
 }
 
@@ -45,8 +44,8 @@ export class Profile extends vscode.TreeItem {
         this.tooltip = this.label
     }
     iconPath = {
-		light: path.join(__filename, '..', '..', 'resources', 'light', 'dependency.svg'),
-		dark: path.join(__filename, '..', '..', 'resources', 'dark', 'dependency.svg')
+		light: path.join(__filename, '..', '..', 'resources', 'light', 'profile.svg'),
+		dark: path.join(__filename, '..', '..', 'resources', 'dark', 'profile.svg')
 	};
 
 	contextValue = 'dependency';
