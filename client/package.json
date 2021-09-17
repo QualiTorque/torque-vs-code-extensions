@@ -49,6 +49,10 @@
 					"id": "blueprintsExplorerView",
 					"name": "Blueprints Explorer",
 					"contextualTitle": "Blueprints Explorer"
+				},
+				{
+					"id": "profilesView",
+					"name": "Profiles"
 				}
 			]
 		},

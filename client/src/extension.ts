@@ -33,6 +33,7 @@ import {
 } from './yamlHelper';
 import { BlueprintsProvider } from './blueprintsExplorer';
 import { SandboxStartPanel } from './startSandboxWebview';
+import { ProfilesProvider } from "./profiles";
 
 let client: LanguageClient;
 
@@ -112,9 +113,13 @@ export async function activate(context: ExtensionContext) {
 		? workspace.workspaceFolders[0].uri.fsPath : undefined;
 
 	// Samples of `window.registerTreeDataProvider`
+    const profilesProvider = new ProfilesProvider();
+    window.registerTreeDataProvider('profilesView', profilesProvider);
+
 	const blueprintsProvider = new BlueprintsProvider();
 	window.registerTreeDataProvider('blueprintsExplorerView', blueprintsProvider);
 	commands.registerCommand('blueprintsExplorerView.refreshEntry', () => blueprintsProvider.refresh());
+    
     context.subscriptions.push(
 		commands.registerCommand('extension.openReserveForm', (bpname:string, space:string, inputs:Array<string>, artifacts: object) => {
             SandboxStartPanel.createOrShow(context.extensionUri, bpname, space, inputs, artifacts);

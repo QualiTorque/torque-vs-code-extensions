@@ -15,6 +15,7 @@
 # limitations under the License.                                           #
 ############################################################################
 import asyncio
+import configparser
 from dataclasses import dataclass
 import json
 import logging
@@ -22,6 +23,8 @@ import subprocess
 import sys
 import textwrap
 import tabulate
+from pathlib import Path
+
 
 from server.ats.trees.app import AppTree
 
@@ -74,6 +77,7 @@ class TorqueLanguageServer(LanguageServer):
     CONFIGURATION_SECTION = 'torque'
     CMD_VALIDATE_BLUEPRINT = 'validate_torque_blueprint'
     CMD_START_SANDBOX = 'start_torque_sandbox'
+    CMD_LIST_TORQUE_PROFILES = "list_torque_profiles"
     latest_opened_document = None
 
 
@@ -760,6 +764,30 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     except Exception as ex:
         server.show_message_log(str(ex), msg_type=MessageType.Error)
 
+@torque_ls.command(TorqueLanguageServer.CMD_LIST_TORQUE_PROFILES)
+async def get_profiles(server: TorqueLanguageServer, *args):
+    from configparser import ConfigParser
+    result = []
+    filename = os.environ.get("TORQUE_CONFIG_PATH", None) or "~/.torque/config"
+    filename = Path(filename).expanduser()
+
+    if not os.path.isfile(filename):
+        return []
+
+    conf = ConfigParser()
+    conf.read(filename)
+    
+    for section in conf.sections():
+        result.append(
+            {
+                "profile": section,
+                "space": conf[section]["space"],
+                "token": conf[section]["token"]
+            }
+        )
+
+    return result
+    # return ["abc", "bcd"]
 
 @torque_ls.command(TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT)
 async def validate_blueprint(server: TorqueLanguageServer, *args):
