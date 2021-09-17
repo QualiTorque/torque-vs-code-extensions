@@ -9,6 +9,10 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
         console.log("start")
     }
 
+    refresh(): void {
+		this._onDidChangeTreeData.fire();
+	}
+
     getTreeItem(element: Profile): vscode.TreeItem {
         return element;
 	}

@@ -115,6 +115,7 @@ export async function activate(context: ExtensionContext) {
 	// Samples of `window.registerTreeDataProvider`
     const profilesProvider = new ProfilesProvider();
     window.registerTreeDataProvider('profilesView', profilesProvider);
+    commands.registerCommand('profilesView.refreshEntry', () => profilesProvider.refresh());
 
 	const blueprintsProvider = new BlueprintsProvider();
 	window.registerTreeDataProvider('blueprintsExplorerView', blueprintsProvider);
