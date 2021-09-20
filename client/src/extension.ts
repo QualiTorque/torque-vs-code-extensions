@@ -33,7 +33,7 @@ import {
 } from './yamlHelper';
 import { BlueprintsProvider } from './blueprintsExplorer';
 import { SandboxStartPanel } from './startSandboxWebview';
-import { ProfilesProvider } from "./profiles";
+import { Profile, ProfilesProvider } from "./profiles";
 
 let client: LanguageClient;
 
@@ -116,6 +116,11 @@ export async function activate(context: ExtensionContext) {
     const profilesProvider = new ProfilesProvider();
     window.registerTreeDataProvider('profilesView', profilesProvider);
     commands.registerCommand('profilesView.refreshEntry', () => profilesProvider.refresh());
+    commands.registerCommand('profilesView.setAsDefaultEntry', (node: Profile) => profilesProvider.setAsDefault(node));
+    commands.registerCommand('profilesView.openLoginForm', () => {
+        console.log('create or show login page');
+    });
+    commands.registerCommand('profilesView.removeEntry', (node: Profile) => profilesProvider.removeEntry(node));
 
 	const blueprintsProvider = new BlueprintsProvider();
 	window.registerTreeDataProvider('blueprintsExplorerView', blueprintsProvider);

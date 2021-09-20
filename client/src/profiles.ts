@@ -13,6 +13,29 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
 		this._onDidChangeTreeData.fire();
 	}
 
+    refreshAllTrees(): void {
+        //refresh the tree
+		this.refresh();
+        //refresh the other explorers
+        vscode.commands.executeCommand('blueprintsExplorerView.refreshEntry')
+    }
+
+    setAsDefault(profile: Profile): void {
+        console.log(profile.label);
+        //store the default profile value
+
+        //refresh
+        this.refreshAllTrees();
+	}
+
+    removeEntry(profile: Profile): void {
+        console.log(profile.label);
+        //store the default profile value
+
+        //refresh the tree
+		this.refreshAllTrees();
+	}
+
     getTreeItem(element: Profile): vscode.TreeItem {
         return element;
 	}
@@ -27,9 +50,13 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                 vscode.commands.executeCommand('list_torque_profiles')
                 .then((result:Array<string>) => 
                 {
+                    var default_profile = vscode.workspace.getConfiguration("torque").get<string>("default_profile", "");
                     for (var profile of result) {  
-                        profiles.push(new Profile(profile['profile'], vscode.TreeItemCollapsibleState.None))
-                    }
+                        if (profile['profile'] == default_profile)
+                            profiles.push(new Profile(profile['profile'], '(default)', vscode.TreeItemCollapsibleState.None))
+                        else
+                            profiles.push(new Profile(profile['profile'], '', vscode.TreeItemCollapsibleState.None))
+                    }                    
                     resolve(profiles)
 
                 })
@@ -41,17 +68,18 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
 export class Profile extends vscode.TreeItem {
     constructor(
         public readonly label : string,
+        public description : string,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
 
     ) {
         super(label,collapsibleState)
-        this.tooltip = this.label
+        this.tooltip = this.label        
     }
     iconPath = {
 		light: path.join(__filename, '..', '..', 'resources', 'light', 'profile.svg'),
 		dark: path.join(__filename, '..', '..', 'resources', 'dark', 'profile.svg')
 	};
 
-	contextValue = 'dependency';
+	contextValue = 'space';
 
 }
