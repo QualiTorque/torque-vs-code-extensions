@@ -75,10 +75,8 @@ export class Profile extends vscode.TreeItem {
         super(label,collapsibleState)
         this.tooltip = this.label        
     }
-    iconPath = {
-		light: path.join(__filename, '..', '..', 'resources', 'light', 'profile.svg'),
-		dark: path.join(__filename, '..', '..', 'resources', 'dark', 'profile.svg')
-	};
+    
+    iconPath = new vscode.ThemeIcon("account");
 
 	contextValue = 'space';
 

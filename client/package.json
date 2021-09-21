@@ -60,42 +60,27 @@
 			{
 				"command": "blueprintsExplorerView.refreshEntry",
 				"title": "Refresh",
-				"icon": {
-					"light": "resources/light/refresh.svg",
-					"dark": "resources/dark/refresh.svg"
-				}
+				"icon": "$(refresh)"
 			},
 			{
 				"command": "profilesView.refreshEntry",
 				"title": "Refresh",
-				"icon": {
-					"light": "resources/light/refresh.svg",
-					"dark": "resources/dark/refresh.svg"
-				}
+				"icon": "$(refresh)"
 			},
 			{
 				"command": "profilesView.setAsDefaultEntry",
 				"title": "Set as default",
-				"icon": {
-					"light": "resources/light/check.svg",
-					"dark": "resources/dark/check.svg"
-				}
+				"icon": "$(check)"
 			},
 			{
 				"command": "profilesView.removeEntry",
 				"title": "Delete profile",
-				"icon": {
-					"light": "resources/light/remove-profile.svg",
-					"dark": "resources/dark/remove-profile.svg"
-				}
+				"icon": "$(close)"
 			},
 			{
 				"command": "profilesView.openLoginForm",
 				"title": "Add profile",
-				"icon": {
-					"light": "resources/light/add-profile.svg",
-					"dark": "resources/dark/add-profile.svg"
-				}
+				"icon": "$(add)"
 			}
 		],
 		"menus": {
