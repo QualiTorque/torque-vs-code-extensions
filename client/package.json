@@ -72,6 +72,14 @@
 					"light": "resources/light/refresh.svg",
 					"dark": "resources/dark/refresh.svg"
 				}
+			},
+			{
+				"command": "profilesView.addProfile",
+				"title": "Add Profile",
+				"icon": {
+					"light": "resources/light/add.svg",
+					"dark": "resources/dark/add.svg"
+				}
 			}
 		],
 		"menus": {
@@ -83,6 +91,11 @@
 				},
 				{
 					"command": "profilesView.refreshEntry",
+					"group": "navigation",
+					"when": "view == profilesView"
+				},
+				{
+					"command": "profilesView.addProfile",
 					"group": "navigation",
 					"when": "view == profilesView"
 				}

@@ -78,6 +78,7 @@ class TorqueLanguageServer(LanguageServer):
     CMD_VALIDATE_BLUEPRINT = 'validate_torque_blueprint'
     CMD_START_SANDBOX = 'start_torque_sandbox'
     CMD_LIST_TORQUE_PROFILES = "list_torque_profiles"
+    CMD_TORQUE_LOGIN = "torque_login"
     latest_opened_document = None
 
 
@@ -787,7 +788,32 @@ async def get_profiles(server: TorqueLanguageServer, *args):
         )
 
     return result
-    # return ["abc", "bcd"]
+
+@torque_ls.command(TorqueLanguageServer.CMD_TORQUE_LOGIN)
+async def torque_login(server: TorqueLanguageServer, *args):
+    if not args:
+        return
+
+    params = args[0].pop()
+    try:
+        p = subprocess.Popen(
+            ['torque', 'configure', 'set', '--login'],
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+
+        result = p.communicate(
+            input=f"{params.profile}\n{params.account}\n{params.space}\n{params.email}\n{params.password}\n".encode()
+        )
+
+        exit_code = p.returncode
+        if exit_code != 0:
+            return result[1].decode()
+        else:
+            return None
+
+    except Exception as e:
+        return
 
 @torque_ls.command(TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT)
 async def validate_blueprint(server: TorqueLanguageServer, *args):

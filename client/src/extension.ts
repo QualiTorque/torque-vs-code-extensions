@@ -20,7 +20,7 @@
 
 import * as net from "net";
 import * as path from "path";
-import { ExtensionContext, workspace, window, commands, Uri } from "vscode";
+import { ExtensionContext, workspace, window, commands, Uri, WebviewPanel, ViewColumn } from "vscode";
 import { installLSWithProgress } from "./setup";
 import {
     LanguageClient,
@@ -34,6 +34,7 @@ import {
 import { BlueprintsProvider } from './blueprintsExplorer';
 import { SandboxStartPanel } from './startSandboxWebview';
 import { ProfilesProvider } from "./profiles";
+import { torqueLogin } from  "./torqueLogin"
 
 let client: LanguageClient;
 
@@ -116,6 +117,7 @@ export async function activate(context: ExtensionContext) {
     const profilesProvider = new ProfilesProvider();
     window.registerTreeDataProvider('profilesView', profilesProvider);
     commands.registerCommand('profilesView.refreshEntry', () => profilesProvider.refresh());
+    // commands.executeCommand('profilesView.addProfile')
 
 	const blueprintsProvider = new BlueprintsProvider();
 	window.registerTreeDataProvider('blueprintsExplorerView', blueprintsProvider);
@@ -126,6 +128,23 @@ export async function activate(context: ExtensionContext) {
             SandboxStartPanel.createOrShow(context.extensionUri, bpname, space, inputs, artifacts);
         })
 	);
+    let loginPanel: WebviewPanel | undefined
+    context.subscriptions.push(
+        commands.registerCommand('profilesView.addProfile', () => {
+            if (loginPanel) {
+                loginPanel.reveal(loginPanel.viewColumn || ViewColumn.Active)
+            } else {
+                loginPanel = torqueLogin(profilesProvider)
+                loginPanel.onDidDispose(
+                    () => {
+                        loginPanel = undefined
+                    },
+                    undefined,
+                    context.subscriptions
+                )
+            }
+        })
+    )
     
 }
 
