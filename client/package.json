@@ -60,26 +60,27 @@
 			{
 				"command": "blueprintsExplorerView.refreshEntry",
 				"title": "Refresh",
-				"icon": {
-					"light": "resources/light/refresh.svg",
-					"dark": "resources/dark/refresh.svg"
-				}
+				"icon": "$(refresh)"
 			},
 			{
 				"command": "profilesView.refreshEntry",
 				"title": "Refresh",
-				"icon": {
-					"light": "resources/light/refresh.svg",
-					"dark": "resources/dark/refresh.svg"
-				}
+				"icon": "$(refresh)"
 			},
 			{
 				"command": "profilesView.addProfile",
 				"title": "Add Profile",
-				"icon": {
-					"light": "resources/light/add.svg",
-					"dark": "resources/dark/add.svg"
-				}
+				"icon": "$(add)"
+			},
+			{
+				"command": "profilesView.setAsDefaultEntry",
+				"title": "Set as default",
+				"icon": "$(check)"
+			},
+			{
+				"command": "profilesView.removeEntry",
+				"title": "Delete profile",
+				"icon": "$(close)"
 			}
 		],
 		"menus": {
@@ -98,6 +99,19 @@
 					"command": "profilesView.addProfile",
 					"group": "navigation",
 					"when": "view == profilesView"
+
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "profilesView.setAsDefaultEntry",
+					"when": "view == profilesView && viewItem == space",
+					"group": "inline"
+				},
+				{
+					"command": "profilesView.removeEntry",
+					"when": "view == profilesView && viewItem == space",
+					"group": "inline"
 				}
 			]
 		},
@@ -105,50 +119,12 @@
 			"type": "object",
 			"title": "Torque Server Configuration",
 			"properties": {
-				"Platform Name": {
+				"torque.default_profile": {
 					"type": "string",
-					"description": "The platform name you use",
-					"default": "torque",
-					"scope": "application"
-				},
-				"torque.connections": {
-					"type": "array",
-					"default": [
-					  {
-						"profile": "{{put-profile-name-here}}",
-						"account": "{{put-account-name-here}}",
-						"space": "{{put-space-here}}",
-						"token": "{{put-token-here}}"
-					  }
-					],
-					"description": "Connection profiles for Torque",
-					"items": {
-					  "type": "object",
-					  "properties": {
-						"profile": {
-						  "type": "string",
-						  "default": "{{put-profile-name-here}}",
-						  "description": "Profile Name"
-						},
-						"account": {
-						  "type": "string",
-						  "default": "{{put-account-name-here}}",
-						  "description": "Account ID"
-						},
-						"space": {
-						  "type": "string",
-						  "default": "{{put-space-here}}",
-						  "description": "Torque Space"
-						},
-						"token": {
-						  "type": "string",
-						  "default": "{{put-token-here}}",
-						  "description": "Torque Token"
-						}
-					  }
-					},
+					"description": "The deafult profile/space to use",
+					"default": "default",
 					"scope": "resource"
-				}
+				}				
 			}
 		},
 		"languages": [

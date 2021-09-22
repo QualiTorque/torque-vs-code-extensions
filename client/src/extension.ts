@@ -117,7 +117,8 @@ export async function activate(context: ExtensionContext) {
     const profilesProvider = new ProfilesProvider();
     window.registerTreeDataProvider('profilesView', profilesProvider);
     commands.registerCommand('profilesView.refreshEntry', () => profilesProvider.refresh());
-    // commands.executeCommand('profilesView.addProfile')
+    // commands.registerCommand('profilesView.setAsDefaultEntry', (node: Profile) => profilesProvider.setAsDefault(node));
+    // commands.registerCommand('profilesView.removeEntry', (node: Profile) => profilesProvider.removeEntry(node));
 
 	const blueprintsProvider = new BlueprintsProvider();
 	window.registerTreeDataProvider('blueprintsExplorerView', blueprintsProvider);
