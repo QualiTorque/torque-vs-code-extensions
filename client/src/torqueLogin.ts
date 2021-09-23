@@ -68,7 +68,7 @@ export function torqueLogin(extensionUri: vscode.Uri, profilesTree: ProfilesProv
                     {
                         if (result) {
                             // panel.webview.postMessage({ statusCode: 'Failure', error: result })
-                            vscode.window.showErrorMessage("Unable To login:\n" + result);
+                            vscode.window.showErrorMessage("Unable to login:\n" + result);
                         } else {
                             vscode.window.showInformationMessage("Profile has been added")
                             panel.dispose()
