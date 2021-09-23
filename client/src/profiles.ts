@@ -29,9 +29,9 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
 	}
 
     removeEntry(profile: Profile): void {
-        console.log(profile.label);
-        //store the default profile value
+        console.log("Removing " + profile.label);
 
+        vscode.commands.executeCommand('remove_profile', profile.label)
         //refresh the tree
 		this.refreshAllTrees();
 	}

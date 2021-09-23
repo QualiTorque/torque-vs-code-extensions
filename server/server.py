@@ -79,6 +79,7 @@ class TorqueLanguageServer(LanguageServer):
     CMD_START_SANDBOX = 'start_torque_sandbox'
     CMD_LIST_TORQUE_PROFILES = "list_torque_profiles"
     CMD_TORQUE_LOGIN = "torque_login"
+    CMD_REMOVE_PROFILE = "remove_profile"
     latest_opened_document = None
 
 
@@ -797,7 +798,7 @@ async def torque_login(server: TorqueLanguageServer, *args):
     params = args[0].pop()
     try:
         p = subprocess.Popen(
-            ['torque', 'configure', 'set', '--login'],
+            [sys.prefix + '/bin/torque', 'configure', 'set', '--login'],
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.PIPE)
@@ -814,6 +815,24 @@ async def torque_login(server: TorqueLanguageServer, *args):
 
     except Exception as e:
         return
+
+@torque_ls.command(TorqueLanguageServer.CMD_REMOVE_PROFILE)
+async def remove_profile(server: TorqueLanguageServer, *args):
+    if not args or not args[0]:
+        server.show_message("No profile provided", MessageType.Error)
+        return 1
+
+    profile = args[0].pop()
+    try:
+        result = subprocess.run(
+            [sys.prefix + '/bin/torque', 'configure', 'remove', profile],
+            capture_output=True,
+            text=True)
+        server.show_message(f"Profile {profile} has been deleted")
+        return result.returncode
+    except Exception as ex:
+        server.show_message(f"Failed to remove profile {profile}. Reason: {str(ex)}", MessageType.Error)
+
 
 @torque_ls.command(TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT)
 async def validate_blueprint(server: TorqueLanguageServer, *args):

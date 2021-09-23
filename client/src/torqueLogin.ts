@@ -2,19 +2,6 @@ import * as vscode from 'vscode'
 import { loginFormHtml } from './loginFormHtml'
 import { ProfilesProvider } from './profiles';
 
-export class LoginCommand extends vscode.TreeItem {
-    constructor(
-        public readonly label : string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-
-    ) {
-        super(label,collapsibleState)
-        this.tooltip = this.label
-    }
-
-	contextValue = 'dependency';
-
-}
 export function torqueLogin(profilesTree: ProfilesProvider, listener?: (message: any) => Promise<void>): vscode.WebviewPanel {
     const panel = vscode.window.createWebviewPanel(
         'html',

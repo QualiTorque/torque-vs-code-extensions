@@ -33,7 +33,7 @@ import {
 } from './yamlHelper';
 import { BlueprintsProvider } from './blueprintsExplorer';
 import { SandboxStartPanel } from './startSandboxWebview';
-import { ProfilesProvider } from "./profiles";
+import { Profile, ProfilesProvider } from "./profiles";
 import { torqueLogin } from  "./torqueLogin"
 
 let client: LanguageClient;
@@ -118,7 +118,7 @@ export async function activate(context: ExtensionContext) {
     window.registerTreeDataProvider('profilesView', profilesProvider);
     commands.registerCommand('profilesView.refreshEntry', () => profilesProvider.refresh());
     // commands.registerCommand('profilesView.setAsDefaultEntry', (node: Profile) => profilesProvider.setAsDefault(node));
-    // commands.registerCommand('profilesView.removeEntry', (node: Profile) => profilesProvider.removeEntry(node));
+    commands.registerCommand('profilesView.removeEntry', (node: Profile) => profilesProvider.removeEntry(node));
 
 	const blueprintsProvider = new BlueprintsProvider();
 	window.registerTreeDataProvider('blueprintsExplorerView', blueprintsProvider);
