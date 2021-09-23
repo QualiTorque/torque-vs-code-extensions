@@ -244,7 +244,7 @@ class Parser:
                         self.tokens_stack.pop()
 
                 else:
-                    # We expected a value for property inside object but it wasn't found after ValueToken
+                    # We exрpected a value for property inside object but it wasn't found after ValueToken
                     # It means BlockEndToken closes the parent
                     # Close expected node
                     node = self.nodes_stack.pop()
@@ -275,6 +275,9 @@ class Parser:
                 self.tokens_stack.pop()  # remove BlockEntryToken
                 node = self.nodes_stack.pop()  # remove sequence 
                 node.end_pos = self.get_token_end(token)
+
+                if isinstance(self.tokens_stack[-1], ValueToken):
+                    self.tokens_stack.pop()
 
                 # and also handle property if exist
                 if isinstance(self.nodes_stack[-1], PropertyNode):
