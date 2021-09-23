@@ -244,7 +244,7 @@ class Parser:
                         self.tokens_stack.pop()
 
                 else:
-                    # We exрpected a value for property inside object but it wasn't found after ValueToken
+                    # We expected a value for property inside object but it wasn't found after ValueToken
                     # It means BlockEndToken closes the parent
                     # Close expected node
                     node = self.nodes_stack.pop()
