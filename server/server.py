@@ -768,26 +768,37 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
 
 @torque_ls.command(TorqueLanguageServer.CMD_LIST_TORQUE_PROFILES)
 async def get_profiles(server: TorqueLanguageServer, *args):
-    from configparser import ConfigParser
     result = []
-    filename = os.environ.get("TORQUE_CONFIG_PATH", None) or "~/.torque/config"
-    filename = Path(filename).expanduser()
-
-    if not os.path.isfile(filename):
+    keys = ['profile', 'account', 'space']
+    
+    try: 
+        res = subprocess.run(
+            [sys.prefix + '/bin/torque', 'configure', 'list'],
+            capture_output=True,
+            text=True
+        )
+    except Exception as ex:
+        server.show_message(
+            f"Unable to fetch profiles list, reason: {str(ex)}",
+            msg_type=MessageType.Error)
         return []
 
-    conf = ConfigParser()
-    conf.read(filename)
-    
-    for section in conf.sections():
-        result.append(
-            {
-                "profile": section,
-                "space": conf[section]["space"],
-                "token": conf[section]["token"]
-            }
-        )
+    lines = res.stdout.split('\n')
 
+    for i in range(2, len(lines)):
+        if lines[i]:
+            data = lines[i].split()[:-1]
+            if len(data) > 3 or len(data) < 2:
+                server.show_message(
+                    f"Wrong format of line: {data}",
+                    msg_type=MessageType.Error)
+                return []
+
+            if len(data) == 2:
+                data.insert(1, '')
+
+            result.append(dict(zip(keys, data)))
+    
     return result
 
 @torque_ls.command(TorqueLanguageServer.CMD_TORQUE_LOGIN)
