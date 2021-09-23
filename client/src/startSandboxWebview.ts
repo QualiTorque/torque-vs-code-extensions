@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { getNonce } from './utils'
 
 
 function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
@@ -141,8 +142,7 @@ export class SandboxStartPanel {
 
 		// Use a nonce to only allow specific scripts to be run
 		const nonce = getNonce();
-		const nonce2 = getNonce();
-        var durationHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+		var durationHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         durationHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='30' min='10' max='3600'></td></tr>";
         durationHtml += "</table>";
 
@@ -229,11 +229,3 @@ export class SandboxStartPanel {
 	}
 }
 
-function getNonce() {
-	let text = '';
-	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-	for (let i = 0; i < 32; i++) {
-		text += possible.charAt(Math.floor(Math.random() * possible.length));
-	}
-	return text;
-}

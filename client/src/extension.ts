@@ -135,7 +135,7 @@ export async function activate(context: ExtensionContext) {
             if (loginPanel) {
                 loginPanel.reveal(loginPanel.viewColumn || ViewColumn.Active)
             } else {
-                loginPanel = torqueLogin(profilesProvider)
+                loginPanel = torqueLogin(context.extensionUri, profilesProvider)
                 loginPanel.onDidDispose(
                     () => {
                         loginPanel = undefined

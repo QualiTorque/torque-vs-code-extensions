@@ -3,40 +3,24 @@ export const loginFormHtml = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-        div {
-            margin-bottom: 10px;
-        }
-        label {
-            display: inline-block;
-            width: 150px;
-            text-align: right;
-        }
-    </style>
+    <title>Login to Torque</title>
+    {{HEAD_BLOCK}}
+        
 </head>
     <body>
         <div id="app">
-            <h1>Login To Torque</h1>
+            <h2>Login to Torque</h2>
+            <br/>
 
-            <div>
-                <label for="torque-profile">Profile Name: </label>
-                <input id="torque-profile" type="text"> <br>
-
-                <label for="torque-account">Torque Account: </label>
-                <input id="torque-account" type="text"><br>
-
-                <label for="torque-space">Torque Space: </label>
-                <input id="torque-space" type="text"><br>
-
-                <label for="torque-email">Email: </label>
-                <input id="torque-email" type="email"><br>
-
-                <label for="torque-password">Password: </label>
-                <input id="torque-password" type="password"> <br>
-
-                <input id="submit" type="submit" value="Login">
-            </div>
+            <table width='50%' border='0' cellpadding='1' cellspacing='1'>
+            <tr><td width='180px'>Profile Name:</td><td><input id="torque-profile" type="text"></td></tr>
+            <tr><td width='180px'>Torque Account:</td><td><input id="torque-account" type="text"></td></tr>
+            <tr><td width='180px'>Torque Space:</td><td><input id="torque-space" type="text"></td></tr>
+            <tr><td width='180px'>Email:</td><td><input id="torque-email" type="email"></td></tr>
+            <tr><td width='180px'>Password:</td><td><input id="torque-password" type="password"></td></tr>
+            
+            <tr><td width='180px'><br/><input id="submit" type="submit" value='Login'></td><td></td></tr>
+            </table>
         </div>
     </body>
     <script>
