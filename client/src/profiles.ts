@@ -20,10 +20,10 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
         vscode.commands.executeCommand('blueprintsExplorerView.refreshEntry')
     }
 
-    setAsDefault(profile: Profile): void {
+    async setAsDefault(profile: Profile): Promise<void> {
         console.log(profile.label);
         //store the default profile value
-
+        await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
         //refresh
         this.refreshAllTrees();
 	}
@@ -43,22 +43,44 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
     getChildren(element?: Profile): Thenable<Profile[]> {
         return new Promise(async (resolve) => {
             if (element) {
-                return []
+                var result = []
+                result.push(new vscode.TreeItem(`account: ${element.account}`, vscode.TreeItemCollapsibleState.None))
+                result.push(new vscode.TreeItem(`space: ${element.space}`, vscode.TreeItemCollapsibleState.None))
+                return resolve(result)
             }
             else {
                 var profiles = []
                 vscode.commands.executeCommand('list_torque_profiles')
-                .then((result:Array<string>) => 
+                .then(async (result:Array<string>) => 
                 {
                     var default_profile = vscode.workspace.getConfiguration("torque").get<string>("default_profile", "");
-                    for (var profile of result) {  
-                        if (profile['profile'] == default_profile)
-                            profiles.push(new Profile(profile['profile'], '(default)', vscode.TreeItemCollapsibleState.None))
-                        else
-                            profiles.push(new Profile(profile['profile'], '', vscode.TreeItemCollapsibleState.None))
-                    }                    
-                    resolve(profiles)
+                    var description = ""
 
+                    for (var profile of result) {
+                        var account = (profile['account'] === "") ? 'undefined' : profile['account']
+                        description = (profile['profile'] == default_profile) ? "[default]" : ""
+
+                        profiles.push(new Profile(
+                            profile['profile'],description,
+                            vscode.TreeItemCollapsibleState.Collapsed,
+                            account,
+                            profile['space']))
+                    }
+                    if (description === "") {
+                        if (profiles.length > 0) {
+                            await vscode.workspace.getConfiguration("torque").update(
+                                "default_profile",
+                                profiles[0].label,
+                                vscode.ConfigurationTarget.Workspace);
+                            profiles[0].description = "[default]";
+                        }
+                        else 
+                            await vscode.workspace.getConfiguration("torque").update(
+                                "default_profile", "", vscode.ConfigurationTarget.Workspace);
+                        // TODO: Condider having a method to refresh only external explorers
+                        await vscode.commands.executeCommand('blueprintsExplorerView.refreshEntry')
+                    }
+                    resolve(profiles)
                 })
             }
         });
@@ -70,10 +92,12 @@ export class Profile extends vscode.TreeItem {
         public readonly label : string,
         public description : string,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+        public account : string,
+        public space: string
 
     ) {
         super(label,collapsibleState)
-        this.tooltip = this.label        
+        this.tooltip = `account: ${this.account}\nspace: ${this.space}`      
     }
     
     iconPath = new vscode.ThemeIcon("account");

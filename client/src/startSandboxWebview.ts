@@ -27,19 +27,21 @@ export class SandboxStartPanel {
 	private readonly _extensionUri: vscode.Uri;
 
     private _bpname: string;
-    private _space: string;
+    // private _space: string;
     private _inputs: Array<string>;
     private _artifacts: object;
 	private _disposables: vscode.Disposable[] = [];
 
-	public static createOrShow(extensionUri: vscode.Uri, bpname:string, space:string, inputs:Array<string>, artifacts: object) {
-        const column = vscode.window.activeTextEditor
+	// public static createOrShow(extensionUri: vscode.Uri, bpname:string, space:string, inputs:Array<string>, artifacts: object) {
+	public static createOrShow(extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, artifacts: object) {
+		const column = vscode.window.activeTextEditor
 			? vscode.window.activeTextEditor.viewColumn
 			: undefined;
 
 		// If we already have a panel, show it.
 		if (SandboxStartPanel.currentPanel) {
-			SandboxStartPanel.currentPanel.updatePanel(bpname, space, inputs, artifacts);
+			// SandboxStartPanel.currentPanel.updatePanel(bpname, space, inputs, artifacts);
+			SandboxStartPanel.currentPanel.updatePanel(bpname, inputs, artifacts);
             SandboxStartPanel.currentPanel._panel.reveal(column);
             return;
 		}
@@ -51,15 +53,16 @@ export class SandboxStartPanel {
 			column || vscode.ViewColumn.One,
 			getWebviewOptions(extensionUri),
 		);
-
-		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, space, inputs, artifacts);
+		// SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, space, inputs, artifacts);
+		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, inputs, artifacts);
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, space:string, inputs:Array<string>, artifacts: object) {
+	// private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, space:string, inputs:Array<string>, artifacts: object) {
+	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, artifacts: object) {
 		this._panel = panel;
 		this._extensionUri = extensionUri;
         this._bpname = decodeURI(bpname);
-        this._space = space;
+        // this._space = space;
         this._inputs = inputs;
         this._artifacts = artifacts;
 
@@ -89,9 +92,10 @@ export class SandboxStartPanel {
 		);
 	}
 
-    public updatePanel(bpname:string, space:string, inputs:Array<string>, artifacts: object) {
+    // public updatePanel(bpname:string, space:string, inputs:Array<string>, artifacts: object) {
+	public updatePanel(bpname:string, inputs:Array<string>, artifacts: object) {
         this._bpname = decodeURI(bpname);
-        this._space = space;
+        // this._space = space;
         this._inputs = inputs;
         this._artifacts = artifacts;
 

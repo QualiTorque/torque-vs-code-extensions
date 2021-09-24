@@ -117,16 +117,21 @@ export async function activate(context: ExtensionContext) {
     const profilesProvider = new ProfilesProvider();
     window.registerTreeDataProvider('profilesView', profilesProvider);
     commands.registerCommand('profilesView.refreshEntry', () => profilesProvider.refresh());
-    // commands.registerCommand('profilesView.setAsDefaultEntry', (node: Profile) => profilesProvider.setAsDefault(node));
+    commands.registerCommand('profilesView.setAsDefaultEntry', (node: Profile) => profilesProvider.setAsDefault(node));
     commands.registerCommand('profilesView.removeEntry', (node: Profile) => profilesProvider.removeEntry(node));
 
 	const blueprintsProvider = new BlueprintsProvider();
 	window.registerTreeDataProvider('blueprintsExplorerView', blueprintsProvider);
 	commands.registerCommand('blueprintsExplorerView.refreshEntry', () => blueprintsProvider.refresh());
     
+    // context.subscriptions.push(
+	// 	commands.registerCommand('extension.openReserveForm', (bpname:string, space:string, inputs:Array<string>, artifacts: object) => {
+    //         SandboxStartPanel.createOrShow(context.extensionUri, bpname, space, inputs, artifacts);
+    //     })
+	// );
     context.subscriptions.push(
-		commands.registerCommand('extension.openReserveForm', (bpname:string, space:string, inputs:Array<string>, artifacts: object) => {
-            SandboxStartPanel.createOrShow(context.extensionUri, bpname, space, inputs, artifacts);
+		commands.registerCommand('extension.openReserveForm', (bpname:string, inputs:Array<string>, artifacts: object) => {
+            SandboxStartPanel.createOrShow(context.extensionUri, bpname, inputs, artifacts);
         })
 	);
     let loginPanel: WebviewPanel | undefined

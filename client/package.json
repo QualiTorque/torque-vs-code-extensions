@@ -99,7 +99,6 @@
 					"command": "profilesView.addProfile",
 					"group": "navigation",
 					"when": "view == profilesView"
-
 				}
 			],
 			"view/item/context": [
