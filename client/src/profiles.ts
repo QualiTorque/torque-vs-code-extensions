@@ -55,10 +55,16 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                 {
                     var default_profile = vscode.workspace.getConfiguration("torque").get<string>("default_profile", "");
                     var description = ""
+                    var default_found = false;
 
                     for (var profile of result) {
                         var account = (profile['account'] === "") ? 'undefined' : profile['account']
-                        description = (profile['profile'] == default_profile) ? "[default]" : ""
+                        if (profile['profile'] == default_profile) {
+                            description = "[default]";
+                            default_found = true;
+                        }
+                        else
+                            description = "";
 
                         profiles.push(new Profile(
                             profile['profile'],description,
@@ -66,7 +72,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                             account,
                             profile['space']))
                     }
-                    if (description === "") {
+                    if (default_found === false) {
                         if (profiles.length > 0) {
                             await vscode.workspace.getConfiguration("torque").update(
                                 "default_profile",
