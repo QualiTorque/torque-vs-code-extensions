@@ -80,6 +80,8 @@ class TorqueLanguageServer(LanguageServer):
     CMD_LIST_TORQUE_PROFILES = "list_torque_profiles"
     CMD_TORQUE_LOGIN = "torque_login"
     CMD_REMOVE_PROFILE = "remove_profile"
+    CMD_LIST_SANDBOXES = "list_sandboxes"
+    CMD_LIST_BLUEPRINTS = "list_blueprints"
     latest_opened_document = None
 
 
@@ -800,6 +802,19 @@ async def get_profiles(server: TorqueLanguageServer, *args):
             result.append(dict(zip(keys, data)))
     
     return result
+
+@torque_ls.command(TorqueLanguageServer.CMD_LIST_SANDBOXES)
+async def list_sandboxes(server: TorqueLanguageServer, *args):
+    try:
+        result = subprocess.run(
+            [sys.prefix + '/bin/torque', 'sb', 'list'], # TODO: add , '--json'],
+            capture_output=True,
+            text=True)
+
+        return result.stdout
+    except Exception as ex:
+        server.show_message(f"Unable to fetch Torque sandboxes. Reason: {str(ex)}", MessageType.Error)
+
 
 @torque_ls.command(TorqueLanguageServer.CMD_TORQUE_LOGIN)
 async def torque_login(server: TorqueLanguageServer, *args):

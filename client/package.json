@@ -51,12 +51,22 @@
 					"contextualTitle": "Blueprints Explorer"
 				},
 				{
+					"id": "sandboxesExplorerView",
+					"name": "Sandboxes Explorer",
+					"contextualTitle": "Sandboxes Explorer"
+				},
+				{
 					"id": "profilesView",
 					"name": "Profiles"
 				}
 			]
 		},
 		"commands": [
+			{
+				"command": "sandboxesExplorerView.refreshEntry",
+				"title": "Refresh",
+				"icon": "$(refresh)"
+			},
 			{
 				"command": "blueprintsExplorerView.refreshEntry",
 				"title": "Refresh",
@@ -89,6 +99,11 @@
 					"command": "blueprintsExplorerView.refreshEntry",
 					"group": "navigation",
 					"when": "view == blueprintsExplorerView"
+				},
+				{
+					"command": "sandboxesExplorerView.refreshEntry",
+					"group": "navigation",
+					"when": "view == sandboxesExplorerView"
 				},
 				{
 					"command": "profilesView.refreshEntry",
