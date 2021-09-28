@@ -32,8 +32,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
         console.log("Removing " + profile.label);
 
         vscode.commands.executeCommand('remove_profile', profile.label)
-        //refresh the tree
-		this.refreshAllTrees();
+		this.refresh();
 	}
 
     getTreeItem(element: Profile): vscode.TreeItem {
@@ -50,7 +49,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
             }
             else {
                 var profiles = []
-                vscode.commands.executeCommand('list_torque_profiles')
+                await vscode.commands.executeCommand('list_torque_profiles')
                 .then(async (result:Array<string>) => 
                 {
                     var default_profile = vscode.workspace.getConfiguration("torque").get<string>("default_profile", "");
