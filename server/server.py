@@ -730,8 +730,9 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
             command.extend(['-i', inputs])
         if artifacts:
             command.extend(['-a', artifacts])
-        # if not dev_mode:
-        #     command.extend(['-w', '0'])
+        if not dev_mode:
+            command.extend(['-t', '0'])
+        
         process = subprocess.Popen(command,
                                    cwd=server.workspace.root_path if dev_mode else None,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
