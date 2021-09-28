@@ -90,7 +90,7 @@ export class SandboxStartPanel {
 						return;
                     case 'run-command':
                         if (message.name == 'start-sandbox') {
-                            this.startSandbox(bpname, message.sandbox_name, message.duration, message.inputs, message.artifacts);
+                            this.startSandbox(this._bpname, message.sandbox_name, message.duration, message.inputs, message.artifacts);
                         }
                         return;
 				}
