@@ -698,8 +698,9 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     else:
         dev_mode = False
 
-    duration = args[0][1]
-    inputs_args = args[0][2]
+    sandbox_name = args[0][1]
+    duration = args[0][2]
+    inputs_args = args[0][3]
     if inputs_args:
         idx = 0
         inputs = ""
@@ -710,7 +711,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     else:
         inputs = ""
     
-    artifacts_args = args[0][3]
+    artifacts_args = args[0][4]
     if artifacts_args:
         idx = 0
         artifacts = ""
@@ -730,6 +731,8 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
             command.extend(['-i', inputs])
         if artifacts:
             command.extend(['-a', artifacts])
+        if sandbox_name:
+            command.extend(['-n', sandbox_name])
         if not dev_mode:
             command.extend(['-t', '0'])
         

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { getNonce } from './utils'
+const path = require('path')
 
 
 function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
@@ -57,8 +58,8 @@ export class SandboxStartPanel {
 		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, inputs, artifacts);
 	}
 
-	private async startSandbox(bpname, duration, inputs, artifacts) {
-		await vscode.commands.executeCommand('start_torque_sandbox', bpname, duration, inputs, artifacts)
+	private async startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, artifacts:object) {
+		await vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputs, artifacts)
 		.then(async (result:Array<string>) => {
 			vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
 		})
@@ -89,7 +90,7 @@ export class SandboxStartPanel {
 						return;
                     case 'run-command':
                         if (message.name == 'start-sandbox') {
-                            this.startSandbox(bpname, message.duration, message.inputs, message.artifacts);
+                            this.startSandbox(bpname, message.sandbox_name, message.duration, message.inputs, message.artifacts);
                         }
                         return;
 				}
@@ -152,14 +153,20 @@ export class SandboxStartPanel {
 		const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);
 
 		// Use a nonce to only allow specific scripts to be run
+		var cleanName = this._bpname;
+		if (cleanName.endsWith('.yaml'))
+		{
+			cleanName = cleanName.replace('.yaml', '').split(path.sep).slice(-1)[0]
+		}
 		const nonce = getNonce();
-		var durationHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-        durationHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='30' min='10' max='3600'></td></tr>";
-        durationHtml += "</table>";
+		var generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+        generalHtml += "<tr><td width='180px'>" + "Name" + "</td><td>" + "<input type='text' id='sandbox_name' value='" + cleanName + "'></td></tr>";
+        generalHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='30' min='10' max='3600'></td></tr>";
+        generalHtml += "</table>";
 
         if (this._inputs.length > 0) {
             var inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-            var postMessageProperties = "duration: document.getElementById('duration').value, inputs: {";        
+            var postMessageProperties = "sandbox_name: document.getElementById('sandbox_name').value, duration: document.getElementById('duration').value, inputs: {";        
             for (var i=0; i<this._inputs.length; i++)
             {
                 inputsHtml += "<tr><td width='180px'>" + this._inputs[i]['name'] + (!this._inputs[i]['optional']? ' *': '') + "</td><td>" + "<input type=" + (this._inputs[i]['display_style']=='masked'?'password':'text') + " id='" + this._inputs[i]['name'] + "' value='" + (this._inputs[i]['default_value'] ? this._inputs[i]['default_value'] : '') + "'></td></tr>";
@@ -216,7 +223,7 @@ export class SandboxStartPanel {
 				<h2>Launch a New Sandbox</h2>
 				<h3>Blueprint: ${this._bpname}</h3>
                 <br/>
-				${durationHtml}
+				${generalHtml}
                 <br/>
 				${inputsHtml}
                 ${artifactsHtml}
