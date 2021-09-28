@@ -270,7 +270,7 @@ export class SandboxStartPanel {
         //     var shortcutsHtml = "<b>Quick Links</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         //     for (var i=0; i<shortcuts.length; i++)
         //     {
-        //         shortcutsHtml += "<tr><td width='180px'>" + shortcuts[i]['name'] + "</td><td>" + shortcuts[i]['shortcuts'][0] + "</td><td></tr>";
+        //         shortcutsHtml += "<tr><td width='180px'>" + shortcuts[i]['name'] + "</td><td><a href='" + shortcuts[i]['shortcuts'][0] + "' target='_blank'>" + shortcuts[i]['shortcuts'][0] + "</a></td><td></tr>";
         //     }
         //     shortcutsHtml += "</table>";            
         // }
