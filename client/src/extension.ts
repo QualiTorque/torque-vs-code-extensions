@@ -35,6 +35,7 @@ import { BlueprintsProvider } from './blueprintsExplorer';
 import { SandboxStartPanel } from './startSandboxWebview';
 import { Profile, ProfilesProvider } from "./profiles";
 import { torqueLogin } from  "./torqueLogin"
+import { SandboxesProvider } from "./sandboxesExplorer";
 
 let client: LanguageClient;
 
@@ -113,27 +114,13 @@ export async function activate(context: ExtensionContext) {
     const rootPath = (workspace.workspaceFolders && (workspace.workspaceFolders.length > 0))
 		? workspace.workspaceFolders[0].uri.fsPath : undefined;
 
-	// Samples of `window.registerTreeDataProvider`
+	// PROFILES
     const profilesProvider = new ProfilesProvider();
     window.registerTreeDataProvider('profilesView', profilesProvider);
     commands.registerCommand('profilesView.refreshEntry', () => profilesProvider.refresh());
     commands.registerCommand('profilesView.setAsDefaultEntry', (node: Profile) => profilesProvider.setAsDefault(node));
     commands.registerCommand('profilesView.removeEntry', (node: Profile) => profilesProvider.removeEntry(node));
 
-	const blueprintsProvider = new BlueprintsProvider();
-	window.registerTreeDataProvider('blueprintsExplorerView', blueprintsProvider);
-	commands.registerCommand('blueprintsExplorerView.refreshEntry', () => blueprintsProvider.refresh());
-    
-    // context.subscriptions.push(
-	// 	commands.registerCommand('extension.openReserveForm', (bpname:string, space:string, inputs:Array<string>, artifacts: object) => {
-    //         SandboxStartPanel.createOrShow(context.extensionUri, bpname, space, inputs, artifacts);
-    //     })
-	// );
-    context.subscriptions.push(
-		commands.registerCommand('extension.openReserveForm', (bpname:string, inputs:Array<string>, artifacts: object) => {
-            SandboxStartPanel.createOrShow(context.extensionUri, bpname, inputs, artifacts);
-        })
-	);
     let loginPanel: WebviewPanel | undefined
     context.subscriptions.push(
         commands.registerCommand('profilesView.addProfile', () => {
@@ -151,6 +138,22 @@ export async function activate(context: ExtensionContext) {
             }
         })
     )
+
+    // BLUEPRINTS
+	const blueprintsProvider = new BlueprintsProvider();
+	window.registerTreeDataProvider('blueprintsExplorerView', blueprintsProvider);
+	commands.registerCommand('blueprintsExplorerView.refreshEntry', () => blueprintsProvider.refresh());
+    
+    // SANDBOXES
+    const sandboxesProvider = new SandboxesProvider();
+    window.registerTreeDataProvider('sandboxesExplorerView', sandboxesProvider);
+	commands.registerCommand('sandboxesExplorerView.refreshEntry', () => sandboxesProvider.refresh());
+
+    context.subscriptions.push(
+		commands.registerCommand('extension.openReserveForm', (bpname:string, inputs:Array<string>, artifacts: object) => {
+            SandboxStartPanel.createOrShow(context.extensionUri, bpname, inputs, artifacts);
+        })
+	);
     
 }
 

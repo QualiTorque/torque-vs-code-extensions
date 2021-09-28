@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { resourceUsage } from 'process';
 
 export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 
@@ -32,9 +33,20 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 					vscode.window.showInformationMessage('No default profile is defined');
 					results.push(this.getLoginTreeItem())
 					return resolve(results);
+				} else {
+					var sandboxes = []
+					await vscode.commands.executeCommand('list_sandboxes', default_profile)
+					.then(async (result:Array<string>) => {
+						for (var sb of result)
+							sandboxes.push(new Sandbox(
+								sb['name'],
+								vscode.TreeItemCollapsibleState.None,
+								sb['id'],
+								sb['blueprint_name'])
+							)
+					})
+					resolve(sandboxes)
 				}
-				else 
-					return resolve(this.getOnlineBlueprints(default_profile))
 			}
 		});
 	}
@@ -45,60 +57,23 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 		message.tooltip = "Currently you don't have any profiles confifured. Login to Torque in order to create the first profile"
 		return message
 	}
-
-	/**
-	 * Given the path to package.json, read all its dependencies and devDependencies.
-	 */
-	private getOnlineBlueprints(profile): Sandbox[] {
-        const sbs =  
-		const blueprintsJson = JSON.parse(templist);
-
-		// const toBp = (blueprintName: string, description: string, is_sample: boolean, space: string, inputs: Array<string>, artifacts: string):
-		const toBp = (blueprintName: string, description: string, is_sample: boolean, inputs: Array<string>, artifacts: string):
-		     => {
-			var cleanName = blueprintName;
-			if (is_sample)
-				cleanName = cleanName.replace('[Sample]', '')
-			return new Blueprint(cleanName, description, vscode.TreeItemCollapsibleState.None, {
-				command: 'extension.openReserveForm',
-				title: '',
-				arguments: [blueprintName, inputs, artifacts]
-				// arguments: [blueprintName, space, inputs, artifacts]
-			});
-		};
-
-		const bps = [];
-		for (var b=0; b<blueprintsJson.length; b++)
-		{
-			const bpj = blueprintsJson[b];
-			if (bpj.errors.length==0 && bpj.enabled)
-			{ 
-				var bp = toBp(bpj.blueprint_name, bpj.description, bpj.is_sample, bpj.inputs, bpj.artifacts);
-				// var bp = toBp(bpj.blueprint_name, bpj.description, bpj.is_sample, conn["space"], bpj.inputs, bpj.artifacts);
-				bps.push(bp);
-			}
-		}
-
-		return bps;
-	}
-
 }
 
 export class Sandbox extends vscode.TreeItem {
-
 	constructor(
 		public readonly label: string,
-		public readonly description: string,
+		// public readonly description: string,
 		//private readonly version: string,
 		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+		public id: string,
+		public blueprint_name: string,
 		public readonly command?: vscode.Command,
-        
 
 	) {
 		super(label, collapsibleState);
 
-		this.tooltip = this.label;
-		this.description = this.description;
+		this.tooltip = `Originated from the blueprint '${this.blueprint_name}'`;
+		this.description = this.id;
 	}
 
 	iconPath = {
