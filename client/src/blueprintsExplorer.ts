@@ -8,15 +8,7 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
     connections: Array<object>;
 
 	constructor() {
-        console.log("before get connections");
-        this.connections = vscode.workspace.getConfiguration("torque").get<Array<object>>("connections", []);
-        if (this.connections)
-        { 
-            for (var c=0; c<this.connections.length; c++)
-                console.log(this.connections[c]);
-        }
-        else
-            console.log("can't get connections");
+        
 	}
 
 	refresh(): void {

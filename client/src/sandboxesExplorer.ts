@@ -8,7 +8,7 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 	readonly onDidChangeTreeData: vscode.Event<Sandbox | undefined | void> = this._onDidChangeTreeData.event;
 
 	constructor() {
-        console.log("before get connections");
+        
 	}
 
 	refresh(): void {
@@ -25,7 +25,6 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 			var results = []
       
 			if (element) {
-				console.log("element")
 				return resolve(results);
 			}
 			else {
