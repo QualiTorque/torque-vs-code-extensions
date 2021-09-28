@@ -805,7 +805,7 @@ async def list_sandboxes(server: TorqueLanguageServer, *args):
 
     try:
         result = subprocess.run(
-            [sys.prefix + '/bin/torque', '--profile', profile, 'sb', 'list'], # TODO: add , '--json'],
+            [sys.prefix + '/bin/torque', '--profile', profile, 'sb', 'list', '--filter=my'], # TODO: add , '--json'],
             capture_output=True,
             text=True)
 
