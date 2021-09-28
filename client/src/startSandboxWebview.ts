@@ -164,9 +164,10 @@ export class SandboxStartPanel {
         generalHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='30' min='10' max='3600'></td></tr>";
         generalHtml += "</table>";
 
+		var postMessageProperties = "sandbox_name: document.getElementById('sandbox_name').value, duration: document.getElementById('duration').value"
         if (this._inputs.length > 0) {
             var inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-            var postMessageProperties = "sandbox_name: document.getElementById('sandbox_name').value, duration: document.getElementById('duration').value, inputs: {";        
+            postMessageProperties += ", inputs: {";        
             for (var i=0; i<this._inputs.length; i++)
             {
                 inputsHtml += "<tr><td width='180px'>" + this._inputs[i]['name'] + (!this._inputs[i]['optional']? ' *': '') + "</td><td>" + "<input type=" + (this._inputs[i]['display_style']=='masked'?'password':'text') + " id='" + this._inputs[i]['name'] + "' value='" + (this._inputs[i]['default_value'] ? this._inputs[i]['default_value'] : '') + "'></td></tr>";
@@ -177,7 +178,7 @@ export class SandboxStartPanel {
         }
         else {
             var inputsHtml = "";
-            var postMessageProperties = "duration: document.getElementById('duration').value, inputs: {}";   
+            postMessageProperties += ", inputs: {}";   
         }
 
         if (!this._isEmpty(this._artifacts)) {
