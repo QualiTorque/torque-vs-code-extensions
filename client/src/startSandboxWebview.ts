@@ -57,6 +57,13 @@ export class SandboxStartPanel {
 		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, inputs, artifacts);
 	}
 
+	private async startSandbox(bpname, duration, inputs, artifacts) {
+		await vscode.commands.executeCommand('start_torque_sandbox', bpname, duration, inputs, artifacts)
+		.then(async (result:Array<string>) => {
+			vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
+		})
+	}
+
 	// private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, space:string, inputs:Array<string>, artifacts: object) {
 	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, artifacts: object) {
 		this._panel = panel;
@@ -82,7 +89,7 @@ export class SandboxStartPanel {
 						return;
                     case 'run-command':
                         if (message.name == 'start-sandbox') {
-                            vscode.commands.executeCommand('start_torque_sandbox', bpname, message.duration, message.inputs, message.artifacts)
+                            this.startSandbox(bpname, message.duration, message.inputs, message.artifacts);
                         }
                         return;
 				}
