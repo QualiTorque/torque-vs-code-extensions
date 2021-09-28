@@ -22,6 +22,7 @@ import logging
 import subprocess
 import sys
 import textwrap
+from types import resolve_bases
 import tabulate
 from pathlib import Path
 
@@ -80,6 +81,8 @@ class TorqueLanguageServer(LanguageServer):
     CMD_LIST_TORQUE_PROFILES = "list_torque_profiles"
     CMD_TORQUE_LOGIN = "torque_login"
     CMD_REMOVE_PROFILE = "remove_profile"
+    CMD_LIST_SANDBOXES = "list_sandboxes"
+    CMD_LIST_BLUEPRINTS = "list_blueprints"
     latest_opened_document = None
 
 
@@ -788,6 +791,66 @@ async def get_profiles(server: TorqueLanguageServer, *args):
     
     return result
 
+@torque_ls.command(TorqueLanguageServer.CMD_LIST_SANDBOXES)
+async def list_sandboxes(server: TorqueLanguageServer, *args):
+    if not args or not args[0]:
+        server.show_message("No profile provided", MessageType.Error)
+        return None
+        
+    profile = args[0].pop()
+
+    sbs = []
+    keys = ['id', 'name', 'blueprint_name']
+
+    try:
+        result = subprocess.run(
+            [sys.prefix + '/bin/torque', '--profile', profile, 'sb', 'list'], # TODO: add , '--json'],
+            capture_output=True,
+            text=True)
+
+    except Exception as ex:
+        server.show_message(f"Unable to fetch Torque sandboxes. Reason: {str(ex)}", MessageType.Error)
+    
+    if result.stderr:
+        server.show_message(f"An error occurred while executing the command: {result.stderr}", MessageType.Error)
+
+    lines = result.stdout.split('\n')
+
+    for i in range(2, len(lines)):
+        if lines[i]:
+            data = lines[i].split()
+            if len(data) != 3:
+                server.show_message(
+                    f"Wrong format of line: {data}",
+                    msg_type=MessageType.Error)
+                return []
+
+            sbs.append(dict(zip(keys, data)))
+
+    return sbs
+
+@torque_ls.command(TorqueLanguageServer.CMD_LIST_BLUEPRINTS)
+async def list_blueprints(server: TorqueLanguageServer, *args):
+    if not args or not args[0]:
+        server.show_message("No profile provided", MessageType.Error)
+        return None
+        
+    profile = args[0].pop()
+    try:
+        result = subprocess.run(
+            [sys.prefix + '/bin/torque', '--profile', profile, 'bp', 'list', '--output', 'json', '--detail'],
+            capture_output=True,
+            text=True)
+        
+    except Exception as ex:
+        server.show_message(f"Unable to fetch Torque sandboxes. Reason: {str(ex)}", MessageType.Error)
+        return None
+
+    if result.stderr:
+        server.show_message(f"An error occurred while executing the command: {result.stderr}", MessageType.Error)
+   
+    return result.stdout
+
 @torque_ls.command(TorqueLanguageServer.CMD_TORQUE_LOGIN)
 async def torque_login(server: TorqueLanguageServer, *args):
     if not args:
@@ -830,7 +893,6 @@ async def remove_profile(server: TorqueLanguageServer, *args):
         return result.returncode
     except Exception as ex:
         server.show_message(f"Failed to remove profile {profile}. Reason: {str(ex)}", MessageType.Error)
-
 
 @torque_ls.command(TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT)
 async def validate_blueprint(server: TorqueLanguageServer, *args):

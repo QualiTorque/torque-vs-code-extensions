@@ -1,7 +1,4 @@
-import { read } from 'fs';
 import * as vscode from 'vscode'
-import * as path from 'path';
-
 export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
     private _onDidChangeTreeData: vscode.EventEmitter<Profile | undefined | void> = new vscode.EventEmitter<Profile | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<Profile | undefined | void> = this._onDidChangeTreeData.event;
@@ -32,8 +29,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
         console.log("Removing " + profile.label);
 
         vscode.commands.executeCommand('remove_profile', profile.label)
-        //refresh the tree
-		this.refreshAllTrees();
+		this.refresh();
 	}
 
     getTreeItem(element: Profile): vscode.TreeItem {
@@ -50,7 +46,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
             }
             else {
                 var profiles = []
-                vscode.commands.executeCommand('list_torque_profiles')
+                await vscode.commands.executeCommand('list_torque_profiles')
                 .then(async (result:Array<string>) => 
                 {
                     var default_profile = vscode.workspace.getConfiguration("torque").get<string>("default_profile", "");
@@ -85,6 +81,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                                 "default_profile", "", vscode.ConfigurationTarget.Workspace);
                         // TODO: Condider having a method to refresh only external explorers
                         await vscode.commands.executeCommand('blueprintsExplorerView.refreshEntry')
+                        await vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
                     }
                     resolve(profiles)
                 })
