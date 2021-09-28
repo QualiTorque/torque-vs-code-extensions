@@ -487,7 +487,7 @@ def code_lens(server: TorqueLanguageServer, params: Optional[CodeLensParams] = N
                             end=Position(line=1, character=1),
                         ),
                         command=Command(
-                            title='Validate on Server',
+                            title='Validate with Torque',
                             command=TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT,
                             arguments=[params.text_document.uri]
                         )
@@ -499,8 +499,6 @@ def code_lens(server: TorqueLanguageServer, params: Optional[CodeLensParams] = N
                         ),
                         command=Command(
                             title='Start Sandbox',
-                            # command=TorqueLanguageServer.CMD_START_SANDBOX,
-                            # arguments=[params.text_document.uri]
                             command="extension.openReserveForm",
                             arguments=[params.text_document.uri, 30, inputs, artifacts]
                         )
