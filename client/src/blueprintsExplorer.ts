@@ -62,27 +62,29 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 		
 		await vscode.commands.executeCommand('list_blueprints', profile)
 		.then(async (result:string) => {
-			const blueprintsJson = JSON.parse(result);
+			if (result.length > 0) {
+				const blueprintsJson = JSON.parse(result);
 
-			const toBp = (blueprintName: string, description: string, is_sample: boolean, inputs: Array<string>, artifacts: string):
-			Blueprint => {
-				var cleanName = blueprintName;
-				if (is_sample)
-					cleanName = cleanName.replace('[Sample]', '')
-				return new Blueprint(cleanName, description, vscode.TreeItemCollapsibleState.None, {
-					command: 'extension.openReserveForm',
-					title: '',
-					arguments: [blueprintName, inputs, artifacts]
-				});
-			};
+				const toBp = (blueprintName: string, description: string, is_sample: boolean, inputs: Array<string>, artifacts: string):
+				Blueprint => {
+					var cleanName = blueprintName;
+					if (is_sample)
+						cleanName = cleanName.replace('[Sample]', '')
+					return new Blueprint(cleanName, description, vscode.TreeItemCollapsibleState.None, {
+						command: 'extension.openReserveForm',
+						title: '',
+						arguments: [blueprintName, inputs, artifacts]
+					});
+				};
 
-			for (var b=0; b<blueprintsJson.length; b++) {
-				const bpj = blueprintsJson[b];
-				if (bpj.errors.length==0 && bpj.enabled) { 
-					var bp = toBp(bpj.blueprint_name, bpj.description, bpj.is_sample, bpj.inputs, bpj.artifacts);
-					bps.push(bp);
+				for (var b=0; b<blueprintsJson.length; b++) {
+					const bpj = blueprintsJson[b];
+					if (bpj.errors.length==0 && bpj.enabled) { 
+						var bp = toBp(bpj.blueprint_name, bpj.description, bpj.is_sample, bpj.inputs, bpj.artifacts);
+						bps.push(bp);
+					}
 				}
-			}		
+			}	
 		})
 		return bps;
 	}

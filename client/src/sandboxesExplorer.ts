@@ -37,13 +37,15 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 					var sandboxes = []
 					await vscode.commands.executeCommand('list_sandboxes', default_profile)
 					.then(async (result:Array<string>) => {
-						for (var sb of result)
-							sandboxes.push(new Sandbox(
-								sb['name'],
-								vscode.TreeItemCollapsibleState.None,
-								sb['id'],
-								sb['blueprint_name'])
-							)
+						if (result.length > 0) {
+							for (var sb of result)
+								sandboxes.push(new Sandbox(
+									sb['name'],
+									vscode.TreeItemCollapsibleState.None,
+									sb['id'],
+									sb['blueprint_name'])
+								)
+						}
 					})
 					resolve(sandboxes)
 				}
