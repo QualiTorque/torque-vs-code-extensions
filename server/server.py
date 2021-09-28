@@ -22,6 +22,7 @@ import logging
 import subprocess
 import sys
 import textwrap
+from types import resolve_bases
 import tabulate
 from pathlib import Path
 
@@ -815,6 +816,28 @@ async def list_sandboxes(server: TorqueLanguageServer, *args):
     except Exception as ex:
         server.show_message(f"Unable to fetch Torque sandboxes. Reason: {str(ex)}", MessageType.Error)
 
+
+@torque_ls.command(TorqueLanguageServer.CMD_LIST_BLUEPRINTS)
+async def list_blueprints(server: TorqueLanguageServer, *args):
+    if not args or not args[0]:
+        server.show_message("No profile provided", MessageType.Error)
+        return None
+        
+    profile = args[0].pop()
+    try:
+        result = subprocess.run(
+            [sys.prefix + '/bin/torque', '--profile', profile, 'bp', 'list', '--output', 'json', '--detail'],
+            capture_output=True,
+            text=True)
+        
+    except Exception as ex:
+        server.show_message(f"Unable to fetch Torque sandboxes. Reason: {str(ex)}", MessageType.Error)
+        return None
+
+    if result.stderr:
+        server.show_message(f"An error occurred while executing the command: {result.stderr}", MessageType.Error)
+   
+    return result.stdout
 
 @torque_ls.command(TorqueLanguageServer.CMD_TORQUE_LOGIN)
 async def torque_login(server: TorqueLanguageServer, *args):
