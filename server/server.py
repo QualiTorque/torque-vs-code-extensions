@@ -739,10 +739,14 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         process = subprocess.Popen(command,
                                    cwd=server.workspace.root_path if dev_mode else None,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        sandbox_id = ""
         for line in process.stdout:
             line_dec = line.decode().strip()
+            if line_dec.startswith('Id:'):
+                sandbox_id = line_dec.replace('Id: ','')
             if not line_dec.endswith('sec]'):
-                server.show_message_log(line_dec)
+                if sandbox_id and not line_dec == sandbox_id:
+                    server.show_message_log(line_dec)           
 
         error_msg = ""
         if process.stderr:
