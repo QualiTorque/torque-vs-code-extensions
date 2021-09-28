@@ -734,7 +734,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         if sandbox_name:
             command.extend(['-n', sandbox_name])
         if not dev_mode:
-            command.extend(['-t', '0'])
+            command.extend(['-t', '0', '-b', 'master'])
         
         process = subprocess.Popen(command,
                                    cwd=server.workspace.root_path if dev_mode else None,
