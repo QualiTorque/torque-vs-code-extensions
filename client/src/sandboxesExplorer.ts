@@ -62,8 +62,6 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 export class Sandbox extends vscode.TreeItem {
 	constructor(
 		public readonly label: string,
-		// public readonly description: string,
-		//private readonly version: string,
 		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
 		public id: string,
 		public blueprint_name: string,

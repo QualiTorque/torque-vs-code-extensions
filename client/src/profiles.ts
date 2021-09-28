@@ -1,7 +1,4 @@
-import { read } from 'fs';
 import * as vscode from 'vscode'
-import * as path from 'path';
-
 export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
     private _onDidChangeTreeData: vscode.EventEmitter<Profile | undefined | void> = new vscode.EventEmitter<Profile | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<Profile | undefined | void> = this._onDidChangeTreeData.event;
@@ -84,6 +81,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                                 "default_profile", "", vscode.ConfigurationTarget.Workspace);
                         // TODO: Condider having a method to refresh only external explorers
                         await vscode.commands.executeCommand('blueprintsExplorerView.refreshEntry')
+                        await vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
                     }
                     resolve(profiles)
                 })

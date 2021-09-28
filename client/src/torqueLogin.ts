@@ -3,19 +3,6 @@ import { loginFormHtml } from './loginFormHtml'
 import { ProfilesProvider } from './profiles';
 import { getNonce } from './utils'
 
-// export class LoginCommand extends vscode.TreeItem {
-//     constructor(
-//         public readonly label : string,
-//         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-
-//     ) {
-//         super(label,collapsibleState)
-//         this.tooltip = this.label
-//     }
-
-// 	contextValue = 'dependency';
-
-// }
 export function torqueLogin(extensionUri: vscode.Uri, profilesTree: ProfilesProvider, listener?: (message: any) => Promise<void>): vscode.WebviewPanel {
     const panel = vscode.window.createWebviewPanel(
         'html',
@@ -50,9 +37,7 @@ export function torqueLogin(extensionUri: vscode.Uri, profilesTree: ProfilesProv
                 <link href="${stylesMainUri}" rel="stylesheet">`;
     head = `<link href="${stylesMainUri}" rel="stylesheet">`;
 
-    // var style = `.app { background-image: url()}`
     html = html.replace('{{HEAD_BLOCK}}', head)
-    // html = html.replace('{{STYLE_BLOCK}}', style)
 
     panel.webview.html = html
 
@@ -67,7 +52,6 @@ export function torqueLogin(extensionUri: vscode.Uri, profilesTree: ProfilesProv
                     vscode.commands.executeCommand('torque_login', message).then((result: string) => 
                     {
                         if (result) {
-                            // panel.webview.postMessage({ statusCode: 'Failure', error: result })
                             vscode.window.showErrorMessage("Unable to login:\n" + result);
                         } else {
                             vscode.window.showInformationMessage("Profile has been added")
