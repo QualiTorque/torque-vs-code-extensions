@@ -679,19 +679,13 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                     scope_uri='',
                     section=TorqueLanguageServer.CONFIGURATION_SECTION)
                 ]))
-        connections = config[0].get('connections')
+        default_profile = config[0].get('default_profile')
     except:
-        server.show_message('Please define your connections in the settings first.', MessageType.Error)
+        default_profile = ''
+    
+    if not default_profile:
+        server.show_message('Please have at least one profile set as the default one.', MessageType.Error)
         return
-
-    connection = None
-    if len(connections) == 1:
-        connection = connections[0]
-    else:
-        for con in connections:
-            if "default" in con and con["default"] == True:
-                connection = con
-                break
 
     blueprint_name = args[0][0]
     
@@ -724,16 +718,11 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     else:
         artifacts = ""       
         
-    account = connection["account"]
-    space = connection["space"]
-    token = connection["token"]
     server.show_message('Starting sandbox from blueprint: ' + blueprint_name)
     try:
-        command = [sys.prefix + '/bin/colony',
-                                    '--token', token,
-                                    '--account', account,
-                                    '--space', space,
-                                    'sb', 'start', blueprint_name, '-d', duration]
+        command = [sys.prefix + '/bin/torque',
+                   '--profile', default_profile,
+                   'sb', 'start', blueprint_name, '-d', duration]
         if inputs:
             command.extend(['-i', inputs])
         if artifacts:
@@ -855,47 +844,35 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                     scope_uri='',
                     section=TorqueLanguageServer.CONFIGURATION_SECTION)
                 ]))
-        connections = config[0].get('connections')
+        default_profile = config[0].get('default_profile')
     except:
-        server.show_message('Please define your connections in the settings first.', MessageType.Error)
+        default_profile = ''
+    
+    if not default_profile:
+        server.show_message('Please have at least one profile set as the default one.', MessageType.Error)
         return
 
-    if len(connections) == 1:
-        connection = connections[0]
-    else:
-        for con in connections:
-            if "default" in con and con["default"].lower() == "true":
-                connection = con
-                break
-
     blueprint_name = pathlib.Path(args[0][0]).name.replace(".yaml", "")
-    account = connection["account"]
-    space = connection["space"]
-    token = connection["token"]
     server.show_message('Validating blueprint: ' + blueprint_name)
 
     try:
-        result = subprocess.run([sys.prefix + '/bin/colony',
-                                '--token', token,
-                                '--account', account,
-                                '--space', space,
-                                'bp', 'validate', blueprint_name],
+        result = subprocess.run([sys.prefix + '/bin/torque',
+                                '--profile', default_profile,
+                                'bp', 'validate', blueprint_name, '--output=json'],
                                 cwd=server.workspace.root_path,
                                 capture_output=True, text=True)
     except Exception as ex:
         print(ex)
     if result.stderr:
-        lines = result.stderr.split('\n')
-        table = []
+        errors_json = json.loads(result.stderr)
         headers = ["Name", "Message"]
-        for line in lines[3:-1]:
-            #cols = line.split('  ')
-            cols = re.split(r'\s{2,}', line)
-            table.append(['\n'.join(textwrap.wrap(cols[0], width=40)),
-                          '\n'.join(textwrap.wrap(cols[1], width=60))])
-
+        table = []
+        for err in errors_json:
+            table.append(['\n'.join(textwrap.wrap(err["name"], width=40)),
+                          '\n'.join(textwrap.wrap(err["message"], width=60))])
+        
         server.show_message_log(tabulate.tabulate(table, headers, tablefmt="simple"))
-        server.show_message('Validation complete. Check the Problems view for any issues.')
+        server.show_message('Validation complete. Check the "Torque Language Server" Output view for any issues.')
     else:
         server.show_message('Validation completed. Blueprint is valid.')
 
