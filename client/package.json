@@ -121,7 +121,6 @@
 				"torque.default_profile": {
 					"type": "string",
 					"description": "The deafult profile/space to use",
-					"default": "default",
 					"scope": "resource"
 				}				
 			}
