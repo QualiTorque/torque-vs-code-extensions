@@ -10,11 +10,13 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
 		this._onDidChangeTreeData.fire();
 	}
 
-    refreshAllTrees(): void {
+    refreshAllTrees(only_externals: boolean): void {
         //refresh the tree
-		this.refresh();
+        if (!only_externals)
+		    this.refresh();
         //refresh the other explorers
         vscode.commands.executeCommand('blueprintsExplorerView.refreshEntry')
+        vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
     }
 
     async setAsDefault(profile: Profile): Promise<void> {
@@ -22,7 +24,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
         //store the default profile value
         await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
         //refresh
-        this.refreshAllTrees();
+        this.refreshAllTrees(false);
 	}
 
     removeEntry(profile: Profile): void {
@@ -79,9 +81,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                         else 
                             await vscode.workspace.getConfiguration("torque").update(
                                 "default_profile", "", vscode.ConfigurationTarget.Workspace);
-                        // TODO: Condider having a method to refresh only external explorers
-                        await vscode.commands.executeCommand('blueprintsExplorerView.refreshEntry')
-                        await vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
+                        this.refreshAllTrees(true);
                     }
                     resolve(profiles)
                 })
