@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { Sandbox } from './models';
+import { ProfilesManager } from './profilesManager';
 
 export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 
@@ -32,7 +33,8 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 
 	getChildren(element?: Sandbox): Thenable<Sandbox[]> {
 		return new Promise(async (resolve) => {
-			const default_profile = vscode.workspace.getConfiguration('torque').get<string>("default_profile", "");
+			const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
+			const profile = vscode.workspace.getConfiguration('torque').get<string>("default_profile", "");
 			var results = []
       
 			if (element) {

@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { Blueprint } from './models';
+import { ProfilesProvider } from './profilesExplorer';
+import { ProfilesManager } from './profilesManager';
 
 export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 
@@ -22,7 +24,9 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 
 	getChildren(element?: Blueprint): Thenable<Blueprint[]> {
 		return new Promise(async (resolve) => {
-			const default_profile = vscode.workspace.getConfiguration('torque').get<string>("default_profile", "");
+
+			const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
+			// const default_profile = vscode.workspace.getConfiguration('torque').get<string>("default_profile", "");
 			var results = []
 
 			if (element) {

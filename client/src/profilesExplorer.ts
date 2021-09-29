@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { Profile } from './models';
+import { ProfilesManager } from './profilesManager';
 export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
     private _onDidChangeTreeData: vscode.EventEmitter<Profile | undefined | void> = new vscode.EventEmitter<Profile | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<Profile | undefined | void> = this._onDidChangeTreeData.event;
@@ -23,7 +24,8 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
     async setAsDefault(profile: Profile): Promise<void> {
         console.log(profile.label);
         //store the default profile value
-        await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
+        ProfilesManager.getInstance().setActive(profile)
+        // await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
         //refresh
         this.refreshAllTrees(false);
 	}
@@ -48,11 +50,13 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                 return resolve(result)
             }
             else {
+                var profilesMngr = ProfilesManager.getInstance()
                 var profiles = []
                 await vscode.commands.executeCommand('list_torque_profiles')
                 .then(async (result:Array<string>) => 
                 {                  
-                    var default_profile = vscode.workspace.getConfiguration("torque").get<string>("default_profile", "");
+                    var default_profile = (profilesMngr.getActive() === undefined) ? "" : profilesMngr.getActive().label
+                    // var default_profile = vscode.workspace.getConfiguration("torque").get<string>("default_profile", "");
                     var description = ""
                     var default_found = false;
 
@@ -73,15 +77,17 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                     }
                     if (default_found === false) {
                         if (profiles.length > 0) {
-                            await vscode.workspace.getConfiguration("torque").update(
-                                "default_profile",
-                                profiles[0].label,
-                                vscode.ConfigurationTarget.Workspace);
+                            profilesMngr.setActive(profiles[0])
+                            // await vscode.workspace.getConfiguration("torque").update(
+                            //     "default_profile",
+                            //     profiles[0].label,
+                            //     vscode.ConfigurationTarget.Workspace);
                             profiles[0].description = "[default]";
                         }
-                        else 
-                            await vscode.workspace.getConfiguration("torque").update(
-                                "default_profile", "", vscode.ConfigurationTarget.Workspace);
+                        else
+                            profilesMngr.setActive(undefined)
+                            // await vscode.workspace.getConfiguration("torque").update(
+                            //     "default_profile", "", vscode.ConfigurationTarget.Workspace);
                         this.refreshAllTrees(true);
                     }
                     resolve(profiles)

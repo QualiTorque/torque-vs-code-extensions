@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { Sandbox } from './models';
+import { ProfilesManager } from './profilesManager';
 import { getNonce } from './utils'
 
 export function sandboxDetailsPanel(extensionUri: vscode.Uri, sandbox: any, details: any): vscode.WebviewPanel {
@@ -49,14 +50,17 @@ function isEmpty(obj) {
 
 function getBaseInfo(sandbox: any, details: any) {
     var generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+    const acct = ProfilesManager.getInstance().getActive().account
+    const space = ProfilesManager.getInstance().getActive().space
 
     const profile = vscode.workspace.getConfiguration('torque').get<string>("default_profile", "");
     generalHtml += "<tr><td width='180px'>" + "ID" + "</td><td>" + sandbox.id + "</td></tr>";
     generalHtml += "<tr><td width='180px'>" + "Status" + "</td><td>" + details.get('status') + "</td></tr>";
 
-    // if (sandbox_url) {
-    //     generalHtml += "<tr><td width='180px'><a href='" + sandbox_url +"' target='_blank'/>" + "Open in Torque" + "</td><td></td></tr>";
-    // }
+    if (acct !== "") {
+        const sandbox_url = `https://${acct}.qtorque.io/${space}/sandboxes/${sandbox.id}`
+        generalHtml += "<tr><td width='180px'><a href='" + sandbox_url +"' target='_blank'/>" + "Open in Torque" + "</td><td></td></tr>";
+    }
 
     generalHtml += "</table>";
 

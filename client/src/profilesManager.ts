@@ -11,18 +11,20 @@ export class ProfilesManager {
     private constructor() {}
 
     public async setActive(profile: Profile) {
-        if (this.profiles.includes(profile)) {
-            this.activeProfile = profile;
-            await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
-        }
+        this.activeProfile = profile;
+        await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
+        // if (this.profiles.includes(profile)) {
+        //     this.activeProfile = profile;
+        //     await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
+        // }
     }
 
     public getActive(){
-        if (this.activeProfile === undefined) 
-            if (this.profiles.length > 0)
-                this.setActive(this.profiles[0]);
-            else
-                return undefined;
+        // if (this.activeProfile === undefined) 
+        //     if (this.profiles.length > 0)
+        //         this.setActive(this.profiles[0]);
+        //     else
+        //         return undefined;
 
         return this.activeProfile;
     }
