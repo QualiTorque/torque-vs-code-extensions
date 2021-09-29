@@ -193,16 +193,19 @@ export class SandboxDetailsPanel {
         if (!this._sandbox_details)
         {
             htmlBody = `<body>
-                        <br/>
+                        <div style="vertical-align: top; display: inline-block; margin-top: 5px">
                         <h2>${this._sandbox_name}</h2>
                         <h3>Blueprint: ${this._blueprint_name}</h3>
                         <br/>
+                        </div>
+                        <div style="vertical-align: top;">
                         <h4>Loading details...</h4>
+                        </div>
                         </body>`;
         }
         else
         {            
-            // htmlBody = this._getMainBody()
+            // htmlBody = this._getMainBody(nonce)
             htmlBody = this._getBaseInfo(nonce)
         }
         return htmlHeader + htmlBody + closeHtml;
@@ -267,8 +270,6 @@ export class SandboxDetailsPanel {
         
     private _getMainBody(nonce:string) {
         //test sandbox details html
-        var title = 'aaaaaaaa';
-        var blueprint_name = 'blueprint name'
         var sandbox_status = "Active";
         var create_time = '2021-09-28T20:34:03.993243+00:00'
         var scheduled_end_time = '2021-09-28T20:34:03.993243+00:00'
@@ -326,15 +327,23 @@ export class SandboxDetailsPanel {
     
         const html = `
             <body>
+                <div style="vertical-align: top; display: inline-block; margin-top: 5px">
+                <h2>${this._sandbox_name}</h2>
+                <h3>Blueprint: ${this._blueprint_name}</h3>
                 <br/>
-                <h2>${title}</h2>
-                <h3>Blueprint: ${blueprint_name}</h3>
-                <br/>
+                </div>
+                <div style="vertical-align: top; display: inline-block; float:right; margin-top: 5px">
+                <input type='button' id='reload-btn' value='Refresh' style="width:100px;display: inline-block;">
+                &nbsp;
+                <input type='button' id='end-btn' value='End Sandbox' style="width:100px;display: inline-block;">
+                </div>
+                <div style="vertical-align: top;">
                 ${generalHtml}
                 <br/>
                 ${shortcutsHtml}
                 ${inputsHtml}
-                ${artifactsHtml}                
+                ${artifactsHtml} 
+                </div>          
             </body>`;
         
         const script = `
