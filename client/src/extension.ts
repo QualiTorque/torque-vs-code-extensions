@@ -36,7 +36,7 @@ import { SandboxStartPanel } from './startSandboxWebview';
 import { ProfilesProvider } from "./profilesExplorer";
 import { torqueLogin } from  "./torqueLogin"
 import { SandboxesProvider } from "./sandboxesExplorer";
-import { sandboxDetailsPanel } from "./sandboxDetails";
+import { SandboxDetailsPanel } from "./sandboxDetails";
 import { Profile, Sandbox } from "./models";
 
 let client: LanguageClient;
@@ -150,7 +150,7 @@ export async function activate(context: ExtensionContext) {
     const sandboxesProvider = new SandboxesProvider();
     window.registerTreeDataProvider('sandboxesExplorerView', sandboxesProvider);
 	commands.registerCommand('sandboxesExplorerView.refreshEntry', () => sandboxesProvider.refresh());
-    commands.registerCommand('sandboxesExplorerView.getSandboxDetails', (sandbox: any, profile: string) => sandboxesProvider.getSandboxDetails(sandbox, profile));
+    commands.registerCommand('sandboxesExplorerView.getSandboxDetails', (sandbox: any) => sandboxesProvider.getSandboxDetails(sandbox));
 
     context.subscriptions.push(
 		commands.registerCommand('extension.openReserveForm', (bpname:string, inputs:Array<string>, artifacts: object) => {
@@ -158,21 +158,9 @@ export async function activate(context: ExtensionContext) {
         })
 	);
 
-    let sbDetailsPanel: WebviewPanel | undefined
     context.subscriptions.push(
-        commands.registerCommand('extension.showSandboxDetails', (sandbox: Sandbox, details: Map<any, any>) => {
-            if (sbDetailsPanel) {
-                sbDetailsPanel.reveal(sbDetailsPanel.viewColumn || ViewColumn.Active)
-            } else {
-                sbDetailsPanel = sandboxDetailsPanel(context.extensionUri, sandbox, details)
-                sbDetailsPanel.onDidDispose(
-                    () => {
-                        sbDetailsPanel = undefined
-                    },
-                    undefined,
-                    context.subscriptions
-                )
-            }
+        commands.registerCommand('extension.showSandboxDetails', (sandbox: any) => {
+            SandboxDetailsPanel.createOrShow(context.extensionUri, sandbox['id'], sandbox['name'], sandbox['blueprint_name'])
         })
     )
     

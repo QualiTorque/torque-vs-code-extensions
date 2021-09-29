@@ -19,22 +19,21 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 		return element;
 	}
 
-	async getSandboxDetails(sb: any, profile: string): Promise<void> {
-		let details = new Map();
+	async getSandboxDetails(sb: any): Promise<void> {
+		//let details = new Map();
 
-		await vscode.commands.executeCommand('get_sandbox', sb.id, profile )
-		.then(async (result:string) => {
-			if (result.length > 0)
-				details.set('status', result)
-        })
+		// await vscode.commands.executeCommand('get_sandbox', sb.id, profile )
+		// .then(async (result:string) => {
+		// 	if (result.length > 0)
+		// 		details.set('status', result)
+        // })
 
-		vscode.commands.executeCommand('extension.showSandboxDetails', sb, details)
+		vscode.commands.executeCommand('extension.showSandboxDetails', sb)
 	}
 
 	getChildren(element?: Sandbox): Thenable<Sandbox[]> {
 		return new Promise(async (resolve) => {
 			const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
-			const profile = vscode.workspace.getConfiguration('torque').get<string>("default_profile", "");
 			var results = []
       
 			if (element) {
@@ -59,7 +58,7 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 									{
 										command: 'sandboxesExplorerView.getSandboxDetails',
 										title: 'Sandbox Details',
-										arguments: [sb, default_profile] 
+										arguments: [sb] 
 									}
 									)
 								)
