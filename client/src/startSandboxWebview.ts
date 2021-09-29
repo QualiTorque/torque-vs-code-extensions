@@ -58,6 +58,7 @@ export class SandboxStartPanel {
 		await vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputs, artifacts)
 		.then(async (result:Array<string>) => {
 			vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
+			this._panel.dispose();
 		})
 	}
 
