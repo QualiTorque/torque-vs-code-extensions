@@ -149,6 +149,7 @@ export async function activate(context: ExtensionContext) {
     const sandboxesProvider = new SandboxesProvider();
     window.registerTreeDataProvider('sandboxesExplorerView', sandboxesProvider);
 	commands.registerCommand('sandboxesExplorerView.refreshEntry', () => sandboxesProvider.refresh());
+    commands.registerCommand('sandboxesExplorerView.getSandboxDetails', (sandbox: any, profile: string) => sandboxesProvider.getSandboxDetails(sandbox, profile));
 
     context.subscriptions.push(
 		commands.registerCommand('extension.openReserveForm', (bpname:string, inputs:Array<string>, artifacts: object) => {
@@ -158,11 +159,11 @@ export async function activate(context: ExtensionContext) {
 
     let sbDetailsPanel: WebviewPanel | undefined
     context.subscriptions.push(
-        commands.registerCommand('extension.showSandboxDetails', (sandbox: Sandbox) => {
+        commands.registerCommand('extension.showSandboxDetails', async (sandbox: Sandbox, details: Map<any, any>) => {
             if (sbDetailsPanel) {
                 sbDetailsPanel.reveal(sbDetailsPanel.viewColumn || ViewColumn.Active)
             } else {
-                sbDetailsPanel = sandboxDetailsPanel(context.extensionUri, sandbox)
+                sbDetailsPanel = sandboxDetailsPanel(context.extensionUri, sandbox, details)
                 sbDetailsPanel.onDidDispose(
                     () => {
                         sbDetailsPanel = undefined

@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { Sandbox } from './sandboxesExplorer';
 import { getNonce } from './utils'
 
-export function sandboxDetailsPanel(extensionUri: vscode.Uri, sandbox: Sandbox, listener?: (message: any) => Promise<void>): vscode.WebviewPanel {
+export function sandboxDetailsPanel(extensionUri: vscode.Uri, sandbox: any, details: any): vscode.WebviewPanel {
     const panel = vscode.window.createWebviewPanel(
         'html',
         'Sandbox details',
@@ -17,8 +17,28 @@ export function sandboxDetailsPanel(extensionUri: vscode.Uri, sandbox: Sandbox, 
     const stylesMainUri = panel.webview.asWebviewUri(stylesPathMainPath);
     const nonce = getNonce();
 
-    const mockedHtml = getHtml(panel.webview, nonce, stylesMainUri)
-    panel.webview.html = mockedHtml;
+    const htmlHeader = `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+
+        <!--
+            Use a content security policy to only allow loading images from https or from our extension directory,
+            and only allow scripts that have a specific nonce.
+        -->
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${panel.webview.cspSource}; img-src ${panel.webview.cspSource} https:; script-src 'nonce-${nonce}';">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link href="${stylesMainUri}" rel="stylesheet">
+
+        <title>${sandbox.name}</title>
+    </head>`
+
+    // const htmlBody = getMainBody(sandbox)
+    const htmlBody = getBaseInfo(sandbox, details)
+
+    panel.webview.html = htmlHeader + htmlBody;
     return panel;
 }
 
@@ -27,7 +47,35 @@ function isEmpty(obj) {
     return true;
 }
 
-function getHtml(webview: vscode.Webview, nonce: string, stylesMainUri: vscode.Uri ) {
+function getBaseInfo(sandbox: any, details: any) {
+    var generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+
+    const profile = vscode.workspace.getConfiguration('torque').get<string>("default_profile", "");
+    generalHtml += "<tr><td width='180px'>" + "ID" + "</td><td>" + sandbox.id + "</td></tr>";
+    generalHtml += "<tr><td width='180px'>" + "Status" + "</td><td>" + details.get('status') + "</td></tr>";
+
+    // if (sandbox_url) {
+    //     generalHtml += "<tr><td width='180px'><a href='" + sandbox_url +"' target='_blank'/>" + "Open in Torque" + "</td><td></td></tr>";
+    // }
+
+    generalHtml += "</table>";
+
+    
+    const html = `
+    	<body>
+            <br/>
+    		<h2>${sandbox.name}</h2>
+    		<h3>Blueprint: ${sandbox.blueprint_name}</h3>
+            <br/>
+    		${generalHtml}
+            <br/>              
+    	</body>
+        
+    	</html>`;
+    return html;
+}
+    
+function getMainBody(sandbox: Sandbox) {
     //test sandbox details html
     var title = 'aaaaaaaa';
     var blueprint_name = 'blueprint name'
@@ -86,23 +134,7 @@ function getHtml(webview: vscode.Webview, nonce: string, stylesMainUri: vscode.U
         var artifactsHtml = "";
     }	
 
-    const html = `<!DOCTYPE html>
-    	<html lang="en">
-    	<head>
-    		<meta charset="UTF-8">
-
-    		<!--
-    			Use a content security policy to only allow loading images from https or from our extension directory,
-    			and only allow scripts that have a specific nonce.
-    		-->
-    		<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
-
-    		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    		<link href="${stylesMainUri}" rel="stylesheet">
-
-    		<title>${title}</title>
-    	</head>
+    const html = `
     	<body>
             <br/>
     		<h2>${title}</h2>

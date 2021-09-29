@@ -19,6 +19,18 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 		return element;
 	}
 
+	async getSandboxDetails(sb: any, profile: string): Promise<void> {
+		let details = new Map();
+
+		await vscode.commands.executeCommand('get_sandbox', sb.id, profile )
+		.then(async (result:string) => {
+			if (result.length > 0)
+				details.set('status', result)
+        })
+
+		vscode.commands.executeCommand('extension.showSandboxDetails', sb, details)
+	}
+
 	getChildren(element?: Sandbox): Thenable<Sandbox[]> {
 		return new Promise(async (resolve) => {
 			const default_profile = vscode.workspace.getConfiguration('torque').get<string>("default_profile", "");
@@ -37,19 +49,20 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 					await vscode.commands.executeCommand('list_sandboxes', default_profile)
 					.then(async (result:Array<string>) => {
 						if (result.length > 0) {
-							for (var sb of result)
+							for (var sb of result) {
 								sandboxes.push(new Sandbox(
 									sb['name'],
 									vscode.TreeItemCollapsibleState.None,
 									sb['id'],
 									sb['blueprint_name'],
 									{
-										command: 'extension.showSandboxDetails',
+										command: 'sandboxesExplorerView.getSandboxDetails',
 										title: 'Sandbox Details',
-										arguments: [sb] 
+										arguments: [sb, default_profile] 
 									}
 									)
 								)
+							}
 						}
 					})
 					resolve(sandboxes)
