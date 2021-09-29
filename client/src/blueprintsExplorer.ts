@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { Blueprint } from './models';
 
 export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 
@@ -100,28 +101,4 @@ export class Space extends vscode.TreeItem {
 	};
 
 	contextValue = 'folder';
-}
-
-export class Blueprint extends vscode.TreeItem {
-
-	constructor(
-		public readonly label: string,
-		public readonly description: string,
-		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-		public readonly command?: vscode.Command,
-        
-
-	) {
-		super(label, collapsibleState);
-
-		this.tooltip = this.label;
-		this.description = this.description;
-	}
-
-	iconPath = {
-		light: path.join(__filename, '..', '..', 'resources', 'light', 'dependency.svg'),
-		dark: path.join(__filename, '..', '..', 'resources', 'dark', 'dependency.svg')
-	};
-
-	contextValue = 'dependency';
 }

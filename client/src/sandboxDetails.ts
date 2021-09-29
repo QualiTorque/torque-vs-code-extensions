@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { Sandbox } from './sandboxesExplorer';
+import { Sandbox } from './models';
 import { getNonce } from './utils'
 
 export function sandboxDetailsPanel(extensionUri: vscode.Uri, sandbox: any, details: any): vscode.WebviewPanel {

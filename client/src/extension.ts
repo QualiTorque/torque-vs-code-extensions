@@ -33,10 +33,11 @@ import {
 } from './yamlHelper';
 import { BlueprintsProvider } from './blueprintsExplorer';
 import { SandboxStartPanel } from './startSandboxWebview';
-import { Profile, ProfilesProvider } from "./profiles";
+import { ProfilesProvider } from "./profilesExplorer";
 import { torqueLogin } from  "./torqueLogin"
-import { Sandbox, SandboxesProvider } from "./sandboxesExplorer";
+import { SandboxesProvider } from "./sandboxesExplorer";
 import { sandboxDetailsPanel } from "./sandboxDetails";
+import { Profile, Sandbox } from "./models";
 
 let client: LanguageClient;
 

@@ -1,9 +1,9 @@
-import { Profile } from "./profiles";
+import { Profile } from "./models";
 import * as vscode from 'vscode';
 
 
 // singleton
-class ProfilesManager {
+export class ProfilesManager {
     private static instance: ProfilesManager | undefined;
     private readonly profiles: Profile[] = [];
     private activeProfile: Profile | undefined;

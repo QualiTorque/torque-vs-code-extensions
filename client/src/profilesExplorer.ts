@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { Profile } from './models';
 export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
     private _onDidChangeTreeData: vscode.EventEmitter<Profile | undefined | void> = new vscode.EventEmitter<Profile | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<Profile | undefined | void> = this._onDidChangeTreeData.event;
@@ -50,7 +51,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                 var profiles = []
                 await vscode.commands.executeCommand('list_torque_profiles')
                 .then(async (result:Array<string>) => 
-                {
+                {                  
                     var default_profile = vscode.workspace.getConfiguration("torque").get<string>("default_profile", "");
                     var description = ""
                     var default_found = false;
@@ -88,23 +89,4 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
             }
         });
     }
-}
-
-export class Profile extends vscode.TreeItem {
-    constructor(
-        public readonly label : string,
-        public description : string,
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-        public account : string,
-        public space: string
-
-    ) {
-        super(label,collapsibleState)
-        this.tooltip = `account: ${this.account}\nspace: ${this.space}`      
-    }
-    
-    iconPath = new vscode.ThemeIcon("account");
-
-	contextValue = 'space';
-
 }

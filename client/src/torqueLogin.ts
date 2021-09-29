@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import { loginFormHtml } from './loginFormHtml'
-import { ProfilesProvider } from './profiles';
+import { ProfilesProvider } from './profilesExplorer';
 import { getNonce } from './utils'
 
 export function torqueLogin(extensionUri: vscode.Uri, profilesTree: ProfilesProvider, listener?: (message: any) => Promise<void>): vscode.WebviewPanel {
