@@ -159,7 +159,7 @@ export async function activate(context: ExtensionContext) {
 
     let sbDetailsPanel: WebviewPanel | undefined
     context.subscriptions.push(
-        commands.registerCommand('extension.showSandboxDetails', async (sandbox: Sandbox, details: Map<any, any>) => {
+        commands.registerCommand('extension.showSandboxDetails', (sandbox: Sandbox, details: Map<any, any>) => {
             if (sbDetailsPanel) {
                 sbDetailsPanel.reveal(sbDetailsPanel.viewColumn || ViewColumn.Active)
             } else {
