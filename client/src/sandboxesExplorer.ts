@@ -42,7 +42,13 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 									sb['name'],
 									vscode.TreeItemCollapsibleState.None,
 									sb['id'],
-									sb['blueprint_name'])
+									sb['blueprint_name'],
+									{
+										command: 'extension.showSandboxDetails',
+										title: 'Sandbox Details',
+										arguments: [sb] 
+									}
+									)
 								)
 						}
 					})

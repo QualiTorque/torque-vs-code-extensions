@@ -35,7 +35,8 @@ import { BlueprintsProvider } from './blueprintsExplorer';
 import { SandboxStartPanel } from './startSandboxWebview';
 import { Profile, ProfilesProvider } from "./profiles";
 import { torqueLogin } from  "./torqueLogin"
-import { SandboxesProvider } from "./sandboxesExplorer";
+import { Sandbox, SandboxesProvider } from "./sandboxesExplorer";
+import { sandboxDetailsPanel } from "./sandboxDetails";
 
 let client: LanguageClient;
 
@@ -154,6 +155,24 @@ export async function activate(context: ExtensionContext) {
             SandboxStartPanel.createOrShow(context.extensionUri, bpname, inputs, artifacts);
         })
 	);
+
+    let sbDetailsPanel: WebviewPanel | undefined
+    context.subscriptions.push(
+        commands.registerCommand('extension.showSandboxDetails', (sandbox: Sandbox) => {
+            if (sbDetailsPanel) {
+                sbDetailsPanel.reveal(sbDetailsPanel.viewColumn || ViewColumn.Active)
+            } else {
+                sbDetailsPanel = sandboxDetailsPanel(context.extensionUri, sandbox)
+                sbDetailsPanel.onDidDispose(
+                    () => {
+                        sbDetailsPanel = undefined
+                    },
+                    undefined,
+                    context.subscriptions
+                )
+            }
+        })
+    )
     
 }
 

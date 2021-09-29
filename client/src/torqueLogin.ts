@@ -14,7 +14,6 @@ export function torqueLogin(extensionUri: vscode.Uri, profilesTree: ProfilesProv
             localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')]
         }
     )
-
     // Local path to main script run in the webview
     // const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js');
 
