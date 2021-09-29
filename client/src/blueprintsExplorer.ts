@@ -30,7 +30,6 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 			var results = []
 
 			if (element) {
-				console.log("element")
 				return resolve(results);
 			} else {
 				if (default_profile === "") {

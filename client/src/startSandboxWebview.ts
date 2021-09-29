@@ -14,7 +14,7 @@ function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
 }
 
 /**
- * Manages cat coding webview panels
+ * Manages start sandbox webview panels
  */
 export class SandboxStartPanel {
 	/**
@@ -61,7 +61,6 @@ export class SandboxStartPanel {
 		})
 	}
 
-	// private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, space:string, inputs:Array<string>, artifacts: object) {
 	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, artifacts: object) {
 		this._panel = panel;
 		this._extensionUri = extensionUri;
@@ -96,8 +95,7 @@ export class SandboxStartPanel {
 		);
 	}
 
-    // public updatePanel(bpname:string, space:string, inputs:Array<string>, artifacts: object) {
-	public updatePanel(bpname:string, inputs:Array<string>, artifacts: object) {
+    public updatePanel(bpname:string, inputs:Array<string>, artifacts: object) {
         this._bpname = decodeURI(bpname);
         // this._space = space;
         this._inputs = inputs;

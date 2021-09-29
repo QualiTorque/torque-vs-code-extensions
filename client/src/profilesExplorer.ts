@@ -5,7 +5,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
     private _onDidChangeTreeData: vscode.EventEmitter<Profile | undefined | void> = new vscode.EventEmitter<Profile | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<Profile | undefined | void> = this._onDidChangeTreeData.event;
     constructor () {
-        console.log("start")
+        
     }
 
     refresh(): void {
@@ -22,7 +22,6 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
     }
 
     async setAsDefault(profile: Profile): Promise<void> {
-        console.log(profile.label);
         //store the default profile value
         ProfilesManager.getInstance().setActive(profile)
         // await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
