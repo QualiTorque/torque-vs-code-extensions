@@ -868,14 +868,20 @@ async def torque_login(server: TorqueLanguageServer, *args):
 
     params = args[0].pop()
     try:
+        command = [sys.prefix + '/bin/torque', 'configure', 'set']
+        if params.email and params.password:
+            command.append('--login')
+            command_inputs = f"{params.profile}\n{params.account}\n{params.space}\n{params.email}\n{params.password}\n".encode()
+        elif params.token:
+            command_inputs = f"{params.profile}\n{params.account}\n{params.space}\n{params.token}\n".encode()
         p = subprocess.Popen(
-            [sys.prefix + '/bin/torque', 'configure', 'set', '--login'],
+            command,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.PIPE)
 
         result = p.communicate(
-            input=f"{params.profile}\n{params.account}\n{params.space}\n{params.email}\n{params.password}\n".encode()
+            input=command_inputs
         )
 
         exit_code = p.returncode

@@ -47,17 +47,21 @@ export function torqueLogin(extensionUri: vscode.Uri, profilesTree: ProfilesProv
                     vscode.window.showErrorMessage(message.text);
                     return;
                 case 'login':
-                    console.info(`Login...`)
-                    vscode.commands.executeCommand('torque_login', message).then((result: string) => 
-                    {
-                        if (result) {
-                            vscode.window.showErrorMessage("Unable to login:\n" + result);
-                        } else {
-                            vscode.window.showInformationMessage("Profile has been added")
-                            panel.dispose()
-                        }
-                    });
-                    profilesTree.refresh();
+                    if (message.profile && message.account && message.space && ((message.email && message.password) || message.token)) {
+                        vscode.commands.executeCommand('torque_login', message).then((result: string) => 
+                        {
+                            if (result) {
+                                vscode.window.showErrorMessage("Unable to login:\n" + result);
+                            } else {
+                                vscode.window.showInformationMessage("Profile has been added")
+                                panel.dispose()
+                            }
+                        });
+                        profilesTree.refresh();
+                    }
+                    else {
+                        vscode.window.showErrorMessage("Please provide all the required fields together with one credentials option (Email+Password or Token).");
+                    }
 
                     return;
             }
