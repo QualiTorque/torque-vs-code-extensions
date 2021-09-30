@@ -12,7 +12,8 @@ export class ProfilesManager {
 
     public async setActive(profile: Profile) {
         this.activeProfile = profile;
-        await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
+        this._updateConfiguration(profile);
+        // await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
         // if (this.profiles.includes(profile)) {
         //     this.activeProfile = profile;
         //     await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
@@ -20,6 +21,11 @@ export class ProfilesManager {
     }
 
     public getActive(){
+        if (this.activeProfile === undefined) {
+            // try to load from file
+            var profile = this._loadConfiguration();
+            this.activeProfile = profile;
+        }
         // if (this.activeProfile === undefined) 
         //     if (this.profiles.length > 0)
         //         this.setActive(this.profiles[0]);
@@ -54,6 +60,20 @@ export class ProfilesManager {
         }
 
         return ProfilesManager.instance
+    }
+
+    private _updateConfiguration(profile: Profile) : void {
+        vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
+        vscode.workspace.getConfiguration("torque").update("default_account", profile.account, vscode.ConfigurationTarget.Workspace);
+        vscode.workspace.getConfiguration("torque").update("default_space", profile.space, vscode.ConfigurationTarget.Workspace);
+    }
+
+    private _loadConfiguration() : Profile {
+        const acct = vscode.workspace.getConfiguration('torque').get<string>("default_paccount", "");
+        const space = vscode.workspace.getConfiguration('torque').get<string>("default_space", "");
+        const profile  = vscode.workspace.getConfiguration('torque').get<string>("default_profile", "");
+
+        return new Profile(profile, '', vscode.TreeItemCollapsibleState.None, acct, space )
     }
 
 }
