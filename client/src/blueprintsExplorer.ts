@@ -85,23 +85,3 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 		return bps;
 	}
 }
-
-export class Space extends vscode.TreeItem {
-
-	constructor(
-		public readonly label: string,
-		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-		
-	) {
-		super(label, collapsibleState);
-
-		this.tooltip = this.label;
-	}
-
-	iconPath = {
-		light: path.join(__filename, '..', '..', 'resources', 'light', 'folder.svg'),
-		dark: path.join(__filename, '..', '..', 'resources', 'dark', 'folder.svg')
-	};
-
-	contextValue = 'folder';
-}
