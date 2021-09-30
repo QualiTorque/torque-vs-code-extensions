@@ -29,11 +29,21 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 	}
 
 	async endSandbox(sandbox: Sandbox): Promise<any> {
-		const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label;
-		vscode.window.showInformationMessage(`Ending the sandbox ${sandbox.id}...`)
-		vscode.commands.executeCommand('end_sandbox', sandbox.id, default_profile );
-		vscode.window.showInformationMessage('End request has been sent');
-		this.refreshDelayed(30);
+		vscode.window.showInformationMessage(
+            "Do you want to end sandbox?",
+            ...["No", "Yes"]
+        )
+        .then((answer) => {
+            if (answer === "Yes") {
+                const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label;
+				vscode.window.showInformationMessage(`Ending the sandbox ${sandbox.id}...`)
+				vscode.commands.executeCommand('end_sandbox', sandbox.id, default_profile );
+				vscode.window.showInformationMessage('End request has been sent');
+				this.refreshDelayed(30);
+            }
+        });
+
+		
     }
 
 	async getSandboxDetails(sb: any): Promise<void> {
