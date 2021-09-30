@@ -68,6 +68,11 @@
 				"icon": "$(refresh)"
 			},
 			{
+				"command": "sandboxesExplorerView.endSandbox",
+				"title": "End Sandbox",
+				"icon": "$(close)"
+			},
+			{
 				"command": "blueprintsExplorerView.refreshEntry",
 				"title": "Refresh",
 				"icon": "$(refresh)"
@@ -125,6 +130,11 @@
 				{
 					"command": "profilesView.removeEntry",
 					"when": "view == profilesView && viewItem == space",
+					"group": "inline"
+				},
+				{
+					"command": "sandboxesExplorerView.endSandbox",
+					"when": "view == sandboxesExplorerView",
 					"group": "inline"
 				}
 			]

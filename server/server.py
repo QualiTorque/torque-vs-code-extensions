@@ -84,6 +84,7 @@ class TorqueLanguageServer(LanguageServer):
     CMD_LIST_SANDBOXES = "list_sandboxes"
     CMD_LIST_BLUEPRINTS = "list_blueprints"
     CMD_GET_SANDBOX = "get_sandbox"
+    CMD_END_SANDBOX = "end_sandbox"
     latest_opened_document = None
 
 
@@ -924,7 +925,29 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
     if result.stderr:
         server.show_message(f"An error occurred while executing the command: {result.stderr}", MessageType.Error)
    
-    return result.stdout         
+    return result.stdout
+
+@torque_ls.command(TorqueLanguageServer.CMD_END_SANDBOX)
+async def end_sandbox(server: TorqueLanguageServer, *args):
+    if not args or not args[0]:
+        server.show_message("No profile provided", MessageType.Error)
+        return 1
+
+    profile = args[0].pop()
+    sb_id = args[0].pop()
+
+    try:
+        result = subprocess.run(
+            [sys.prefix + '/bin/torque', '--profile', profile, 'sb', 'end', sb_id],
+            capture_output=True,
+            text=True)
+    except Exception as ex:
+        server.show_message(f"Failed to end the sandbox {sb_id}. Reason: {str(ex)}", MessageType.Error)
+    
+    if result.stderr:
+        server.show_message(f"An error occurred while executing the command: {result.stderr}", MessageType.Error)
+
+    return result.stdout
 
 @torque_ls.command(TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT)
 async def validate_blueprint(server: TorqueLanguageServer, *args):
@@ -969,4 +992,3 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
         server.show_message('Validation complete. Check the "Torque Language Server" Output view for any issues.')
     else:
         server.show_message('Validation completed. Blueprint is valid.')
-

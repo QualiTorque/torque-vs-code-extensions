@@ -151,6 +151,8 @@ export async function activate(context: ExtensionContext) {
     window.registerTreeDataProvider('sandboxesExplorerView', sandboxesProvider);
 	commands.registerCommand('sandboxesExplorerView.refreshEntry', () => sandboxesProvider.refresh());
     commands.registerCommand('sandboxesExplorerView.getSandboxDetails', (sandbox: any) => sandboxesProvider.getSandboxDetails(sandbox));
+    commands.registerCommand('sandboxesExplorerView.endSandbox', (sandbox: Sandbox) => sandboxesProvider.endSandbox(sandbox));
+
 
     context.subscriptions.push(
 		commands.registerCommand('extension.openReserveForm', (bpname:string, inputs:Array<string>, artifacts: object) => {
@@ -163,7 +165,7 @@ export async function activate(context: ExtensionContext) {
             SandboxDetailsPanel.createOrShow(context.extensionUri, sandbox['id'], sandbox['name'], sandbox['blueprint_name'])
         })
     )
-    
+
 }
 
 export function deactivate(): Thenable<void> {

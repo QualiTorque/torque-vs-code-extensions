@@ -1,23 +1,40 @@
+import { setTimeout } from 'timers';
 import * as vscode from 'vscode';
 import { Sandbox } from './models';
 import { ProfilesManager } from './profilesManager';
 
 export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
-
 	private _onDidChangeTreeData: vscode.EventEmitter<Sandbox | undefined | void> = new vscode.EventEmitter<Sandbox | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<Sandbox | undefined | void> = this._onDidChangeTreeData.event;
+	private pendingRefresh?: NodeJS.Timeout;
 
-	constructor() {
-        
-	}
+	constructor() {}
 
 	refresh(): void {
 		this._onDidChangeTreeData.fire();
 	}
 
+	refreshDelayed(seconds: number): void {
+		if (this.pendingRefresh !== undefined) {
+		  clearTimeout(this.pendingRefresh);
+		}
+		this.pendingRefresh = setTimeout(() => {
+		  this.pendingRefresh = undefined;
+		  this.refresh();
+		}, seconds * 1000);
+	  }
+
 	getTreeItem(element: Sandbox): vscode.TreeItem {
 		return element;
 	}
+
+	async endSandbox(sandbox: Sandbox): Promise<any> {
+		const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label;
+		vscode.window.showInformationMessage(`Ending the sandbox ${sandbox.id}...`)
+		vscode.commands.executeCommand('end_sandbox', sandbox.id, default_profile );
+		vscode.window.showInformationMessage('End request has been sent');
+		this.refreshDelayed(30);
+    }
 
 	async getSandboxDetails(sb: any): Promise<void> {
 		//let details = new Map();

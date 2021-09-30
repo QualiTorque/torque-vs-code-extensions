@@ -83,8 +83,14 @@ export class SandboxDetailsPanel {
             placeHolder: 'Are you sure you want to end this sandbox? (type yes)',
         });
         if (result == 'yes') {
-            const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
-            // TODO: add this command:
+            var sb = new Sandbox(
+                this._sandbox_name,
+                vscode.TreeItemCollapsibleState.None,
+                this._sandbox_id,
+                this._blueprint_name)
+                                        
+            await vscode.commands.executeCommand('sandboxesExplorerView.endSandbox', sb);
+            // const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
             // await vscode.commands.executeCommand('end_sandbox', this._sandbox_id, default_profile )
             this._panel.dispose()
         }
