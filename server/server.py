@@ -762,7 +762,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         if error_msg:
             server.show_message('Sandbox had some errors. See details in the Output view.')
         else:
-            server.show_message('Sandbox is ready. See details in the Output view.')
+            server.show_message('Sandbox was created. See details in the Output view or Sandboxes view.')
     except Exception as ex:
         server.show_message_log(str(ex), msg_type=MessageType.Error)
 

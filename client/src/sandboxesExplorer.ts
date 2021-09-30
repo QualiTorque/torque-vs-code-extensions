@@ -30,7 +30,7 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 
 	async endSandbox(sandbox: Sandbox): Promise<any> {
 		vscode.window.showInformationMessage(
-            "Do you want to end sandbox?",
+            "Ending a sandbox permanently removes its resources from the cloud. Are you sure you want to end this sandbox?",
             ...["No", "Yes"]
         )
         .then((answer) => {
