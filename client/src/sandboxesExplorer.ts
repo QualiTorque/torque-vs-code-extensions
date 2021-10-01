@@ -47,14 +47,6 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
     }
 
 	async getSandboxDetails(sb: any): Promise<void> {
-		//let details = new Map();
-
-		// await vscode.commands.executeCommand('get_sandbox', sb.id, profile )
-		// .then(async (result:string) => {
-		// 	if (result.length > 0)
-		// 		details.set('status', result)
-        // })
-
 		vscode.commands.executeCommand('extension.showSandboxDetails', sb)
 	}
 

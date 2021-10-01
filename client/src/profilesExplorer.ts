@@ -23,8 +23,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
 
     async setAsDefault(profile: Profile): Promise<void> {
         //store the default profile value
-        ProfilesManager.getInstance().setActive(profile)
-        // await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
+        await ProfilesManager.getInstance().setActive(profile)
         //refresh
         this.refreshAllTrees(false);
 	}
@@ -61,7 +60,6 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                 .then(async (result:Array<string>) => 
                 {                  
                     var default_profile = (profilesMngr.getActive() === undefined) ? "" : profilesMngr.getActive().label
-                    // var default_profile = vscode.workspace.getConfiguration("torque").get<string>("default_profile", "");
                     var description = ""
                     var default_found = false;
 
@@ -82,17 +80,11 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                     }
                     if (default_found === false) {
                         if (profiles.length > 0) {
-                            profilesMngr.setActive(profiles[0])
-                            // await vscode.workspace.getConfiguration("torque").update(
-                            //     "default_profile",
-                            //     profiles[0].label,
-                            //     vscode.ConfigurationTarget.Workspace);
+                            await profilesMngr.setActive(profiles[0])
                             profiles[0].description = "[default]";
                         }
                         else
-                            profilesMngr.setActive(undefined)
-                            // await vscode.workspace.getConfiguration("torque").update(
-                            //     "default_profile", "", vscode.ConfigurationTarget.Workspace);
+                            await profilesMngr.setActive(undefined)
                         this.refreshAllTrees(true);
                     }
                     resolve(profiles)
