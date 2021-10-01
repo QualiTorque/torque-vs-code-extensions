@@ -77,21 +77,16 @@ export class SandboxDetailsPanel {
 	}
 
     private async endSandbox() {
-        const result = await window.showInputBox({
-            value: '',
-            valueSelection: [2, 4],
-            placeHolder: 'Are you sure you want to end this sandbox? (type yes)',
-        });
-        if (result == 'yes') {
-            var sb = new Sandbox(
-                this._sandbox_name,
-                vscode.TreeItemCollapsibleState.None,
-                this._sandbox_id,
-                this._blueprint_name)
-                                        
-            await vscode.commands.executeCommand('sandboxesExplorerView.endSandbox', sb);
-            this._panel.dispose()
-        }
+        var sb = new Sandbox(
+            this._sandbox_name,
+            vscode.TreeItemCollapsibleState.None,
+            this._sandbox_id,
+            this._blueprint_name)
+                                            
+        vscode.commands.executeCommand('sandboxesExplorerView.endSandbox', sb)
+            .then(() => {
+                this._panel.dispose()
+            })
     }
 
 	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, sandbox_id:string, sandbox_name:string, blueprint_name: string) {
