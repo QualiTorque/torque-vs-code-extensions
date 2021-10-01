@@ -59,7 +59,7 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 			if (result.length > 0) {
 				const blueprintsJson = JSON.parse(result);
 
-				const toBp = (blueprintName: string, description: string, is_sample: boolean, inputs: Array<string>, artifacts: string):
+				const toBp = (blueprintName: string, description: string, is_sample: boolean, inputs: Array<string>, artifacts: string, branch: string):
 				Blueprint => {
 					var cleanName = blueprintName;
 					if (is_sample)
@@ -67,14 +67,17 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 					return new Blueprint(cleanName, description, vscode.TreeItemCollapsibleState.None, {
 						command: 'extension.openReserveForm',
 						title: '',
-						arguments: [blueprintName, inputs, artifacts]
+						arguments: [blueprintName, inputs, artifacts, branch]
 					});
 				};
 
 				for (var b=0; b<blueprintsJson.length; b++) {
 					const bpj = blueprintsJson[b];
-					if (bpj.errors.length==0 && bpj.enabled) { 
-						var bp = toBp(bpj.blueprint_name, bpj.description, bpj.is_sample, bpj.inputs, bpj.artifacts);
+					if (bpj.errors.length==0 && bpj.enabled) {
+						let re = new RegExp('(?<=blob\/)(.*)(?=\/blueprints)');
+						const branch = bpj.url.match(re)[0]
+
+						var bp = toBp(bpj.blueprint_name, bpj.description, bpj.is_sample, bpj.inputs, bpj.artifacts, branch);
 						bps.push(bp);
 					}
 				}
