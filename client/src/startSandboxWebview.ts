@@ -31,8 +31,9 @@ export class SandboxStartPanel {
     private _inputs: Array<string>;
     private _artifacts: object;
 	private _disposables: vscode.Disposable[] = [];
+	private _branch: string;
 
-	public static createOrShow(extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, artifacts: object) {
+	public static createOrShow(extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, artifacts: object, branch: string) {
 		const column = vscode.window.activeTextEditor
 			? vscode.window.activeTextEditor.viewColumn
 			: undefined;
@@ -51,24 +52,24 @@ export class SandboxStartPanel {
 			column || vscode.ViewColumn.One,
 			getWebviewOptions(extensionUri),
 		);
-		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, inputs, artifacts);
+		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, inputs, artifacts, branch);
 	}
 
-	private async startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, artifacts:object) {
-		await vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputs, artifacts)
+	private async startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, artifacts:object, branch:string) {
+		await vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputs, artifacts, branch)
 		.then(async (result:Array<string>) => {
 			vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
 			this._panel.dispose();
 		})
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, artifacts: object) {
+	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, artifacts: object, branch: string) {
 		this._panel = panel;
 		this._extensionUri = extensionUri;
         this._bpname = decodeURI(bpname);
-        // this._space = space;
         this._inputs = inputs;
         this._artifacts = artifacts;
+		this._branch = branch;
 
 		// Set the webview's initial html content
 		this._update();
@@ -86,7 +87,7 @@ export class SandboxStartPanel {
 						return;
                     case 'run-command':
                         if (message.name == 'start-sandbox') {
-                            this.startSandbox(this._bpname, message.sandbox_name, message.duration, message.inputs, message.artifacts);
+                            this.startSandbox(this._bpname, message.sandbox_name, message.duration, message.inputs, message.artifacts, this._branch);
                         }
                         return;
 				}
@@ -158,10 +159,10 @@ export class SandboxStartPanel {
         generalHtml += "<tr><td width='180px'>" + "Name" + "</td><td>" + "<input type='text' id='sandbox_name' value='" + cleanName + "'></td></tr>";
         generalHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='30' min='10' max='3600'></td></tr>";
         generalHtml += "</table>";
-
+		var inputsHtml = "";
 		var postMessageProperties = "sandbox_name: document.getElementById('sandbox_name').value, duration: document.getElementById('duration').value"
         if (this._inputs.length > 0) {
-            var inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+            inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
             postMessageProperties += ", inputs: {";        
             for (var i=0; i<this._inputs.length; i++)
             {
@@ -171,13 +172,12 @@ export class SandboxStartPanel {
             inputsHtml += "</table>";
             postMessageProperties += "}";            
         }
-        else {
-            var inputsHtml = "";
+        else
             postMessageProperties += ", inputs: {}";   
-        }
 
+		var artifactsHtml = "";
         if (!this._isEmpty(this._artifacts)) {
-            var artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+            artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
             postMessageProperties += ", artifacts: {";        
             for (const [key, value] of Object.entries(this._artifacts)) {
                 artifactsHtml += "<tr><td width='180px'>" + key + ' *' + "</td><td>" + "<input type='text' id='art_" + key + "' value='" + (value ? value : '') + "'></td></tr>";
@@ -188,10 +188,9 @@ export class SandboxStartPanel {
             if (this._inputs.length > 0)
                 artifactsHtml = "<br/>" + artifactsHtml;
         }
-        else {
-            var artifactsHtml = "";
+        else
             postMessageProperties += ", artifacts: {}";
-        }
+
         
         var startHtml = "<br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         startHtml += "<tr><td width='180px'><input type='button' id='start-btn' value='Start'></td><td></td></tr>";

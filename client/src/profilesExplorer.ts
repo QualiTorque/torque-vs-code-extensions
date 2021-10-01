@@ -23,17 +23,22 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
 
     async setAsDefault(profile: Profile): Promise<void> {
         //store the default profile value
-        ProfilesManager.getInstance().setActive(profile)
-        // await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
+        await ProfilesManager.getInstance().setActive(profile)
         //refresh
         this.refreshAllTrees(false);
 	}
 
     removeEntry(profile: Profile): void {
-        console.log("Removing " + profile.label);
-
-        vscode.commands.executeCommand('remove_profile', profile.label)
-		this.refresh();
+        vscode.window.showInformationMessage(
+            "Are you sure you want to remove this profile?",
+            ...["No", "Yes"]
+        )
+        .then(async (answer) => {
+            if (answer === "Yes") {
+                await vscode.commands.executeCommand('remove_profile', profile.label)
+		        this.refresh();
+            }
+        });
 	}
 
     getTreeItem(element: Profile): vscode.TreeItem {
@@ -54,15 +59,14 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                 await vscode.commands.executeCommand('list_torque_profiles')
                 .then(async (result:Array<string>) => 
                 {                  
-                    var default_profile = (profilesMngr.getActive() === undefined) ? "" : profilesMngr.getActive().label
-                    // var default_profile = vscode.workspace.getConfiguration("torque").get<string>("default_profile", "");
+                    var active_profile = (profilesMngr.getActive() === undefined) ? "" : profilesMngr.getActive().label
                     var description = ""
                     var default_found = false;
 
                     for (var profile of result) {
                         var account = (profile['account'] === "") ? 'undefined' : profile['account']
-                        if (profile['profile'] == default_profile) {
-                            description = "[default]";
+                        if (profile['profile'] == active_profile) {
+                            description = "[active]";
                             default_found = true;
                         }
                         else
@@ -76,17 +80,11 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                     }
                     if (default_found === false) {
                         if (profiles.length > 0) {
-                            profilesMngr.setActive(profiles[0])
-                            // await vscode.workspace.getConfiguration("torque").update(
-                            //     "default_profile",
-                            //     profiles[0].label,
-                            //     vscode.ConfigurationTarget.Workspace);
-                            profiles[0].description = "[default]";
+                            await profilesMngr.setActive(profiles[0])
+                            profiles[0].description = "[active]";
                         }
                         else
-                            profilesMngr.setActive(undefined)
-                            // await vscode.workspace.getConfiguration("torque").update(
-                            //     "default_profile", "", vscode.ConfigurationTarget.Workspace);
+                            await profilesMngr.setActive(undefined)
                         this.refreshAllTrees(true);
                     }
                     resolve(profiles)

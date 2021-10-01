@@ -57,7 +57,6 @@ export class Blueprint extends vscode.TreeItem {
 		super(label, collapsibleState);
 
 		this.tooltip = this.label;
-		this.description = this.description;
 	}
 
 	iconPath = {

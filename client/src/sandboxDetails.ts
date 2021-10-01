@@ -59,12 +59,12 @@ export class SandboxDetailsPanel {
 
 	private async reloadSandbox() {
         let details = new Map();
-        const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
+        const active_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
 
         return window.withProgress({location: ProgressLocation.Notification}, (progress): Promise<string> => {
             return new Promise<string>(async (resolve) => {
                 progress.report({ message: "Loading sandbox details" });
-                await vscode.commands.executeCommand('get_sandbox', this._sandbox_id, default_profile )
+                await vscode.commands.executeCommand('get_sandbox', this._sandbox_id, active_profile )
                 .then(async (result:string) => {
                     if (result.length > 0)
                         details.set('status', result)
@@ -77,23 +77,16 @@ export class SandboxDetailsPanel {
 	}
 
     private async endSandbox() {
-        const result = await window.showInputBox({
-            value: '',
-            valueSelection: [2, 4],
-            placeHolder: 'Are you sure you want to end this sandbox? (type yes)',
-        });
-        if (result == 'yes') {
-            var sb = new Sandbox(
-                this._sandbox_name,
-                vscode.TreeItemCollapsibleState.None,
-                this._sandbox_id,
-                this._blueprint_name)
-                                        
-            await vscode.commands.executeCommand('sandboxesExplorerView.endSandbox', sb);
-            // const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
-            // await vscode.commands.executeCommand('end_sandbox', this._sandbox_id, default_profile )
-            this._panel.dispose()
-        }
+        var sb = new Sandbox(
+            this._sandbox_name,
+            vscode.TreeItemCollapsibleState.None,
+            this._sandbox_id,
+            this._blueprint_name)
+                                            
+        vscode.commands.executeCommand('sandboxesExplorerView.endSandbox', sb)
+            .then(() => {
+                this._panel.dispose()
+            })
     }
 
 	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, sandbox_id:string, sandbox_name:string, blueprint_name: string) {
