@@ -30,10 +30,16 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
 	}
 
     removeEntry(profile: Profile): void {
-        console.log("Removing " + profile.label);
-
-        vscode.commands.executeCommand('remove_profile', profile.label)
-		this.refresh();
+        vscode.window.showInformationMessage(
+            "Are you sure you want to remove this profile?",
+            ...["No", "Yes"]
+        )
+        .then(async (answer) => {
+            if (answer === "Yes") {
+                await vscode.commands.executeCommand('remove_profile', profile.label)
+		        this.refresh();
+            }
+        });
 	}
 
     getTreeItem(element: Profile): vscode.TreeItem {
