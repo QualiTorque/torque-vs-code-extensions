@@ -143,7 +143,7 @@
 			"type": "object",
 			"title": "Torque Server Configuration",
 			"properties": {
-				"torque.default_profile": {
+				"torque.active_profile": {
 					"type": "string",
 					"description": "The deafult profile/space to use",
 					"scope": "resource"

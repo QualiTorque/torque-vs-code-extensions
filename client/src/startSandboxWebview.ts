@@ -158,10 +158,10 @@ export class SandboxStartPanel {
         generalHtml += "<tr><td width='180px'>" + "Name" + "</td><td>" + "<input type='text' id='sandbox_name' value='" + cleanName + "'></td></tr>";
         generalHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='30' min='10' max='3600'></td></tr>";
         generalHtml += "</table>";
-
+		var inputsHtml = "";
 		var postMessageProperties = "sandbox_name: document.getElementById('sandbox_name').value, duration: document.getElementById('duration').value"
         if (this._inputs.length > 0) {
-            var inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+            inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
             postMessageProperties += ", inputs: {";        
             for (var i=0; i<this._inputs.length; i++)
             {
@@ -171,13 +171,12 @@ export class SandboxStartPanel {
             inputsHtml += "</table>";
             postMessageProperties += "}";            
         }
-        else {
-            var inputsHtml = "";
+        else
             postMessageProperties += ", inputs: {}";   
-        }
 
+		var artifactsHtml = "";
         if (!this._isEmpty(this._artifacts)) {
-            var artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+            artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
             postMessageProperties += ", artifacts: {";        
             for (const [key, value] of Object.entries(this._artifacts)) {
                 artifactsHtml += "<tr><td width='180px'>" + key + ' *' + "</td><td>" + "<input type='text' id='art_" + key + "' value='" + (value ? value : '') + "'></td></tr>";
@@ -188,10 +187,9 @@ export class SandboxStartPanel {
             if (this._inputs.length > 0)
                 artifactsHtml = "<br/>" + artifactsHtml;
         }
-        else {
-            var artifactsHtml = "";
+        else
             postMessageProperties += ", artifacts: {}";
-        }
+
         
         var startHtml = "<br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         startHtml += "<tr><td width='180px'><input type='button' id='start-btn' value='Start'></td><td></td></tr>";

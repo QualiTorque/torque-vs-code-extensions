@@ -17,8 +17,7 @@ export class ProfilesManager {
     public getActive(){
         if (this.activeProfile === undefined) {
             // try to load from file
-            var profile = this._loadConfiguration();
-            this.activeProfile = profile;
+            this.activeProfile = this._loadConfiguration();
         }
         return this.activeProfile;
     }
@@ -33,14 +32,14 @@ export class ProfilesManager {
 
     private async _updateConfiguration(profile: Profile) : Promise<void> {
         if (profile !== undefined)
-            await vscode.workspace.getConfiguration("torque").update("default_profile", profile.label, vscode.ConfigurationTarget.Workspace);
+            await vscode.workspace.getConfiguration("torque").update("active_profile", profile.label, vscode.ConfigurationTarget.Workspace);
         else
-            await vscode.workspace.getConfiguration("torque").update("default_profile", "", vscode.ConfigurationTarget.Workspace);
+            await vscode.workspace.getConfiguration("torque").update("active_profile", "", vscode.ConfigurationTarget.Workspace);
         
     }
 
     private _loadConfiguration() : Profile {
-        const profile  = vscode.workspace.getConfiguration('torque').get<string>("default_profile", "");
+        const profile  = vscode.workspace.getConfiguration('torque').get<string>("active_profile", "");
         return new Profile(profile, '', vscode.TreeItemCollapsibleState.None, "", "")
     }
 

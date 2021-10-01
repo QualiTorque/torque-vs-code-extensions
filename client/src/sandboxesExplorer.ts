@@ -35,9 +35,9 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
         )
         .then((answer) => {
             if (answer === "Yes") {
-                const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label;
+                const active_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label;
 				vscode.window.showInformationMessage(`Ending the sandbox ${sandbox.id}...`)
-				vscode.commands.executeCommand('end_sandbox', sandbox.id, default_profile );
+				vscode.commands.executeCommand('end_sandbox', sandbox.id, active_profile );
 				vscode.window.showInformationMessage('End request has been sent');
 				this.refreshDelayed(30);
             }
@@ -52,20 +52,20 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 
 	getChildren(element?: Sandbox): Thenable<Sandbox[]> {
 		return new Promise(async (resolve) => {
-			const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
+			const active_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
 			var results = []
       
 			if (element) {
 				return resolve(results);
 			}
 			else {
-				if (default_profile === "") {
+				if (active_profile === "") {
 					vscode.window.showInformationMessage('No default profile is defined');
 					results.push(this.getLoginTreeItem())
 					return resolve(results);
 				} else {
 					var sandboxes = []
-					await vscode.commands.executeCommand('list_sandboxes', default_profile)
+					await vscode.commands.executeCommand('list_sandboxes', active_profile)
 					.then(async (result:Array<string>) => {
 						if (result.length > 0) {
 							for (var sb of result) {
@@ -93,7 +93,7 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 	private getLoginTreeItem() : vscode.TreeItem {
 		var message = new vscode.TreeItem("Login to Torque", vscode.TreeItemCollapsibleState.None)
 		message.command = {command: 'profilesView.addProfile', 'title': 'Login'}
-		message.tooltip = "Currently you don't have any profiles confifured. Login to Torque in order to create the first profile"
+		message.tooltip = "Currently you don't have any profiles configured. Login to Torque in order to create the first profile"
 		return message
 	}
 }

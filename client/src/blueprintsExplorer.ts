@@ -24,21 +24,19 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 
 	getChildren(element?: Blueprint): Thenable<Blueprint[]> {
 		return new Promise(async (resolve) => {
-
-			const default_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
-			// const default_profile = vscode.workspace.getConfiguration('torque').get<string>("default_profile", "");
+			const active_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
 			var results = []
 
 			if (element) {
 				return resolve(results);
 			} else {
-				if (default_profile === "") {
+				if (active_profile === "") {
 					vscode.window.showInformationMessage('No default profile is defined');
 					results.push(this.getLoginTreeItem())
 					return resolve(results);
 				}
 				else
-					return resolve(this.getOnlineBlueprints(default_profile))
+					return resolve(this.getOnlineBlueprints(active_profile))
 			}
 		});
 	}

@@ -59,14 +59,14 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                 await vscode.commands.executeCommand('list_torque_profiles')
                 .then(async (result:Array<string>) => 
                 {                  
-                    var default_profile = (profilesMngr.getActive() === undefined) ? "" : profilesMngr.getActive().label
+                    var active_profile = (profilesMngr.getActive() === undefined) ? "" : profilesMngr.getActive().label
                     var description = ""
                     var default_found = false;
 
                     for (var profile of result) {
                         var account = (profile['account'] === "") ? 'undefined' : profile['account']
-                        if (profile['profile'] == default_profile) {
-                            description = "[default]";
+                        if (profile['profile'] == active_profile) {
+                            description = "[active]";
                             default_found = true;
                         }
                         else
@@ -81,7 +81,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                     if (default_found === false) {
                         if (profiles.length > 0) {
                             await profilesMngr.setActive(profiles[0])
-                            profiles[0].description = "[default]";
+                            profiles[0].description = "[active]";
                         }
                         else
                             await profilesMngr.setActive(undefined)

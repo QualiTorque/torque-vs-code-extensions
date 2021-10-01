@@ -684,11 +684,11 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                     scope_uri='',
                     section=TorqueLanguageServer.CONFIGURATION_SECTION)
                 ]))
-        default_profile = config[0].get('default_profile')
+        active_profile = config[0].get('active_profile')
     except:
-        default_profile = ''
+        active_profile = ''
     
-    if not default_profile:
+    if not active_profile:
         server.show_message('Please have at least one profile set as the default one.', MessageType.Error)
         return
 
@@ -727,7 +727,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     server.show_message('Starting sandbox from blueprint: ' + blueprint_name)
     try:
         command = [sys.prefix + '/bin/torque',
-                   '--profile', default_profile,
+                   '--profile', active_profile,
                    'sb', 'start', blueprint_name, '-d', duration]
         if inputs:
             command.extend(['-i', inputs])
@@ -967,11 +967,11 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                     scope_uri='',
                     section=TorqueLanguageServer.CONFIGURATION_SECTION)
                 ]))
-        default_profile = config[0].get('default_profile')
+        active_profile = config[0].get('active_profile')
     except:
-        default_profile = ''
+        active_profile = ''
     
-    if not default_profile:
+    if not active_profile:
         server.show_message('Please have at least one profile set as the default one.', MessageType.Error)
         return
 
@@ -980,7 +980,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
 
     try:
         result = subprocess.run([sys.prefix + '/bin/torque',
-                                '--profile', default_profile,
+                                '--profile', active_profile,
                                 'bp', 'validate', blueprint_name, '--output=json'],
                                 cwd=server.workspace.root_path,
                                 capture_output=True, text=True)
