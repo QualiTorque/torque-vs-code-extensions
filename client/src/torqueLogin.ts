@@ -28,17 +28,12 @@ export function torqueLogin(extensionUri: vscode.Uri, profilesTree: ProfilesProv
     // const stylesResetUri = webview.asWebviewUri(styleResetPath);
     const stylesMainUri = panel.webview.asWebviewUri(stylesPathMainPath);
 
-    // Use a nonce to only allow specific scripts to be run
-    const nonce = getNonce();
+    let html = loginFormHtml;
+    let head = `<link href="${stylesMainUri}" rel="stylesheet">`;
 
-    var html = loginFormHtml
-    var head = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${panel.webview.cspSource}; img-src ${panel.webview.cspSource} https:; script-src 'nonce-${nonce}';">
-                <link href="${stylesMainUri}" rel="stylesheet">`;
-    head = `<link href="${stylesMainUri}" rel="stylesheet">`;
+    html = html.replace('{{HEAD_BLOCK}}', head);
 
-    html = html.replace('{{HEAD_BLOCK}}', head)
-
-    panel.webview.html = html
+    panel.webview.html = html;
 
     panel.webview.onDidReceiveMessage(
         message => {

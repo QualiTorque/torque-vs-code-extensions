@@ -53,7 +53,7 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 	getChildren(element?: Sandbox): Thenable<Sandbox[]> {
 		return new Promise(async (resolve) => {
 			const active_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
-			var results = []
+			const results = []
       
 			if (element) {
 				return resolve(results);
@@ -64,11 +64,11 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 					results.push(this.getLoginTreeItem())
 					return resolve(results);
 				} else {
-					var sandboxes = []
+					const sandboxes = []
 					await vscode.commands.executeCommand('list_sandboxes', active_profile)
 					.then(async (result:Array<string>) => {
 						if (result.length > 0) {
-							for (var sb of result) {
+							for (let sb of result) {
 								sandboxes.push(new Sandbox(
 									sb['name'],
 									vscode.TreeItemCollapsibleState.None,
@@ -91,7 +91,7 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 	}
 
 	private getLoginTreeItem() : vscode.TreeItem {
-		var message = new vscode.TreeItem("Login to Torque", vscode.TreeItemCollapsibleState.None)
+		const message = new vscode.TreeItem("Login to Torque", vscode.TreeItemCollapsibleState.None)
 		message.command = {command: 'profilesView.addProfile', 'title': 'Login'}
 		message.tooltip = "Currently you don't have any profiles configured. Login to Torque in order to create the first profile"
 		return message

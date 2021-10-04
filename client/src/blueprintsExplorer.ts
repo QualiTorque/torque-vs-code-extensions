@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import { Blueprint } from './models';
-import { ProfilesProvider } from './profilesExplorer';
 import { ProfilesManager } from './profilesManager';
 
 export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
@@ -10,9 +8,7 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 	readonly onDidChangeTreeData: vscode.Event<Blueprint | undefined | void> = this._onDidChangeTreeData.event;
     connections: Array<object>;
 
-	constructor() {
-        
-	}
+	constructor() {}
 
 	refresh(): void {
 		this._onDidChangeTreeData.fire();
@@ -25,7 +21,7 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 	getChildren(element?: Blueprint): Thenable<Blueprint[]> {
 		return new Promise(async (resolve) => {
 			const active_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
-			var results = []
+			const results = []
 
 			if (element) {
 				return resolve(results);
@@ -42,9 +38,9 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 	}
 
 	private getLoginTreeItem() : vscode.TreeItem {
-		var message = new vscode.TreeItem("Login to Torque", vscode.TreeItemCollapsibleState.None)
+		const message = new vscode.TreeItem("Login to Torque", vscode.TreeItemCollapsibleState.None)
 		message.command = {command: 'profilesView.addProfile', 'title': 'Login'}
-		message.tooltip = "Currently you don't have any profiles confifured. Login to Torque in order to create the first profile"
+		message.tooltip = "Currently you don't have any profiles configured. Login to Torque in order to create the first profile"
 		return message
 	}
 
@@ -61,7 +57,7 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 
 				const toBp = (blueprintName: string, description: string, is_sample: boolean, inputs: Array<string>, artifacts: string, branch: string):
 				Blueprint => {
-					var cleanName = blueprintName;
+					let cleanName = blueprintName;
 					if (is_sample)
 						cleanName = cleanName.replace('[Sample]', '')
 					return new Blueprint(cleanName, description, vscode.TreeItemCollapsibleState.None, {
@@ -71,13 +67,13 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 					});
 				};
 
-				for (var b=0; b<blueprintsJson.length; b++) {
+				for (let b=0; b<blueprintsJson.length; b++) {
 					const bpj = blueprintsJson[b];
 					if (bpj.errors.length==0 && bpj.enabled) {
 						let re = new RegExp('(?<=blob\/)(.*)(?=\/blueprints)');
 						const branch = bpj.url.match(re)[0]
 
-						var bp = toBp(bpj.blueprint_name, bpj.description, bpj.is_sample, bpj.inputs, bpj.artifacts, branch);
+						const bp = toBp(bpj.blueprint_name, bpj.description, bpj.is_sample, bpj.inputs, bpj.artifacts, branch);
 						bps.push(bp);
 					}
 				}

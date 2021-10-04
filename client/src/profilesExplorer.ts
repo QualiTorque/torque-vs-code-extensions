@@ -48,23 +48,23 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
     getChildren(element?: Profile): Thenable<Profile[]> {
         return new Promise(async (resolve) => {
             if (element) {
-                var result = []
+                const result = []
                 result.push(new vscode.TreeItem(`account: ${element.account}`, vscode.TreeItemCollapsibleState.None))
                 result.push(new vscode.TreeItem(`space: ${element.space}`, vscode.TreeItemCollapsibleState.None))
                 return resolve(result)
             }
             else {
-                var profilesMngr = ProfilesManager.getInstance()
-                var profiles = []
+                const profilesMngr = ProfilesManager.getInstance()
+                const profiles = []
                 await vscode.commands.executeCommand('list_torque_profiles')
                 .then(async (result:Array<string>) => 
                 {                  
-                    var active_profile = (profilesMngr.getActive() === undefined) ? "" : profilesMngr.getActive().label
-                    var description = ""
-                    var default_found = false;
+                    const active_profile = (profilesMngr.getActive() === undefined) ? "" : profilesMngr.getActive().label
+                    let description = ""
+                    let default_found = false;
 
-                    for (var profile of result) {
-                        var account = (profile['account'] === "") ? 'undefined' : profile['account']
+                    for (let profile of result) {
+                        const account = (profile['account'] === "") ? 'undefined' : profile['account']
                         if (profile['profile'] == active_profile) {
                             description = "[active]";
                             default_found = true;

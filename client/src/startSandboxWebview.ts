@@ -31,7 +31,7 @@ export class SandboxStartPanel {
     private _inputs: Array<string>;
     private _artifacts: object;
 	private _disposables: vscode.Disposable[] = [];
-	private _branch: string;
+	private readonly _branch: string;
 
 	public static createOrShow(extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, artifacts: object, branch: string) {
 		const column = vscode.window.activeTextEditor
@@ -129,7 +129,7 @@ export class SandboxStartPanel {
 	}
 
     private _isEmpty(obj) {
-        for (var j in obj) { return false }
+        for (let j in obj) { return false }
         return true;
     }
 
@@ -149,22 +149,22 @@ export class SandboxStartPanel {
 		const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);
 
 		// Use a nonce to only allow specific scripts to be run
-		var cleanName = this._bpname;
+		let cleanName = this._bpname;
 		if (cleanName.endsWith('.yaml'))
 		{
 			cleanName = cleanName.replace('.yaml', '').split(path.sep).slice(-1)[0]
 		}
 		const nonce = getNonce();
-		var generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+		let generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         generalHtml += "<tr><td width='180px'>" + "Name" + "</td><td>" + "<input type='text' id='sandbox_name' value='" + cleanName + "'></td></tr>";
         generalHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='30' min='10' max='3600'></td></tr>";
         generalHtml += "</table>";
-		var inputsHtml = "";
-		var postMessageProperties = "sandbox_name: document.getElementById('sandbox_name').value, duration: document.getElementById('duration').value"
+		let inputsHtml = "";
+		let postMessageProperties = "sandbox_name: document.getElementById('sandbox_name').value, duration: document.getElementById('duration').value"
         if (this._inputs.length > 0) {
             inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
             postMessageProperties += ", inputs: {";        
-            for (var i=0; i<this._inputs.length; i++)
+            for (let i=0; i<this._inputs.length; i++)
             {
                 inputsHtml += "<tr><td width='180px'>" + this._inputs[i]['name'] + (!this._inputs[i]['optional']? ' *': '') + "</td><td>" + "<input type=" + (this._inputs[i]['display_style']=='masked'?'password':'text') + " id='" + this._inputs[i]['name'] + "' value='" + (this._inputs[i]['default_value'] ? this._inputs[i]['default_value'] : '') + "'></td></tr>";
                 postMessageProperties += `"${this._inputs[i]['name']}": document.getElementById('${this._inputs[i]['name']}').value,`;
@@ -175,7 +175,7 @@ export class SandboxStartPanel {
         else
             postMessageProperties += ", inputs: {}";   
 
-		var artifactsHtml = "";
+		let artifactsHtml = "";
         if (!this._isEmpty(this._artifacts)) {
             artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
             postMessageProperties += ", artifacts: {";        
@@ -192,11 +192,11 @@ export class SandboxStartPanel {
             postMessageProperties += ", artifacts: {}";
 
         
-        var startHtml = "<br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+        let startHtml = "<br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         startHtml += "<tr><td width='180px'><input type='button' id='start-btn' value='Start'></td><td></td></tr>";
         startHtml += "</table>";
         
-		var html = `<!DOCTYPE html>
+		let html = `<!DOCTYPE html>
 			<html lang="en">
 			<head>
 				<meta charset="UTF-8">
