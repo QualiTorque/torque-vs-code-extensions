@@ -811,11 +811,10 @@ async def list_sandboxes(server: TorqueLanguageServer, *args):
     profile = args[0].pop()
 
     sbs = []
-    keys = ['id', 'name', 'blueprint_name']
 
     try:
         result = subprocess.run(
-            [sys.prefix + '/bin/torque', '--profile', profile, 'sb', 'list', '--filter=my'], # TODO: add , '--json'],
+            [sys.prefix + '/bin/torque', '--profile', profile, 'sb', 'list', '--filter=my', '--output=json'],
             capture_output=True,
             text=True)
 
@@ -825,18 +824,8 @@ async def list_sandboxes(server: TorqueLanguageServer, *args):
     if result.stderr:
         server.show_message(f"An error occurred while executing the command: {result.stderr}", MessageType.Error)
 
-    lines = result.stdout.split('\n')
-
-    for i in range(2, len(lines)):
-        if lines[i]:
-            data = lines[i].split()
-            if len(data) != 3:
-                server.show_message(
-                    f"Wrong format of line: {data}",
-                    msg_type=MessageType.Error)
-                return []
-
-            sbs.append(dict(zip(keys, data)))
+    if result.stdout:
+        sbs = json.loads(result.stdout)
 
     return sbs
 
