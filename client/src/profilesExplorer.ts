@@ -58,27 +58,40 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
                 const profiles = []
                 await vscode.commands.executeCommand('list_torque_profiles')
                 .then(async (result:Array<string>) => 
-                {                  
-                    const active_profile = (profilesMngr.getActive() === undefined) ? "" : profilesMngr.getActive().label
+                {
+                    const activeProfile = profilesMngr.getActive();
+                    const activeProfileName = (activeProfile === undefined) ? "" : activeProfile.label;
+                    const activeSpaceName = (activeProfile === undefined) ? "" : activeProfile.space;
+
                     let description = ""
-                    let default_found = false;
+                    let defaultFound = false;
 
                     for (let profile of result) {
                         const account = (profile['account'] === "") ? 'undefined' : profile['account']
-                        if (profile['profile'] == active_profile) {
+
+                        if (profile['profile'] == activeProfileName) {
                             description = "[active]";
-                            default_found = true;
+                            defaultFound = true;
                         }
                         else
                             description = "";
 
-                        profiles.push(new Profile(
-                            profile['profile'],description,
+                        const profileTreeItem = new Profile(
+                            profile['profile'],
+                            description,
                             vscode.TreeItemCollapsibleState.Collapsed,
                             account,
-                            profile['space']))
+                            profile['space'])
+
+                        profiles.push(profileTreeItem)
+
+                        if (description != "" && activeSpaceName != profile['space']) {
+                            await profilesMngr.setActive(profileTreeItem)
+                            this.refreshAllTrees(true);
+                        }
                     }
-                    if (default_found === false) {
+
+                    if (defaultFound === false) {
                         if (profiles.length > 0) {
                             await profilesMngr.setActive(profiles[0])
                             profiles[0].description = "[active]";
