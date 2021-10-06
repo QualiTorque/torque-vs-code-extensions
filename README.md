@@ -37,6 +37,38 @@ In some parts of Torque configuration files you have links, and you can jump to 
 
 ![links](https://user-images.githubusercontent.com/8643801/131506656-c63860a7-6828-4b8d-afd0-4ea51c1d36b5.gif)
 
+### Interactive features
+
+This extension also enables you to interact with Torque directly. You can aks Torque to validate a local blueprint, start sandbox from it and
+elpore and manage resources that are currenly available in Torque
+
+In activity bar you have a new Torque menu item where you will find information about active sandboxes and enabled blueprints available in Torque.
+
+![activitybar](https://user-images.githubusercontent.com/8643801/136196489-72b24601-075a-45d0-8230-8be2975ad7e6.png)
+
+Please note that it will work only if you have [profiles configured](https://github.com/QualiSystemsLab/colony-cli#configuration) in the Torque Cli config file.
+If you don't have any profiles there you can add them by logging in to Torque just from VSCode. Open login form by pressing on plus button or coresponding messages
+in explorers' area
+
+![login](https://user-images.githubusercontent.com/8643801/136199312-3f3e34a1-4373-470a-9438-ba88ac2e7dbf.png)
+
+#### Switching between profiles
+
+You can change currently used profile by special buttons in the profiles explorer. Once picked, explorers' trees will be updated accordingly. All the next actions will be performed within an account and space mapped to this profile and explorers' trees will be updated accordingly.
+
+![switch](https://user-images.githubusercontent.com/8643801/136202940-aea95f49-3ff9-4bb2-8bc2-c4b1b54f61a0.gif)
+
+#### Starting sandboxes
+
+You can start a sandbox in Torque from currently opened blueprint or by pressing on any available one in the blueprints explorer. All default values for parameters and artifacts are taken from blueprint's definition.
+
+
+#### Server Blueprint Validation
+
+Although local syntax validation finds all of the most common errors in your blueprint, you can still ask Torque to check it on the server side. Open needed blueprint and use code lens command to activate validation:
+
+![validation](https://user-images.githubusercontent.com/8643801/136206637-b4a8f19c-1db4-47dd-82f8-8bf8976d0303.gif)
+
 ## Getting Started
 
 **Prerequisite:** 
