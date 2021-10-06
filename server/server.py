@@ -703,36 +703,19 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     sandbox_name = args[0][1]
     duration = args[0][2]
     inputs_args = args[0][3]
-    if inputs_args:
-        idx = 0
-        inputs = ""
-        for inp in list(inputs_args._fields):
-            inputs += inp + "=" + inputs_args[idx] + ", "
-            idx += 1
-        inputs = inputs[:-2]
-    else:
-        inputs = ""
-    
-    artifacts_args = args[0][4]
-    if artifacts_args:
-        idx = 0
-        artifacts = ""
-        for art in list(artifacts_args._fields):
-            artifacts += art + "=" + artifacts_args[idx] + ", "
-            idx += 1
-        artifacts = artifacts[:-2]
-    else:
-        artifacts = ""       
+    artifacts_args = args[0][4]   
         
     server.show_message('Starting sandbox from blueprint: ' + blueprint_name)
     try:
         command = [sys.prefix + '/bin/torque',
                    '--profile', active_profile,
                    'sb', 'start', blueprint_name, '-d', duration]
-        if inputs:
-            command.extend(['-i', inputs])
-        if artifacts:
-            command.extend(['-a', artifacts])
+        # if inputs:
+        if inputs_args:
+            command.extend(['-i', inputs_args])
+        # if artifacts:
+        if artifacts_args:
+            command.extend(['-a', artifacts_args])
         if sandbox_name:
             command.extend(['-n', sandbox_name])
         if not dev_mode:

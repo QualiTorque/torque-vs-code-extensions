@@ -56,7 +56,10 @@ export class SandboxStartPanel {
 	}
 
 	private async startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, artifacts:object, branch:string) {
-		await vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputs, artifacts, branch)
+		let inputsString = this._compose_comma_separated_string(inputs);
+		let artifactsString = this._compose_comma_separated_string(artifacts);
+
+		await vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputsString, artifactsString, branch)
 		.then(async (result:Array<string>) => {
 			vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
 			this._panel.dispose();
@@ -120,6 +123,17 @@ export class SandboxStartPanel {
 			}
 		}
 	}
+	private _compose_comma_separated_string(mapContainer: object) : string{
+		let resultString = "";
+		for (const [key, value] of Object.entries(mapContainer))
+			resultString += `${key}=${value}, `
+
+		resultString.trimEnd;
+		if (resultString.length > 2) 
+			resultString = resultString.substring(0, resultString.length - 2)
+		
+		return resultString
+	}
 
 	private _update() {
 		const webview = this._panel.webview;
@@ -178,7 +192,7 @@ export class SandboxStartPanel {
 		let artifactsHtml = "";
         if (!this._isEmpty(this._artifacts)) {
             artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-            postMessageProperties += ", artifacts: {";        
+            postMessageProperties += ", artifacts: {";
             for (const [key, value] of Object.entries(this._artifacts)) {
                 artifactsHtml += "<tr><td width='180px'>" + key + ' *' + "</td><td>" + "<input type='text' id='art_" + key + "' value='" + (value ? value : '') + "'></td></tr>";
                 postMessageProperties += `"${key}": document.getElementById('art_${key}').value,`;
