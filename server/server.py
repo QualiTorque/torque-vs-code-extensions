@@ -505,7 +505,7 @@ def code_lens(server: TorqueLanguageServer, params: Optional[CodeLensParams] = N
                         command=Command(
                             title='Start Sandbox',
                             command="extension.openReserveForm",
-                            arguments=[params.text_document.uri, 30, inputs, artifacts, '']
+                            arguments=[params.text_document.uri, inputs, artifacts, '']
                         )
                     ),
                 ]
