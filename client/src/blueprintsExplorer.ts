@@ -32,7 +32,7 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 					return resolve(results);
 				}
 				else
-					return resolve(this.getOnlineBlueprints(active_profile))
+					return resolve(this.getOnlineBlueprints())
 			}
 		});
 	}
@@ -47,10 +47,10 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 	/**
 	 * Given the path to package.json, read all its dependencies and devDependencies.
 	 */
-	private async getOnlineBlueprints(profile: string): Promise<Blueprint[]> {
+	private async getOnlineBlueprints(): Promise<Blueprint[]> {
 		const bps = [];
 		
-		await vscode.commands.executeCommand('list_blueprints', profile)
+		await vscode.commands.executeCommand('list_blueprints')
 		.then(async (result:string) => {
 			if (result.length > 0) {
 				const blueprintsJson = JSON.parse(result);

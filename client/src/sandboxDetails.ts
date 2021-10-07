@@ -59,12 +59,11 @@ export class SandboxDetailsPanel {
 
 	private async reloadSandbox() {
         let details = new Map();
-        const active_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
 
         return window.withProgress({location: ProgressLocation.Notification}, (progress): Promise<string> => {
             return new Promise<string>(async (resolve) => {
                 progress.report({ message: "Loading sandbox details" });
-                await vscode.commands.executeCommand('get_sandbox', this._sandbox_id, active_profile )
+                await vscode.commands.executeCommand('get_sandbox', this._sandbox_id)
                 .then(async (result:string) => {
                     if (result.length > 0)
                         details.set('status', result)

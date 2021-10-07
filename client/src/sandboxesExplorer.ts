@@ -35,9 +35,8 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
         )
         .then((answer) => {
             if (answer === "Yes") {
-                const active_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label;
 				vscode.window.showInformationMessage(`Ending the sandbox ${sandbox.id}...`)
-				vscode.commands.executeCommand('end_sandbox', sandbox.id, active_profile );
+				vscode.commands.executeCommand('end_sandbox', sandbox.id);
 				vscode.window.showInformationMessage('End request has been sent');
 				this.refreshDelayed(30);
             }
@@ -65,7 +64,7 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 					return resolve(results);
 				} else {
 					const sandboxes = []
-					await vscode.commands.executeCommand('list_sandboxes', active_profile)
+					await vscode.commands.executeCommand('list_sandboxes')
 					.then(async (result:Array<string>) => {
 						if (result.length > 0) {
 							for (let sb of result) {

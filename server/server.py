@@ -671,13 +671,7 @@ async def lsp_document_link(server: TorqueLanguageServer, params: DocumentLinkPa
 #     #         ))
 #     return None
 
-
-@torque_ls.command(TorqueLanguageServer.CMD_START_SANDBOX)
-async def start_sandbox(server: TorqueLanguageServer, *args):
-    if len(args[0]) == 0:
-        server.show_message('Please start the sandbox from the command in the blueprint file.', MessageType.Error)
-        return
-
+async def _get_profile(server: TorqueLanguageServer):
     try:
         config = await server.get_configuration_async(ConfigurationParams(items=[
                 ConfigurationItem(
@@ -687,6 +681,16 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         active_profile = config[0].get('active_profile')
     except:
         active_profile = ''
+
+    return active_profile
+    
+@torque_ls.command(TorqueLanguageServer.CMD_START_SANDBOX)
+async def start_sandbox(server: TorqueLanguageServer, *args):
+    if len(args[0]) == 0:
+        server.show_message('Please start the sandbox from the command in the blueprint file.', MessageType.Error)
+        return
+
+    active_profile = await _get_profile(server)
     
     if not active_profile:
         server.show_message('Please have at least one profile set as the default one.', MessageType.Error)
@@ -751,7 +755,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         server.show_message_log(str(ex), msg_type=MessageType.Error)
 
 @torque_ls.command(TorqueLanguageServer.CMD_LIST_TORQUE_PROFILES)
-async def get_profiles(server: TorqueLanguageServer, *args):
+async def get_profiles(server: TorqueLanguageServer, *_):
     result = []
     keys = ['profile', 'account', 'space']
     
@@ -786,18 +790,18 @@ async def get_profiles(server: TorqueLanguageServer, *args):
     return result
 
 @torque_ls.command(TorqueLanguageServer.CMD_LIST_SANDBOXES)
-async def list_sandboxes(server: TorqueLanguageServer, *args):
-    if not args or not args[0]:
-        server.show_message("No profile provided", MessageType.Error)
-        return None
-        
-    profile = args[0].pop()
+async def list_sandboxes(server: TorqueLanguageServer, *_):
+    active_profile = await _get_profile(server)
+
+    if not active_profile:
+        server.show_message('Please have at least one profile set as the default one.', MessageType.Error)
+        return
 
     sbs = []
 
     try:
         result = subprocess.run(
-            [sys.prefix + '/bin/torque', '--profile', profile, 'sb', 'list', '--filter=my', '--output=json'],
+            [sys.prefix + '/bin/torque', '--profile', active_profile, 'sb', 'list', '--filter=my', '--output=json'],
             capture_output=True,
             text=True)
 
@@ -813,15 +817,16 @@ async def list_sandboxes(server: TorqueLanguageServer, *args):
     return sbs
 
 @torque_ls.command(TorqueLanguageServer.CMD_LIST_BLUEPRINTS)
-async def list_blueprints(server: TorqueLanguageServer, *args):
-    if not args or not args[0]:
-        server.show_message("No profile provided", MessageType.Error)
-        return None
-        
-    profile = args[0].pop()
+async def list_blueprints(server: TorqueLanguageServer, *_):    
+    active_profile = await _get_profile(server)
+
+    if not active_profile:
+        server.show_message('Please have at least one profile set as the default one.', MessageType.Error)
+        return
+
     try:
         result = subprocess.run(
-            [sys.prefix + '/bin/torque', '--profile', profile, 'bp', 'list', '--output', 'json', '--detail'],
+            [sys.prefix + '/bin/torque', '--profile', active_profile, 'bp', 'list', '--output', 'json', '--detail'],
             capture_output=True,
             text=True)
         
@@ -836,8 +841,9 @@ async def list_blueprints(server: TorqueLanguageServer, *args):
 
 @torque_ls.command(TorqueLanguageServer.CMD_TORQUE_LOGIN)
 async def torque_login(server: TorqueLanguageServer, *args):
-    if not args:
-        return
+    if not args or not args[0]:
+        server.show_message("No params for login provided", MessageType.Error)
+        return 1
 
     params = args[0].pop()
     try:
@@ -868,34 +874,42 @@ async def torque_login(server: TorqueLanguageServer, *args):
 
 @torque_ls.command(TorqueLanguageServer.CMD_REMOVE_PROFILE)
 async def remove_profile(server: TorqueLanguageServer, *args):
-    if not args or not args[0]:
-        server.show_message("No profile provided", MessageType.Error)
-        return 1
+    if len(args[0]) == 0:
+        server.show_message('Please remove the sandbox from the command in the blueprint file.', MessageType.Error)
+        return
 
-    profile = args[0].pop()
+    active_profile = await _get_profile(server)
+
+    if not active_profile:
+        server.show_message('Please have at least one profile set as the default one.', MessageType.Error)
+        return
+
     try:
         result = subprocess.run(
-            [sys.prefix + '/bin/torque', 'configure', 'remove', profile],
+            [sys.prefix + '/bin/torque', 'configure', 'remove', active_profile],
             capture_output=True,
             text=True)
-        server.show_message(f"Profile {profile} has been deleted")
+        server.show_message(f"Profile {active_profile} has been deleted")
         return result.returncode
     except Exception as ex:
-        server.show_message(f"Failed to remove profile {profile}. Reason: {str(ex)}", MessageType.Error)
+        server.show_message(f"Failed to remove profile {active_profile}. Reason: {str(ex)}", MessageType.Error)
 
-# TODO(ddovbii): Right now it just takes sandbox status. Once `sb get --output json` 
-# command is implemented it must be rewritten to fetch all data
 @torque_ls.command(TorqueLanguageServer.CMD_GET_SANDBOX)
 async def get_sandbox(server: TorqueLanguageServer, *args):
     if not args or not args[0]:
-        server.show_message("No profile provided", MessageType.Error)
+        server.show_message("No sandbox id provided", MessageType.Error)
         return 1
 
-    profile = args[0].pop()
+    active_profile = await _get_profile(server)
+
+    if not active_profile:
+        server.show_message('Please have at least one profile set as the default one.', MessageType.Error)
+        return
+
     sb_id = args[0].pop()
     try:
         result = subprocess.run(
-            [sys.prefix + '/bin/torque', '--profile', profile, 'sb', 'get', sb_id, '--output=json', '--detail'],
+            [sys.prefix + '/bin/torque', '--profile', active_profile, 'sb', 'get', sb_id, '--output=json', '--detail'],
             capture_output=True,
             text=True)
     except Exception as ex:
@@ -909,15 +923,20 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
 @torque_ls.command(TorqueLanguageServer.CMD_END_SANDBOX)
 async def end_sandbox(server: TorqueLanguageServer, *args):
     if not args or not args[0]:
-        server.show_message("No profile provided", MessageType.Error)
+        server.show_message("No sandbox id provided", MessageType.Error)
         return 1
 
-    profile = args[0].pop()
+    active_profile = await _get_profile(server)
+
+    if not active_profile:
+        server.show_message('Please have at least one profile set as the default one.', MessageType.Error)
+        return
+
     sb_id = args[0].pop()
 
     try:
         result = subprocess.run(
-            [sys.prefix + '/bin/torque', '--profile', profile, 'sb', 'end', sb_id],
+            [sys.prefix + '/bin/torque', '--profile', active_profile, 'sb', 'end', sb_id],
             capture_output=True,
             text=True)
     except Exception as ex:
@@ -934,20 +953,12 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
         server.show_message('Please validate the blueprint from the command in the blueprint file.', MessageType.Error)
         return
 
-    try:
-        config = await server.get_configuration_async(ConfigurationParams(items=[
-                ConfigurationItem(
-                    scope_uri='',
-                    section=TorqueLanguageServer.CONFIGURATION_SECTION)
-                ]))
-        active_profile = config[0].get('active_profile')
-    except:
-        active_profile = ''
-    
+    active_profile = await _get_profile(server)
+
     if not active_profile:
         server.show_message('Please have at least one profile set as the default one.', MessageType.Error)
         return
-
+    
     blueprint_name = pathlib.Path(args[0][0]).name.replace(".yaml", "")
     server.show_message('Validating blueprint: ' + blueprint_name)
 
