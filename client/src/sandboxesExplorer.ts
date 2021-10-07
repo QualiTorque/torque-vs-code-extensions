@@ -37,7 +37,7 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
             if (answer === "Yes") {
 				vscode.window.showInformationMessage(`Ending the sandbox ${sandbox.id}...`)
 				vscode.commands.executeCommand('end_sandbox', sandbox.id);
-				vscode.window.showInformationMessage('End request has been sent');
+				vscode.window.showInformationMessage('End request sent');
 				this.refreshDelayed(30);
             }
         });
