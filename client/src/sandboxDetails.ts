@@ -224,7 +224,9 @@ export class SandboxDetailsPanel {
         var generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         generalHtml += "<tr><td width='180px'>" + "ID" + "</td><td>" + this._sandbox_id + "</td></tr>";
         generalHtml += "<tr><td width='180px'>" + "Status" + "</td><td>" + sandboxJson.sandbox_status + "</td></tr>";
-        generalHtml += "<tr><td width='180px'>" + "End time" + "</td><td>" + sandboxJson.scheduled_end_time + "</td></tr>";
+
+        let date = new Date(sandboxJson.scheduled_end_time);
+        generalHtml += "<tr><td width='180px'>" + "End time" + "</td><td>" + date.toLocaleString() + "</td></tr>";
     
         if (acct !== "") {
             const sandbox_url = `https://${acct}.qtorque.io/${space}/sandboxes/${this._sandbox_id}`
