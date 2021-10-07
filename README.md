@@ -39,41 +39,39 @@ In some parts of Torque configuration files you have links, and you can jump to 
 
 ### Interactive features
 
-This extension also enables you to interact with Torque directly. You can aks Torque to validate a local blueprint, start sandbox from it and
-elpore and manage resources that are currenly available in Torque
+This extension also enables you to interact with Torque directly. You can ask Torque to validate a local blueprint, start sandbox from it and exlpore and manage resources that are currenly available in Torque.
 
-In activity bar you have a new Torque menu item where you will find information about active sandboxes and enabled blueprints available in Torque.
+In the activity bar you have a new Torque menu item where you will find information about active sandboxes and enabled blueprints available in Torque.
 
 ![activitybar](https://user-images.githubusercontent.com/8643801/136196489-72b24601-075a-45d0-8230-8be2975ad7e6.png)
 
-Please note that it will work only if you have [profiles configured](https://github.com/QualiSystemsLab/colony-cli#configuration) in the Torque Cli config file.
-If you don't have any profiles there you can add them by logging in to Torque just from VSCode. Open login form by pressing on plus button or coresponding messages
-in explorers' area
+In order to see and interact with information in these views, this extension utilizes the Torque CLI (which is also installed as a dependency). If you already use it, and have [profiles configured](https://github.com/QualiSystemsLab/colony-cli#configuration) you will see them appear already in the UI.
+If you don't have any profiles there, or never used it, you can add them from the Profiles explorer (using the + button, or from the Login to Torque messages in the Blueprints/Sandboxes explorers), and logging into Torque using your email credentials or a token, directly from VSCode. 
 
 ![login](https://user-images.githubusercontent.com/8643801/136199312-3f3e34a1-4373-470a-9438-ba88ac2e7dbf.png)
 
 #### Switching between profiles
 
-You can change currently used profile by special buttons in the profiles explorer. Once picked, explorers' trees will be updated accordingly. All the next actions will be performed within an account and space mapped to this profile and explorers' trees will be updated accordingly.
+You can change the active profile with the checkmark buttons in the profiles explorer. Once picked, the different explorers will be updated accordingly. All the next actions will be performed within an account and space mapped to this profile and the explorers trees will get updated accordingly.
 
 ![switch](https://user-images.githubusercontent.com/8643801/136202940-aea95f49-3ff9-4bb2-8bc2-c4b1b54f61a0.gif)
 
 #### Starting sandboxes
 
-You can start a sandbox in Torque from currently a blueprint currently opened in IDE or by pressing on any available blueprint in the blueprints explorer. All default values for parameters and artifacts are taken from blueprint's definition.
+You can start a sandbox in Torque from a blueprint file currently opened in the IDE or by selecting any of the available blueprints in the blueprints explorer (only valid and published blueprints will appear there). All the default values for the parameters inputs and artifacts are taken from the blueprint definitions.
 
 ![start-sandbox](https://user-images.githubusercontent.com/8643801/136235308-1c82468e-59da-4e08-8867-83a0a0534be2.gif)
 
 #### Server Blueprint Validation
 
-Although local syntax validation finds all of the most common errors in your blueprint, you can still ask Torque to check it on the server side. Open needed blueprint and use code lens command to activate validation:
+Although a local, real-time, syntax validation finds the most common errors in your blueprint/application/service files, you can still ask Torque to check it on the server side. Open any of the blueprint files in your repository and use the code lens command to start the validation:
 
 ![validation](https://user-images.githubusercontent.com/8643801/136206637-b4a8f19c-1db4-47dd-82f8-8bf8976d0303.gif)
 
 ## Getting Started
 
 **Prerequisite:** 
-* **python>=3.6** installed on your system
+* **python>=3.6** installed on your system.
 
 - Install the extension from the Marketplace.
 - VS Code may require you to reload it. Make sure you do that.
@@ -81,4 +79,4 @@ Although local syntax validation finds all of the most common errors in your blu
   or directly in VS Code settings (under __pyhon.pythonPath__)
 - Open any folder with a Torque blueprint repository and get an enhanced experience working on your Torque files!
 
-The extension should be triggered automatically when loading Torque's blueprint, application, or service YAMLs located in a [blueprint repository folder structure](https://community.qtorque.io/developing-blueprints-61/setting-up-a-blueprint-repository-258).
+The extension will be activated automatically when loading Torque's blueprint, application, or service YAMLs located in a [blueprint repository folder structure](https://community.qtorque.io/developing-blueprints-61/setting-up-a-blueprint-repository-258), or when opening the Torque view in the activity bar.
