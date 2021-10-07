@@ -34,8 +34,7 @@ export class ProfilesManager {
         if (profile !== undefined) 
             await vscode.workspace.getConfiguration("torque").update("active_profile", profile.label, vscode.ConfigurationTarget.Workspace);
         else
-            await vscode.workspace.getConfiguration("torque").update("active_profile", "", vscode.ConfigurationTarget.Workspace);
-        
+            await vscode.workspace.getConfiguration("torque").update("active_profile", "", vscode.ConfigurationTarget.Workspace);        
     }
 
     private _loadConfiguration() : Profile {
