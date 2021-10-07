@@ -148,27 +148,16 @@ export class SandboxStartPanel {
     }
 
 	private _getHtmlForWebview(webview: vscode.Webview) {
-		// Local path to main script run in the webview
-		// const scriptPathOnDisk = vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js');
-
-		// And the uri we use to load this script in the webview
-		// const scriptUri = webview.asWebviewUri(scriptPathOnDisk);
-
-		// Local path to css styles
-		// const styleResetPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css');
 		const stylesPathMainPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css');
 
-		// Uri to load styles into webview
-		// const stylesResetUri = webview.asWebviewUri(styleResetPath);
 		const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);
 
-		// Use a nonce to only allow specific scripts to be run
 		let cleanName = this._bpname;
 		if (cleanName.endsWith('.yaml'))
-		{
-			cleanName = cleanName.replace('.yaml', '').split(path.sep).slice(-1)[0]
-		}
-		const nonce = getNonce();
+			cleanName = cleanName.replace('.yaml', '').split(path.sep).slice(-1)[0]	
+		if (cleanName.startsWith('[Sample]'))
+			cleanName = cleanName.replace('[Sample]','');
+		
 		let generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         generalHtml += "<tr><td width='180px'>" + "Name" + "</td><td>" + "<input type='text' id='sandbox_name' value='" + cleanName + "'></td></tr>";
         generalHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='30' min='10' max='3600'></td></tr>";
@@ -210,6 +199,9 @@ export class SandboxStartPanel {
         startHtml += "<tr><td width='180px'><input type='button' id='start-btn' value='Start'></td><td></td></tr>";
         startHtml += "</table>";
         
+		// Use a nonce to only allow specific scripts to be run
+		const nonce = getNonce();
+		
 		let html = `<!DOCTYPE html>
 			<html lang="en">
 			<head>
@@ -230,7 +222,7 @@ export class SandboxStartPanel {
 			<body>
                 <br/>
 				<h2>Launch a New Sandbox</h2>
-				<h3>Blueprint: ${this._bpname}</h3>
+				<h3>Blueprint: ${cleanName}</h3>
                 <br/>
 				${generalHtml}
                 <br/>
