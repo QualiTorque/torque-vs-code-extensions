@@ -6,7 +6,7 @@ import sys
 import logging
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
 from server.ats.trees.blueprint import BlueprintTree
-from server.constants import PREDEFINED_TORQUE_INPUTS
+from server.constants import PREDEFINED_TORQUE_INPUTS, AWS_REGIONS, AZURE_REGIONS
 from server.utils import applications, services
 
 
@@ -135,6 +135,14 @@ class BlueprintValidationHandler(ValidationHandler):
             if srv.id.text in available_srvs:
                 if available_srvs[srv.id.text]["srv_tree"] is None:
                     self._add_diagnostic(srv.id, message=message.format(srv.id.text))
+
+    def _validate_clouds_regions_are_valid(self):
+        message = "The region '{}' is not valid."
+        for cloud in self._tree.clouds.nodes:
+            if cloud.value and cloud.value.text:
+                region = cloud.value.text
+                if region not in set(AWS_REGIONS+AZURE_REGIONS):
+                    self._add_diagnostic(cloud.value, message=message.format(region))
 
     def _check_for_unused_blueprint_inputs(self):
         if self._tree.inputs_node:
@@ -440,6 +448,7 @@ class BlueprintValidationHandler(ValidationHandler):
             self._validate_services_inputs_exists()
             self._validate_used_apps_are_valid()
             self._validate_used_services_are_valid()
+            self._validate_clouds_regions_are_valid()
             self._validate_blueprint_networking_gateway_not_same_as_management_or_application()
         except Exception as ex:
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
