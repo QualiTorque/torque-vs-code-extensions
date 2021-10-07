@@ -895,7 +895,7 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
     sb_id = args[0].pop()
     try:
         result = subprocess.run(
-            [sys.prefix + '/bin/torque', '--profile', profile, 'sb', 'status', sb_id],
+            [sys.prefix + '/bin/torque', '--profile', profile, 'sb', 'get', sb_id, '--output=json', '--detail'],
             capture_output=True,
             text=True)
     except Exception as ex:

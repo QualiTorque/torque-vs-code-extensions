@@ -214,14 +214,18 @@ export class SandboxDetailsPanel {
         for (var j in obj) { return false }
         return true;
     }
-    
+
+
     private _getBaseInfo(nonce:string) {
+        const sandboxJson = JSON.parse(this._sandbox_details);
+
         const acct = ProfilesManager.getInstance().getActive().account
         const space = ProfilesManager.getInstance().getActive().space
     
         var generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         generalHtml += "<tr><td width='180px'>" + "ID" + "</td><td>" + this._sandbox_id + "</td></tr>";
-        generalHtml += "<tr><td width='180px'>" + "Status" + "</td><td>" + this._sandbox_details + "</td></tr>";
+        generalHtml += "<tr><td width='180px'>" + "Status" + "</td><td>" + sandboxJson.sandbox_status + "</td></tr>";
+        generalHtml += "<tr><td width='180px'>" + "End time" + "</td><td>" + sandboxJson.scheduled_end_time + "</td></tr>";
     
         if (acct !== "") {
             const sandbox_url = `https://${acct}.qtorque.io/${space}/sandboxes/${this._sandbox_id}`
@@ -229,6 +233,47 @@ export class SandboxDetailsPanel {
         }
     
         generalHtml += "</table>";
+
+        if (sandboxJson.applications.length > 0) {
+            var shortcutsHtml = "<b>Quick Links</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+            for (var i = 0; i < sandboxJson.applications.length; i++) {
+                let appName = sandboxJson.applications[i]['name'];
+                let shortcuts = sandboxJson.applications[i]['shortcuts'];
+
+                if (shortcuts.length > 0) {
+                    shortcutsHtml += `<tr><td width='180px'>${appName}</td>`;
+
+                    for (var j = 0; j < shortcuts.length; j++)
+                        shortcutsHtml += `<td><a href='${shortcuts[j]}' target='_blank'/>link${j+1}</a></td>`;
+
+                    shortcutsHtml += "<td></tr>"
+                }
+            }
+            shortcutsHtml += "</table><br/>"; 
+        } else
+            shortcutsHtml = "";
+
+        if (sandboxJson.inputs.length > 0) {
+            var inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+
+            for (var i=0; i<sandboxJson.inputs.length; i++)
+            {
+                inputsHtml += "<tr><td width='180px'>" + sandboxJson.inputs[i]['name'] + "</td>";
+                inputsHtml += "<td>" + (sandboxJson.inputs[i]['display_style'] == 'masked' ? '******' : sandboxJson.inputs[i]['value']) + "</td><td></tr>";
+            }
+            inputsHtml += "</table><br/>";
+        } else 
+            var inputsHtml = "";
+
+        if (!this._isEmpty(sandboxJson.artifacts)) {
+            var artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+            for (const [key, value] of Object.entries(sandboxJson.artifacts)) {
+                artifactsHtml += "<tr><td width='180px'>" + key  + "</td><td>" + value + "</td></tr>";
+            }
+            artifactsHtml += "</table>";
+        }
+        else 
+            var artifactsHtml = "";
         
         const html = `
             <body>
@@ -244,109 +289,15 @@ export class SandboxDetailsPanel {
             </div>
             <div style="vertical-align: top;">
             ${generalHtml}
+            <br/>
+            ${shortcutsHtml}
+            ${inputsHtml}
+            ${artifactsHtml} 
             </div>              
             </body>`;
         
         const script = `
             <script nonce="${nonce}">
-            const vscode = acquireVsCodeApi();
-            document.getElementById("reload-btn").addEventListener("click", function() {
-                vscode.postMessage({
-                    command: 'run-command',
-                    name: 'reload-sandbox'                 
-                });
-            });
-            document.getElementById("end-btn").addEventListener("click", function() {
-                vscode.postMessage({
-                    command: 'run-command',
-                    name: 'end-sandbox'                 
-                });
-            });
-            </script>
-        `;
-        return html + script;
-    }
-        
-    private _getMainBody(nonce:string) {
-        //test sandbox details html
-        var sandbox_status = "Active";
-        var create_time = '2021-09-28T20:34:03.993243+00:00'
-        var scheduled_end_time = '2021-09-28T20:34:03.993243+00:00'
-        var sandbox_url = 'https://trial-dc588bf8.qtorque.io/Trial/sandboxes/nc6373wln300z1'
-        var inputs = [{'name': 'input1', 'value': 'value1'}, {'name': 'input2', 'value': 'value2'}]
-        var artifacts = {}
-        var shortcuts = [{'name': 'app1', 'shortcuts': ['http://sandb-MainA-LFA6RZ04WIWO-1717599593.us-west-2.elb.amazonaws.com:3000']}] //will be inside the applications part
-    
-        var generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-    
-        generalHtml += "<tr><td width='180px'>" + "Status" + "</td><td>" + sandbox_status + "</td></tr>";
-        generalHtml += "<tr><td width='180px'>" + "Launched at" + "</td><td>" + create_time + "</td></tr>";
-        generalHtml += "<tr><td width='180px'>" + "End time" + "</td><td>" + scheduled_end_time + "</td></tr>";
-        if (sandbox_url) {
-            generalHtml += "<tr><td width='180px'><a href='" + sandbox_url +"' target='_blank'/>" + "Open in Torque" + "</td><td></td></tr>";
-        }
-        generalHtml += "</table>";
-    
-        if (shortcuts.length > 0) {
-            var shortcutsHtml = "<b>Quick Links</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-            for (var i=0; i<shortcuts.length; i++)
-            {
-                shortcutsHtml += "<tr><td width='180px'>" + shortcuts[i]['name'] + "</td><td><a href='" + shortcuts[i]['shortcuts'][0] + "' target='_blank'>" + shortcuts[i]['shortcuts'][0] + "</a></td><td></tr>";
-            }
-            shortcutsHtml += "</table>";            
-        }
-        else {
-            var shortcutsHtml = "";
-        }
-    
-        if (inputs.length > 0) {
-            var inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-            for (var i=0; i<inputs.length; i++)
-            {
-                inputsHtml += "<tr><td width='180px'>" + inputs[i]['name'] + "</td><td>" + inputs[i]['value'] + "</td><td></tr>";
-            }
-            inputsHtml += "</table>";            
-        }
-        else {
-            var inputsHtml = "";
-        }
-    
-        if (!this._isEmpty(artifacts)) {
-            var artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-            for (const [key, value] of Object.entries(artifacts)) {
-                artifactsHtml += "<tr><td width='180px'>" + key  + "</td><td>" + value + "</td></tr>";
-            }
-            artifactsHtml += "</table>";
-            if (inputs.length > 0)
-                artifactsHtml = "<br/>" + artifactsHtml;
-        }
-        else {
-            var artifactsHtml = "";
-        }	
-    
-        const html = `
-            <body>
-                <div style="vertical-align: top; display: inline-block; margin-top: 5px">
-                <h2>${this._sandbox_name}</h2>
-                <h3>Blueprint: ${this._blueprint_name}</h3>
-                <br/>
-                </div>
-                <div style="vertical-align: top; display: inline-block; float:right; margin-top: 5px">
-                <input type='button' id='reload-btn' value='Refresh' style="width:100px;display: inline-block;">
-                &nbsp;
-                <input type='button' id='end-btn' value='End Sandbox' style="width:100px;display: inline-block;">
-                </div>
-                <div style="vertical-align: top;">
-                ${generalHtml}
-                <br/>
-                ${shortcutsHtml}
-                ${inputsHtml}
-                ${artifactsHtml} 
-                </div>          
-            </body>`;
-        
-        const script = `
-            <script nonce=${nonce}>
             const vscode = acquireVsCodeApi();
             document.getElementById("reload-btn").addEventListener("click", function() {
                 vscode.postMessage({
