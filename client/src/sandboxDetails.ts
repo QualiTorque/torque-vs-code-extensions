@@ -235,8 +235,8 @@ export class SandboxDetailsPanel {
     
         generalHtml += "</table>";
 
+        var shortcutsHtml = "";
         if (sandboxJson.applications.length > 0) {
-            var shortcutsHtml = "<b>Quick Links</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
             for (var i = 0; i < sandboxJson.applications.length; i++) {
                 let appName = sandboxJson.applications[i]['name'];
                 let shortcuts = sandboxJson.applications[i]['shortcuts'];
@@ -250,9 +250,10 @@ export class SandboxDetailsPanel {
                     shortcutsHtml += "<td></tr>"
                 }
             }
-            shortcutsHtml += "</table><br/>"; 
-        } else
-            shortcutsHtml = "";
+        }
+        
+        if (shortcutsHtml !== "")
+            shortcutsHtml = `<b>Quick Links</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>${shortcutsHtml}</table><br/>`
 
         if (sandboxJson.inputs.length > 0) {
             var inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
