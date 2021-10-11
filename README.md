@@ -31,7 +31,7 @@ complex dynamic checks. Some of them include:
 
 ### Document Links
 
-In some parts of Torque configuration files you have links, and you can jump to the referenced files by holding down the __[Ctrl]__ keuboard key and clicking the link.
+In some parts of Torque configuration files you have links, and you can jump to the referenced files by holding down the __[Ctrl]__ keyboard key and clicking the link.
 - In a blueprint file, it opens the relevant application/service YAML when clicking the file's name.
 - From a service/application file, you can jump to the referenced scripts.
 
@@ -39,32 +39,32 @@ In some parts of Torque configuration files you have links, and you can jump to 
 
 ### Interactive features
 
-This extension also enables you to interact with Torque directly. You can ask Torque to validate a local blueprint, start sandbox from it and exlpore and manage resources that are currenly available in Torque.
+This extension also enables you to interact with Torque directly. You can ask Torque to validate a local blueprint, start sandbox from it and explore and manage resources that are currenly available in Torque.
 
 In the activity bar you have a new Torque menu item where you will find information about active sandboxes and enabled blueprints available in Torque.
 
 ![activitybar](https://user-images.githubusercontent.com/8643801/136196489-72b24601-075a-45d0-8230-8be2975ad7e6.png)
 
-In order to see and interact with information in these views, this extension utilizes the Torque CLI (which is also installed as a dependency). If you already use it, and have [profiles configured](https://github.com/QualiSystemsLab/colony-cli#configuration) you will see them appear already in the UI.
-If you don't have any profiles there, or never used it, you can add them from the Profiles explorer (using the + button, or from the Login to Torque messages in the Blueprints/Sandboxes explorers), and logging into Torque using your email credentials or a token, directly from VSCode. 
+In order to see and interact with information in these views, this extension utilizes the Torque CLI (which is also installed as a dependency). If you're already using it, and have [profiles configured](https://github.com/QualiSystemsLab/colony-cli#configuration) you will see them appear in the UI.
+If you don't have any profiles there, or have never used it, you can add them from the Profiles explorer (using the + button, or from the Login to Torque messages in the Blueprints/Sandboxes explorers), and logging into Torque using your email credentials or a token, directly from VSCode. 
 
 ![login](https://user-images.githubusercontent.com/8643801/136199312-3f3e34a1-4373-470a-9438-ba88ac2e7dbf.png)
 
 #### Switching between profiles
 
-You can change the active profile with the checkmark buttons in the profiles explorer. Once picked, the different explorers will be updated accordingly. All the next actions will be performed within an account and space mapped to this profile and the explorers trees will get updated accordingly.
+You can change the active profile with the checkmark buttons in the Profiles explorer. Once selected, the different explorers will be updated accordingly. All the next actions will be performed within an account and space mapped to this profile and the explorers trees will get updated accordingly.
 
 ![switch](https://user-images.githubusercontent.com/8643801/136202940-aea95f49-3ff9-4bb2-8bc2-c4b1b54f61a0.gif)
 
 #### Starting sandboxes
 
-You can start a sandbox in Torque from a blueprint file currently opened in the IDE or by selecting any of the available blueprints in the blueprints explorer (only valid and published blueprints will appear there). All the default values for the parameters inputs and artifacts are taken from the blueprint definitions.
+You can start a sandbox in Torque from a blueprint file that is currently open in the IDE. or by selecting any of the available blueprints in the Blueprints explorer (only valid and published blueprints are displayed there). All the default values for the parameters inputs and artifacts are taken from the blueprint's definitions.
 
 ![start-sandbox](https://user-images.githubusercontent.com/8643801/136235308-1c82468e-59da-4e08-8867-83a0a0534be2.gif)
 
 #### Server Blueprint Validation
 
-Although a local, real-time, syntax validation finds the most common errors in your blueprint/application/service files, you can still ask Torque to check it on the server side. Open any of the blueprint files in your repository and use the code lens command to start the validation:
+Although a local, real-time syntax validation finds the most common errors in your blueprint/application/service files, you can still ask Torque to check for errors on the server-side. Open any of the blueprint's files in your repository and use the code lens command to start the validation:
 
 ![validation](https://user-images.githubusercontent.com/8643801/136206637-b4a8f19c-1db4-47dd-82f8-8bf8976d0303.gif)
 
