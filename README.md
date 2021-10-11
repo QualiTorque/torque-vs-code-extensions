@@ -58,7 +58,7 @@ You can change the active profile with the checkmark buttons in the Profiles exp
 
 #### Starting sandboxes
 
-You can start a sandbox in Torque from a blueprint file that is currently open in the IDE. or by selecting any of the available blueprints in the Blueprints explorer (only valid and published blueprints are displayed there). All the default values for the parameters inputs and artifacts are taken from the blueprint's definitions.
+You can start a sandbox in Torque from a blueprint file that is currently open in the IDE. or by selecting any of the available blueprints in the Blueprints explorer (only valid and published blueprints are displayed there). All the default values for the parameters inputs and artifacts are taken from the blueprint's definition.
 
 ![start-sandbox](https://user-images.githubusercontent.com/8643801/136235308-1c82468e-59da-4e08-8867-83a0a0534be2.gif)
 
