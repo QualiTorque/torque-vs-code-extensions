@@ -30,6 +30,7 @@ from pathlib import Path
 from server.ats.trees.app import AppTree
 
 from server.ats.trees.common import BaseTree, PropertyNode
+from server.constants import AWS_REGIONS, AZURE_REGIONS
 from server.utils.common import is_var_allowed
 from server.validation.factory import ValidatorFactory
 
@@ -292,6 +293,22 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     root = torque_ls.workspace.root_path
     
     if doc_type == "blueprint":
+        parent_node = common.get_parent_node(tree, params.position)
+        if parent_node and parent_node.text == "clouds":
+            items = []
+            items += [CompletionItem(label=script,
+                                     detail="AWS region",
+                                     kind=CompletionItemKind.File) for script in AWS_REGIONS]
+                
+            items += [CompletionItem(label=script,
+                                     detail="Azure region",
+                                     kind=CompletionItemKind.File) for script in AZURE_REGIONS]
+                
+            return CompletionList(
+                    is_incomplete=False,
+                    items=items,
+                )
+        
         items=[]
         if last_word.endswith('.'):
             if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
@@ -371,11 +388,10 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                                                     )))
     
         else:
-            parent = common.get_parent_word(doc, params.position)
             line = params.position.line
             char = params.position.character
-    
-            if parent == "applications":
+            
+            if parent_node and parent_node.text == "applications":
                 apps = applications.get_available_applications(root)
                 for app in apps:
                     if apps[app]['app_completion']:
@@ -387,7 +403,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                                                                     new_text=apps[app]['app_completion'],
                                                     )))
     
-            if parent == "services":
+            if parent_node and parent_node.text == "services":
                 srvs = services.get_available_services(root)
                 for srv in srvs:
                     if srvs[srv]['srv_completion']:

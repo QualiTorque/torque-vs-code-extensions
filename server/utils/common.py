@@ -54,28 +54,42 @@ def is_var_allowed(tree: BaseTree, pos: Position) -> bool:
         return False
 
 
-def get_parent_word(document: Document, position: types.Position):
-    lines = document.lines
-    if position.line >= len(lines) or position.line == 0:
-        return None
+def get_parent_node(tree: BaseTree, pos: Position):
+    path = get_path_to_pos(tree, pos)
 
-    row, col = position_from_utf16(lines, position)    
+    if not path:
+        return None
     
-    cur_word = document.word_at_position(position=types.Position(line=row, character=col))
-    line = lines[row]
-    index = line.find(cur_word)
-    if index >= 2:
-        col = index - 2
+    while path:
+        node = path.pop()
+        if node.parent.start_pos[0] < pos.line and node.parent.start_pos[1] < pos.character:
+            return node.parent
     
-    row -= 1
-    word = None
-    while row >= 0:
-        word = document.word_at_position(position=types.Position(line=row, character=col))
-        row -= 1
-        if word:
-            break
+    return None
+
+
+# def get_parent_word(document: Document, position: types.Position):
+#     lines = document.lines
+#     if position.line >= len(lines) or position.line == 0:
+#         return None
+
+#     row, col = position_from_utf16(lines, position)    
     
-    return word
+#     cur_word = document.word_at_position(position=types.Position(line=row, character=col))
+#     line = lines[row]
+#     index = line.find(cur_word)
+#     if index >= 2:
+#         col = index - 2
+    
+#     row -= 1
+#     word = None
+#     while row >= 0:
+#         word = document.word_at_position(position=types.Position(line=row, character=col))
+#         row -= 1
+#         if word:
+#             break
+    
+#     return word
     
 
 def preceding_words(document: Document, position: types.Position) -> Optional[Tuple[str, str]]:
