@@ -521,7 +521,7 @@
                     }
                 }
             },
-            "required": ["gateway", "management", "application"],
+            "required": ["management", "application"],
             "title": "Subnets"
         }
     }
