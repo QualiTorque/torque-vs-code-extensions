@@ -17,6 +17,9 @@
 import asyncio
 import json
 import logging
+
+from server.completers.resolver import CompletionResolver
+
 import subprocess
 import sys
 import textwrap
@@ -30,7 +33,6 @@ from server.ats.trees.common import BaseTree, PropertyNode
 from server.utils.common import get_repo_root_path, is_var_allowed, get_path_to_pos
 from server.validation.factory import ValidatorFactory
 
-# from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
 from pygls.lsp.types.basic_structures import TextEdit
 import yaml
 import os
@@ -325,13 +327,13 @@ def completions(
             )
 
     root = get_repo_root_path(doc.path)
-    
+
     if doc_type == "blueprint":
         path = get_path_to_pos(tree, params.position)
 
-        items=[]
-        if last_word.endswith('.'):
-            if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
+        items = []
+        if last_word.endswith("."):
+            if words and len(words) > 1 and words[1] == words[-1] and words[0] != "-":
                 cur_word = words[-1]
                 word_parts = cur_word.split("$")
                 if word_parts:
@@ -431,11 +433,13 @@ def completions(
         else:
             try:
                 completer = CompletionResolver.get_completer(path)
-                completions = completer(server.workspace, params, tree).get_completions()
+                completions = completer(
+                    server.workspace, params, tree
+                ).get_completions()
                 items += completions
             except ValueError:
                 logging.error("Unable to build a completions list")
-            
+
         if items:
             return CompletionList(is_incomplete=False, items=items)
         else:
