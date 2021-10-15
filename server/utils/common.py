@@ -2,7 +2,7 @@ from typing import Optional, Tuple, List
 from pygls.lsp import types
 from pygls.workspace import Document, position_from_utf16
 
-from server.ats.trees.common import YamlNode, Position, MappingNode, TextNode, BaseTree
+from server.ats.trees.common import SequenceNode, YamlNode, Position, MappingNode, TextNode, BaseTree
 
 
 class Visitor:
@@ -63,7 +63,10 @@ def get_parent_node(tree: BaseTree, pos: Position):
     while path:
         node = path.pop()
         if node.parent.start_pos[0] < pos.line and node.parent.start_pos[1] < pos.character:
-            return node.parent
+            if isinstance(node.parent, SequenceNode):
+                return node.parent.parent
+            else:
+                return node.parent
     
     return None
 

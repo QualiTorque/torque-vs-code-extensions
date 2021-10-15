@@ -294,7 +294,7 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     
     if doc_type == "blueprint":
         parent_node = common.get_parent_node(tree, params.position)
-        if parent_node and parent_node.text == "clouds":
+        if parent_node and hasattr(parent_node, 'text') and parent_node.text == "clouds":
             items = []
             items += [CompletionItem(label=script,
                                      detail="AWS region",
@@ -397,11 +397,10 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
                     if apps[app]['app_completion']:
                         items.append(CompletionItem(label=app,
                                                     kind=CompletionItemKind.Reference,
-                                                    text_edit=TextEdit(
-                                                                    range=Range(start=Position(line=line, character=char-2),
-                                                                                end=Position(line=line, character=char)),
-                                                                    new_text=apps[app]['app_completion'],
-                                                    )))
+                                                    range=Range(start=Position(line=line, character=0),
+                                                                end=Position(line=line, character=char)),
+                                                    insert_text=apps[app]['app_completion'],
+                                                    ))
     
             if parent_node and parent_node.text == "services":
                 srvs = services.get_available_services(root)
