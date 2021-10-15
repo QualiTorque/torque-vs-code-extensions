@@ -30,7 +30,6 @@ from server.ats.trees.blueprint import ApplicationNode
 import subprocess
 import sys
 import textwrap
-from types import resolve_bases
 import tabulate
 from pathlib import Path
 
