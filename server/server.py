@@ -648,6 +648,7 @@ async def lsp_document_link(server: TorqueLanguageServer, params: DocumentLinkPa
 #     #         ))
 #     return None
 
+
 async def _get_profile(server: TorqueLanguageServer):
     try:
         config = await server.get_configuration_async(ConfigurationParams(items=[
@@ -739,8 +740,9 @@ async def get_profiles(server: TorqueLanguageServer, *_):
     try: 
         res = subprocess.run(
             [sys.prefix + '/bin/torque', 'configure', 'list'],
-            capture_output=True,
-            text=True
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
         )
     except Exception as ex:
         server.show_message(
@@ -779,8 +781,9 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
     try:
         result = subprocess.run(
             [sys.prefix + '/bin/torque', '--profile', active_profile, 'sb', 'list', '--filter=my', '--output=json'],
-            capture_output=True,
-            text=True)
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True)
 
         if result.stderr:
             server.show_message(
@@ -807,8 +810,9 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
     try:
         result = subprocess.run(
             [sys.prefix + '/bin/torque', '--profile', active_profile, 'bp', 'list', '--output', 'json', '--detail'],
-            capture_output=True,
-            text=True
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
         )
         if result.stderr:
             server.show_message(
@@ -868,10 +872,7 @@ async def remove_profile(server: TorqueLanguageServer, *args):
         return
 
     try:
-        result = subprocess.run(
-            [sys.prefix + '/bin/torque', 'configure', 'remove', active_profile],
-            capture_output=True,
-            text=True)
+        result = subprocess.run([sys.prefix + '/bin/torque', 'configure', 'remove', active_profile])
         server.show_message(f"Profile {active_profile} has been deleted")
         return result.returncode
     except Exception as ex:
@@ -893,8 +894,9 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
     try:
         result = subprocess.run(
             [sys.prefix + '/bin/torque', '--profile', active_profile, 'sb', 'get', sb_id, '--output=json', '--detail'],
-            capture_output=True,
-            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
         )
         if result.stderr:
             server.show_message(
@@ -927,8 +929,9 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
     try:
         result = subprocess.run(
             [sys.prefix + '/bin/torque', '--profile', active_profile, 'sb', 'end', sb_id],
-            capture_output=True,
-            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
         )
         if result.stderr:
             server.show_message(
@@ -970,8 +973,10 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                 "--output=json",
             ],
             cwd=server.workspace.root_path,
-            capture_output=True,
-            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            
         )
         if result.stderr:
             try:
