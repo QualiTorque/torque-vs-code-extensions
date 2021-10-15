@@ -18,8 +18,6 @@ import asyncio
 import json
 import logging
 
-from server.completers.resolver import CompletionResolver
-
 import subprocess
 import sys
 import textwrap
@@ -38,7 +36,7 @@ import yaml
 import os
 import pathlib
 from json import JSONDecodeError
-from typing import Any, Dict, Optional, List
+from typing import Optional, List
 
 from server.ats.parser import Parser, ParserError
 
@@ -76,7 +74,6 @@ from pygls.lsp.types import (
     DidChangeWorkspaceFoldersParams,
 )
 from pygls.server import LanguageServer
-from pygls.workspace import position_from_utf16
 
 DEBOUNCE_DELAY = 0.3
 
@@ -287,7 +284,7 @@ def completions(
             doc_type = yaml_obj.get("kind", "")
         else:
             return CompletionList(is_incomplete=True, items=[])
-    except yaml.MarkedYAMLError as ex:
+    except yaml.MarkedYAMLError:
         return CompletionList(is_incomplete=True, items=[])
 
     tree = Parser(doc.source).parse()
@@ -594,7 +591,7 @@ async def lsp_document_link(
             doc_type = yaml_obj.get("kind", "")
         else:
             return links
-    except yaml.MarkedYAMLError as ex:
+    except yaml.MarkedYAMLError:
         return links
 
     root = get_repo_root_path(doc.path)
@@ -984,6 +981,7 @@ async def torque_login(server: TorqueLanguageServer, *args):
     params = args[0].pop()
     try:
         command = [sys.prefix + "/bin/torque", "configure", "set"]
+        command_inputs = ""
         if params.email and params.password:
             command.append("--login")
             command_inputs = f"{params.profile}\n{params.account}\n{params.space}\n{params.email}\n{params.password}\n".encode()
@@ -1004,7 +1002,7 @@ async def torque_login(server: TorqueLanguageServer, *args):
         else:
             return None
 
-    except Exception as e:
+    except Exception:
         return
 
 
