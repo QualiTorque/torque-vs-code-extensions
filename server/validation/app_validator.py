@@ -49,7 +49,7 @@ class AppValidationHandler(ValidationHandler):
                     if deprecated_properties[prop]:
                         message += " " + message_replace.format(deprecated_properties[prop])
                     self._add_diagnostic_for_range(message,
-                                                   range_start_tupple=(line_num, col),
-                                                   range_end_tupple=(line_num, col+len(prop)),
+                                                   range_start_tuple=(line_num, col),
+                                                   range_end_tuple=(line_num, col + len(prop)),
                                                    diag_severity=DiagnosticSeverity.Warning)                    
             line_num += 1
