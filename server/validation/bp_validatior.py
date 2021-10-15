@@ -1,6 +1,5 @@
-
-import pathlib
 import re
+from server.utils.common import get_repo_root_path
 from server.validation.common import ValidationHandler
 import sys
 import logging
@@ -15,14 +14,6 @@ class BlueprintValidationHandler(ValidationHandler):
         super().__init__(tree, document_path)
         self.blueprint_apps = [app.id.text for app in self._tree.get_applications()]
         self.blueprint_services = [srv.id.text for srv in self._tree.get_services()]
-
-    def _get_repo_root_path(self):
-        path = pathlib.Path(self._document.path).absolute()
-        if path.parents[0].name == "blueprints":
-            return path.parents[1].absolute().as_posix()
-
-        else:
-            raise ValueError(f"Wrong document path of blueprint file: {path.as_posix()}")    
 
     def _check_for_deprecated_properties(self):
         deprecated_properties = {"availability": "bastion_availability",
@@ -104,7 +95,7 @@ class BlueprintValidationHandler(ValidationHandler):
         available_apps = applications.get_available_applications()
         for app in self._tree.get_applications():
             if app.id.text in available_apps:
-                if available_apps[app.id.text]["app_tree"] is None:
+                if available_apps[app.id.text]["tree"] is None:
                     self._add_diagnostic(app.id, message=message.format(app.id.text))
             
     def _validate_blueprint_apps_have_input_values(self):
@@ -133,7 +124,7 @@ class BlueprintValidationHandler(ValidationHandler):
         available_srvs = services.get_available_services()
         for srv in self._tree.get_services():
             if srv.id.text in available_srvs:
-                if available_srvs[srv.id.text]["srv_tree"] is None:
+                if available_srvs[srv.id.text]["tree"] is None:
                     self._add_diagnostic(srv.id, message=message.format(srv.id.text))
 
     def _check_for_unused_blueprint_inputs(self):
@@ -418,7 +409,7 @@ class BlueprintValidationHandler(ValidationHandler):
 
         try:
             # prep
-            root_path = self._get_repo_root_path()
+            root_path = get_repo_root_path(self._document.path)
 
             _ = applications.get_available_applications(root_path)
             _ = services.get_available_services(root_path)

@@ -15,20 +15,19 @@
 # limitations under the License.                                           #
 ############################################################################
 import asyncio
-from dataclasses import dataclass
 import json
 import logging
 import subprocess
 import sys
 import textwrap
-from types import resolve_bases
 import tabulate
 
+from server.completers.resolver import CompletionResolver
 
 from server.ats.trees.app import AppTree
 
 from server.ats.trees.common import BaseTree, PropertyNode
-from server.utils.common import is_var_allowed
+from server.utils.common import get_repo_root_path, is_var_allowed, get_path_to_pos
 from server.validation.factory import ValidatorFactory
 
 # from pygls.lsp.types.language_features.semantic_tokens import SemanticTokens, SemanticTokensEdit, SemanticTokensLegend, SemanticTokensOptions, SemanticTokensParams, SemanticTokensPartialResult, SemanticTokensRangeParams
@@ -325,12 +324,14 @@ def completions(
                 is_incomplete=(len(suggested_vars) == 0), items=suggested_vars
             )
 
-    root = server.workspace.root_path
-
+    root = get_repo_root_path(doc.path)
+    
     if doc_type == "blueprint":
-        items = []
-        if last_word.endswith("."):
-            if words and len(words) > 1 and words[1] == words[-1] and words[0] != "-":
+        path = get_path_to_pos(tree, params.position)
+
+        items=[]
+        if last_word.endswith('.'):
+            if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
                 cur_word = words[-1]
                 word_parts = cur_word.split("$")
                 if word_parts:
@@ -428,71 +429,18 @@ def completions(
                         )
 
         else:
-            parent = common.get_parent_word(doc, params.position)
-            line = params.position.line
-            char = params.position.character
-
-            if parent == "applications":
-                apps = applications.get_available_applications(root)
-                for app in apps:
-                    if apps[app]["app_completion"]:
-                        items.append(
-                            CompletionItem(
-                                label=app,
-                                kind=CompletionItemKind.Reference,
-                                text_edit=TextEdit(
-                                    range=Range(
-                                        start=Position(line=line, character=char - 2),
-                                        end=Position(line=line, character=char),
-                                    ),
-                                    new_text=apps[app]["app_completion"],
-                                ),
-                            )
-                        )
-
-            if parent == "services":
-                srvs = services.get_available_services(root)
-                for srv in srvs:
-                    if srvs[srv]["srv_completion"]:
-                        items.append(
-                            CompletionItem(
-                                label=srv,
-                                kind=CompletionItemKind.Reference,
-                                text_edit=TextEdit(
-                                    range=Range(
-                                        start=Position(line=line, character=char - 2),
-                                        end=Position(line=line, character=char),
-                                    ),
-                                    new_text=srvs[srv]["srv_completion"],
-                                ),
-                            )
-                        )
-
+            try:
+                completer = CompletionResolver.get_completer(path)
+                completions = completer(server.workspace, params, tree).get_completions()
+                items += completions
+            except ValueError:
+                logging.error("Unable to build a completions list")
+            
         if items:
             return CompletionList(is_incomplete=False, items=items)
         else:
-            line = params.position.line
-            char = params.position.character
-            return CompletionList(
-                is_incomplete=False,
-                items=[
-                    CompletionItem(
-                        label=f"No suggestions.",
-                        kind=CompletionItemKind.Text,
-                        text_edit=TextEdit(
-                            new_text="",
-                            range=Range(
-                                start=Position(
-                                    line=line,
-                                    character=char
-                                    - (1 if last_word.endswith("$") else 0),
-                                ),
-                                end=Position(line=line, character=char),
-                            ),
-                        ),
-                    )
-                ],
-            )
+            return CompletionList(is_incomplete=True, items=[])
+
     elif doc_type == "application":
         if words and len(words) == 1:
             if words[0] == "script:":
@@ -645,7 +593,7 @@ async def lsp_document_link(
     except yaml.MarkedYAMLError as ex:
         return links
 
-    root = server.workspace.root_path
+    root = get_repo_root_path(doc.path)
 
     if doc_type == "blueprint":
         try:

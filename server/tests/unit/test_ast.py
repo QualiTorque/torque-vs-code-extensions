@@ -172,6 +172,25 @@ spec_version: 1"""
         self.assertEqual(tree.errors[0].start_pos, (4, 4))
         self.assertEqual(tree.errors[0].end_pos, (4, 5))
 
+
+    def test_empty_item_deep_in_tree(self):
+        doc = """source:
+  image:
+    ami:
+    - id: ami-034a66a2fdb1a734e
+      region: eu-west-1
+      username: ubuntu
+    - 
+    docker_image:
+    - name: quali/ubuntu
+      tag: elk624-python-2
+  os_type: linux
+kind: application
+"""
+        tree = self._parse(doc)
+        self.assertEqual(len(tree.errors), 1)
+        self.assertEqual(tree, no_indent.app_no_indent_deep)
+
     def test_ignore_unknown_child_simple(self):
         doc = """kind: blueprint
 test: value
