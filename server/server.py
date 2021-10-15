@@ -787,7 +787,17 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
             capture_output=True,
             text=True)
 
+        if result.stderr:
+            server.show_message(
+                f"An error occurred while executing the command: {result.stderr}",
+                MessageType.Error,
+            )
+
+        if result.stdout:
+            sbs = json.loads(result.stdout)
+
     except Exception as ex:
+<<<<<<< HEAD
         server.show_message(f"Unable to fetch Torque sandboxes. Reason: {str(ex)}", MessageType.Error)
     
     if result.stderr:
@@ -795,6 +805,11 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
 
     if result.stdout:
         sbs = json.loads(result.stdout)
+=======
+        server.show_message(
+            f"Unable to fetch Torque sandboxes. Reason: {str(ex)}", MessageType.Error
+        )
+>>>>>>> fa8f8c5 (read subprocess result in try block)
 
     return sbs
 
@@ -810,16 +825,33 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
         result = subprocess.run(
             [sys.prefix + '/bin/torque', '--profile', active_profile, 'bp', 'list', '--output', 'json', '--detail'],
             capture_output=True,
+<<<<<<< HEAD
             text=True)
         
+=======
+            text=True,
+        )
+        if result.stderr:
+            server.show_message(
+                f"An error occurred while executing the command: {result.stderr}",
+                MessageType.Error,
+            )
+
+        return result.stdout
+
+>>>>>>> fa8f8c5 (read subprocess result in try block)
     except Exception as ex:
         server.show_message(f"Unable to fetch Torque sandboxes. Reason: {str(ex)}", MessageType.Error)
         return None
+<<<<<<< HEAD
 
     if result.stderr:
         server.show_message(f"An error occurred while executing the command: {result.stderr}", MessageType.Error)
    
     return result.stdout
+=======
+    
+>>>>>>> fa8f8c5 (read subprocess result in try block)
 
 @torque_ls.command(TorqueLanguageServer.CMD_TORQUE_LOGIN)
 async def torque_login(server: TorqueLanguageServer, *args):
@@ -893,6 +925,7 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
         result = subprocess.run(
             [sys.prefix + '/bin/torque', '--profile', active_profile, 'sb', 'get', sb_id, '--output=json', '--detail'],
             capture_output=True,
+<<<<<<< HEAD
             text=True)
     except Exception as ex:
         server.show_message(f"Failed to get status of sandbox {sb_id}. Reason: {str(ex)}", MessageType.Error)
@@ -901,6 +934,22 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
         server.show_message(f"An error occurred while executing the command: {result.stderr}", MessageType.Error)
    
     return result.stdout
+=======
+            text=True,
+        )
+        if result.stderr:
+            server.show_message(
+                f"An error occurred while executing the command: {result.stderr}",
+                MessageType.Error,
+            )
+        return result.stdout
+
+    except Exception as ex:
+        server.show_message(
+            f"Failed to get status of sandbox {sb_id}. Reason: {str(ex)}",
+            MessageType.Error,
+        )
+>>>>>>> fa8f8c5 (read subprocess result in try block)
 
 @torque_ls.command(TorqueLanguageServer.CMD_END_SANDBOX)
 async def end_sandbox(server: TorqueLanguageServer, *args):
@@ -920,6 +969,7 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
         result = subprocess.run(
             [sys.prefix + '/bin/torque', '--profile', active_profile, 'sb', 'end', sb_id],
             capture_output=True,
+<<<<<<< HEAD
             text=True)
     except Exception as ex:
         server.show_message(f"Failed to end the sandbox {sb_id}. Reason: {str(ex)}", MessageType.Error)
@@ -928,6 +978,22 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
         server.show_message(f"An error occurred while executing the command: {result.stderr}", MessageType.Error)
 
     return result.stdout
+=======
+            text=True,
+        )
+        if result.stderr:
+            server.show_message(
+                f"An error occurred while executing the command: {result.stderr}",
+                MessageType.Error,
+            )
+        return result.stdout
+
+    except Exception as ex:
+        server.show_message(
+            f"Failed to end the sandbox {sb_id}. Reason: {str(ex)}", MessageType.Error
+        )
+
+>>>>>>> fa8f8c5 (read subprocess result in try block)
 
 @torque_ls.command(TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT)
 async def validate_blueprint(server: TorqueLanguageServer, *args):
@@ -945,6 +1011,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
     server.show_message('Validating blueprint: ' + blueprint_name)
 
     try:
+<<<<<<< HEAD
         result = subprocess.run([sys.prefix + '/bin/torque',
                                 '--profile', active_profile,
                                 'bp', 'validate', blueprint_name, '--output=json'],
@@ -967,3 +1034,47 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
             server.show_message("Unable to get the list of issues. Try to validate blueprint using Torque CLI")
     else:
         server.show_message('Validation completed. Blueprint is valid.')
+=======
+        result = subprocess.run(
+            [
+                sys.prefix + "/bin/torque",
+                "--profile",
+                active_profile,
+                "bp",
+                "validate",
+                blueprint_name,
+                "--output=json",
+            ],
+            cwd=server.workspace.root_path,
+            capture_output=True,
+            text=True,
+        )
+        if result.stderr:
+            try:
+                errors_json = json.loads(result.stderr)
+                headers = ["Name", "Message"]
+                table = []
+                for err in errors_json:
+                    table.append(
+                        [
+                            "\n".join(textwrap.wrap(err["name"], width=40)),
+                            "\n".join(textwrap.wrap(err["message"], width=60)),
+                        ]
+                    )
+
+                server.show_message_log(
+                    tabulate.tabulate(table, headers, tablefmt="simple")
+                )
+                server.show_message(
+                    'Validation complete. Check the "Torque Language Server" Output view for any issues.'
+                )
+            except JSONDecodeError:
+                server.show_message(
+                    "Unable to get the list of issues. Try to validate blueprint using Torque CLI"
+                )
+        else:
+            server.show_message("Validation completed. Blueprint is valid.")
+
+    except Exception as ex:
+        print(ex)
+>>>>>>> fa8f8c5 (read subprocess result in try block)
