@@ -932,7 +932,6 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
         server.show_message(
             f"Unable to fetch Torque sandboxes. Reason: {str(ex)}", MessageType.Error
         )
-
     return sbs
 
 
@@ -960,14 +959,13 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
                 "--detail",
             ],
             capture_output=True,
-            text=True,
+            text=True
         )
         if result.stderr:
             server.show_message(
                 f"An error occurred while executing the command: {result.stderr}",
                 MessageType.Error,
             )
-
         return result.stdout
 
     except Exception as ex:
@@ -1087,6 +1085,7 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
             MessageType.Error,
         )
 
+
 @torque_ls.command(TorqueLanguageServer.CMD_END_SANDBOX)
 async def end_sandbox(server: TorqueLanguageServer, *args):
     if not args or not args[0]:
@@ -1128,7 +1127,6 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
         server.show_message(
             f"Failed to end the sandbox {sb_id}. Reason: {str(ex)}", MessageType.Error
         )
-
 
 
 @torque_ls.command(TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT)
