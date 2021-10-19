@@ -266,7 +266,13 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     except yaml.MarkedYAMLError as ex:
         return CompletionList(is_incomplete=True, items=[])
 
-    tree = Parser(doc.source).parse()
+    try:
+        tree = Parser(doc.source).parse()
+    except Exception as ex:
+        import sys
+        logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+        return CompletionList(is_incomplete=True, items=[])
+    
     words = common.preceding_words(doc, params.position)
     last_word = words[-1] if words else ""
     
@@ -751,7 +757,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                 sandbox_id = line_dec.replace('Id: ','')
             if not line_dec.endswith('sec]'):
                 if sandbox_id and not line_dec == sandbox_id:
-                    server.show_message_log(line_dec)           
+                    server.show_message_log(line_dec)
 
         error_msg = ""
         if process.stderr:
@@ -763,9 +769,10 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                 error_msg = 'Error while starting the sandbox:\n' + error_msg
                 server.show_message_log(error_msg)
         if error_msg:
-            server.show_message('Sandbox had some errors. See details in the Output view.')
+            server.show_message('Sandbox failed to start. See details in the Output view.')
         else:
             server.show_message('Sandbox was created. See details in the Output view or Sandboxes view.')
+            server.show_message_log("Sandbox created, you can view the current state of the sandbox from the Sandboxes Explorer.")
     except Exception as ex:
         server.show_message_log(str(ex), msg_type=MessageType.Error)
 
@@ -984,7 +991,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                                 cwd=server.workspace.root_path,
                                 capture_output=True, text=True)
     except Exception as ex:
-        print(ex)
+        logging.error(ex)
     if result.stderr:
         try:
             errors_json = json.loads(result.stderr)
@@ -997,6 +1004,6 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
             server.show_message_log(tabulate.tabulate(table, headers, tablefmt="simple"))
             server.show_message('Validation complete. Check the "Torque Language Server" Output view for any issues.')
         except JSONDecodeError:
-            server.show_message("Unable to get the list of issues. Try to validate blueprint using Torque CLI")
+            server.show_message("Unable to get the list of issues. Try to validate this blueprint using Torque CLI")
     else:
         server.show_message('Validation completed. Blueprint is valid.')
