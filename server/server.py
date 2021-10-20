@@ -995,7 +995,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
     if result.stderr:
         try:
             errors_json = json.loads(result.stderr)
-            headers = ["Name", "Message"]
+            headers = ["Problem", "Details"]
             table = []
             for err in errors_json:
                 table.append(['\n'.join(textwrap.wrap(err["name"], width=40)),
@@ -1006,4 +1006,5 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
         except JSONDecodeError:
             server.show_message("Unable to get the list of issues. Try to validate this blueprint using Torque CLI")
     else:
+        server.show_message_log(f"Validation completed. The blueprint '{blueprint_name}' and its dependencies are valid.")
         server.show_message('Validation completed. Blueprint is valid.')
