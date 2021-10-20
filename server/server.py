@@ -767,7 +767,7 @@ async def _get_profile(server: TorqueLanguageServer):
                 ]
             )
         )
-        active_profile = config[0].get("active_profile")
+        active_profile = config[0].get("activeProfile")
     except:
         active_profile = ""
 
