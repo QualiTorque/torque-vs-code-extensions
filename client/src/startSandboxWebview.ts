@@ -148,6 +148,7 @@ export class SandboxStartPanel {
     }
 
 	private _getHtmlForWebview(webview: vscode.Webview) {
+		const default_duration = vscode.workspace.getConfiguration('torque').get<number>("defaultSandboxDuration", 120);
 		const stylesPathMainPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css');
 
 		const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);
@@ -160,7 +161,7 @@ export class SandboxStartPanel {
 		
 		let generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         generalHtml += "<tr><td width='180px'>" + "Name" + "</td><td>" + "<input type='text' id='sandbox_name' value='" + cleanName + "'></td></tr>";
-        generalHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='30' min='10' max='3600'></td></tr>";
+        generalHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='" + default_duration.toString() + "' min='10' max='3600'></td></tr>";
         generalHtml += "</table>";
 		let inputsHtml = "";
 		let postMessageProperties = "sandbox_name: document.getElementById('sandbox_name').value, duration: document.getElementById('duration').value"
