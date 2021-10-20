@@ -299,8 +299,8 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
     root = torque_ls.workspace.root_path
     
     if doc_type == "blueprint":
-        parent_node = common.get_parent_node(tree, params.position)
-        if parent_node and hasattr(parent_node, 'text') and parent_node.text == "clouds":
+        parent_node = common.get_parent_node_text(tree, params.position)
+        if parent_node == "clouds":
             items = []
             items += [CompletionItem(label=script,
                                      detail="AWS region",
@@ -397,18 +397,19 @@ def completions(params: Optional[CompletionParams] = None) -> CompletionList:
             line = params.position.line
             char = params.position.character
             
-            if parent_node and parent_node.text == "applications":
+            if parent_node == "applications":
                 apps = applications.get_available_applications(root)
                 for app in apps:
                     if apps[app]['app_completion']:
                         items.append(CompletionItem(label=app,
                                                     kind=CompletionItemKind.Reference,
-                                                    range=Range(start=Position(line=line, character=0),
-                                                                end=Position(line=line, character=char)),
-                                                    insert_text=apps[app]['app_completion'],
-                                                    ))
+                                                    text_edit=TextEdit(
+                                                                    range=Range(start=Position(line=line, character=char-2),
+                                                                                end=Position(line=line, character=char)),
+                                                                    new_text=apps[app]['app_completion'],
+                                                    )))
     
-            if parent_node and parent_node.text == "services":
+            elif parent_node == "services":
                 srvs = services.get_available_services(root)
                 for srv in srvs:
                     if srvs[srv]['srv_completion']:

@@ -16,6 +16,6 @@ class StringYAML(YAML):
 def format_yaml(input):
     yaml = StringYAML()
     data = yaml.load(input)
-    yaml.indent(sequence=2, offset=2)
+    yaml.indent(sequence=4, offset=2)
     output = yaml.dump(data)
     return output
