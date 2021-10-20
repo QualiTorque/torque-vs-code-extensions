@@ -450,6 +450,7 @@ def completions(
 
         else:
             try:
+                path = common.get_path_to_pos(tree, params.position)
                 completer = CompletionResolver.get_completer(path)
                 completions = completer(
                     server.workspace, params, tree
@@ -475,7 +476,7 @@ def completions(
                     ],
                 )
 
-    if doc_type == "TerraForm":
+    elif doc_type == "TerraForm":
         if words and len(words) == 1:
             if words[0] == "var_file:":
                 var_files = services.get_service_vars(params.text_document.uri)
