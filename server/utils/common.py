@@ -1,3 +1,4 @@
+import pathlib
 from typing import Optional, Tuple, List
 from pygls.lsp import types
 from pygls.workspace import Document, position_from_utf16
@@ -103,18 +104,34 @@ def get_parent_node_text(tree: BaseTree, pos: Position):
 #     return word
     
 
-def preceding_words(document: Document, position: types.Position) -> Optional[Tuple[str, str]]:
-    """
-    Get the word under the cursor returning the start and end positions.
-    """
+def get_line_before_position(document: Document, position: types.Position):
     lines = document.lines
     if position.line >= len(lines):
         return None
 
     row, col = position_from_utf16(lines, position)
     line = lines[row]
+    return line[:col]
+
+
+def preceding_words(document: Document, position: types.Position) -> Optional[Tuple[str, str]]:
+    """
+    Get the word under the cursor returning the start and end positions.
+    """
+    line = get_line_before_position(document, position)
     try:
-        word = line[:col].strip().split()[-2:]
+        word = line.strip().split()[-2:]
         return word
     except ValueError:
         return None
+
+def get_repo_root_path(path: str) -> str:
+    full_path = pathlib.Path(path).absolute()
+    if full_path.parents[0].name == "blueprints":
+        return full_path.parents[1].absolute().as_posix()
+
+    elif full_path.parents[1].name in ["services", "applications"]:
+        return full_path.parents[2].absolute().as_posix()
+
+    else:
+        raise ValueError(f"Wrong document path of blueprint file: {full_path.as_posix()}")  

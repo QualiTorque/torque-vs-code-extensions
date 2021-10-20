@@ -1,3 +1,11 @@
+from server.ats.trees.app import (
+    AmiImageNode,
+    AmiSequenceNode,
+    AppTree,
+    DockerImageNode,
+    DockerImagesSequence,
+    SourceNode,
+)
 from server.ats.trees.common import (
     NodeError,
     PropertyNode,
@@ -534,7 +542,7 @@ empty_item_end_no_indent = BlueprintTree(
         ),
         value=BlueprintTree.AppsSequence(
             start_pos=(2, 0),
-            end_pos=None,
+            end_pos=(6, 0),
             parent=ScalarNode(
                 start_pos=(1, 0),
                 end_pos=(1, 12),
@@ -635,4 +643,259 @@ empty_item_end_no_indent = BlueprintTree(
     ingress=None,
     infrastructure=None,
     environmentType=None,
+)
+##########################################################################
+app_no_indent_deep = AppTree(
+    start_pos=(0, 0),
+    end_pos=(12, 0),
+    errors=[
+        NodeError(
+            start_pos=(6, 4), end_pos=(6, 5), message="Element could not be empty"
+        )
+    ],
+    inputs_node=None,
+    kind=PropertyNode(
+        start_pos=(11, 0),
+        end_pos=(12, 0),
+        errors=[],
+        key=ScalarNode(start_pos=(11, 0), end_pos=(11, 4), errors=[], _text="kind"),
+        value=ScalarNode(
+            start_pos=(11, 6), end_pos=(11, 17), errors=[], _text="application"
+        ),
+    ),
+    spec_version=None,
+    outputs=None,
+    configuration=None,
+    source=PropertyNode(
+        start_pos=(0, 0),
+        end_pos=(11, 0),
+        errors=[
+            NodeError(
+                start_pos=(6, 4), end_pos=(6, 5), message="Element could not be empty"
+            )
+        ],
+        key=ScalarNode(
+            start_pos=(0, 0),
+            end_pos=(0, 6),
+            errors=[
+                NodeError(
+                    start_pos=(6, 4),
+                    end_pos=(6, 5),
+                    message="Element could not be empty",
+                )
+            ],
+            _text="source",
+        ),
+        value=SourceNode(
+            start_pos=(1, 2),
+            end_pos=(11, 0),
+            errors=[
+                NodeError(
+                    start_pos=(6, 4),
+                    end_pos=(6, 5),
+                    message="Element could not be empty",
+                )
+            ],
+            image=PropertyNode(
+                start_pos=(1, 2),
+                end_pos=(10, 2),
+                errors=[
+                    NodeError(
+                        start_pos=(6, 4),
+                        end_pos=(6, 5),
+                        message="Element could not be empty",
+                    )
+                ],
+                key=ScalarNode(
+                    start_pos=(1, 2),
+                    end_pos=(1, 7),
+                    errors=[
+                        NodeError(
+                            start_pos=(6, 4),
+                            end_pos=(6, 5),
+                            message="Element could not be empty",
+                        )
+                    ],
+                    _text="image",
+                ),
+                value=SourceNode.ImageNode(
+                    start_pos=(2, 4),
+                    end_pos=(10, 2),
+                    errors=[
+                        NodeError(
+                            start_pos=(6, 4),
+                            end_pos=(6, 5),
+                            message="Element could not be empty",
+                        )
+                    ],
+                    ami=PropertyNode(
+                        start_pos=(2, 4),
+                        end_pos=(7, 4),
+                        errors=[
+                            NodeError(
+                                start_pos=(6, 4),
+                                end_pos=(6, 5),
+                                message="Element could not be empty",
+                            )
+                        ],
+                        key=ScalarNode(
+                            start_pos=(2, 4),
+                            end_pos=(2, 7),
+                            errors=[
+                                NodeError(
+                                    start_pos=(6, 4),
+                                    end_pos=(6, 5),
+                                    message="Element could not be empty",
+                                )
+                            ],
+                            _text="ami",
+                        ),
+                        value=AmiSequenceNode(
+                            start_pos=(3, 4),
+                            end_pos=(7, 4),
+                            errors=[
+                                NodeError(
+                                    start_pos=(6, 4),
+                                    end_pos=(6, 5),
+                                    message="Element could not be empty",
+                                )
+                            ],
+                            nodes=[
+                                AmiImageNode(
+                                    start_pos=(3, 6),
+                                    end_pos=(6, 4),
+                                    errors=[],
+                                    id=PropertyNode(
+                                        start_pos=(3, 6),
+                                        end_pos=(4, 6),
+                                        errors=[],
+                                        key=ScalarNode(
+                                            start_pos=(3, 6),
+                                            end_pos=(3, 8),
+                                            errors=[],
+                                            _text="id",
+                                        ),
+                                        value=TextNode(
+                                            start_pos=(3, 10),
+                                            end_pos=(3, 31),
+                                            errors=[],
+                                            _text="ami-034a66a2fdb1a734e",
+                                        ),
+                                    ),
+                                    region=PropertyNode(
+                                        start_pos=(4, 6),
+                                        end_pos=(5, 6),
+                                        errors=[],
+                                        key=ScalarNode(
+                                            start_pos=(4, 6),
+                                            end_pos=(4, 12),
+                                            errors=[],
+                                            _text="region",
+                                        ),
+                                        value=ScalarNode(
+                                            start_pos=(4, 14),
+                                            end_pos=(4, 23),
+                                            errors=[],
+                                            _text="eu-west-1",
+                                        ),
+                                    ),
+                                    username=PropertyNode(
+                                        start_pos=(5, 6),
+                                        end_pos=(6, 4),
+                                        errors=[],
+                                        key=ScalarNode(
+                                            start_pos=(5, 6),
+                                            end_pos=(5, 14),
+                                            errors=[],
+                                            _text="username",
+                                        ),
+                                        value=TextNode(
+                                            start_pos=(5, 16),
+                                            end_pos=(5, 22),
+                                            errors=[],
+                                            _text="ubuntu",
+                                        ),
+                                    ),
+                                )
+                            ],
+                        ),
+                    ),
+                    azure_image=None,
+                    docker_image=PropertyNode(
+                        start_pos=(7, 4),
+                        end_pos=(10, 2),
+                        errors=[],
+                        key=ScalarNode(
+                            start_pos=(7, 4),
+                            end_pos=(7, 16),
+                            errors=[],
+                            _text="docker_image",
+                        ),
+                        value=DockerImagesSequence(
+                            start_pos=(8, 4),
+                            end_pos=(10, 2),
+                            errors=[],
+                            nodes=[
+                                DockerImageNode(
+                                    start_pos=(8, 6),
+                                    end_pos=(10, 2),
+                                    errors=[],
+                                    name=PropertyNode(
+                                        start_pos=(8, 6),
+                                        end_pos=(9, 6),
+                                        errors=[],
+                                        key=ScalarNode(
+                                            start_pos=(8, 6),
+                                            end_pos=(8, 10),
+                                            errors=[],
+                                            _text="name",
+                                        ),
+                                        value=TextNode(
+                                            start_pos=(8, 12),
+                                            end_pos=(8, 24),
+                                            errors=[],
+                                            _text="quali/ubuntu",
+                                        ),
+                                    ),
+                                    pull_secret=None,
+                                    tag=PropertyNode(
+                                        start_pos=(9, 6),
+                                        end_pos=(10, 2),
+                                        errors=[],
+                                        key=ScalarNode(
+                                            start_pos=(9, 6),
+                                            end_pos=(9, 9),
+                                            errors=[],
+                                            _text="tag",
+                                        ),
+                                        value=TextNode(
+                                            start_pos=(9, 11),
+                                            end_pos=(9, 26),
+                                            errors=[],
+                                            _text="elk624-python-2",
+                                        ),
+                                    ),
+                                    username=None,
+                                )
+                            ],
+                        ),
+                    ),
+                ),
+            ),
+            os_type=PropertyNode(
+                start_pos=(10, 2),
+                end_pos=(11, 0),
+                errors=[],
+                key=ScalarNode(
+                    start_pos=(10, 2), end_pos=(10, 9), errors=[], _text="os_type"
+                ),
+                value=ScalarNode(
+                    start_pos=(10, 11), end_pos=(10, 16), errors=[], _text="linux"
+                ),
+            ),
+        ),
+    ),
+    debugging=None,
+    infrastructure=None,
+    ostype=None,
 )

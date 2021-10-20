@@ -26,4 +26,3 @@ coverage.xml
 *.zip
 *.vsix
 client/*.md
-venv/

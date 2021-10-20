@@ -147,17 +147,7 @@
 					"type": "string",
 					"description": "The deafult profile to use",
 					"scope": "resource"
-				},
-				"torque.active_account": {
-					"type": "string",
-					"description": "The deafult account to use",
-					"scope": "resource"
-				},
-				"torque.active_space": {
-					"type": "string",
-					"description": "The deafult space to use",
-					"scope": "resource"
-				}				
+				}	
 			}
 		},
 		"languages": [

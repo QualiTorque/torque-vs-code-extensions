@@ -273,7 +273,11 @@ class Parser:
             if self.is_array_item and isinstance(self.tokens_stack[-1], BlockEntryToken):
                 self._handle_hanging_dash(self.tokens_stack[-1])
                 self.tokens_stack.pop()  # remove BlockEntryToken
-                self.nodes_stack.pop()  # remove sequence
+                node = self.nodes_stack.pop()  # remove sequence 
+                node.end_pos = self.get_token_end(token)
+
+                if isinstance(self.tokens_stack[-1], ValueToken):
+                    self.tokens_stack.pop()
 
                 # and also handle property if exist
                 if isinstance(self.nodes_stack[-1], PropertyNode):
