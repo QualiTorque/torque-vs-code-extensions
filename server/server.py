@@ -808,6 +808,10 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     artifacts_args = args[0][4]
 
     server.show_message("Starting sandbox from blueprint: " + blueprint_name)
+    server.show_message_log("Starting sandbox from blueprint: " + blueprint_name)
+    if dev_mode:
+        server.show_message_log("If there are local changes it might take some more time to get ready.")
+        
     try:
         command = [sys.prefix + '/bin/python', '-m', 'torque',
                    '--profile', active_profile,
@@ -850,12 +854,11 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                 server.show_message_log(error_msg)
         if error_msg:
             server.show_message(
-                'Sandbox had some errors. Check the "Torque" Output view for more details.'
+                'Sandbox creation failed. Check the "Torque" Output view for more details.'
             )
         else:
-            server.show_message(
-                "Sandbox was created. See details in the Output view or Sandboxes view."
-            )
+            server.show_message("Sandbox was created. See details in the Output view or Sandboxes view.")
+            server.show_message_log("Sandbox was created. See details in the Output view or Sandboxes view.")
     except Exception as ex:
         server.show_message_log(str(ex), msg_type=MessageType.Error)
 
@@ -979,7 +982,7 @@ async def torque_login(server: TorqueLanguageServer, *args):
 
         exit_code = p.returncode
         if exit_code != 0:
-            return result[1].decode()
+            return "Login Failed"
         else:
             return None
 
@@ -991,27 +994,19 @@ async def torque_login(server: TorqueLanguageServer, *args):
 async def remove_profile(server: TorqueLanguageServer, *args):
     if len(args[0]) == 0:
         server.show_message(
-            "Please remove the sandbox from the command in the blueprint file.",
+            "Profile was not provided",
             MessageType.Error,
         )
         return
 
-    active_profile = await _get_profile(server)
-
-    if not active_profile:
-        server.show_message(
-            "Please have at least one profile set as the default one.",
-            MessageType.Error,
-        )
-        return
-
+    profile_name = args[0][0]
     try:
-        result = _run_torque_cli_command(f"torque configure remove {active_profile}")
-        server.show_message(f"Profile {active_profile} has been deleted")
+        result = _run_torque_cli_command(f"torque configure remove {profile_name}")
+        server.show_message(f"Profile '{profile_name}' deleted.")
         return result.returncode
     except Exception as ex:
         server.show_message(
-            f"Failed to remove profile {active_profile}. Reason: {str(ex)}",
+            f"Failed to remove profile '{profile_name}'. Reason: {str(ex)}",
             MessageType.Error,
         )
 
