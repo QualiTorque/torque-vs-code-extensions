@@ -45,10 +45,9 @@ function getClientOptions(): LanguageClientOptions {
     return {
         // Register the server for plain text documents
         documentSelector: [
-            { scheme: "file", language: "yaml" },
-            // { scheme: "untitled", language: "yaml" },
+            { scheme: "file", language: "yaml" },            
         ],
-        outputChannelName: "Torque Language Server",
+        outputChannelName: "Torque",
         synchronize: {
             // Notify the server about file changes to '.yaml files contain in the workspace
             fileEvents: workspace.createFileSystemWatcher("**/*.yaml"),

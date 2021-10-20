@@ -141,7 +141,7 @@
 		},
 		"configuration": {
 			"type": "object",
-			"title": "Torque Server Configuration",
+			"title": "Torque Configuration",
 			"properties": {
 				"torque.active_profile": {
 					"type": "string",

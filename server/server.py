@@ -1002,7 +1002,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                           '\n'.join(textwrap.wrap(err["message"], width=60))])
 
             server.show_message_log(tabulate.tabulate(table, headers, tablefmt="simple"))
-            server.show_message('Validation complete. Check the "Torque Language Server" Output view for any issues.')
+            server.show_message('Validation complete. Check the "Torque" Output view for any issues.')
         except JSONDecodeError:
             server.show_message("Unable to get the list of issues. Try to validate this blueprint using Torque CLI")
     else:
