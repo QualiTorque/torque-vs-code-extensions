@@ -48,7 +48,7 @@ function getClientOptions(): LanguageClientOptions {
             { scheme: "file", language: "yaml" },
             // { scheme: "untitled", language: "yaml" },
         ],
-        outputChannelName: "Torque Language Server",
+        outputChannelName: "Torque",
         synchronize: {
             // Notify the server about file changes to '.yaml files contain in the workspace
             fileEvents: workspace.createFileSystemWatcher("**/*.yaml"),

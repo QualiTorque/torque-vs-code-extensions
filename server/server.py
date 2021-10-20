@@ -848,7 +848,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                 server.show_message_log(error_msg)
         if error_msg:
             server.show_message(
-                "Sandbox had some errors. See details in the Output view."
+                'Sandbox had some errors. Check the "Torque" Output view for more details.'
             )
         else:
             server.show_message(
@@ -1109,7 +1109,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
         if result.stderr:
             try:
                 errors_json = json.loads(result.stderr)
-                headers = ["Name", "Message"]
+                headers = ["Problem", "Details"]
                 table = []
                 for err in errors_json:
                     table.append(
@@ -1123,14 +1123,14 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                     tabulate.tabulate(table, headers, tablefmt="simple")
                 )
                 server.show_message(
-                    'Validation complete. Check the "Torque Language Server" Output view for any issues.'
+                    'Validation complete. Check the "Torque" Output view for any issues.'
                 )
             except JSONDecodeError:
                 server.show_message(
                     "Unable to get the list of issues. Try to validate blueprint using Torque CLI"
                 )
         else:
-            server.show_message("Validation completed. Blueprint is valid.")
+            server.show_message_log(f"Validation completed. The blueprint '{blueprint_name}' and its dependencies are valid.")
 
     except Exception as ex:
         print(ex)
