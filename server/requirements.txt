@@ -1,3 +1,5 @@
 pygls==0.11.1
 pyyaml==5.4.1
 ruamel.yaml==0.17.10
+tabulate==0.8.7
+torque-cli==1.4.6b0

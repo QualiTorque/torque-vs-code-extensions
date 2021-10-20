@@ -1,3 +1,4 @@
+from pygls.workspace import Document
 from server.validation.srv_validator import ServiceValidationHandler
 from server.validation.app_validator import AppValidationHandler
 from server.validation.bp_validatior import BlueprintValidationHandler
@@ -12,7 +13,7 @@ class ValidatorFactory:
     }
 
     @classmethod
-    def get_validator(cls, tree: BaseTree):
+    def get_validator(cls, tree: BaseTree, text_doc: Document):
         if tree.kind is None:
             raise ValueError("Unable to validate document. 'kind' property is not defined")
 
@@ -22,4 +23,6 @@ class ValidatorFactory:
             options = ", ".join(list(cls.kind_validators_map.keys()))
             raise ValueError(f"'kind' property is not correct. Must be in {options}")
 
-        return cls.kind_validators_map[kind]
+        validator_cls: type = cls.kind_validators_map[kind]
+
+        return validator_cls(tree, text_doc)

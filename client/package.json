@@ -30,9 +30,126 @@
 		"Linters"
 	],
 	"activationEvents": [
-		"onLanguage:yaml"
+		"onLanguage:yaml",
+		"onStartupFinished"
 	],
 	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "torque-view-container",
+					"title": "Torque",
+					"icon": "icon/Quali_Q_white.svg"
+				}
+			]
+		},
+		"views": {
+			"torque-view-container": [
+				{
+					"id": "blueprintsExplorerView",
+					"name": "Blueprints Explorer",
+					"contextualTitle": "Blueprints Explorer"
+				},
+				{
+					"id": "sandboxesExplorerView",
+					"name": "Sandboxes Explorer",
+					"contextualTitle": "Sandboxes Explorer"
+				},
+				{
+					"id": "profilesView",
+					"name": "Profiles"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "sandboxesExplorerView.refreshEntry",
+				"title": "Refresh",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "sandboxesExplorerView.endSandbox",
+				"title": "End Sandbox",
+				"icon": "$(close)"
+			},
+			{
+				"command": "blueprintsExplorerView.refreshEntry",
+				"title": "Refresh",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "profilesView.refreshEntry",
+				"title": "Refresh",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "profilesView.addProfile",
+				"title": "Add Profile",
+				"icon": "$(add)"
+			},
+			{
+				"command": "profilesView.setAsDefaultEntry",
+				"title": "Set as default",
+				"icon": "$(check)"
+			},
+			{
+				"command": "profilesView.removeEntry",
+				"title": "Delete profile",
+				"icon": "$(close)"
+			}
+		],
+		"menus": {
+			"view/title": [
+				{
+					"command": "blueprintsExplorerView.refreshEntry",
+					"group": "navigation",
+					"when": "view == blueprintsExplorerView"
+				},
+				{
+					"command": "sandboxesExplorerView.refreshEntry",
+					"group": "navigation",
+					"when": "view == sandboxesExplorerView"
+				},
+				{
+					"command": "profilesView.refreshEntry",
+					"group": "navigation",
+					"when": "view == profilesView"
+				},
+				{
+					"command": "profilesView.addProfile",
+					"group": "navigation",
+					"when": "view == profilesView"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "profilesView.setAsDefaultEntry",
+					"when": "view == profilesView && viewItem == space",
+					"group": "inline"
+				},
+				{
+					"command": "profilesView.removeEntry",
+					"when": "view == profilesView && viewItem == space",
+					"group": "inline"
+				},
+				{
+					"command": "sandboxesExplorerView.endSandbox",
+					"when": "view == sandboxesExplorerView",
+					"group": "inline"
+				}
+			]
+		},
+		"configuration": {
+			"type": "object",
+			"title": "Torque Configuration",
+			"properties": {
+				"torque.active_profile": {
+					"type": "string",
+					"description": "The deafult profile to use",
+					"scope": "resource"
+				}	
+			}
+		},
 		"languages": [
 			{
 				"id": "yaml",

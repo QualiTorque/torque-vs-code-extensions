@@ -29,8 +29,8 @@ class InfrastructureNode(ObjectNode):
 
 @dataclass
 class RuleNode(ObjectNode):
-    path: ScalarNode = None
-    host: ScalarNode = None
+    path: TextNode = None
+    host: TextNode = None
     application: ScalarNode = None
     port: TextNode = None  # yes, numeric
     color: ScalarNode = None  # not green|blue

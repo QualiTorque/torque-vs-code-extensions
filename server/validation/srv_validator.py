@@ -1,4 +1,3 @@
-import pathlib
 import re
 from server.ats.trees.service import ServiceTree
 from server.validation.common import ValidationHandler
@@ -23,14 +22,6 @@ class ServiceValidationHandler(ValidationHandler):
             logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
 
         return self._diagnostics
-
-    def _get_repo_root_path(self):
-        path = pathlib.Path(self._document.path).absolute()
-        if path.parents[1].name == "services":
-            return path.parents[2].absolute().as_posix()
-
-        else:
-            raise ValueError(f"Wrong document path of service file: {path.as_posix()}")    
 
     def _check_for_unused_service_inputs(self):
         if self._tree.inputs_node:
@@ -83,7 +74,7 @@ class ServiceValidationHandler(ValidationHandler):
                     if deprecated_properties[prop]:
                         message += " " + message_replace.format(deprecated_properties[prop])
                     self._add_diagnostic_for_range(message,
-                                                   range_start_tupple=(line_num, col),
-                                                   range_end_tupple=(line_num, col+len(prop)),
+                                                   range_start_tuple=(line_num, col),
+                                                   range_end_tuple=(line_num, col + len(prop)),
                                                    diag_severity=DiagnosticSeverity.Warning)                    
             line_num += 1

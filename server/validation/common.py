@@ -10,9 +10,6 @@ class ValidationHandler:
         self._diagnostics: List[Diagnostic] = []
         self._document = document
 
-    def _get_repo_root_path(self):
-        raise NotImplementedError()
-
     def _add_diagnostic(
             self,
             node: YamlNode,
@@ -32,15 +29,15 @@ class ValidationHandler:
     def _add_diagnostic_for_range(
             self,
             message: str = "",
-            range_start_tupple = None,
-            range_end_tupple = None,
+            range_start_tuple=None,
+            range_end_tuple=None,
             diag_severity: DiagnosticSeverity = None):
-        if range_start_tupple and range_end_tupple:
+        if range_start_tuple and range_end_tuple:
             self._diagnostics.append(
                 Diagnostic(
                     range=Range(
-                        start=Position(line=range_start_tupple[0], character=range_start_tupple[1]),
-                        end=Position(line=range_end_tupple[0], character=range_end_tupple[1]),
+                        start=Position(line=range_start_tuple[0], character=range_start_tuple[1]),
+                        end=Position(line=range_end_tuple[0], character=range_end_tuple[1]),
                     ),
                     message=message,
                     severity=diag_severity

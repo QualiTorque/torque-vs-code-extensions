@@ -247,7 +247,7 @@
             "type": "object",
             "additionalProperties": false,
             "patternProperties": {
-                "^[\\w\\-\\/]+$": { 
+                "^[\\w\\-\\ /]+$": { 
                     "type": "string", 
                     "pattern": "^(?!\\$).+"
                 }
@@ -521,7 +521,7 @@
                     }
                 }
             },
-            "required": ["gateway", "management", "application"],
+            "required": ["management", "application"],
             "title": "Subnets"
         }
     }

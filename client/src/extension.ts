@@ -20,7 +20,7 @@
 
 import * as net from "net";
 import * as path from "path";
-import { ExtensionContext, workspace, languages } from "vscode";
+import { ExtensionContext, workspace, window, commands, Uri, WebviewPanel, ViewColumn } from "vscode";
 import { installLSWithProgress } from "./setup";
 import {
     LanguageClient,
@@ -31,6 +31,13 @@ import {
     activateYamlExtension,
     addSchemasToYamlConfig
 } from './yamlHelper';
+import { BlueprintsProvider } from './blueprintsExplorer';
+import { SandboxStartPanel } from './startSandboxWebview';
+import { ProfilesProvider } from "./profilesExplorer";
+import { torqueLogin } from  "./torqueLogin"
+import { SandboxesProvider } from "./sandboxesExplorer";
+import { SandboxDetailsPanel } from "./sandboxDetails";
+import { Profile, Sandbox } from "./models";
 
 let client: LanguageClient;
 
@@ -38,10 +45,9 @@ function getClientOptions(): LanguageClientOptions {
     return {
         // Register the server for plain text documents
         documentSelector: [
-            { scheme: "file", language: "yaml" },
-            // { scheme: "untitled", language: "yaml" },
+            { scheme: "file", language: "yaml" },            
         ],
-        outputChannelName: "Torque Language Server",
+        outputChannelName: "Torque",
         synchronize: {
             // Notify the server about file changes to '.yaml files contain in the workspace
             fileEvents: workspace.createFileSystemWatcher("**/*.yaml"),
@@ -105,6 +111,60 @@ export async function activate(context: ExtensionContext) {
 
     activateYamlFeatures(context);    
     context.subscriptions.push(client.start());
+
+    const rootPath = (workspace.workspaceFolders && (workspace.workspaceFolders.length > 0))
+		? workspace.workspaceFolders[0].uri.fsPath : undefined;
+
+	// PROFILES
+    const profilesProvider = new ProfilesProvider();
+    window.registerTreeDataProvider('profilesView', profilesProvider);
+    commands.registerCommand('profilesView.refreshEntry', () => profilesProvider.refresh());
+    commands.registerCommand('profilesView.setAsDefaultEntry', (node: Profile) => profilesProvider.setAsDefault(node));
+    commands.registerCommand('profilesView.removeEntry', (node: Profile) => profilesProvider.removeEntry(node));
+
+    let loginPanel: WebviewPanel | undefined
+    context.subscriptions.push(
+        commands.registerCommand('profilesView.addProfile', () => {
+            if (loginPanel) {
+                loginPanel.reveal(loginPanel.viewColumn || ViewColumn.Active)
+            } else {
+                loginPanel = torqueLogin(context.extensionUri, profilesProvider)
+                loginPanel.onDidDispose(
+                    () => {
+                        loginPanel = undefined
+                    },
+                    undefined,
+                    context.subscriptions
+                )
+            }
+        })
+    )
+
+    // BLUEPRINTS
+	const blueprintsProvider = new BlueprintsProvider();
+	window.registerTreeDataProvider('blueprintsExplorerView', blueprintsProvider);
+	commands.registerCommand('blueprintsExplorerView.refreshEntry', () => blueprintsProvider.refresh());
+    
+    // SANDBOXES
+    const sandboxesProvider = new SandboxesProvider();
+    window.registerTreeDataProvider('sandboxesExplorerView', sandboxesProvider);
+	commands.registerCommand('sandboxesExplorerView.refreshEntry', () => sandboxesProvider.refresh());
+    commands.registerCommand('sandboxesExplorerView.getSandboxDetails', (sandbox: any) => sandboxesProvider.getSandboxDetails(sandbox));
+    commands.registerCommand('sandboxesExplorerView.endSandbox', (sandbox: Sandbox) => sandboxesProvider.endSandbox(sandbox));
+
+
+    context.subscriptions.push(
+		commands.registerCommand('extension.openReserveForm', (bpname:string, inputs:Array<string>, artifacts: object, branch: string) => {
+            SandboxStartPanel.createOrShow(context.extensionUri, bpname, inputs, artifacts, branch);
+        })
+	);
+
+    context.subscriptions.push(
+        commands.registerCommand('extension.showSandboxDetails', (sandbox: any) => {
+            SandboxDetailsPanel.createOrShow(context.extensionUri, sandbox['id'], sandbox['name'], sandbox['blueprint_name'])
+        })
+    )
+
 }
 
 export function deactivate(): Thenable<void> {

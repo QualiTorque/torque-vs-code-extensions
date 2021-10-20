@@ -102,7 +102,7 @@ export async function installLSWithProgress(context: ExtensionContext): Promise<
   }, (progress): Promise<string> => {
     return new Promise<string>(async (resolve, reject) => {
       try {
-        progress.report({ message: "First-time Torque language server initialization" });
+        progress.report({ message: "First-time Torque extension initialization" });
 
         // Get python interpreter
         const python = await getPython();
