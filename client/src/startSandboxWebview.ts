@@ -234,8 +234,9 @@ export class SandboxStartPanel {
             <script nonce="${nonce}">
                 const vscode = acquireVsCodeApi();
                 document.getElementById("start-btn").addEventListener("click", function() {
-                    startSandbox();
-                });
+					this.disabled = true;
+					startSandbox();
+                }, { once: true });
                 function startSandbox() {                
                     vscode.postMessage({
                         command: 'run-command',
