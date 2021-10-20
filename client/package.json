@@ -141,13 +141,13 @@
 		},
 		"configuration": {
 			"type": "object",
-			"title": "Torque Server Configuration",
+			"title": "Torque Configuration",
 			"properties": {
-				"torque.active_profile": {
+				"torque.activeProfile": {
 					"type": "string",
-					"description": "The deafult profile to use",
+					"description": "The currently selected profile to use. Can be set from the Torque profiles view when having at least one profile.",
 					"scope": "resource"
-				}	
+				}				
 			}
 		},
 		"languages": [
