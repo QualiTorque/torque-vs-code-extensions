@@ -18,6 +18,7 @@ import asyncio
 import json
 import logging
 import shlex
+import sys
 
 import subprocess
 import textwrap
@@ -744,7 +745,8 @@ async def lsp_document_link(
 
 
 def _run_torque_cli_command(command: str, **kwargs):
-    cmd_list = shlex.split("python -m " + command)
+    cmd_list = shlex.split(sys.prefix + "/bin/python -m " + command)
+    logging.info("Running command: " + ' '.join(cmd_list))
  
     res = subprocess.run(
             cmd_list,
@@ -807,7 +809,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
 
     server.show_message("Starting sandbox from blueprint: " + blueprint_name)
     try:
-        command = ['python', '-m', 'torque',
+        command = [sys.prefix + '/bin/python', '-m', 'torque',
                    '--profile', active_profile,
                    'sb', 'start', blueprint_name, '-d', duration]
         # if inputs:
@@ -960,7 +962,7 @@ async def torque_login(server: TorqueLanguageServer, *args):
 
     params = args[0].pop()
     try:
-        command = ['python', '-m' 'torque', 'configure', 'set']
+        command = [sys.prefix + '/bin/python', '-m' 'torque', 'configure', 'set']
         if params.email and params.password:
             command.append("--login")
             command_inputs = f"{params.profile}\n{params.account}\n{params.space}\n{params.email}\n{params.password}\n".encode()
