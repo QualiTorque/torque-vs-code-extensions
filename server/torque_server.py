@@ -27,6 +27,7 @@ import os
 import pathlib
 from json import JSONDecodeError
 from typing import Optional, List
+from urllib.parse import unquote
 
 from .completers.resolver import CompletionResolver
 from .ats.parser import Parser, ParserError
@@ -793,7 +794,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
 
     if blueprint_name.endswith(".yaml"):
         dev_mode = True
-        blueprint_name = pathlib.Path(args[0][0]).name.replace(".yaml", "")
+        blueprint_name = unquote(pathlib.Path(args[0][0]).name.replace(".yaml", ""))
     else:
         dev_mode = False
 
@@ -1089,12 +1090,12 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
         )
         return
 
-    blueprint_name = pathlib.Path(args[0][0]).name.replace(".yaml", "")
+    blueprint_name = unquote(pathlib.Path(args[0][0]).name.replace(".yaml", ""))
     server.show_message("Validating blueprint: " + blueprint_name)
 
     try:
         result = _run_torque_cli_command(
-            f"torque --profile {active_profile} bp validate {blueprint_name} --output=json",
+            f'torque --profile {active_profile} bp validate "{blueprint_name}" --output=json',
             cwd=server.workspace.root_path,
         )
 
