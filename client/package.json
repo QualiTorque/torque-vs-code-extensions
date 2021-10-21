@@ -153,7 +153,7 @@
 					"description": "A default sandbox duration (in minutes) to use when displaying the start sandbox form.",
 					"default": 120,
 					"scope": "application"
-				}				
+				}
 			}
 		},
 		"languages": [
@@ -179,7 +179,7 @@
 	],
 	"main": "./out/extension",
 	"scripts": {
-		"vscode:prepublish": "npm run compile && echo copying server && cp -R ../server out/server && cp ../README.md ./README.md",
+		"vscode:prepublish": "npm run compile && echo copying server && cp -Rf ../server/. out/language_server && cp ../README.md ./README.md",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"webpack": "webpack --mode development",

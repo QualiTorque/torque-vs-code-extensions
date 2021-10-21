@@ -104,10 +104,10 @@ export async function activate(context: ExtensionContext) {
         client = startLangServerTCP(2087);
     } else {
         // Production - Client is going to run the server (for use within `.vsix` package)
-        const cwd = path.join(__dirname, "..", "out", "server");
+        const cwd = path.join(__dirname, "..", "out");
         
         const python = await installLSWithProgress(context);
-        client = startLangServer(python, ["-m", "server"], cwd);
+        client = startLangServer(python, ["-m", "language_server"], cwd);
     }
 
     activateYamlFeatures(context);    

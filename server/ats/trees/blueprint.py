@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from server.ats.trees.common import (BaseTree, ScalarMappingsSequence, MappingNode, SequenceNode, TextMapping,
+from .common import (BaseTree, ScalarMappingsSequence, MappingNode, SequenceNode, TextMapping,
                                      TextMappingSequence, TextNode, ScalarNodesSequence, ScalarNode,
                                      TextNodesSequence, ObjectNode)
 from typing import List, Union

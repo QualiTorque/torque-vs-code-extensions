@@ -1,6 +1,4 @@
 import re
-from server.utils.common import get_repo_root_path
-from server.validation.common import ValidationHandler
 import sys
 import logging
 from pygls.lsp.types.basic_structures import (
@@ -9,9 +7,11 @@ from pygls.lsp.types.basic_structures import (
     Position,
     Range,
 )
-from server.ats.trees.blueprint import BlueprintTree
-from server.constants import PREDEFINED_TORQUE_INPUTS
-from server.utils import applications, services
+from ..ats.trees.blueprint import BlueprintTree
+from ..utils.common import get_repo_root_path
+from .common import ValidationHandler
+from ..constants import PREDEFINED_TORQUE_INPUTS
+from ..utils import applications, services
 
 
 class BlueprintValidationHandler(ValidationHandler):

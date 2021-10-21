@@ -1,8 +1,8 @@
 import os
 import logging
 import pathlib
-from server.utils.yaml_utils import format_yaml
-from server.ats.parser import Parser, ParserError
+from .yaml_utils import format_yaml
+from ..ats.parser import Parser, ParserError
 
 APPLICATIONS = {}
 

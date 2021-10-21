@@ -3,7 +3,7 @@ from typing import Optional, Tuple, List
 from pygls.lsp import types
 from pygls.workspace import Document, position_from_utf16
 
-from server.ats.trees.common import YamlNode, Position, MappingNode, TextNode, BaseTree
+from ..ats.trees.common import YamlNode, Position, MappingNode, TextNode, BaseTree
 
 
 class Visitor:

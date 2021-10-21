@@ -19,29 +19,24 @@ import json
 import logging
 import shlex
 import sys
-
 import subprocess
 import textwrap
 import tabulate
-
-from server.completers.resolver import CompletionResolver
-
-from server.ats.trees.app import AppTree
-
-from server.ats.trees.common import BaseTree, PropertyNode
-from server.utils.common import get_repo_root_path, is_var_allowed, get_path_to_pos
-from server.validation.factory import ValidatorFactory
-
-from pygls.lsp.types.basic_structures import TextEdit
 import yaml
 import os
 import pathlib
 from json import JSONDecodeError
 from typing import Optional, List
 
-from server.ats.parser import Parser, ParserError
+from .completers.resolver import CompletionResolver
+from .ats.parser import Parser, ParserError
+from .ats.trees.app import AppTree
+from .ats.trees.common import BaseTree, PropertyNode
+from .utils.common import get_repo_root_path, is_var_allowed, get_path_to_pos
+from .validation.factory import ValidatorFactory
+from .utils import services, applications, common
 
-from server.utils import services, applications, common
+from pygls.lsp.types.basic_structures import TextEdit
 
 from pygls.lsp.methods import (
     CODE_LENS,

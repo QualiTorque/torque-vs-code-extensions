@@ -1,9 +1,9 @@
 import re
 
 from pygls.lsp.types.basic_structures import DiagnosticSeverity
-from server.ats.trees.app import AppTree
-from server.validation.common import ValidationHandler
-from server.utils import applications
+from ..ats.trees.app import AppTree
+from .common import ValidationHandler
+from ..utils import applications
 
 
 class AppValidationHandler(ValidationHandler):
