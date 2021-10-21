@@ -960,6 +960,13 @@ async def torque_login(server: TorqueLanguageServer, *args):
         return 1
 
     params = args[0].pop()
+    if ' ' in params.profile:
+        server.show_message("Profile name cannot have spaces", MessageType.Error)
+        return 1
+    if ' ' in params.space:
+        server.show_message("Space name cannot have spaces", MessageType.Error)
+        return 1
+    
     try:
         command = [sys.prefix + '/bin/python', '-m' 'torque', 'configure', 'set']
         if params.email and params.password:
