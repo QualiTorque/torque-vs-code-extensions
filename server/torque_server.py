@@ -741,17 +741,35 @@ async def lsp_document_link(
 
 
 def _run_torque_cli_command(command: str, **kwargs):
-    cmd_list = shlex.split(sys.prefix + "/bin/python -m " + command)
-    logging.info("Running command: " + ' '.join(cmd_list))
- 
-    res = subprocess.run(
-            cmd_list,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            **kwargs
-        )
-    return res
+    #cmd_list = shlex.split(sys.executable + " -m " + command)
+    #logging.info("Running command: " + ' '.join(cmd_list))
+    
+    # res = subprocess.run(
+    #         cmd_list,
+    #         stdout=subprocess.PIPE,
+    #         stderr=subprocess.PIPE,
+    #         universal_newlines=True,
+    #         **kwargs
+    #     )
+    #return res
+    from torque.shell import main as ts_main
+    #a = sys.argv
+    from contextlib import redirect_stdout, redirect_stderr
+    import io
+
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    with redirect_stdout(stdout), redirect_stderr(stderr):
+        use_cwd = kwargs.get('cwd', None)
+        if use_cwd:
+            os.chdir(use_cwd)
+        sys.argv = shlex.split(command)
+        result = ts_main(should_exit=False)
+        output = stdout.getvalue()
+        err = stderr.getvalue()
+    #sys.argv = a
+    
+    return output, err
 
 
 async def _get_profile(server: TorqueLanguageServer):
@@ -765,6 +783,24 @@ async def _get_profile(server: TorqueLanguageServer):
                 ]
             )
         )
+        active_profile = config[0].get("activeProfile")
+    except:
+        active_profile = ""
+
+    return active_profile
+
+    
+def _get_profile_sync(server: TorqueLanguageServer):
+    try:
+        config = server.get_configuration(
+            ConfigurationParams(
+                items=[
+                    ConfigurationItem(
+                        section=TorqueLanguageServer.CONFIGURATION_SECTION
+                    )
+                ]
+            )
+        ).result()
         active_profile = config[0].get("activeProfile")
     except:
         active_profile = ""
@@ -809,7 +845,8 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         server.show_message_log("If there are local changes it might take some more time to get ready.")
         
     try:
-        command = [sys.prefix + '/bin/python', '-m', 'torque',
+        # command =  [sys.executable, '-m', 
+        command =  ['torque',
                    '--profile', active_profile,
                    'sb', 'start', blueprint_name, '-d', duration]
         # if inputs:
@@ -824,14 +861,16 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
             branch = args[0][5]
             command.extend(["-t", "0", "-b", branch])
 
-        process = subprocess.Popen(
-            command,
-            cwd=server.workspace.root_path if dev_mode else None,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        # process = subprocess.Popen(
+        #     command,
+        #     cwd=server.workspace.root_path if dev_mode else None,
+        #     stdout=subprocess.PIPE,
+        #     stderr=subprocess.PIPE,
+        # )
+        cwd=server.workspace.root_path if dev_mode else None
+        stdout, stderr = _run_torque_cli_command(command, cwd=cwd)
         sandbox_id = ""
-        for line in process.stdout:
+        for line in stdout:
             line_dec = line.decode().strip()
             if line_dec.startswith("Id:"):
                 sandbox_id = line_dec.replace("Id: ", "")
@@ -840,9 +879,9 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                     server.show_message_log(line_dec)
 
         error_msg = ""
-        if process.stderr:
+        if stderr:
             # server.show_message_log('Error while starting the sandbox:')
-            for line in process.stderr:
+            for line in stderr:
                 error_msg += line.decode().strip() + "\n"
                 # server.show_message_log(line.decode().strip())
             if error_msg:
@@ -860,12 +899,12 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
 
 
 @torque_ls.command(TorqueLanguageServer.CMD_LIST_TORQUE_PROFILES)
-async def get_profiles(server: TorqueLanguageServer, *_):
+def get_profiles(server: TorqueLanguageServer, *_):
     result = []
     keys = ['profile', 'account', 'space']
     
     try:
-        res = _run_torque_cli_command("torque configure list") 
+        stdout, stderr = _run_torque_cli_command("torque configure list") 
 
     except Exception as ex:
         server.show_message(
@@ -874,7 +913,7 @@ async def get_profiles(server: TorqueLanguageServer, *_):
         )
         return []
 
-    lines = res.stdout.split("\n")
+    lines = stdout.split("\n")
 
     for i in range(2, len(lines)):
         if lines[i]:
@@ -896,7 +935,7 @@ async def get_profiles(server: TorqueLanguageServer, *_):
 @torque_ls.command(TorqueLanguageServer.CMD_LIST_SANDBOXES)
 async def list_sandboxes(server: TorqueLanguageServer, *_):
     active_profile = await _get_profile(server)
-
+    
     if not active_profile:
         server.show_message(
             "Please have at least one profile set as the default one.",
@@ -907,16 +946,16 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
     sbs = []
 
     try:
-        result = _run_torque_cli_command(f"torque --profile {active_profile} sb list --output=json")
+        stdout, stderr = _run_torque_cli_command(f"torque --profile {active_profile} sb list --output=json")
 
-        if result.stderr:
+        if stderr:
             server.show_message(
-                f"An error occurred while executing the command: {result.stderr}",
+                f"An error occurred while executing the command: {stderr}",
                 MessageType.Error,
             )
 
-        if result.stdout:
-            sbs = json.loads(result.stdout)
+        if stdout:
+            sbs = json.loads(stdout)
 
     except Exception as ex:
         server.show_message(
@@ -928,7 +967,7 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
 @torque_ls.command(TorqueLanguageServer.CMD_LIST_BLUEPRINTS)
 async def list_blueprints(server: TorqueLanguageServer, *_):
     active_profile = await _get_profile(server)
-
+    
     if not active_profile:
         server.show_message(
             "Please have at least one profile set as the default one.",
@@ -937,14 +976,14 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
         return
 
     try:
-        result = _run_torque_cli_command(f"torque --profile {active_profile} bp list --output=json --detail")
+        stdout, stderr = _run_torque_cli_command(f"torque --profile {active_profile} bp list --output=json --detail")
 
-        if result.stderr:
+        if stderr:
             server.show_message(
-                f"An error occurred while executing the command: {result.stderr}",
+                f"An error occurred while executing the command: {stderr}",
                 MessageType.Error,
             )
-        return result.stdout
+        return stdout
 
     except Exception as ex:
         server.show_message(
@@ -968,12 +1007,13 @@ async def torque_login(server: TorqueLanguageServer, *args):
         return 1
     
     try:
-        command = [sys.prefix + '/bin/python', '-m' 'torque', 'configure', 'set']
+        command = [sys.executable, '-m' 'torque', 'configure', 'set']
         if params.email and params.password:
             command.append("--login")
             command_inputs = f"{params.profile}\n{params.account}\n{params.space}\n{params.email}\n{params.password}\n".encode()
         elif params.token:
             command_inputs = f"{params.profile}\n{params.account}\n{params.space}\n{params.token}\n".encode()
+        
         p = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -1004,9 +1044,9 @@ async def remove_profile(server: TorqueLanguageServer, *args):
 
     profile_name = args[0][0]
     try:
-        result = _run_torque_cli_command(f"torque configure remove {profile_name}")
+        stdout, stderr = _run_torque_cli_command(f"torque configure remove {profile_name}")
         server.show_message(f"Profile '{profile_name}' deleted.")
-        return result.returncode
+        return True
     except Exception as ex:
         server.show_message(
             f"Failed to remove profile '{profile_name}'. Reason: {str(ex)}",
@@ -1031,13 +1071,13 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
 
     sb_id = args[0].pop()
     try:
-        result = _run_torque_cli_command(f"torque --profile {active_profile} sb get {sb_id} --output=json --detail")
-        if result.stderr:
+        stdout, stderr = _run_torque_cli_command(f"torque --profile {active_profile} sb get {sb_id} --output=json --detail")
+        if stderr:
             server.show_message(
-                f"An error occurred while executing the command: {result.stderr}",
+                f"An error occurred while executing the command: {stderr}",
                 MessageType.Error,
             )
-        return result.stdout
+        return stdout
 
     except Exception as ex:
         server.show_message(
@@ -1064,14 +1104,14 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
     sb_id = args[0].pop()
 
     try:
-        result = _run_torque_cli_command(f"torque --profile {active_profile} sb end {sb_id}")
+        stdout, stderr = _run_torque_cli_command(f"torque --profile {active_profile} sb end {sb_id}")
 
-        if result.stderr:
+        if stderr:
             server.show_message(
-                f"An error occurred while executing the command: {result.stderr}",
+                f"An error occurred while executing the command: {stderr}",
                 MessageType.Error,
             )
-        return result.stdout
+        return stdout
 
     except Exception as ex:
         server.show_message(
@@ -1079,8 +1119,9 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
         )
 
 
+@torque_ls.thread()
 @torque_ls.command(TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT)
-async def validate_blueprint(server: TorqueLanguageServer, *args):
+def validate_blueprint(server: TorqueLanguageServer, *args):
     if len(args[0]) == 0:
         server.show_message(
             "Please validate the blueprint from the command in the blueprint file.",
@@ -1088,7 +1129,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
         )
         return
 
-    active_profile = await _get_profile(server)
+    active_profile = _get_profile_sync(server)
 
     if not active_profile:
         server.show_message(
@@ -1099,16 +1140,16 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
 
     blueprint_name = unquote(pathlib.Path(args[0][0]).name.replace(".yaml", ""))
     server.show_message("Validating blueprint: " + blueprint_name)
-
+    server.show_message_log(f"Validating blueprint: " + blueprint_name)
     try:
-        result = _run_torque_cli_command(
+        stdout, stderr = _run_torque_cli_command(
             f'torque --profile {active_profile} bp validate "{blueprint_name}" --output=json',
             cwd=server.workspace.root_path,
         )
 
-        if result.stderr:
+        if stderr:
             try:
-                errors_json = json.loads(result.stderr)
+                errors_json = json.loads(stderr)
                 headers = ["Problem", "Details"]
                 table = []
                 for err in errors_json:
