@@ -739,37 +739,58 @@ async def lsp_document_link(
     return links
 
 
+def _run_torque_cli_command(command: str, use_cli=False, inputs=None, **kwargs):
+    if use_cli:
+        cmd_list = [sys.executable, '-m'] + shlex.split(command)
+        logging.info("Running command: " + ' '.join(cmd_list))
+        
+        res = subprocess.run(
+                cmd_list,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                **kwargs
+            )
+        return res.stdout, res.stderr
+    else:
+        from torque.shell import main as ts_main
+        #a = sys.argv
+        from contextlib import redirect_stdout, redirect_stderr
+        import io
 
-def _run_torque_cli_command(command: str, **kwargs):
-    #cmd_list = shlex.split(sys.executable + " -m " + command)
-    #logging.info("Running command: " + ' '.join(cmd_list))
-    
-    # res = subprocess.run(
-    #         cmd_list,
-    #         stdout=subprocess.PIPE,
-    #         stderr=subprocess.PIPE,
-    #         universal_newlines=True,
-    #         **kwargs
-    #     )
-    #return res
-    from torque.shell import main as ts_main
-    #a = sys.argv
-    from contextlib import redirect_stdout, redirect_stderr
-    import io
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        class MY_STD_IN( object ):
+            def __init__(self, response_list):
+                self.std_in_list = response_list
+                self.std_in_length = len(response_list)
+                self.index = 0
 
-    stdout = io.StringIO()
-    stderr = io.StringIO()
-    with redirect_stdout(stdout), redirect_stderr(stderr):
-        use_cwd = kwargs.get('cwd', None)
-        if use_cwd:
-            os.chdir(use_cwd)
-        sys.argv = shlex.split(command)
-        result = ts_main(should_exit=False)
-        output = stdout.getvalue()
-        err = stderr.getvalue()
-    #sys.argv = a
-    
-    return output, err
+            def readline(self):
+                value = self.std_in_list[self.index]      
+                print(value)
+                if self.index < self.std_in_length -1:
+                    self.index += 1
+                else:
+                    self.index = 0
+
+                return value + '\n'
+
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+            use_cwd = kwargs.get('cwd', None)
+            if use_cwd:
+                os.chdir(use_cwd)
+            sys.argv = shlex.split(command)
+            if inputs:
+                predetermined_stdin_responses = inputs.split('\n')
+                sys.stdin = MY_STD_IN( predetermined_stdin_responses )
+            
+            result = ts_main(should_exit=False)
+            output = stdout.getvalue()
+            err = stderr.getvalue()
+        #sys.argv = a
+        
+        return output, err
 
 
 async def _get_profile(server: TorqueLanguageServer):
@@ -845,7 +866,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         server.show_message_log("If there are local changes it might take some more time to get ready.")
         
     try:
-        # command =  [sys.executable, '-m', 
+        # command =  [sys.executable, '-m', 'torque',
         command =  ['torque',
                    '--profile', active_profile,
                    'sb', 'start', blueprint_name, '-d', duration]
@@ -867,11 +888,16 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         #     stdout=subprocess.PIPE,
         #     stderr=subprocess.PIPE,
         # )
+        # stdout = process.stdout
+        # stderr = process.stderr
         cwd=server.workspace.root_path if dev_mode else None
-        stdout, stderr = _run_torque_cli_command(command, cwd=cwd)
+        stdout, stderr = _run_torque_cli_command(' '.join(command), cwd=cwd)
+        stdout = stdout.split("\n") if stdout else []
+        stderr = stderr.split("\n") if stderr else []
         sandbox_id = ""
         for line in stdout:
-            line_dec = line.decode().strip()
+            # line_dec = line.decode().strip()
+            line_dec = line.strip()
             if line_dec.startswith("Id:"):
                 sandbox_id = line_dec.replace("Id: ", "")
             if not line_dec.endswith("sec]"):
@@ -882,7 +908,8 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         if stderr:
             # server.show_message_log('Error while starting the sandbox:')
             for line in stderr:
-                error_msg += line.decode().strip() + "\n"
+                # error_msg += line.decode().strip() + "\n"
+                error_msg += line.strip() + "\n"
                 # server.show_message_log(line.decode().strip())
             if error_msg:
                 error_msg = "Error while starting the sandbox:\n" + error_msg
@@ -1007,29 +1034,36 @@ async def torque_login(server: TorqueLanguageServer, *args):
         return 1
     
     try:
-        command = [sys.executable, '-m' 'torque', 'configure', 'set']
+        #command = [sys.executable, '-m', 'torque', 'configure', 'set']
+        command = ['torque', 'configure', 'set']
         if params.email and params.password:
             command.append("--login")
             command_inputs = f"{params.profile}\n{params.account}\n{params.space}\n{params.email}\n{params.password}\n".encode()
         elif params.token:
             command_inputs = f"{params.profile}\n{params.account}\n{params.space}\n{params.token}\n".encode()
         
-        p = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stdin=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+        stdout, stderr = _run_torque_cli_command(' '.join(command), inputs=command_inputs.decode())
+        
+        # p = subprocess.Popen(
+        #     command,
+        #     stdout=subprocess.PIPE,
+        #     stdin=subprocess.PIPE,
+        #     stderr=subprocess.PIPE,
+        #     universal_newlines=True
+        # )
 
-        result = p.communicate(input=command_inputs)
+        # result = p.communicate(input=str(command_inputs))
 
-        exit_code = p.returncode
+        # exit_code = p.returncode
+        
+        exit_code = 1 if "Login Failed" in stderr else 0
         if exit_code != 0:
             return "Login Failed"
         else:
             return None
 
-    except Exception:
+    except Exception as ex:
+        logging.error(ex)
         return
 
 
@@ -1119,9 +1153,9 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
         )
 
 
-@torque_ls.thread()
+#@torque_ls.thread()
 @torque_ls.command(TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT)
-def validate_blueprint(server: TorqueLanguageServer, *args):
+async def validate_blueprint(server: TorqueLanguageServer, *args):
     if len(args[0]) == 0:
         server.show_message(
             "Please validate the blueprint from the command in the blueprint file.",
@@ -1129,7 +1163,8 @@ def validate_blueprint(server: TorqueLanguageServer, *args):
         )
         return
 
-    active_profile = _get_profile_sync(server)
+    #active_profile = _get_profile_sync(server)
+    active_profile = await _get_profile(server)
 
     if not active_profile:
         server.show_message(
@@ -1144,6 +1179,7 @@ def validate_blueprint(server: TorqueLanguageServer, *args):
     try:
         stdout, stderr = _run_torque_cli_command(
             f'torque --profile {active_profile} bp validate "{blueprint_name}" --output=json',
+            use_cli=False,
             cwd=server.workspace.root_path,
         )
 

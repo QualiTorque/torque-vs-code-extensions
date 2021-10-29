@@ -55,11 +55,11 @@ export class SandboxStartPanel {
 		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, inputs, artifacts, branch);
 	}
 
-	private async startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, artifacts:object, branch:string) {
+	private startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, artifacts:object, branch:string) {
 		let inputsString = this._compose_comma_separated_string(inputs);
 		let artifactsString = this._compose_comma_separated_string(artifacts);
 
-		await vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputsString, artifactsString, branch)
+		vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputsString, artifactsString, branch)
 		.then(async (result:Array<string>) => {
 			vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
 			this._panel.dispose();
@@ -126,11 +126,15 @@ export class SandboxStartPanel {
 	private _compose_comma_separated_string(mapContainer: object) : string{
 		let resultString = "";
 		for (const [key, value] of Object.entries(mapContainer))
-			resultString += `${key}=${value}, `
-
+		{
+			if (value!='')
+				resultString += `${key}=${value},`
+			// else
+			// 	resultString += `${key}="",`
+		}
 		resultString.trimEnd;
 		if (resultString.length > 2) 
-			resultString = resultString.substring(0, resultString.length - 2)
+			resultString = resultString.substring(0, resultString.length - 1)
 		
 		return resultString
 	}
@@ -155,7 +159,7 @@ export class SandboxStartPanel {
 
 		let cleanName = this._bpname;
 		if (cleanName.endsWith('.yaml'))
-			cleanName = cleanName.replace('.yaml', '').split(path.sep).slice(-1)[0]	
+			cleanName = cleanName.replace('.yaml', '').split('/').slice(-1)[0]	
 		if (cleanName.startsWith('[Sample]'))
 			cleanName = cleanName.replace('[Sample]','');
 		
