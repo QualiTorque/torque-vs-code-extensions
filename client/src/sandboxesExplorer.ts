@@ -49,7 +49,7 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 	async getSandboxDetails(sb: any): Promise<void> {
 		vscode.commands.executeCommand('extension.showSandboxDetails', sb)
 	}
-
+	
 	getChildren(element?: Sandbox): Thenable<Sandbox[]> {
 		return new Promise(async (resolve) => {
 			if (!element && this.firstLoad) {

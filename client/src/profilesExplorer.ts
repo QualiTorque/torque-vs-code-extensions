@@ -56,7 +56,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
             else {
                 const profilesMngr = ProfilesManager.getInstance()
                 const profiles = []
-                vscode.commands.executeCommand('list_torque_profiles')
+                await vscode.commands.executeCommand('list_torque_profiles')
                 .then(async (result:Array<string>) => 
                 {
                     const activeProfile = profilesMngr.getActive();
