@@ -30,8 +30,7 @@
 		"Linters"
 	],
 	"activationEvents": [
-		"onLanguage:yaml",
-		"onStartupFinished"
+		"*"
 	],
 	"contributes": {
 		"viewsContainers": {
