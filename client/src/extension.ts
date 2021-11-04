@@ -102,7 +102,7 @@ export async function activate(context: ExtensionContext) {
         const cwd = path.join(__dirname, "..", "out");
         
         const python = await installLSWithProgress(context);
-        client = startLangServer(python, ["-m", "language_server"], cwd);
+        client = startLangServer(python, ["-m", "server"], cwd);
     }
 
     activateYamlFeatures(context);    
