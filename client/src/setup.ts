@@ -112,7 +112,7 @@ export async function installLSWithProgress(context: ExtensionContext): Promise<
 
         // Install source from wheels
         venvPython = getPythonFromVenvPath(venv);
-        const requirementsPath = join(context.extensionPath, "out", "server");
+        const requirementsPath = join(context.extensionPath, "out", "language_server");
         await installRequirements(venvPython, requirementsPath);
 
         window.showInformationMessage("Torque extension is ready! :)");

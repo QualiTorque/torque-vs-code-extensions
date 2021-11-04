@@ -7,3 +7,4 @@ out/test/**
 node_modules/
 *.log
 **/*.pyc
+src/*

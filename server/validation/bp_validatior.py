@@ -1,6 +1,4 @@
 import re
-from server.utils.common import get_repo_root_path
-from server.validation.common import ValidationHandler
 import sys
 import logging
 from pygls.lsp.types.basic_structures import (
@@ -10,6 +8,8 @@ from pygls.lsp.types.basic_structures import (
     Range,
 )
 from server.ats.trees.blueprint import BlueprintTree
+from server.utils.common import get_repo_root_path
+from server.validation.common import ValidationHandler
 from server.constants import PREDEFINED_TORQUE_INPUTS, AWS_REGIONS, AZURE_REGIONS
 from server.utils import applications, services
 

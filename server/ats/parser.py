@@ -4,11 +4,11 @@ from yaml.tokens import (BlockEndToken, BlockEntryToken, BlockMappingStartToken,
                          BlockSequenceStartToken, KeyToken,
                          ScalarToken, Token, ValueToken, StreamStartToken, StreamEndToken)
 
-from server.ats.trees.app import AppTree
-from server.ats.trees.blueprint import BlueprintTree
-from server.ats.trees.common import (PropertyNode, YamlNode, TextNode, MappingNode, BaseTree,
-                                     SequenceNode, NodeError, ObjectNode)
-from server.ats.trees.service import ServiceTree
+from .trees.app import AppTree
+from .trees.blueprint import BlueprintTree
+from .trees.common import (PropertyNode, YamlNode, TextNode, MappingNode, BaseTree,
+                           SequenceNode, NodeError, ObjectNode)
+from .trees.service import ServiceTree
 
 
 class ParserError(Exception):

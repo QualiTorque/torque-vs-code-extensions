@@ -46,9 +46,9 @@ export function torqueLogin(extensionUri: vscode.Uri, profilesTree: ProfilesProv
                         vscode.commands.executeCommand('torque_login', message).then((result: string) => 
                         {
                             if (result) {
-                                vscode.window.showErrorMessage("Unable to login:\n" + result);
+                                vscode.window.showErrorMessage("Unable to login, please check the provided information and try again");
                             } else {
-                                vscode.window.showInformationMessage("Profile has been added")
+                                vscode.window.showInformationMessage("Profile added.")
                                 panel.dispose()
                             }
                         });

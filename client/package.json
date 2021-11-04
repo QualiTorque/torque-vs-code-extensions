@@ -30,8 +30,7 @@
 		"Linters"
 	],
 	"activationEvents": [
-		"onLanguage:yaml",
-		"onStartupFinished"
+		"*"
 	],
 	"contributes": {
 		"viewsContainers": {
@@ -143,11 +142,17 @@
 			"type": "object",
 			"title": "Torque Configuration",
 			"properties": {
-				"torque.active_profile": {
+				"torque.activeProfile": {
 					"type": "string",
-					"description": "The deafult profile to use",
+					"description": "The currently selected profile to use. Can be set from the Torque profiles view when having at least one profile.",
 					"scope": "resource"
-				}	
+				},
+				"torque.defaultSandboxDuration": {
+					"type": "number",
+					"description": "A default sandbox duration (in minutes) to use when displaying the start sandbox form.",
+					"default": 120,
+					"scope": "application"
+				}
 			}
 		},
 		"languages": [
@@ -173,7 +178,7 @@
 	],
 	"main": "./out/extension",
 	"scripts": {
-		"vscode:prepublish": "npm run compile && echo copying server && cp -R ../server out/server && cp ../README.md ./README.md",
+		"vscode:prepublish": "npm run compile && echo copying server && cp -Rf ../server/. out/language_server && cp ../README.md ./README.md",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"webpack": "webpack --mode development",
