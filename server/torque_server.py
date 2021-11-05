@@ -29,7 +29,7 @@ from server.ats.parser import Parser, ParserError
 from server.ats.trees.app import AppTree
 from server.ats.trees.common import BaseTree, PropertyNode
 from server.constants import AWS_REGIONS, AZURE_REGIONS
-from server.utils.common import get_repo_root_path, is_var_allowed, get_path_to_pos
+from server.utils.common import get_repo_root_path, is_var_allowed
 from server.utils import applications, services, common
 from server.validation.factory import ValidatorFactory
 
@@ -764,28 +764,19 @@ async def lsp_document_link(
     return links
 
 
-async def _run_torque_cli_command(command: str, inputs=None, **kwargs):
+async def _run_torque_cli_command(command: str, **kwargs):
     cmd_list = [sys.executable, '-m'] + shlex.split(command)
     logging.info("Running command: " + ' '.join(cmd_list))
-    if inputs:
-        from torque.shell import main
-        res = subprocess.run(
-                cmd_list,
-                input=inputs,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-                **kwargs
-            )
-    else:
-        res = subprocess.run(
-                cmd_list,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-                **kwargs
-            )
+
+    res = subprocess.run(
+            cmd_list,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            **kwargs
+        )
+
     return res.stdout, res.stderr
     
 
@@ -800,24 +791,6 @@ async def _get_profile(server: TorqueLanguageServer):
                 ]
             )
         )
-        active_profile = config[0].get("activeProfile")
-    except:
-        active_profile = ""
-
-    return active_profile
-
-    
-def _get_profile_sync(server: TorqueLanguageServer):
-    try:
-        config = server.get_configuration(
-            ConfigurationParams(
-                items=[
-                    ConfigurationItem(
-                        section=TorqueLanguageServer.CONFIGURATION_SECTION
-                    )
-                ]
-            )
-        ).result()
         active_profile = config[0].get("activeProfile")
     except:
         active_profile = ""
@@ -1019,14 +992,15 @@ async def torque_login(server: TorqueLanguageServer, *args):
         return 1
     
     try:
-        command = ['torque', 'configure', 'set']
+        command = f"torque configure set -P {params.profile} -a {params.account} -s {params.space}"
+
         if params.email and params.password:
-            command.append("--login")
-            command_inputs = f"{params.profile}\n{params.account}\n{params.space}\n{params.email}\n{params.password}\n".encode()
+            command = command + f" --login -e {params.email} -p {params.password}"
+
         elif params.token:
-            command_inputs = f"{params.profile}\n{params.account}\n{params.space}\n{params.token}\n".encode()
+            command = command + f" -t {params.token}"
         
-        stdout, stderr = await _run_torque_cli_command(' '.join(command), inputs=command_inputs.decode())
+        _, stderr = await _run_torque_cli_command(command)
         
         exit_code = 1 if "Login Failed" in stderr else 0
         if exit_code != 0:
