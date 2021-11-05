@@ -3,7 +3,7 @@ import logging
 
 logging.basicConfig(filename="torque_ls.log", level=logging.DEBUG, filemode="w")
 
-from .torque_server import torque_ls
+from .server import torque_ls
 
 
 def add_arguments(parser):
