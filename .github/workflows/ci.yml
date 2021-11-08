@@ -25,16 +25,16 @@ jobs:
         run: |
           python -m unittest discover -v
 
- lint:
-   name: lint and format
-   runs-on: ubuntu-latest
-   steps:
-     - uses: actions/checkout@v2
-     - uses: actions/setup-python@v2
+  lint:
+    name: lint and format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
 
-     - name: Lint Code Base
-       uses: docker://github/super-linter:v3
-       env:
-         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-         VALIDATE_ALL_CODEBASE: false
-         DEFAULT_BRANCH: master
+      - name: Lint Code Base
+        uses: docker://github/super-linter:v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: false
+          DEFAULT_BRANCH: master
