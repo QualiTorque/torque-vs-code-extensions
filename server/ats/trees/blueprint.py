@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from .common import (BaseTree, ScalarMappingsSequence, MappingNode, SequenceNode, TextMapping,
-                                     TextMappingSequence, TextNode, ScalarNodesSequence, ScalarNode,
-                                     TextNodesSequence, ObjectNode)
+                     TextMappingSequence, TextNode, ScalarNodesSequence, ScalarNode,
+                     TextNodesSequence, ObjectNode)
 from typing import List, Union
 
 
@@ -101,7 +101,7 @@ class ServiceResourceNode(ObjectNode):
 
     def get_inputs(self) -> List[TextMapping]:
         return self._get_seq_nodes("input_values")
-        
+
 
 @dataclass
 class ApplicationResourceNode(ServiceResourceNode):

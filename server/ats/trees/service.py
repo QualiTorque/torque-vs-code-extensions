@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from .common import (BaseTree, ObjectNode, TreeWithOutputs,
-                                     TextNode, ScalarNodesSequence, TextMappingSequence, ScalarNode)
+                     TextNode, ScalarNodesSequence, TextMappingSequence, ScalarNode)
 
 
 @dataclass

@@ -41,7 +41,6 @@ from json import JSONDecodeError
 from typing import Optional, List
 from urllib.parse import unquote
 
-from pygls.lsp.types.basic_structures import TextEdit
 
 from pygls.lsp.methods import (
     CODE_LENS,
@@ -294,7 +293,7 @@ def completions(
         import sys
         logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
         return CompletionList(is_incomplete=True, items=[])
-    
+
     words = common.preceding_words(doc, params.position)
     last_word = words[-1] if words else ""
 
@@ -339,17 +338,17 @@ def completions(
             items += [CompletionItem(label=script,
                                      detail="AWS region",
                                      kind=CompletionItemKind.File) for script in AWS_REGIONS]
-                
+
             items += [CompletionItem(label=script,
                                      detail="Azure region",
                                      kind=CompletionItemKind.File) for script in AZURE_REGIONS]
-                
+
             return CompletionList(
                     is_incomplete=False,
                     items=items,
                 )
-        
-        items=[]
+
+        items = []
         if last_word.endswith('.'):
             if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
                 cur_word = words[-1]
@@ -502,7 +501,7 @@ def completions(
             is_incomplete=False,
             items=[
                 CompletionItem(
-                    label=f"No suggestions.",
+                    label="No suggestions.",
                     kind=CompletionItemKind.Text,
                     text_edit=TextEdit(
                         new_text="",
@@ -778,7 +777,7 @@ async def _run_torque_cli_command(command: str, **kwargs):
         )
 
     return res.stdout, res.stderr
-    
+
 
 async def _get_profile(server: TorqueLanguageServer):
     try:
@@ -833,12 +832,12 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     server.show_message_log("Starting sandbox from blueprint: " + blueprint_name)
     if dev_mode:
         server.show_message_log("If there are local changes it might take some more time to get ready.")
-        
+
     try:
-        command =  ['torque',
+        command = ['torque',
                    '--profile', active_profile,
                    'sb', 'start', blueprint_name, '-d', duration]
-        
+
         if inputs_args:
             command.extend(["-i", inputs_args])
         if artifacts_args:
@@ -887,9 +886,9 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
 async def get_profiles(server: TorqueLanguageServer, *_):
     result = []
     keys = ['profile', 'account', 'space']
-    
+
     try:
-        stdout, stderr = await _run_torque_cli_command("torque configure list") 
+        stdout, stderr = await _run_torque_cli_command("torque configure list")
 
     except Exception as ex:
         server.show_message(
@@ -920,7 +919,7 @@ async def get_profiles(server: TorqueLanguageServer, *_):
 @torque_ls.command(TorqueLanguageServer.CMD_LIST_SANDBOXES)
 async def list_sandboxes(server: TorqueLanguageServer, *_):
     active_profile = await _get_profile(server)
-    
+
     if not active_profile:
         server.show_message(
             "Please have at least one profile set as the default one.",
@@ -952,7 +951,7 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
 @torque_ls.command(TorqueLanguageServer.CMD_LIST_BLUEPRINTS)
 async def list_blueprints(server: TorqueLanguageServer, *_):
     active_profile = await _get_profile(server)
-    
+
     if not active_profile:
         server.show_message(
             "Please have at least one profile set as the default one.",
@@ -975,7 +974,7 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
             f"Unable to fetch Torque sandboxes. Reason: {str(ex)}", MessageType.Error
         )
         return None
-    
+
 
 @torque_ls.command(TorqueLanguageServer.CMD_TORQUE_LOGIN)
 async def torque_login(server: TorqueLanguageServer, *args):
@@ -990,7 +989,7 @@ async def torque_login(server: TorqueLanguageServer, *args):
     if ' ' in params.space:
         server.show_message("Space name cannot have spaces", MessageType.Error)
         return 1
-    
+
     try:
         command = f"torque configure set -P {params.profile} -a {params.account} -s {params.space}"
 
@@ -999,9 +998,9 @@ async def torque_login(server: TorqueLanguageServer, *args):
 
         elif params.token:
             command = command + f" -t {params.token}"
-        
+
         _, stderr = await _run_torque_cli_command(command)
-        
+
         exit_code = 1 if "Login Failed" in stderr else 0
         if exit_code != 0:
             return "Login Failed"
@@ -1099,7 +1098,6 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
         )
 
 
-#@torque_ls.thread()
 @torque_ls.command(TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT)
 async def validate_blueprint(server: TorqueLanguageServer, *args):
     if len(args[0]) == 0:
@@ -1109,7 +1107,6 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
         )
         return
 
-    #active_profile = _get_profile_sync(server)
     active_profile = await _get_profile(server)
 
     if not active_profile:
@@ -1121,7 +1118,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
 
     blueprint_name = unquote(pathlib.Path(args[0][0]).name.replace(".yaml", ""))
     server.show_message("Validating blueprint: " + blueprint_name)
-    server.show_message_log(f"Validating blueprint: " + blueprint_name)
+    server.show_message_log("Validating blueprint: " + blueprint_name)
     try:
         stdout, stderr = await _run_torque_cli_command(
             f'torque --profile {active_profile} bp validate "{blueprint_name}" --output=json',
@@ -1156,4 +1153,3 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
 
     except Exception as ex:
         logging.error(ex)
-    

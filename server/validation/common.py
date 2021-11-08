@@ -25,7 +25,7 @@ class ValidationHandler:
                     message=message,
                     severity=diag_severity
                 ))
-    
+
     def _add_diagnostic_for_range(
             self,
             message: str = "",
@@ -53,7 +53,7 @@ class ValidationHandler:
                     input_node.key,
                     message=message.format(input_node.key.text)
                 )
-    
+
     def _validate_no_reserved_words_in_inputs_prefix(self):
         message = "input '{}' contains a reserved word '{}'"
         reserved_words = ["colony", "torque"]

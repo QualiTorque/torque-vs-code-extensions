@@ -1,7 +1,7 @@
 from abc import ABC
 from dataclasses import dataclass
 from .common import (BaseTree, ResourceMappingNode, SequenceNode,
-                                     TextNode, TreeWithOutputs, ScalarNode, ObjectNode)
+                     TextNode, TreeWithOutputs, ScalarNode, ObjectNode)
 
 
 @dataclass

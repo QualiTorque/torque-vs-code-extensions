@@ -106,7 +106,7 @@ class BlueprintValidationHandler(ValidationHandler):
         for app in self._tree.get_applications():
             if app.id.text not in available_apps:
                 self._add_diagnostic(app.id, message=message.format(app.id.text))
-    
+
     def _validate_used_apps_are_valid(self):
         message = "The app '{}' is not valid. Open the file to get more details."
         available_apps = applications.get_available_applications()
@@ -137,7 +137,7 @@ class BlueprintValidationHandler(ValidationHandler):
         for srv in self._tree.get_services():
             if srv.id.text not in available_srvs:
                 self._add_diagnostic(srv.id, message=message.format(srv.id.text))
-    
+
     def _validate_used_services_are_valid(self):
         message = "The service '{}' is not valid. Open the file to get more details."
         available_srvs = services.get_available_services()
@@ -160,12 +160,12 @@ class BlueprintValidationHandler(ValidationHandler):
             source = self._document.source
             # build a list of inputs used as "name only" to be matched with a blueprint input
             name_only_inputs = {}
-            
+
             for app in self._tree.get_applications():
                 for var in app.inputs:
                     if var.value is None and var.key.text not in name_only_inputs:
                         name_only_inputs[var.key.text] = 1
-            
+
             for srv in self._tree.get_services():
                 for var in srv.inputs:
                     if var.value is None and var.key.text not in name_only_inputs:
@@ -243,7 +243,7 @@ class BlueprintValidationHandler(ValidationHandler):
     def _validate_var_being_used_is_defined(self):
         bp_inputs = {input.key.text for input in self._tree.get_inputs()} if self._tree.inputs_node else {}
 
-        for app in self._tree.get_applications():            
+        for app in self._tree.get_applications():
             for input in app.inputs:
                 self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
 
