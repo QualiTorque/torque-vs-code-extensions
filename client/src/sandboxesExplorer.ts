@@ -7,6 +7,7 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 	private _onDidChangeTreeData: vscode.EventEmitter<Sandbox | undefined | void> = new vscode.EventEmitter<Sandbox | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<Sandbox | undefined | void> = this._onDidChangeTreeData.event;
 	private pendingRefresh?: NodeJS.Timeout;
+	private firstLoad = true;
 
 	constructor() {}
 
@@ -48,23 +49,29 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 	async getSandboxDetails(sb: any): Promise<void> {
 		vscode.commands.executeCommand('extension.showSandboxDetails', sb)
 	}
-
+	
 	getChildren(element?: Sandbox): Thenable<Sandbox[]> {
 		return new Promise(async (resolve) => {
-			const active_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
-			const results = []
-      
+			if (!element && this.firstLoad) {
+				this.firstLoad = false;
+				return resolve([])
+			}
+
 			if (element) {
-				return resolve(results);
+				return resolve([]);
 			}
 			else {
+				const active_profile = (ProfilesManager.getInstance().getActive() === undefined) ? "" : ProfilesManager.getInstance().getActive().label
+				const results = []
+      
 				if (active_profile === "") {
 					vscode.window.showInformationMessage('No default profile is defined');
 					results.push(this.getLoginTreeItem())
 					return resolve(results);
 				} else {
 					const sandboxes = []
-					await vscode.commands.executeCommand('list_sandboxes')
+					
+					vscode.commands.executeCommand('list_sandboxes')
 					.then(async (result:Array<string>) => {
 						if (result.length > 0) {
 							for (let sb of result) {
@@ -81,9 +88,11 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 									)
 								)
 							}
+							return resolve(sandboxes)
 						}
+						else return resolve([])
 					})
-					resolve(sandboxes)
+					//return resolve(sandboxes)
 				}
 			}
 		});

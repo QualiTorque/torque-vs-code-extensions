@@ -55,11 +55,11 @@ export class SandboxStartPanel {
 		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, inputs, artifacts, branch);
 	}
 
-	private async startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, artifacts:object, branch:string) {
+	private startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, artifacts:object, branch:string) {
 		let inputsString = this._compose_comma_separated_string(inputs);
 		let artifactsString = this._compose_comma_separated_string(artifacts);
 
-		await vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputsString, artifactsString, branch)
+		vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputsString, artifactsString, branch)
 		.then(async (result:Array<string>) => {
 			vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
 			this._panel.dispose();
@@ -126,11 +126,15 @@ export class SandboxStartPanel {
 	private _compose_comma_separated_string(mapContainer: object) : string{
 		let resultString = "";
 		for (const [key, value] of Object.entries(mapContainer))
-			resultString += `${key}=${value}, `
-
+		{
+			if (value!='')
+				resultString += `${key}=${value},`
+			// else
+			// 	resultString += `${key}="",`
+		}
 		resultString.trimEnd;
 		if (resultString.length > 2) 
-			resultString = resultString.substring(0, resultString.length - 2)
+			resultString = resultString.substring(0, resultString.length - 1)
 		
 		return resultString
 	}
@@ -148,19 +152,20 @@ export class SandboxStartPanel {
     }
 
 	private _getHtmlForWebview(webview: vscode.Webview) {
+		const default_duration = vscode.workspace.getConfiguration('torque').get<number>("defaultSandboxDuration", 120);
 		const stylesPathMainPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css');
 
 		const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);
 
 		let cleanName = this._bpname;
 		if (cleanName.endsWith('.yaml'))
-			cleanName = cleanName.replace('.yaml', '').split(path.sep).slice(-1)[0]	
+			cleanName = cleanName.replace('.yaml', '').split('/').slice(-1)[0]	
 		if (cleanName.startsWith('[Sample]'))
 			cleanName = cleanName.replace('[Sample]','');
 		
 		let generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         generalHtml += "<tr><td width='180px'>" + "Name" + "</td><td>" + "<input type='text' id='sandbox_name' value='" + cleanName + "'></td></tr>";
-        generalHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='30' min='10' max='3600'></td></tr>";
+        generalHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='" + default_duration.toString() + "' min='10' max='3600'></td></tr>";
         generalHtml += "</table>";
 		let inputsHtml = "";
 		let postMessageProperties = "sandbox_name: document.getElementById('sandbox_name').value, duration: document.getElementById('duration').value"
@@ -233,8 +238,9 @@ export class SandboxStartPanel {
             <script nonce="${nonce}">
                 const vscode = acquireVsCodeApi();
                 document.getElementById("start-btn").addEventListener("click", function() {
-                    startSandbox();
-                });
+					this.disabled = true;
+					startSandbox();
+                }, { once: true });
                 function startSandbox() {                
                     vscode.postMessage({
                         command: 'run-command',

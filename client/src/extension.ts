@@ -20,7 +20,7 @@
 
 import * as net from "net";
 import * as path from "path";
-import { ExtensionContext, workspace, window, commands, Uri, WebviewPanel, ViewColumn } from "vscode";
+import { ExtensionContext, ExtensionMode, workspace, window, commands, WebviewPanel, ViewColumn } from "vscode";
 import { installLSWithProgress } from "./setup";
 import {
     LanguageClient,
@@ -45,19 +45,14 @@ function getClientOptions(): LanguageClientOptions {
     return {
         // Register the server for plain text documents
         documentSelector: [
-            { scheme: "file", language: "yaml" },
-            // { scheme: "untitled", language: "yaml" },
+            { scheme: "file", language: "yaml" },            
         ],
-        outputChannelName: "Torque Language Server",
+        outputChannelName: "Torque",
         synchronize: {
             // Notify the server about file changes to '.yaml files contain in the workspace
             fileEvents: workspace.createFileSystemWatcher("**/*.yaml"),
         },
     };
-}
-
-function isStartedInDebugMode(): boolean {
-    return process.env.VSCODE_DEBUG_MODE === "true";
 }
 
 function startLangServerTCP(addr: number): LanguageClient {
@@ -99,12 +94,12 @@ async function activateYamlFeatures(context: ExtensionContext) {
 }
 
 export async function activate(context: ExtensionContext) {
-    if (isStartedInDebugMode()) {
+    if (context.extensionMode === ExtensionMode.Development) {
         // Development - Run the server manually
         client = startLangServerTCP(2087);
     } else {
         // Production - Client is going to run the server (for use within `.vsix` package)
-        const cwd = path.join(__dirname, "..", "out", "server");
+        const cwd = path.join(__dirname, "..", "out");
         
         const python = await installLSWithProgress(context);
         client = startLangServer(python, ["-m", "server"], cwd);
