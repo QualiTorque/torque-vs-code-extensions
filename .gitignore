@@ -25,4 +25,5 @@ coverage.xml
 
 *.zip
 *.vsix
-client/*.md
+client/README.md
+client/LICENSE
