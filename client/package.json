@@ -30,7 +30,11 @@
 		"Linters"
 	],
 	"activationEvents": [
-		"*"
+		"onLanguage:yaml",
+		"onView:profilesView",
+		"onView:sandboxesExplorerView",
+		"onView:blueprintsExplorerView",
+		"onStartupFinished"
 	],
 	"contributes": {
 		"viewsContainers": {
