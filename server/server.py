@@ -22,9 +22,14 @@ import sys
 import subprocess
 import textwrap
 import tabulate
+import yaml
+import os
+import pathlib
+from json import JSONDecodeError
+from typing import Optional, List
+from urllib.parse import unquote
 
 from server.completers.resolver import CompletionResolver
-
 from server.ats.parser import Parser, ParserError
 from server.ats.trees.app import AppTree
 from server.ats.trees.common import BaseTree, PropertyNode
@@ -34,13 +39,6 @@ from server.utils import applications, services, common
 from server.validation.factory import ValidatorFactory
 
 from pygls.lsp.types.basic_structures import TextEdit
-import yaml
-import os
-import pathlib
-from json import JSONDecodeError
-from typing import Optional, List
-from urllib.parse import unquote
-
 
 from pygls.lsp.methods import (
     CODE_LENS,
