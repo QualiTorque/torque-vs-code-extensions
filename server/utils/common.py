@@ -3,8 +3,7 @@ from typing import Optional, Tuple, List
 from pygls.lsp import types
 from pygls.workspace import Document, position_from_utf16
 
-from server.ats.trees.common import SequenceNode, YamlNode, Position, MappingNode, TextNode, BaseTree
-
+from server.ats.trees.common import YamlNode, Position, MappingNode, TextNode, BaseTree
 
 class Visitor:
     def __init__(self, cursor_position: types.Position):
@@ -63,21 +62,10 @@ def get_parent_node(tree: BaseTree, pos: Position):
     
     while path:
         node = path.pop()
-        if node.parent and node.parent.start_pos[0] < pos.line and node.parent.start_pos[1] < pos.character:
-            if isinstance(node.parent, SequenceNode):
-                return node.parent.parent
-            else:
-                return node.parent
+        if node.parent.start_pos[0] < pos.line and node.parent.start_pos[1] < pos.character:
+            return node.parent
     
     return None
-
-
-def get_parent_node_text(tree: BaseTree, pos: Position):
-    parent_node = get_parent_node(tree, pos)
-    if parent_node and hasattr(parent_node, 'text'):
-        return parent_node.text
-    else:
-        return ""
 
 
 # def get_parent_word(document: Document, position: types.Position):
@@ -103,6 +91,7 @@ def get_parent_node_text(tree: BaseTree, pos: Position):
     
 #     return word
     
+
 
 def get_line_before_position(document: Document, position: types.Position):
     lines = document.lines

@@ -4,11 +4,11 @@ from yaml.tokens import (BlockEndToken, BlockEntryToken, BlockMappingStartToken,
                          BlockSequenceStartToken, KeyToken,
                          ScalarToken, Token, ValueToken, StreamStartToken, StreamEndToken)
 
-from server.ats.trees.app import AppTree
-from server.ats.trees.blueprint import BlueprintTree
-from server.ats.trees.common import (PropertyNode, YamlNode, TextNode, MappingNode, BaseTree,
-                                     SequenceNode, NodeError, ObjectNode)
-from server.ats.trees.service import ServiceTree
+from .trees.app import AppTree
+from .trees.blueprint import BlueprintTree
+from .trees.common import (PropertyNode, YamlNode, TextNode, MappingNode, BaseTree,
+                           SequenceNode, NodeError, ObjectNode)
+from .trees.service import ServiceTree
 
 
 class ParserError(Exception):
@@ -150,7 +150,7 @@ class Parser:
                 node = self.nodes_stack[-1].add()
                 self.nodes_stack.append(node)
             except Exception:
-                raise ParserError(f"Wrong stucture of document", token=token)
+                raise ParserError("Wrong stucture of document", token=token)
                 # raise Exception(f"Unable to add item to the node's container : {e}")
 
         if isinstance(token, StreamEndToken):
@@ -273,7 +273,7 @@ class Parser:
             if self.is_array_item and isinstance(self.tokens_stack[-1], BlockEntryToken):
                 self._handle_hanging_dash(self.tokens_stack[-1])
                 self.tokens_stack.pop()  # remove BlockEntryToken
-                node = self.nodes_stack.pop()  # remove sequence 
+                node = self.nodes_stack.pop()  # remove sequence
                 node.end_pos = self.get_token_end(token)
 
                 if isinstance(self.tokens_stack[-1], ValueToken):
@@ -302,8 +302,8 @@ class Parser:
                 raise ParserError(message="Expected mapping value here", token=token)
             try:
                 value_node = node.get_value(expected_type=TextNode)
-            except ValueError as e:
-                raise ParserError(message=f"Scalar cannot be accepted here. Object expected", token=token)
+            except ValueError:
+                raise ParserError(message="Scalar cannot be accepted here. Object expected", token=token)
             self.nodes_stack.append(value_node)
 
             self._process_scalar_token(token)

@@ -1,10 +1,10 @@
 import re
-from server.ats.trees.service import ServiceTree
-from server.validation.common import ValidationHandler
 import sys
 import logging
 from pygls.lsp.types.basic_structures import DiagnosticSeverity
-from server.utils import services
+from ..ats.trees.service import ServiceTree
+from .common import ValidationHandler
+from ..utils import services
 
 
 class ServiceValidationHandler(ValidationHandler):
@@ -54,12 +54,12 @@ class ServiceValidationHandler(ValidationHandler):
         node = tree.variables.var_file
         if node:
             if not node.value:
-                self._add_diagnostic(node.key, f"Provide a filename")
+                self._add_diagnostic(node.key, "Provide a filename")
                 return
 
             if node.text not in vars_files:
                 self._add_diagnostic(node.value, f"File {node.text} doesn't exist")
-    
+
     def _check_for_deprecated_properties(self):
         deprecated_properties = {"tfvars_file": "var_file under variables"}
         message_dep = "Deprecated property '{}'."
@@ -76,5 +76,5 @@ class ServiceValidationHandler(ValidationHandler):
                     self._add_diagnostic_for_range(message,
                                                    range_start_tuple=(line_num, col),
                                                    range_end_tuple=(line_num, col + len(prop)),
-                                                   diag_severity=DiagnosticSeverity.Warning)                    
+                                                   diag_severity=DiagnosticSeverity.Warning)
             line_num += 1

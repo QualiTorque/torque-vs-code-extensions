@@ -3,8 +3,8 @@ import os
 import re
 import pathlib
 import yaml
-from server.ats.parser import Parser, ParserError
-from server.utils.yaml_utils import format_yaml
+from ..ats.parser import Parser, ParserError
+from .yaml_utils import format_yaml
 
 SERVICES = {}
 

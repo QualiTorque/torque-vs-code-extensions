@@ -4,7 +4,7 @@
 	"description": "A VS Code extension for the Torque YAML syntax. Provides YAML schema verification, auto-complete, highlight problems and much more.",
 	"author": "Quali",
 	"license": "MIT",
-	"version": "0.0.7",
+	"version": "0.0.8",
 	"publisher": "Quali-Torque",
 	"repository": {
 		"type": "git",
@@ -31,6 +31,9 @@
 	],
 	"activationEvents": [
 		"onLanguage:yaml",
+		"onView:profilesView",
+		"onView:sandboxesExplorerView",
+		"onView:blueprintsExplorerView",
 		"onStartupFinished"
 	],
 	"contributes": {
@@ -143,11 +146,17 @@
 			"type": "object",
 			"title": "Torque Configuration",
 			"properties": {
-				"torque.active_profile": {
+				"torque.activeProfile": {
 					"type": "string",
-					"description": "The deafult profile to use",
+					"description": "The currently selected profile to use. Can be set from the Torque profiles view when having at least one profile.",
 					"scope": "resource"
-				}	
+				},
+				"torque.defaultSandboxDuration": {
+					"type": "number",
+					"description": "A default sandbox duration (in minutes) to use when displaying the start sandbox form.",
+					"default": 120,
+					"scope": "application"
+				}
 			}
 		},
 		"languages": [
@@ -173,7 +182,7 @@
 	],
 	"main": "./out/extension",
 	"scripts": {
-		"vscode:prepublish": "npm run compile && echo copying server && cp -R ../server out/server && cp ../README.md ./README.md",
+		"vscode:prepublish": "npm run compile && echo copying server && cp -Rf ../server/. out/server && cp ../README.md ./README.md && cp ../LICENSE ./LICENSE",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"webpack": "webpack --mode development",

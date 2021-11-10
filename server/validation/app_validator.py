@@ -1,9 +1,9 @@
 import re
 
 from pygls.lsp.types.basic_structures import DiagnosticSeverity
-from server.ats.trees.app import AppTree
-from server.validation.common import ValidationHandler
-from server.utils import applications
+from ..ats.trees.app import AppTree
+from .common import ValidationHandler
+from ..utils import applications
 
 
 class AppValidationHandler(ValidationHandler):
@@ -15,13 +15,13 @@ class AppValidationHandler(ValidationHandler):
         self._validate_script_files_exist()
 
         return self._diagnostics
-    
+
     def _validate_script_files_exist(self):
         scripts = applications.get_app_scripts(self._document.path)
         tree: AppTree = self._tree
         if tree.configuration is None:
             return
-            
+
         for prop in ['initialization', 'start', 'healthcheck']:
             node = getattr(tree.configuration, prop, None)
 
@@ -51,5 +51,5 @@ class AppValidationHandler(ValidationHandler):
                     self._add_diagnostic_for_range(message,
                                                    range_start_tuple=(line_num, col),
                                                    range_end_tuple=(line_num, col + len(prop)),
-                                                   diag_severity=DiagnosticSeverity.Warning)                    
+                                                   diag_severity=DiagnosticSeverity.Warning)
             line_num += 1

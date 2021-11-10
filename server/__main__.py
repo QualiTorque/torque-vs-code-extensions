@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-logging.basicConfig(filename="torque_ls.log", level=logging.DEBUG, filemode="w")
+logging.basicConfig(filename="torque_ls.log", level=logging.INFO, filemode="w")
 
 from .server import torque_ls
 
