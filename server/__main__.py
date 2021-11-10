@@ -1,9 +1,8 @@
 import argparse
 import logging
+from .server import torque_ls
 
 logging.basicConfig(filename="torque_ls.log", level=logging.INFO, filemode="w")
-
-from .server import torque_ls
 
 
 def add_arguments(parser):

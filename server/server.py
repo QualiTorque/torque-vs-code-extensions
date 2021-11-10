@@ -289,7 +289,12 @@ def completions(
         tree = Parser(doc.source).parse()
     except Exception as ex:
         import sys
-        logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+
+        logging.error(
+            "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
+            type(ex).__name__,
+            ex,
+        )
         return CompletionList(is_incomplete=True, items=[])
 
     words = common.preceding_words(doc, params.position)
@@ -333,22 +338,28 @@ def completions(
         parent_node = common.get_parent_node_text(tree, params.position)
         if parent_node == "clouds":
             items = []
-            items += [CompletionItem(label=script,
-                                     detail="AWS region",
-                                     kind=CompletionItemKind.File) for script in AWS_REGIONS]
+            items += [
+                CompletionItem(
+                    label=script, detail="AWS region", kind=CompletionItemKind.File
+                )
+                for script in AWS_REGIONS
+            ]
 
-            items += [CompletionItem(label=script,
-                                     detail="Azure region",
-                                     kind=CompletionItemKind.File) for script in AZURE_REGIONS]
+            items += [
+                CompletionItem(
+                    label=script, detail="Azure region", kind=CompletionItemKind.File
+                )
+                for script in AZURE_REGIONS
+            ]
 
             return CompletionList(
-                    is_incomplete=False,
-                    items=items,
-                )
+                is_incomplete=False,
+                items=items,
+            )
 
         items = []
-        if last_word.endswith('.'):
-            if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
+        if last_word.endswith("."):
+            if words and len(words) > 1 and words[1] == words[-1] and words[0] != "-":
                 cur_word = words[-1]
                 word_parts = cur_word.split("$")
                 if word_parts:
@@ -762,17 +773,16 @@ async def lsp_document_link(
 
 
 async def _run_torque_cli_command(command: str, **kwargs):
-    cmd_list = [sys.executable, '-m'] + shlex.split(command)
-    logging.info("Running command: " + ' '.join(cmd_list))
+    cmd_list = [sys.executable, "-m"] + shlex.split(command)
 
     res = subprocess.run(
-            cmd_list,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            **kwargs
-        )
+        cmd_list,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+        **kwargs,
+    )
 
     return res.stdout, res.stderr
 
@@ -789,7 +799,7 @@ async def _get_profile(server: TorqueLanguageServer):
             )
         )
         active_profile = config[0].get("activeProfile")
-    except:
+    except Exception:
         active_profile = ""
 
     return active_profile
@@ -829,12 +839,21 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     server.show_message("Starting sandbox from blueprint: " + blueprint_name)
     server.show_message_log("Starting sandbox from blueprint: " + blueprint_name)
     if dev_mode:
-        server.show_message_log("If there are local changes it might take some more time to get ready.")
+        server.show_message_log(
+            "If there are local changes it might take some more time to get ready."
+        )
 
     try:
-        command = ['torque',
-                   '--profile', active_profile,
-                   'sb', 'start', blueprint_name, '-d', duration]
+        command = [
+            "torque",
+            "--profile",
+            active_profile,
+            "sb",
+            "start",
+            blueprint_name,
+            "-d",
+            duration,
+        ]
 
         if inputs_args:
             command.extend(["-i", inputs_args])
@@ -847,7 +866,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
             command.extend(["-t", "0", "-b", branch])
 
         cwd = server.workspace.root_path if dev_mode else None
-        stdout, stderr = await _run_torque_cli_command(' '.join(command), cwd=cwd)
+        stdout, stderr = await _run_torque_cli_command(" ".join(command), cwd=cwd)
         stdout = stdout.split("\n") if stdout else []
         stderr = stderr.split("\n") if stderr else []
         sandbox_id = ""
@@ -874,8 +893,12 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                 'Sandbox creation failed. Check the "Torque" Output view for more details.'
             )
         else:
-            server.show_message("Sandbox was created. See details in the Output view or Sandboxes explorer.")
-            server.show_message_log("Sandbox was created. View current status and more details using the Sandboxes explorer.")
+            server.show_message(
+                "Sandbox was created. See details in the Output view or Sandboxes explorer."
+            )
+            server.show_message_log(
+                "Sandbox was created. View current status and more details using the Sandboxes explorer."
+            )
     except Exception as ex:
         server.show_message_log(str(ex), msg_type=MessageType.Error)
 
@@ -883,7 +906,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
 @torque_ls.command(TorqueLanguageServer.CMD_LIST_TORQUE_PROFILES)
 async def get_profiles(server: TorqueLanguageServer, *_):
     result = []
-    keys = ['profile', 'account', 'space']
+    keys = ["profile", "account", "space"]
 
     try:
         stdout, stderr = await _run_torque_cli_command("torque configure list")
@@ -928,7 +951,9 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
     sbs = []
 
     try:
-        stdout, stderr = await _run_torque_cli_command(f"torque --profile {active_profile} sb list --output=json")
+        stdout, stderr = await _run_torque_cli_command(
+            f"torque --profile {active_profile} sb list --output=json"
+        )
 
         if stderr:
             server.show_message(
@@ -958,7 +983,9 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
         return
 
     try:
-        stdout, stderr = await _run_torque_cli_command(f"torque --profile {active_profile} bp list --output=json --detail")
+        stdout, stderr = await _run_torque_cli_command(
+            f"torque --profile {active_profile} bp list --output=json --detail"
+        )
 
         if stderr:
             server.show_message(
@@ -981,10 +1008,10 @@ async def torque_login(server: TorqueLanguageServer, *args):
         return 1
 
     params = args[0].pop()
-    if ' ' in params.profile:
+    if " " in params.profile:
         server.show_message("Profile name cannot have spaces", MessageType.Error)
         return 1
-    if ' ' in params.space:
+    if " " in params.space:
         server.show_message("Space name cannot have spaces", MessageType.Error)
         return 1
 
@@ -1021,7 +1048,7 @@ async def remove_profile(server: TorqueLanguageServer, *args):
 
     profile_name = args[0][0]
     try:
-        stdout, stderr = await _run_torque_cli_command(f"torque configure remove {profile_name}")
+        _, __ = await _run_torque_cli_command(f"torque configure remove {profile_name}")
         server.show_message(f"Profile '{profile_name}' deleted.")
         return True
     except Exception as ex:
@@ -1048,7 +1075,9 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
 
     sb_id = args[0].pop()
     try:
-        stdout, stderr = await _run_torque_cli_command(f"torque --profile {active_profile} sb get {sb_id} --output=json --detail")
+        stdout, stderr = await _run_torque_cli_command(
+            f"torque --profile {active_profile} sb get {sb_id} --output=json --detail"
+        )
         if stderr:
             server.show_message(
                 f"An error occurred while executing the command: {stderr}",
@@ -1081,7 +1110,9 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
     sb_id = args[0].pop()
 
     try:
-        stdout, stderr = await _run_torque_cli_command(f"torque --profile {active_profile} sb end {sb_id}")
+        stdout, stderr = await _run_torque_cli_command(
+            f"torque --profile {active_profile} sb end {sb_id}"
+        )
 
         if stderr:
             server.show_message(
@@ -1147,7 +1178,9 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                     "Unable to get the list of issues. Try to validate blueprint using Torque CLI"
                 )
         else:
-            server.show_message_log(f"Validation completed. The blueprint '{blueprint_name}' and its dependencies are valid.")
+            server.show_message_log(
+                f"Validation completed. The blueprint '{blueprint_name}' and its dependencies are valid."
+            )
 
     except Exception as ex:
         logging.error(ex)

@@ -5,6 +5,7 @@ from pygls.workspace import Document, position_from_utf16
 
 from server.ats.trees.common import YamlNode, Position, MappingNode, TextNode, BaseTree
 
+
 class Visitor:
     def __init__(self, cursor_position: types.Position):
         self.found_node = None
@@ -68,31 +69,6 @@ def get_parent_node(tree: BaseTree, pos: Position):
     return None
 
 
-# def get_parent_word(document: Document, position: types.Position):
-#     lines = document.lines
-#     if position.line >= len(lines) or position.line == 0:
-#         return None
-
-#     row, col = position_from_utf16(lines, position)    
-    
-#     cur_word = document.word_at_position(position=types.Position(line=row, character=col))
-#     line = lines[row]
-#     index = line.find(cur_word)
-#     if index >= 2:
-#         col = index - 2
-    
-#     row -= 1
-#     word = None
-#     while row >= 0:
-#         word = document.word_at_position(position=types.Position(line=row, character=col))
-#         row -= 1
-#         if word:
-#             break
-    
-#     return word
-    
-
-
 def get_line_before_position(document: Document, position: types.Position):
     lines = document.lines
     if position.line >= len(lines):
@@ -113,6 +89,7 @@ def preceding_words(document: Document, position: types.Position) -> Optional[Tu
         return word
     except ValueError:
         return None
+
 
 def get_repo_root_path(path: str) -> str:
     full_path = pathlib.Path(path).absolute()

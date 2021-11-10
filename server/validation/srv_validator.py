@@ -13,9 +13,11 @@ class ServiceValidationHandler(ValidationHandler):
 
         try:
             # warnings
+            deprecated_properties = {"tfvars_file": "var_file under variables"}
+
             self._check_for_unused_service_inputs()
             self._validate_variables_file_exist()
-            self._check_for_deprecated_properties()
+            self._check_for_deprecated_properties(deprecated_properties)
 
         except Exception as ex:
             print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
@@ -59,22 +61,3 @@ class ServiceValidationHandler(ValidationHandler):
 
             if node.text not in vars_files:
                 self._add_diagnostic(node.value, f"File {node.text} doesn't exist")
-
-    def _check_for_deprecated_properties(self):
-        deprecated_properties = {"tfvars_file": "var_file under variables"}
-        message_dep = "Deprecated property '{}'."
-        message_replace = "Please use '{}' instead."
-        line_num = 0
-        for line in self._document.lines:
-            for prop in deprecated_properties.keys():
-                found = re.findall('^[^#\\n]*(\\b'+prop+'\\b:)', line)
-                if len(found) > 0:
-                    col = line.find(prop)
-                    message = message_dep.format(prop)
-                    if deprecated_properties[prop]:
-                        message += " " + message_replace.format(deprecated_properties[prop])
-                    self._add_diagnostic_for_range(message,
-                                                   range_start_tuple=(line_num, col),
-                                                   range_end_tuple=(line_num, col + len(prop)),
-                                                   diag_severity=DiagnosticSeverity.Warning)
-            line_num += 1

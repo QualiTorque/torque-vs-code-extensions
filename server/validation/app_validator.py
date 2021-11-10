@@ -8,9 +8,10 @@ from ..utils import applications
 
 class AppValidationHandler(ValidationHandler):
     def validate(self):
+        deprecated_properties = {"ostype": "os_type under source"}
         super().validate()
         # warnings
-        self._check_for_deprecated_properties()
+        self._check_for_deprecated_properties(deprecated_properties)
         # errors
         self._validate_script_files_exist()
 
@@ -34,22 +35,3 @@ class AppValidationHandler(ValidationHandler):
 
             if node.script.text not in scripts:
                 self._add_diagnostic(node.script.value, f"File {node.script.text} doesn't exist")
-
-    def _check_for_deprecated_properties(self):
-        deprecated_properties = {"ostype": "os_type under source"}
-        message_dep = "Deprecated property '{}'."
-        message_replace = "Please use '{}' instead."
-        line_num = 0
-        for line in self._document.lines:
-            for prop in deprecated_properties.keys():
-                found = re.findall('^[^#\\n]*(\\b'+prop+'\\b:)', line)
-                if len(found) > 0:
-                    col = line.find(prop)
-                    message = message_dep.format(prop)
-                    if deprecated_properties[prop]:
-                        message += " " + message_replace.format(deprecated_properties[prop])
-                    self._add_diagnostic_for_range(message,
-                                                   range_start_tuple=(line_num, col),
-                                                   range_end_tuple=(line_num, col + len(prop)),
-                                                   diag_severity=DiagnosticSeverity.Warning)
-            line_num += 1

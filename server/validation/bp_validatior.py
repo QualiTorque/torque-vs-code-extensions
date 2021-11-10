@@ -30,7 +30,7 @@ class BlueprintValidationHandler(ValidationHandler):
         line_num = 0
         for line in self._document.lines:
             for prop in deprecated_properties.keys():
-                found = re.findall('^[^#\\n]*(\\b'+prop+'\\b:)', line)
+                found = re.findall("^[^#\\n]*(\\b" + prop + "\\b:)", line)
                 if len(found) > 0:
                     col = line.find(prop)
                     message = message_dep.format(prop)
@@ -57,13 +57,22 @@ class BlueprintValidationHandler(ValidationHandler):
         line_num = 0
         for line in self._document.lines:
             for prop in deprecated_syntax.keys():
-                for match in re.finditer('^[^#\\n]*(\$\{'+prop+'?\}|\$'+prop+'\\b)', line.lower()):
+                for match in re.finditer(
+                    "^[^#\\n]*(\$\{" + prop + "?\}|\$" + prop + "\\b)", line.lower()
+                ):
                     col = match.span(1)
-                    old_syntax = match.group(1).replace('$', '').replace('{', '').replace('}', '')
-                    self._add_diagnostic_for_range(message.format(old_syntax, deprecated_syntax[prop]),
-                                                   range_start_tuple=(line_num, col[0]),
-                                                   range_end_tuple=(line_num, col[1]),
-                                                   diag_severity=DiagnosticSeverity.Warning)
+                    old_syntax = (
+                        match.group(1)
+                        .replace("$", "")
+                        .replace("{", "")
+                        .replace("}", "")
+                    )
+                    self._add_diagnostic_for_range(
+                        message.format(old_syntax, deprecated_syntax[prop]),
+                        range_start_tuple=(line_num, col[0]),
+                        range_end_tuple=(line_num, col[1]),
+                        diag_severity=DiagnosticSeverity.Warning,
+                    )
 
             line_num += 1
 
@@ -91,8 +100,13 @@ class BlueprintValidationHandler(ValidationHandler):
             for input in res.inputs:
                 if input.value is None:
                     continue
-                if input.value and ('torque.applications.' in input.value.text or 'torque.services.' in input.value.text):
-                    found = re.findall('torque\.(applications|services)\.(.+?)\.', input.value.text)
+                if input.value and (
+                    "torque.applications." in input.value.text
+                    or "torque.services." in input.value.text
+                ):
+                    found = re.findall(
+                        "torque\.(applications|services)\.(.+?)\.", input.value.text
+                    )
                     for f in found:
                         if f[1] not in deps_names:
                             self._add_diagnostic(
@@ -151,7 +165,7 @@ class BlueprintValidationHandler(ValidationHandler):
         for cloud in self._tree.clouds.nodes:
             if cloud.value and cloud.value.text:
                 region = cloud.value.text
-                if region not in set(AWS_REGIONS+AZURE_REGIONS):
+                if region not in set(AWS_REGIONS + AZURE_REGIONS):
                     self._add_diagnostic(cloud.value, message=message.format(region))
 
     def _check_for_unused_blueprint_inputs(self):
@@ -173,12 +187,20 @@ class BlueprintValidationHandler(ValidationHandler):
             # search if used as a variable
             for input in self._tree.get_inputs():
                 if input.key.text not in name_only_inputs:
-                    found = re.findall('^[^#\\n]*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
+                    found = re.findall(
+                        "^[^#\\n]*(\$\{"
+                        + input.key.text
+                        + "\}|\$"
+                        + input.key.text
+                        + "\\b)",
+                        source,
+                        re.MULTILINE,
+                    )
                     if len(found) == 0:
                         self._add_diagnostic(
                             input.key,
                             message=message.format(input.key.text),
-                            diag_severity=DiagnosticSeverity.Warning
+                            diag_severity=DiagnosticSeverity.Warning,
                         )
 
     def _is_valid_auto_var(self, var_name):
@@ -208,8 +230,9 @@ class BlueprintValidationHandler(ValidationHandler):
                 return True, ""
 
         if len(parts) == 5:
-            if parts[1].lower() == "applications" and (not parts[3].lower() == "outputs" and
-                                                       not parts[3].lower() == "dns"):
+            if parts[1].lower() == "applications" and (
+                not parts[3].lower() == "outputs" and not parts[3].lower() == "dns"
+            ):
                 return False, f"{var_name} is not a valid Torque-generated variable"
 
             if parts[1].lower() == "services" and not parts[3].lower() == "outputs":
@@ -218,38 +241,59 @@ class BlueprintValidationHandler(ValidationHandler):
             if parts[1] == "applications":
                 apps = self.blueprint_apps
                 if not parts[2] in apps:
-                    return False, f"{var_name} is not a valid Torque-generated variable (no such app in the blueprint)"
+                    return (
+                        False,
+                        f"{var_name} is not a valid Torque-generated variable (no such app in the blueprint)",
+                    )
 
                 app_outputs = applications.get_app_outputs(app_name=parts[2])
                 if parts[4] not in app_outputs:
-                    return False, f"{var_name} is not a valid Torque-generated variable ('{parts[2]}' does not have the output '{parts[4]}')"
+                    return (
+                        False,
+                        f"{var_name} is not a valid Torque-generated variable ('{parts[2]}' does not have the output '{parts[4]}')",
+                    )
 
             if parts[1] == "services":
                 srvs = self.blueprint_services
                 if not parts[2] in srvs:
-                    return False, (f"{var_name} is not a valid Torque-generated "
-                                   f"variable (no such service in the blueprint)")
+                    return False, (
+                        f"{var_name} is not a valid Torque-generated "
+                        f"variable (no such service in the blueprint)"
+                    )
 
                 srv_outputs = services.get_service_outputs(srv_name=parts[2])
                 if parts[4] not in srv_outputs:
-                    return False, (f"{var_name} is not a valid Torque-generated variable ('{parts[2]}' "
-                                   f"does not have the output '{parts[4]}')")
+                    return False, (
+                        f"{var_name} is not a valid Torque-generated variable ('{parts[2]}' "
+                        f"does not have the output '{parts[4]}')"
+                    )
 
         else:
-            return False, f"{var_name} is not a valid Torque-generated variable (too many parts)"
+            return (
+                False,
+                f"{var_name} is not a valid Torque-generated variable (too many parts)",
+            )
 
         return True, ""
 
     def _validate_var_being_used_is_defined(self):
-        bp_inputs = {input.key.text for input in self._tree.get_inputs()} if self._tree.inputs_node else {}
+        bp_inputs = (
+            {input.key.text for input in self._tree.get_inputs()}
+            if self._tree.inputs_node
+            else {}
+        )
 
         for app in self._tree.get_applications():
             for input in app.inputs:
-                self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
+                self._confirm_variable_defined_in_blueprint_or_auto_var(
+                    bp_inputs, input
+                )
 
         for srv in self._tree.get_services():
             for input in srv.inputs:
-                self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, input)
+                self._confirm_variable_defined_in_blueprint_or_auto_var(
+                    bp_inputs, input
+                )
 
         for art in self._tree.get_artifacts():
             self._confirm_variable_defined_in_blueprint_or_auto_var(bp_inputs, art)
@@ -402,7 +446,7 @@ class BlueprintValidationHandler(ValidationHandler):
                         self._add_diagnostic(
                             input.key,
                             message=f"The application '{app.id.text}' does not have "
-                                    f"an input named '{input.key.text}'"
+                            f"an input named '{input.key.text}'",
                         )
                 missing_inputs = []
                 for input in app_inputs:
@@ -411,7 +455,7 @@ class BlueprintValidationHandler(ValidationHandler):
                 if missing_inputs:
                     self._add_diagnostic(
                         app.id,
-                        message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
+                        message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}",
                     )
 
     def _validate_services_inputs_exists(self):
@@ -427,7 +471,7 @@ class BlueprintValidationHandler(ValidationHandler):
                         self._add_diagnostic(
                             input.key,
                             message=f"The service '{srv.id.text}' does not have an "
-                                    f"input named '{input.key.text}'"
+                            f"input named '{input.key.text}'",
                         )
                 missing_inputs = []
                 for input in srv_inputs:
@@ -436,23 +480,35 @@ class BlueprintValidationHandler(ValidationHandler):
                 if missing_inputs:
                     self._add_diagnostic(
                         srv.id,
-                        message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}"
+                        message=f"The following mandatory inputs are missing: {', '.join(missing_inputs)}",
                     )
 
-    def _validate_blueprint_networking_gateway_not_same_as_management_or_application(self):
+    def _validate_blueprint_networking_gateway_not_same_as_management_or_application(
+        self,
+    ):
         if self._tree.infrastructure and self._tree.infrastructure.connectivity:
-            if (self._tree.infrastructure.connectivity.virtual_network
-                    and self._tree.infrastructure.connectivity.virtual_network.subnets):
+            if (
+                self._tree.infrastructure.connectivity.virtual_network
+                and self._tree.infrastructure.connectivity.virtual_network.subnets
+            ):
                 subs = self._tree.infrastructure.connectivity.virtual_network.subnets
-                if subs.gateway and subs.gateway.nodes and \
-                   subs.management and subs.management.nodes and \
-                   subs.application and subs.application.nodes:
+                if (
+                    subs.gateway
+                    and subs.gateway.nodes
+                    and subs.management
+                    and subs.management.nodes
+                    and subs.application
+                    and subs.application.nodes
+                ):
                     gw = subs.gateway.nodes[0]
                     mgmt = subs.management.nodes[0]
                     app = subs.application.nodes[0]
                     if gw.text == mgmt.text or gw.text == app.text:
-                        self._add_diagnostic(gw, message="Blueprint Gateway subnet cannot "
-                                                         "be used as management or application subnet.")
+                        self._add_diagnostic(
+                            gw,
+                            message="Blueprint Gateway subnet cannot "
+                            "be used as management or application subnet.",
+                        )
 
     def validate(self):
         super().validate()
@@ -483,7 +539,15 @@ class BlueprintValidationHandler(ValidationHandler):
             self._validate_clouds_regions_are_valid()
             self._validate_blueprint_networking_gateway_not_same_as_management_or_application()
         except Exception as ex:
-            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-            logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+            print(
+                "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
+                type(ex).__name__,
+                ex,
+            )
+            logging.error(
+                "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
+                type(ex).__name__,
+                ex,
+            )
 
         return self._diagnostics

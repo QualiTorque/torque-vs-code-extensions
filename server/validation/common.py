@@ -2,6 +2,7 @@ from typing import List
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
 from pygls.workspace import Document
 from ..ats.trees.common import BaseTree, YamlNode
+import re
 
 
 class ValidationHandler:
@@ -77,6 +78,24 @@ class ValidationHandler:
                         output_node,
                         message=message.format(output_node.text)
                     )
+
+    def _check_for_deprecated_properties(self, deprecated_properties):
+        message_dep = "Deprecated property '{}'."
+        message_replace = "Please use '{}' instead."
+        line_num = 0
+        for line in self._document.lines:
+            for prop in deprecated_properties.keys():
+                found = re.findall('^[^#\\n]*(\\b' + prop + '\\b:)', line)
+                if len(found) > 0:
+                    col = line.find(prop)
+                    message = message_dep.format(prop)
+                    if deprecated_properties[prop]:
+                        message += " " + message_replace.format(deprecated_properties[prop])
+                    self._add_diagnostic_for_range(message,
+                                                   range_start_tuple=(line_num, col),
+                                                   range_end_tuple=(line_num, col + len(prop)),
+                                                   diag_severity=DiagnosticSeverity.Warning)
+            line_num += 1
 
     def validate(self):
         # errors
