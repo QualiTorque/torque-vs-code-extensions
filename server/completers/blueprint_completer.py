@@ -1,11 +1,11 @@
 from typing import List
 from pygls.lsp.types.language_features.completion import CompletionItem, CompletionItemKind, CompletionParams
 from pygls.workspace import Workspace
-from ..utils import applications, services
-from ..utils.common import get_line_before_position, get_path_to_pos
-from ..ats.trees.common import BaseTree, ScalarNode, TreeWithOutputs
-from ..ats.trees.blueprint import BlueprintResourceMappingNode, BlueprintTree
-from .base import Completer
+from server.utils import applications, services
+from server.utils.common import get_line_before_position, get_path_to_pos
+from server.ats.trees.common import BaseTree, ScalarNode
+from server.ats.trees.blueprint import BlueprintResourceMappingNode, BlueprintTree
+from server.completers.base import Completer
 
 
 class BlueprintResourceCompleter(Completer):
