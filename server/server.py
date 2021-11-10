@@ -832,6 +832,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
 
     try:
         command = ['torque',
+                   '--disable-version-check',
                    '--profile', active_profile,
                    'sb', 'start', blueprint_name, '-d', duration]
 
@@ -885,7 +886,7 @@ async def get_profiles(server: TorqueLanguageServer, *_):
     keys = ['profile', 'account', 'space']
 
     try:
-        stdout, stderr = _run_torque_cli_command("torque configure list")
+        stdout, stderr = _run_torque_cli_command("torque --disable-version-check configure list")
 
     except Exception as ex:
         server.show_message(
@@ -927,7 +928,7 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
     sbs = []
 
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque --profile {active_profile} sb list --output=json")
+        stdout, stderr = _run_torque_cli_command(f"torque --disable-version-check --profile {active_profile} sb list --output=json")
 
         if stderr:
             server.show_message(
@@ -957,7 +958,7 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
         return
 
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque --profile {active_profile} bp list --output=json --detail")
+        stdout, stderr = _run_torque_cli_command(f"torque --disable-version-check --profile {active_profile} bp list --output=json --detail")
 
         if stderr:
             server.show_message(
@@ -988,7 +989,7 @@ async def torque_login(server: TorqueLanguageServer, *args):
         return 1
 
     try:
-        command = f"torque configure set -P {params.profile} -a {params.account} -s {params.space}"
+        command = f"torque --disable-version-check configure set -P {params.profile} -a {params.account} -s {params.space}"
 
         if params.email and params.password:
             command = command + f" --login -e {params.email} -p {params.password}"
@@ -1020,7 +1021,7 @@ async def remove_profile(server: TorqueLanguageServer, *args):
 
     profile_name = args[0][0]
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque configure remove {profile_name}")
+        stdout, stderr = _run_torque_cli_command(f"torque --disable-version-check configure remove {profile_name}")
         server.show_message(f"Profile '{profile_name}' deleted.")
         return True
     except Exception as ex:
@@ -1047,7 +1048,7 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
 
     sb_id = args[0].pop()
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque --profile {active_profile} sb get {sb_id} --output=json --detail")
+        stdout, stderr = _run_torque_cli_command(f"torque --disable-version-check --profile {active_profile} sb get {sb_id} --output=json --detail")
         if stderr:
             server.show_message(
                 f"An error occurred while executing the command: {stderr}",
@@ -1080,7 +1081,7 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
     sb_id = args[0].pop()
 
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque --profile {active_profile} sb end {sb_id}")
+        stdout, stderr = _run_torque_cli_command(f"torque --disable-version-check --profile {active_profile} sb end {sb_id}")
 
         if stderr:
             server.show_message(
@@ -1118,7 +1119,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
     server.show_message_log("Validating blueprint: " + blueprint_name)
     try:
         stdout, stderr = _run_torque_cli_command(
-            f'torque --profile {active_profile} bp validate "{blueprint_name}" --output=json',
+            f'torque --disable-version-check --profile {active_profile} bp validate "{blueprint_name}" --output=json',
             cwd=server.workspace.root_path,
         )
 
