@@ -182,7 +182,7 @@
 	],
 	"main": "./out/extension",
 	"scripts": {
-		"vscode:prepublish": "npm run compile && echo copying server && cp -Rf ../server/. out/server && cp ../README.md ./README.md && cp ../LICENSE ./LICENSE",
+		"vscode:prepublish": "npm run compile && echo copying server && cp -Rf ../server/. out/server && cp ../*.md ./ && cp ../LICENSE ./LICENSE",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"webpack": "webpack --mode development",
