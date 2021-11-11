@@ -60,13 +60,21 @@ def get_parent_node(tree: BaseTree, pos: Position):
 
     if not path:
         return None
-    
+
     while path:
         node = path.pop()
         if node.parent.start_pos[0] < pos.line and node.parent.start_pos[1] < pos.character:
             return node.parent
-    
+
     return None
+
+
+def get_parent_node_text(tree: BaseTree, pos: Position):
+    parent_node = get_parent_node(tree, pos)
+    if parent_node and hasattr(parent_node, 'text'):
+        return parent_node.text
+    else:
+        return ""
 
 
 def get_line_before_position(document: Document, position: types.Position):
