@@ -35,17 +35,17 @@ def load_app_details(app_name: str, app_source: str):
 
 
 def reload_app_details(app_name, app_source):
-    if APPLICATIONS: # if there is already a cache, add this file
+    if APPLICATIONS:  # if there is already a cache, add this file
         load_app_details(app_name, app_source)
 
 
 def remove_app_details(app_name):
-    if APPLICATIONS: # if there is already a cache, remove this file
+    if APPLICATIONS:  # if there is already a cache, remove this file
         if app_name in APPLICATIONS:
             APPLICATIONS.pop(app_name)
 
 
-def get_available_applications(root_folder: str=None):
+def get_available_applications(root_folder: str = None):
     if APPLICATIONS:
         return APPLICATIONS
     else:
