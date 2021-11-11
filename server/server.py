@@ -834,14 +834,14 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         command = ['torque',
                    '--disable-version-check',
                    '--profile', active_profile,
-                   'sb', 'start', blueprint_name, '-d', duration]
+                   'sb', 'start', f'"{blueprint_name}"', '-d', duration]
 
         if inputs_args:
-            command.extend(["-i", inputs_args])
+            command.extend(["-i", f'"{inputs_args}"'])
         if artifacts_args:
-            command.extend(["-a", artifacts_args])
+            command.extend(["-a", f'"{artifacts_args}"'])
         if sandbox_name:
-            command.extend(["-n", sandbox_name])
+            command.extend(["-n", f'"{sandbox_name}"'])
         if not dev_mode:
             branch = args[0][5]
             command.extend(["-t", "0", "-b", branch])
