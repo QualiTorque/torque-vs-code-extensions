@@ -209,7 +209,7 @@ class PropertyNode(MappingNode):
     def __getattr__(self, name: str) -> Any:
         val = getattr(self.value, name, None)
 
-        if val:
+        if val is not None:
             return val
         else:
             value_class = self.parent.__dataclass_fields__[self.identifier].type

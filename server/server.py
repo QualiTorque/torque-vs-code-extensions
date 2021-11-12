@@ -554,20 +554,9 @@ def code_lens(
             inputs.append(
                 {
                     "name": inp.key.text,
-                    "default_value": inp.default_value.text
-                    if inp.default_value
-                    else "",
-                    "optional": True
-                    if inp.value
-                    and hasattr(inp.value, "optional")
-                    and inp.value.optional
-                    else False,
-                    "display_style": "masked"
-                    if inp.value
-                    and hasattr(inp.value, "display_style")
-                    and inp.value.display_style
-                    and inp.value.display_style.text
-                    else "text",
+                    "default_value": inp.default_value.text if inp.value and inp.default_value else "",
+                    "optional": True if inp.value and inp.value.optional else False,
+                    "display_style": "masked" if inp.value and inp.value.display_style and inp.value.display_style.text else "text",
                 }
             )
         artifacts = {}
