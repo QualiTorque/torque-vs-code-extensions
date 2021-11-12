@@ -214,15 +214,9 @@ class PropertyNode(MappingNode):
         else:
             value_class = self.parent.__dataclass_fields__[self.identifier].type
             if name not in value_class.__dataclass_fields__:
-                raise AttributeError(f"Value of PropertyNode '{self.identifier}' doesn't not have attribute '{name}'")
+                raise AttributeError(f"Value of PropertyNode '{self.identifier}' does not not have attribute '{name}'")
             
             return None
-
-    # def __setattr__(self, name: str, value: Any) -> None:
-    #     if hasattr(self.value, name):
-    #         setattr(self.value, name, value)
-    #     else:
-    #         setattr(self, name, value)
 
     
 @dataclass

@@ -639,49 +639,30 @@ async def lsp_document_link(
             )
             return links
 
-        for app in bp_tree.get_applications():
-            target_path = os.path.join(
-                root, "applications", app.id.text, app.id.text + ".yaml"
-            )
-            if os.path.exists(target_path) and os.path.isfile(target_path):
-                tooltip = "Open the application file at " + target_path
-                links.append(
-                    DocumentLink(
-                        range=Range(
-                            start=Position(
-                                line=app.id.start_pos[0], character=app.id.start_pos[1]
-                            ),
-                            end=Position(
-                                line=app.id.start_pos[0],
-                                character=app.start_pos[1] + len(app.id.text),
-                            ),
-                        ),
-                        target=pathlib.Path(target_path).as_uri(),
-                        tooltip=tooltip,
-                    )
-                )
+        resources = {"service": bp_tree.get_services, "application": bp_tree.get_applications}
 
-        for srv in bp_tree.get_services():
-            target_path = os.path.join(
-                root, "services", srv.id.text, srv.id.text + ".yaml"
-            )
-            if os.path.exists(target_path) and os.path.isfile(target_path):
-                tooltip = "Open the service file at " + target_path
-                links.append(
-                    DocumentLink(
-                        range=Range(
-                            start=Position(
-                                line=srv.id.start_pos[0], character=srv.id.start_pos[1]
-                            ),
-                            end=Position(
-                                line=srv.id.start_pos[0],
-                                character=srv.start_pos[1] + len(srv.id.text),
-                            ),
-                        ),
-                        target=pathlib.Path(target_path).as_uri(),
-                        tooltip=tooltip,
-                    )
+        for res_type, func in resources:
+            for res in func():
+                target_path = os.path.join(
+                    root, f"{res_type}s", res.id.text, res.id.text + ".yaml"
                 )
+                if os.path.exists(target_path) and os.path.isfile(target_path):
+                    tooltip = f"Open the {res_type} file at " + target_path
+                    links.append(
+                        DocumentLink(
+                            range=Range(
+                                start=Position(
+                                    line=res.id.start_pos[0], character=res.id.start_pos[1]
+                                ),
+                                end=Position(
+                                    line=res.id.start_pos[0],
+                                    character=res.start_pos[1] + len(res.id.text),
+                                ),
+                            ),
+                            target=pathlib.Path(target_path).as_uri(),
+                            tooltip=tooltip,
+                        )
+                    )
 
     elif doc_type == "application":
         try:
@@ -866,7 +847,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
             command.extend(["-t", "0", "-b", branch])
 
         cwd = server.workspace.root_path if dev_mode else None
-        stdout, stderr = _run_torque_cli_command(' '.join(command), cwd=cwd)
+        stdout, stderr = _run_torque_cli_command(" ".join(command), cwd=cwd)
         stdout = stdout.split("\n") if stdout else []
         stderr = stderr.split("\n") if stderr else []
         sandbox_id = ""
@@ -909,7 +890,9 @@ async def get_profiles(server: TorqueLanguageServer, *_):
     keys = ["profile", "account", "space"]
 
     try:
-        stdout, stderr = _run_torque_cli_command("torque --disable-version-check configure list")
+        stdout, stderr = _run_torque_cli_command(
+            "torque --disable-version-check configure list"
+        )
 
     except Exception as ex:
         server.show_message(
@@ -983,7 +966,9 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
         return
 
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque --profile {active_profile} bp list --output=json --detail")
+        stdout, stderr = _run_torque_cli_command(
+            f"torque --profile {active_profile} bp list --output=json --detail"
+        )
 
         if stderr:
             server.show_message(
@@ -1046,7 +1031,9 @@ async def remove_profile(server: TorqueLanguageServer, *args):
 
     profile_name = args[0][0]
     try:
-        _, __ = _run_torque_cli_command(f"torque --disable-version-check configure remove {profile_name}")
+        _, __ = _run_torque_cli_command(
+            f"torque --disable-version-check configure remove {profile_name}"
+        )
         server.show_message(f"Profile '{profile_name}' deleted.")
         return True
     except Exception as ex:
@@ -1073,7 +1060,9 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
 
     sb_id = args[0].pop()
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque --disable-version-check --profile {active_profile} sb get {sb_id} --output=json --detail")
+        stdout, stderr = _run_torque_cli_command(
+            f"torque --disable-version-check --profile {active_profile} sb get {sb_id} --output=json --detail"
+        )
         if stderr:
             server.show_message(
                 f"An error occurred while executing the command: {stderr}",
@@ -1106,7 +1095,9 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
     sb_id = args[0].pop()
 
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque --disable-version-check --profile {active_profile} sb end {sb_id}")
+        stdout, stderr = _run_torque_cli_command(
+            f"torque --disable-version-check --profile {active_profile} sb end {sb_id}"
+        )
 
         if stderr:
             server.show_message(
