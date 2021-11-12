@@ -1,11 +1,12 @@
 from typing import List
 from pygls.lsp.types.language_features.completion import CompletionItem, CompletionItemKind, CompletionParams
 from pygls.workspace import Workspace
-from ..utils import applications, services
-from ..utils.common import get_line_before_position, get_path_to_pos
-from ..ats.trees.common import BaseTree, ScalarNode, TreeWithOutputs
-from ..ats.trees.blueprint import BlueprintResourceMappingNode, BlueprintTree
-from .base import Completer
+from server.utils.applications import ApplicationsManager as applications
+from server.utils.services import ServicesManager as services
+from server.utils.common import get_line_before_position, get_path_to_pos
+from server.ats.trees.common import BaseTree, ScalarNode
+from server.ats.trees.blueprint import BlueprintResourceMappingNode, BlueprintTree
+from server.completers.base import Completer
 
 
 class BlueprintResourceCompleter(Completer):
@@ -72,9 +73,9 @@ class BlueprintResourceCompleter(Completer):
         except ValueError:
             raise
         root = self.workspace.root_path  # TODO: workspace's root could not be a root of blueprint repo. Handle
-        return (applications.get_available_applications(root)
+        return (applications.get_available_resources(root)
                 if isinstance(seq, BlueprintTree.AppsSequence)
-                else services.get_available_services(root))
+                else services.get_available_resources(root))
 
     def _build_resource_completion(self, resource_name: str, tree: BaseTree) -> str:
         tab = "  "

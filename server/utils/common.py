@@ -1,9 +1,109 @@
+import os
+import logging
 import pathlib
 from typing import Optional, Tuple, List
 from pygls.lsp import types
 from pygls.workspace import Document, position_from_utf16
 
+from server.ats.parser import Parser, ParserError
 from server.ats.trees.common import YamlNode, Position, MappingNode, TextNode, BaseTree
+from server.utils.yaml_utils import format_yaml
+
+
+class ResourcesManager:
+    cache = {}
+    resource_folder = ""
+    resource_type = ""
+
+    @staticmethod
+    def build_completion_text(resource_name: str, resource_tree: BaseTree) -> str:
+        output = f"- {resource_name}:\n"
+        inputs = resource_tree.get_inputs()
+        if inputs:
+            output += "    input_values:\n"
+            for input_node in inputs:
+                if input_node.value:
+                    output += f"      - {input_node.key.text}: {input_node.value.text}\n"
+                else:
+                    output += f"      - {input_node.key.text}: \n"
+        return output
+
+    @classmethod
+    def load_res_details(cls, resource_name: str, resource_source: str):
+        resource_tree = None
+        output = None
+        try:
+            resource_tree = Parser(document=resource_source).parse()
+            output = cls.build_completion_text(resource_name, resource_tree)
+        except ParserError as e:
+            logging.warning(f"Unable to load {cls.resource_type} '{resource_name}.yaml' due to error: {e.message}")
+        except Exception as e:
+            logging.warning(f"Unable to load {cls.resource_type} '{resource_name}.yaml' due to error: {str(e)}")
+
+        cls.cache[resource_name] = {
+            'tree': resource_tree,
+            'completion': format_yaml(output) if output else None
+        }
+
+    @classmethod
+    def reload_resource_details(cls, resource_name, resource_source):
+        if cls.cache:  # if there is already a cache, add this file
+            cls.load_res_details(resource_name, resource_source)
+
+    @classmethod
+    def remove_resource_details(cls, resource_name):
+        if cls.cache:  # if there is already a cache, remove this file
+            if resource_name in cls.cache:
+                cls.cache.pop(resource_name)
+
+    @classmethod
+    def get_available_resources(cls, root_folder: str = None):
+        if cls.cache:
+            return cls.cache
+        else:
+            if root_folder:
+                resources_path = os.path.join(root_folder, cls.resource_folder)
+                if os.path.exists(resources_path):
+                    for folder in os.listdir(resources_path):
+                        res_dir = os.path.join(resources_path, folder)
+                        if os.path.isdir(res_dir):
+                            files = os.listdir(res_dir)
+                            if f'{folder}.yaml' in files:
+                                f = open(os.path.join(res_dir, f'{folder}.yaml'), "r")
+                                source = f.read()
+                                cls.load_res_details(folder, source)
+
+                return cls.cache
+            else:
+                return None
+
+    @classmethod
+    def get_available_resources_names(cls):
+        if cls.cache:
+            return list(cls.cache.keys())
+        else:
+            return []
+
+    @classmethod
+    def get_inputs(cls, resource_name):
+        if resource_name in cls.cache:
+            resource_tree = cls.cache[resource_name]["tree"]
+            if resource_tree and resource_tree.inputs_node:
+                inputs = {}
+                for input_node in resource_tree.get_inputs():
+                    inputs[input_node.key.text] = input_node.value.text if input_node.value else None
+                return inputs
+
+        return {}
+
+    @classmethod
+    def get_outputs(cls, resource_name):
+        if resource_name in cls.cache:
+            res_tree = cls.cache[resource_name]["tree"]
+            outputs = [out.text for out in res_tree.get_outputs()]
+            return outputs
+
+        return []
 
 
 class Visitor:

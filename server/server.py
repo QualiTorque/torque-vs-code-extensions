@@ -289,7 +289,12 @@ def completions(
         tree = Parser(doc.source).parse()
     except Exception as ex:
         import sys
-        logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+
+        logging.error(
+            "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
+            type(ex).__name__,
+            ex,
+        )
         return CompletionList(is_incomplete=True, items=[])
 
     words = common.preceding_words(doc, params.position)
@@ -333,22 +338,28 @@ def completions(
         parent_node = common.get_parent_node_text(tree, params.position)
         if parent_node == "clouds":
             items = []
-            items += [CompletionItem(label=script,
-                                     detail="AWS region",
-                                     kind=CompletionItemKind.File) for script in AWS_REGIONS]
+            items += [
+                CompletionItem(
+                    label=script, detail="AWS region", kind=CompletionItemKind.File
+                )
+                for script in AWS_REGIONS
+            ]
 
-            items += [CompletionItem(label=script,
-                                     detail="Azure region",
-                                     kind=CompletionItemKind.File) for script in AZURE_REGIONS]
+            items += [
+                CompletionItem(
+                    label=script, detail="Azure region", kind=CompletionItemKind.File
+                )
+                for script in AZURE_REGIONS
+            ]
 
             return CompletionList(
-                    is_incomplete=False,
-                    items=items,
-                )
+                is_incomplete=False,
+                items=items,
+            )
 
         items = []
-        if last_word.endswith('.'):
-            if words and len(words) > 1 and words[1] == words[-1] and words[0] != '-':
+        if last_word.endswith("."):
+            if words and len(words) > 1 and words[1] == words[-1] and words[0] != "-":
                 cur_word = words[-1]
                 word_parts = cur_word.split("$")
                 if word_parts:
@@ -543,20 +554,9 @@ def code_lens(
             inputs.append(
                 {
                     "name": inp.key.text,
-                    "default_value": inp.default_value.text
-                    if inp.default_value
-                    else "",
-                    "optional": True
-                    if inp.value
-                    and hasattr(inp.value, "optional")
-                    and inp.value.optional
-                    else False,
-                    "display_style": "masked"
-                    if inp.value
-                    and hasattr(inp.value, "display_style")
-                    and inp.value.display_style
-                    and inp.value.display_style.text
-                    else "text",
+                    "default_value": inp.default_value.text if inp.value and inp.default_value else "",
+                    "optional": True if inp.value and inp.value.optional else False,
+                    "display_style": "masked" if inp.value and inp.value.display_style and inp.value.display_style.text else "text",
                 }
             )
         artifacts = {}
@@ -628,49 +628,30 @@ async def lsp_document_link(
             )
             return links
 
-        for app in bp_tree.get_applications():
-            target_path = os.path.join(
-                root, "applications", app.id.text, app.id.text + ".yaml"
-            )
-            if os.path.exists(target_path) and os.path.isfile(target_path):
-                tooltip = "Open the application file at " + target_path
-                links.append(
-                    DocumentLink(
-                        range=Range(
-                            start=Position(
-                                line=app.id.start_pos[0], character=app.id.start_pos[1]
-                            ),
-                            end=Position(
-                                line=app.id.start_pos[0],
-                                character=app.start_pos[1] + len(app.id.text),
-                            ),
-                        ),
-                        target=pathlib.Path(target_path).as_uri(),
-                        tooltip=tooltip,
-                    )
-                )
+        resources = {"service": bp_tree.get_services, "application": bp_tree.get_applications}
 
-        for srv in bp_tree.get_services():
-            target_path = os.path.join(
-                root, "services", srv.id.text, srv.id.text + ".yaml"
-            )
-            if os.path.exists(target_path) and os.path.isfile(target_path):
-                tooltip = "Open the service file at " + target_path
-                links.append(
-                    DocumentLink(
-                        range=Range(
-                            start=Position(
-                                line=srv.id.start_pos[0], character=srv.id.start_pos[1]
-                            ),
-                            end=Position(
-                                line=srv.id.start_pos[0],
-                                character=srv.start_pos[1] + len(srv.id.text),
-                            ),
-                        ),
-                        target=pathlib.Path(target_path).as_uri(),
-                        tooltip=tooltip,
-                    )
+        for res_type, func in resources.items():
+            for res in func():
+                target_path = os.path.join(
+                    root, f"{res_type}s", res.id.text, res.id.text + ".yaml"
                 )
+                if os.path.exists(target_path) and os.path.isfile(target_path):
+                    tooltip = f"Open the {res_type} file at " + target_path
+                    links.append(
+                        DocumentLink(
+                            range=Range(
+                                start=Position(
+                                    line=res.id.start_pos[0], character=res.id.start_pos[1]
+                                ),
+                                end=Position(
+                                    line=res.id.start_pos[0],
+                                    character=res.start_pos[1] + len(res.id.text),
+                                ),
+                            ),
+                            target=pathlib.Path(target_path).as_uri(),
+                            tooltip=tooltip,
+                        )
+                    )
 
     elif doc_type == "application":
         try:
@@ -761,17 +742,17 @@ async def lsp_document_link(
     return links
 
 
-def _run_torque_cli_command(command: str, **kwargs):
-    cmd_list = [sys.executable, '-m'] + shlex.split(command)
+async def _run_torque_cli_command(command: str, **kwargs):
+    cmd_list = [sys.executable, "-m"] + shlex.split(command)
 
     res = subprocess.run(
-            cmd_list,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            **kwargs
-        )
+        cmd_list,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+        **kwargs,
+    )
 
     return res.stdout, res.stderr
 
@@ -828,13 +809,21 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     server.show_message("Starting sandbox from blueprint: " + blueprint_name)
     server.show_message_log("Starting sandbox from blueprint: " + blueprint_name)
     if dev_mode:
-        server.show_message_log("If there are local changes it might take some more time to get ready.")
+        server.show_message_log(
+            "If there are local changes it might take some more time to get ready."
+        )
 
     try:
-        command = ['torque',
-                   '--disable-version-check',
-                   '--profile', active_profile,
-                   'sb', 'start', f'"{blueprint_name}"', '-d', duration]
+        command = [
+            "torque",
+            "--profile",
+            active_profile,
+            "sb",
+            "start",
+            blueprint_name,
+            "-d",
+            duration,
+        ]
 
         if inputs_args:
             command.extend(["-i", f'"{inputs_args}"'])
@@ -847,7 +836,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
             command.extend(["-t", "0", "-b", branch])
 
         cwd = server.workspace.root_path if dev_mode else None
-        stdout, stderr = _run_torque_cli_command(' '.join(command), cwd=cwd)
+        stdout, stderr = _run_torque_cli_command(" ".join(command), cwd=cwd)
         stdout = stdout.split("\n") if stdout else []
         stderr = stderr.split("\n") if stderr else []
         sandbox_id = ""
@@ -874,8 +863,12 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                 'Sandbox creation failed. Check the "Torque" Output view for more details.'
             )
         else:
-            server.show_message("Sandbox was created. See details in the Output view or Sandboxes explorer.")
-            server.show_message_log("Sandbox was created. View current status and more details using the Sandboxes explorer.")
+            server.show_message(
+                "Sandbox was created. See details in the Output view or Sandboxes explorer."
+            )
+            server.show_message_log(
+                "Sandbox was created. View current status and more details using the Sandboxes explorer."
+            )
     except Exception as ex:
         server.show_message_log(str(ex), msg_type=MessageType.Error)
 
@@ -883,10 +876,12 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
 @torque_ls.command(TorqueLanguageServer.CMD_LIST_TORQUE_PROFILES)
 async def get_profiles(server: TorqueLanguageServer, *_):
     result = []
-    keys = ['profile', 'account', 'space']
+    keys = ["profile", "account", "space"]
 
     try:
-        stdout, stderr = _run_torque_cli_command("torque --disable-version-check configure list")
+        stdout, stderr = _run_torque_cli_command(
+            "torque --disable-version-check configure list"
+        )
 
     except Exception as ex:
         server.show_message(
@@ -928,7 +923,9 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
     sbs = []
 
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque --disable-version-check --profile {active_profile} sb list --output=json")
+        stdout, stderr = _run_torque_cli_command(
+            f"torque --disable-version-check --profile {active_profile} sb list --output=json"
+        )
 
         if stderr:
             server.show_message(
@@ -958,7 +955,9 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
         return
 
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque --disable-version-check --profile {active_profile} bp list --output=json --detail")
+        stdout, stderr = _run_torque_cli_command(
+            f"torque --profile {active_profile} bp list --output=json --detail"
+        )
 
         if stderr:
             server.show_message(
@@ -981,10 +980,10 @@ async def torque_login(server: TorqueLanguageServer, *args):
         return 1
 
     params = args[0].pop()
-    if ' ' in params.profile:
+    if " " in params.profile:
         server.show_message("Profile name cannot have spaces", MessageType.Error)
         return 1
-    if ' ' in params.space:
+    if " " in params.space:
         server.show_message("Space name cannot have spaces", MessageType.Error)
         return 1
 
@@ -1021,7 +1020,9 @@ async def remove_profile(server: TorqueLanguageServer, *args):
 
     profile_name = args[0][0]
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque --disable-version-check configure remove {profile_name}")
+        _, __ = _run_torque_cli_command(
+            f"torque --disable-version-check configure remove {profile_name}"
+        )
         server.show_message(f"Profile '{profile_name}' deleted.")
         return True
     except Exception as ex:
@@ -1048,7 +1049,9 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
 
     sb_id = args[0].pop()
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque --disable-version-check --profile {active_profile} sb get {sb_id} --output=json --detail")
+        stdout, stderr = _run_torque_cli_command(
+            f"torque --disable-version-check --profile {active_profile} sb get {sb_id} --output=json --detail"
+        )
         if stderr:
             server.show_message(
                 f"An error occurred while executing the command: {stderr}",
@@ -1081,7 +1084,9 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
     sb_id = args[0].pop()
 
     try:
-        stdout, stderr = _run_torque_cli_command(f"torque --disable-version-check --profile {active_profile} sb end {sb_id}")
+        stdout, stderr = _run_torque_cli_command(
+            f"torque --disable-version-check --profile {active_profile} sb end {sb_id}"
+        )
 
         if stderr:
             server.show_message(
@@ -1147,7 +1152,9 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                     "Unable to get the list of issues. Try to validate blueprint using Torque CLI"
                 )
         else:
-            server.show_message_log(f"Validation completed. The blueprint '{blueprint_name}' and its dependencies are valid.")
+            server.show_message_log(
+                f"Validation completed. The blueprint '{blueprint_name}' and its dependencies are valid."
+            )
 
     except Exception as ex:
         logging.error(ex)

@@ -101,7 +101,7 @@ class Parser:
             node.add_error(NodeError(
                 start_pos=Parser.get_token_start(token),
                 end_pos=Parser.get_token_end(token),
-                message=f"Parent node doesn't have child with name '{token.value}'"
+                message=f"Parent node does not have child with name '{token.value}'"
             ))
             self.nodes_stack.append(UnprocessedNode())
             return
@@ -150,7 +150,7 @@ class Parser:
                 node = self.nodes_stack[-1].add()
                 self.nodes_stack.append(node)
             except Exception:
-                raise ParserError("Wrong stucture of document", token=token)
+                raise ParserError("Wrong structure of document", token=token)
                 # raise Exception(f"Unable to add item to the node's container : {e}")
 
         if isinstance(token, StreamEndToken):
