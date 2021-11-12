@@ -1,4 +1,5 @@
 import pathlib
+from server.ats.trees.common import BaseTree
 from server.utils.common import ResourcesManager
 
 
@@ -7,8 +8,8 @@ class ApplicationsManager(ResourcesManager):
     resource_type = "application"
 
     @staticmethod
-    def build_completion_text(resource_name: str, resource_source: str):
-        output = super(resource_name, resource_source)
+    def build_completion_text(resource_name: str, resource_tree: BaseTree):
+        output = ResourcesManager.build_completion_text(resource_name, resource_tree)
         output += "    instances: 1\n"
         return output
 

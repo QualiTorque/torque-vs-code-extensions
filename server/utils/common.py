@@ -16,8 +16,7 @@ class ResourcesManager:
     resource_type = ""
 
     @staticmethod
-    def build_completion_text(resource_name: str, resource_source: str) -> str:
-        resource_tree = Parser(document=resource_source).parse()
+    def build_completion_text(resource_name: str, resource_tree: BaseTree) -> str:
         output = f"- {resource_name}:\n"
         inputs = resource_tree.get_inputs()
         if inputs:
@@ -34,8 +33,8 @@ class ResourcesManager:
         resource_tree = None
         output = None
         try:
-            output = cls.build_completion_text(resource_name, resource_source)
-
+            resource_tree = Parser(document=resource_source).parse()
+            output = cls.build_completion_text(resource_name, resource_tree)
         except ParserError as e:
             logging.warning(f"Unable to load {cls.resource_type} '{resource_name}.yaml' due to error: {e.message}")
         except Exception as e:
@@ -72,7 +71,7 @@ class ResourcesManager:
                             if f'{folder}.yaml' in files:
                                 f = open(os.path.join(res_dir, f'{folder}.yaml'), "r")
                                 source = f.read()
-                                cls.load_res_details(app_name=folder, app_source=source)
+                                cls.load_res_details(folder, source)
 
                 return cls.cache
             else:

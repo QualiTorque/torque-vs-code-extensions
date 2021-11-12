@@ -641,7 +641,7 @@ async def lsp_document_link(
 
         resources = {"service": bp_tree.get_services, "application": bp_tree.get_applications}
 
-        for res_type, func in resources:
+        for res_type, func in resources.items():
             for res in func():
                 target_path = os.path.join(
                     root, f"{res_type}s", res.id.text, res.id.text + ".yaml"

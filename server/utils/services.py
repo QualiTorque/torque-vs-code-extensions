@@ -5,6 +5,9 @@ from server.utils.common import ResourcesManager
 
 
 class ServicesManager(ResourcesManager):
+    resource_type = "service"
+    resource_folder = "services"
+
     @staticmethod
     def get_vars_from_tfvars(file_path: str):
         with open(file_path, "r") as f:
