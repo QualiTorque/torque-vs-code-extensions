@@ -2,9 +2,9 @@ import re
 import sys
 import logging
 from pygls.lsp.types.basic_structures import DiagnosticSeverity
-from ..ats.trees.service import ServiceTree
-from .common import ValidationHandler
-from ..utils import services
+from server.ats.trees.service import ServiceTree
+from server.validation.common import ValidationHandler
+from server.utils.services import ServicesManager as services
 
 
 class ServiceValidationHandler(ValidationHandler):

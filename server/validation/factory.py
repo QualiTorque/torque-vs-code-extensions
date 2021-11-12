@@ -1,8 +1,8 @@
 from pygls.workspace import Document
-from .srv_validator import ServiceValidationHandler
-from .app_validator import AppValidationHandler
-from .bp_validatior import BlueprintValidationHandler
-from ..ats.trees.common import BaseTree
+from server.validation.srv_validator import ServiceValidationHandler
+from server.validation.app_validator import AppValidationHandler
+from server.validation.bp_validatior import BlueprintValidationHandler
+from server.ats.trees.common import BaseTree
 
 
 class ValidatorFactory:
