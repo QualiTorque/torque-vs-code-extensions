@@ -28,7 +28,7 @@
                 ],
                 "justMyCode": false,
                 "env": {
-                    "PYTHONPATH": "venv\\Scripts\\python.exe"
+                    "PYTHONPATH": "${workspaceFolder}/server"
                 }
             }
     ],
