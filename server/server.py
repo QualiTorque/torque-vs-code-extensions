@@ -548,17 +548,31 @@ def code_lens(
             )
             return None
 
+        def to_bool(val: str):
+            return val.lower() == "true"
+
         inputs = []
         bp_inputs = bp_tree.get_inputs()
         for inp in bp_inputs:
-            inputs.append(
-                {
-                    "name": inp.key.text,
-                    "default_value": inp.default_value.text if inp.value and inp.default_value else "",
-                    "optional": True if inp.value and inp.value.optional else False,
-                    "display_style": "masked" if inp.value and inp.value.display_style and inp.value.display_style.text else "text",
-                }
+            props = inp.value
+            item = {}
+            item["name"] = inp.key.text
+            item["default_value"] = (
+                inp.default_value.text if (props and inp.default_value) else ""
             )
+
+            item["optional"] = (
+                to_bool(props.optional.text)
+                if (props and hasattr(props, "optional") and props.optional)
+                else False
+            )
+
+            item["display_style"] = (
+                props.display_style.text
+                if (props and hasattr(props, "display_style") and props.display_style)
+                else "text"
+            )
+            inputs.append(item)
         artifacts = {}
         bp_arts = bp_tree.get_artifacts()
         for art in bp_arts:
@@ -628,7 +642,10 @@ async def lsp_document_link(
             )
             return links
 
-        resources = {"service": bp_tree.get_services, "application": bp_tree.get_applications}
+        resources = {
+            "service": bp_tree.get_services,
+            "application": bp_tree.get_applications,
+        }
 
         for res_type, func in resources.items():
             for res in func():
@@ -641,7 +658,8 @@ async def lsp_document_link(
                         DocumentLink(
                             range=Range(
                                 start=Position(
-                                    line=res.id.start_pos[0], character=res.id.start_pos[1]
+                                    line=res.id.start_pos[0],
+                                    character=res.id.start_pos[1],
                                 ),
                                 end=Position(
                                     line=res.id.start_pos[0],
@@ -742,7 +760,7 @@ async def lsp_document_link(
     return links
 
 
-async def _run_torque_cli_command(command: str, **kwargs):
+def _run_torque_cli_command(command: str, **kwargs):
     cmd_list = [sys.executable, "-m"] + shlex.split(command)
 
     res = subprocess.run(

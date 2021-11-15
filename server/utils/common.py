@@ -163,6 +163,8 @@ def get_parent_node(tree: BaseTree, pos: Position):
 
     while path:
         node = path.pop()
+        if node.parent is None:
+            break
         if node.parent.start_pos[0] < pos.line and node.parent.start_pos[1] < pos.character:
             return node.parent
 
