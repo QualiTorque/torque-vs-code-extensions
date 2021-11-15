@@ -965,7 +965,7 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
 
     try:
         stdout, stderr = _run_torque_cli_command(
-            f"torque --profile {active_profile} bp list --output=json --detail"
+            f"torque --disable-version-check --profile {active_profile} bp list --output=json --detail"
         )
 
         if stderr:
