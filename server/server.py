@@ -742,7 +742,7 @@ async def lsp_document_link(
     return links
 
 
-async def _run_torque_cli_command(command: str, **kwargs):
+def _run_torque_cli_command(command: str, **kwargs):
     cmd_list = [sys.executable, "-m"] + shlex.split(command)
 
     res = subprocess.run(
