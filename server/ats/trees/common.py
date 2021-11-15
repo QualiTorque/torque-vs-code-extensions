@@ -20,14 +20,18 @@ class Position:
         if not isinstance(other, Position):
             return NotImplementedError
         return (
-            self.line < other.line or (self.line == other.line and self.col < other.col)
+            self.line < other.line or (
+                self.line == other.line and self.col < other.col
+            )
         )
 
     def __gt__(self, other):
         if not isinstance(other, Position):
             return NotImplemented
         return (
-            self.line > other.line or (self.line == other.line and self.col > other.col)
+            self.line > other.line or (
+                self.line == other.line and self.col > other.col
+            )
         )
 
     def __le__(self, other):
@@ -125,7 +129,7 @@ class ScalarNode(TextNode):
             raise NodeError(
                 start_pos=(self.start_pos[0], self.start_pos[1] + offset[0]),
                 end_pos=(self.end_pos[0], self.end_pos[1] + offset[1]),
-                message="Variables are not allowed here"
+                message="Variables are not allowed here",
             )
 
 

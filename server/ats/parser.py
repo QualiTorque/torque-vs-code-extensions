@@ -87,7 +87,7 @@ class Parser:
             NodeError(
                 start_pos=self.get_token_start(token),
                 end_pos=self.get_token_end(token),
-                message="Element could not be empty"
+                message="Element could not be empty",
             )
         )
 
@@ -122,7 +122,7 @@ class Parser:
                 NodeError(
                     start_pos=Parser.get_token_start(token),
                     end_pos=Parser.get_token_end(token),
-                    message=f"Parent node does not have child with name '{token.value}'"
+                    message=f"Parent node does not have child with name '{token.value}'",
                 )
             )
             self.nodes_stack.append(UnprocessedNode())
@@ -326,7 +326,10 @@ class Parser:
             try:
                 value_node = node.get_value(expected_type=TextNode)
             except ValueError:
-                raise ParserError(message="Scalar cannot be accepted here. Object expected", token=token)
+                raise ParserError(
+                    message="Scalar cannot be accepted here. Object expected",
+                    token=token,
+                )
             self.nodes_stack.append(value_node)
 
             self._process_scalar_token(token)
@@ -394,7 +397,7 @@ class Parser:
         trees = {
             "application": AppTree,
             "blueprint": BlueprintTree,
-            "TerraForm": ServiceTree
+            "TerraForm": ServiceTree,
         }
 
         yaml_obj = yaml.load(self.document, Loader=yaml.FullLoader)
