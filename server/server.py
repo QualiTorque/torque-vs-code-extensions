@@ -832,29 +832,20 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         )
 
     try:
-        command = [
-            "torque",
-            "--profile",
-            active_profile,
-            "sb",
-            "start",
-            blueprint_name,
-            "-d",
-            duration,
-        ]
+        command = f'torque --profile {active_profile} sb start "{blueprint_name}" -d {duration}'
 
         if inputs_args:
-            command.extend(["-i", f'"{inputs_args}"'])
+            command += f' -i "{inputs_args}"'
         if artifacts_args:
-            command.extend(["-a", f'"{artifacts_args}"'])
+            command += f' -a "{artifacts_args}"'
         if sandbox_name:
-            command.extend(["-n", f'"{sandbox_name}"'])
+            command += f' -n "{sandbox_name}"'
         if not dev_mode:
             branch = args[0][5]
-            command.extend(["-t", "0", "-b", branch])
+            command += f" -t 0 -b {branch}"
 
         cwd = server.workspace.root_path if dev_mode else None
-        stdout, stderr = _run_torque_cli_command(" ".join(command), cwd=cwd)
+        stdout, stderr = _run_torque_cli_command(command, cwd=cwd)
         stdout = stdout.split("\n") if stdout else []
         stderr = stderr.split("\n") if stderr else []
         sandbox_id = ""
