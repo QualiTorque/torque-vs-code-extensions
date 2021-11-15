@@ -314,21 +314,20 @@ class BlueprintValidationHandler(ValidationHandler):
                     if cur_var.startswith("${") and cur_var.endswith("}"):
                         cur_var = "$" + cur_var[2:-1]
 
+                    diag_range = Range(start=Position(
+                                            line=input.value.start_pos[0],
+                                            character=input.value.start_pos[1] + pos[0],
+                                       ),
+                                       end=Position(
+                                            line=input.value.end_pos[0],
+                                            character=input.value.start_pos[1] + pos[1],
+                                       ))
                     if cur_var.startswith("$") and "." not in cur_var:
                         var = cur_var.replace("$", "")
                         if var not in bp_inputs:
                             self._diagnostics.append(
                                 Diagnostic(
-                                    range=Range(
-                                        start=Position(
-                                            line=input.value.start_pos[0],
-                                            character=input.value.start_pos[1] + pos[0],
-                                        ),
-                                        end=Position(
-                                            line=input.value.end_pos[0],
-                                            character=input.value.start_pos[1] + pos[1],
-                                        ),
-                                    ),
+                                    range=diag_range,
                                     message=message.format(cur_var),
                                 )
                             )
@@ -337,32 +336,14 @@ class BlueprintValidationHandler(ValidationHandler):
                         if not valid_var:
                             self._diagnostics.append(
                                 Diagnostic(
-                                    range=Range(
-                                        start=Position(
-                                            line=input.value.start_pos[0],
-                                            character=input.value.start_pos[1] + pos[0],
-                                        ),
-                                        end=Position(
-                                            line=input.value.end_pos[0],
-                                            character=input.value.start_pos[1] + pos[1],
-                                        ),
-                                    ),
+                                    range=diag_range,
                                     message=error_message,
                                 )
                             )
                     else:
                         self._diagnostics.append(
                             Diagnostic(
-                                range=Range(
-                                    start=Position(
-                                        line=input.value.start_pos[0],
-                                        character=input.value.start_pos[1] + pos[0],
-                                    ),
-                                    end=Position(
-                                        line=input.value.end_pos[0],
-                                        character=input.value.start_pos[1] + pos[1],
-                                    ),
-                                ),
+                                range=diag_range,
                                 message=message.format(cur_var),
                             )
                         )
