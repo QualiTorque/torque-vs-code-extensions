@@ -7,7 +7,7 @@ from server.completers.blueprint_completer import BlueprintResourceCompleter
 class CompletionResolver:
     completer_map = {
         BlueprintTree.AppsSequence: BlueprintResourceCompleter,
-        BlueprintTree.ServicesSequence: BlueprintResourceCompleter
+        BlueprintTree.ServicesSequence: BlueprintResourceCompleter,
     }
 
     @classmethod

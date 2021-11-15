@@ -4,7 +4,7 @@ PREDEFINED_TORQUE_INPUTS = [
     "$torque.environment.public_address",
     "$torque.repos.current.current",
     "$torque.repos.current.url",
-    "$torque.repos.current.token"
+    "$torque.repos.current.token",
 ]
 
 AWS_REGIONS = ["us-east-2", "us-east-1", "us-west-1", "us-west-2", "af-south-1", "ap-east-1", "ap-south-1",

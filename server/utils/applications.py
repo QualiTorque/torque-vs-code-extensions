@@ -18,7 +18,7 @@ class ApplicationsManager(ResourcesManager):
         scripts = []
         files = pathlib.Path(app_path.replace("file://", "")).parent.glob("./*")
         for file in files:
-            if not file.name.endswith('.yaml'):
+            if not file.name.endswith(".yaml"):
                 scripts.append(pathlib.Path(file).name)
 
         return scripts

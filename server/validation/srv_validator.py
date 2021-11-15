@@ -1,10 +1,11 @@
+import logging
 import re
 import sys
-import logging
+
 from pygls.lsp.types.basic_structures import DiagnosticSeverity
 from server.ats.trees.service import ServiceTree
-from server.validation.common import ValidationHandler
 from server.utils.services import ServicesManager as services
+from server.validation.common import ValidationHandler
 
 
 class ServiceValidationHandler(ValidationHandler):

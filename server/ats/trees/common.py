@@ -8,7 +8,7 @@ from pygls.lsp import types
 
 # TODO: refactor all the code to use this class
 @dataclass
-class Position: 
+class Position:
     """
     Describes a position in the document
     """
@@ -20,18 +20,14 @@ class Position:
         if not isinstance(other, Position):
             return NotImplementedError
         return (
-            self.line < other.line
-            or self.line == other.line
-            and self.col < other.col
+            self.line < other.line or (self.line == other.line and self.col < other.col)
         )
 
     def __gt__(self, other):
         if not isinstance(other, Position):
             return NotImplemented
         return (
-            self.line > other.line
-            or self.line == other.line
-            and self.col > other.col
+            self.line > other.line or (self.line == other.line and self.col > other.col)
         )
 
     def __le__(self, other):
@@ -75,7 +71,7 @@ class YamlNode(ABC):
 
     def get_children(self):
         return []
-        
+
 
 @dataclass
 class SequenceNode(YamlNode):
@@ -141,7 +137,7 @@ class MappingNode(YamlNode):  # TODO: actually all torque nodes must inherit thi
 
     def get_key(self):
         if self.key is None:
-            key_class = self.__dataclass_fields__['key'].type
+            key_class = self.__dataclass_fields__["key"].type
             self.key = key_class(parent=self)
 
         return self.key
@@ -215,10 +211,10 @@ class PropertyNode(MappingNode):
             value_class = self.parent.__dataclass_fields__[self.identifier].type
             if name not in value_class.__dataclass_fields__:
                 raise AttributeError(f"Value of PropertyNode '{self.identifier}' does not not have attribute '{name}'")
-            
+
             return None
 
-    
+
 @dataclass
 class ObjectNode(YamlNode, ABC):
     def _get_field_mapping(self) -> {str: str}:
@@ -244,10 +240,10 @@ class ObjectNode(YamlNode, ABC):
 
             # Get type of the child according to its annotation
             child_cls = self.__dataclass_fields__.get(attr).type
-        
+
             if issubclass(child_cls, TextNode):
                 child.allow_vars = child_cls.allow_vars
-            try:    
+            try:
                 setattr(self, attr, child)
             except Exception:
                 raise
@@ -266,20 +262,21 @@ class ObjectNode(YamlNode, ABC):
 
         if not issubclass(self.__dataclass_fields__[property_name].type, SequenceNode):
             return ValueError(f"Property '{property_name}' is not sequence")
-        
+
         prop: PropertyNode = getattr(self, property_name, None)
 
         if prop is None or prop.value is None:
             return []
 
         seq: SequenceNode = prop.value
-        return seq.nodes 
-                
+        return seq.nodes
+
 
 @dataclass
 class ScalarNodesSequence(SequenceNode):
     """Container for simple text arrays
-    like outputs, depends on """
+    like outputs, depends on"""
+
     node_type = ScalarNode
 
 
@@ -320,6 +317,7 @@ class ScalarMappingsSequence(SequenceNode):
     """
     Node representing the list of inputs
     """
+
     node_type = ScalarMappingNode
 
 

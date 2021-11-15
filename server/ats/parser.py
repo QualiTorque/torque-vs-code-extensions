@@ -46,7 +46,7 @@ class Parser:
         self.is_array_item: bool = False
 
     def _remove_invalid_characters(self, document: str):
-        return document.replace('\t', '  ')
+        return document.replace("\t", "  ")
 
     @staticmethod
     def get_token_start(token: Token) -> Tuple[int, int]:
@@ -65,10 +65,12 @@ class Parser:
             raise ParserError(message="Wrong structure of sequence", token=token)
 
         seq.nodes.pop()
-        seq.add_error(NodeError(
-            start_pos=self.get_token_start(token),
-            end_pos=self.get_token_end(token),
-            message="Element could not be empty")
+        seq.add_error(
+            NodeError(
+                start_pos=self.get_token_start(token),
+                end_pos=self.get_token_end(token),
+                message="Element could not be empty"
+            )
         )
 
         self.is_array_item = False
@@ -98,11 +100,13 @@ class Parser:
 
         # TODO: replace with parser exception
         except Exception:
-            node.add_error(NodeError(
-                start_pos=Parser.get_token_start(token),
-                end_pos=Parser.get_token_end(token),
-                message=f"Parent node does not have child with name '{token.value}'"
-            ))
+            node.add_error(
+                NodeError(
+                    start_pos=Parser.get_token_start(token),
+                    end_pos=Parser.get_token_end(token),
+                    message=f"Parent node does not have child with name '{token.value}'"
+                )
+            )
             self.nodes_stack.append(UnprocessedNode())
             return
 
@@ -114,8 +118,9 @@ class Parser:
         self.nodes_stack.append(child_node)
 
     def _process_token(self, token: Token) -> None:
-        if (self.nodes_stack and isinstance(self.nodes_stack[-1], PropertyNode)
-                and isinstance(token, (KeyToken, BlockEndToken))):
+        if (self.nodes_stack
+            and isinstance(self.nodes_stack[-1], PropertyNode)
+            and isinstance(token, (KeyToken, BlockEndToken))):
 
             self.nodes_stack[-1].end_pos = self.get_token_end(token)
             self.nodes_stack.pop()
@@ -369,15 +374,17 @@ class Parser:
 
     def _get_tree(self) -> BaseTree:
         trees = {
-            'application': AppTree,
-            'blueprint': BlueprintTree,
-            'TerraForm': ServiceTree
+            "application": AppTree,
+            "blueprint": BlueprintTree,
+            "TerraForm": ServiceTree
         }
 
         yaml_obj = yaml.load(self.document, Loader=yaml.FullLoader)
-        doc_type = yaml_obj.get('kind', '')
+        doc_type = yaml_obj.get("kind", "")
 
         if doc_type not in trees:
-            raise ValueError(f"Unable to initialize tree from document kind '{doc_type}'")
+            raise ValueError(
+                f"Unable to initialize tree from document kind '{doc_type}'"
+            )
 
         return trees[doc_type]()

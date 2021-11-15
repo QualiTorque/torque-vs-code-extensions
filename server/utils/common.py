@@ -41,8 +41,8 @@ class ResourcesManager:
             logging.warning(f"Unable to load {cls.resource_type} '{resource_name}.yaml' due to error: {str(e)}")
 
         cls.cache[resource_name] = {
-            'tree': resource_tree,
-            'completion': format_yaml(output) if output else None
+            "tree": resource_tree,
+            "completion": format_yaml(output) if output else None
         }
 
     @classmethod
@@ -68,8 +68,8 @@ class ResourcesManager:
                         res_dir = os.path.join(resources_path, folder)
                         if os.path.isdir(res_dir):
                             files = os.listdir(res_dir)
-                            if f'{folder}.yaml' in files:
-                                f = open(os.path.join(res_dir, f'{folder}.yaml'), "r")
+                            if f"{folder}.yaml" in files:
+                                f = open(os.path.join(res_dir, f"{folder}.yaml"), "r")
                                 source = f.read()
                                 cls.load_res_details(folder, source)
 
@@ -173,7 +173,7 @@ def get_parent_node(tree: BaseTree, pos: Position):
 
 def get_parent_node_text(tree: BaseTree, pos: Position):
     parent_node = get_parent_node(tree, pos)
-    if parent_node and hasattr(parent_node, 'text'):
+    if parent_node and hasattr(parent_node, "text"):
         return parent_node.text
     else:
         return ""
@@ -210,4 +210,4 @@ def get_repo_root_path(path: str) -> str:
         return full_path.parents[2].absolute().as_posix()
 
     else:
-        raise ValueError(f"Wrong document path of blueprint file: {full_path.as_posix()}")  
+        raise ValueError(f"Wrong document path of blueprint file: {full_path.as_posix()}")

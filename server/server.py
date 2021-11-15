@@ -35,8 +35,10 @@ from server.ats.trees.app import AppTree
 from server.ats.trees.common import BaseTree, PropertyNode
 from server.constants import AWS_REGIONS, AZURE_REGIONS
 from server.utils.common import get_repo_root_path, is_var_allowed
-from server.utils import applications, services, common
 from server.validation.factory import ValidatorFactory
+from server.utils.applications import ApplicationsManager as applications
+from server.utils.services import ServicesManager as services
+from server.utils import common
 
 from pygls.lsp.types.basic_structures import TextEdit
 
@@ -199,11 +201,11 @@ def did_change(server: TorqueLanguageServer, params: DidChangeTextDocumentParams
 
         if doc_type == "application":
             app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-            applications.reload_app_details(app_name=app_name, app_source=source)
+            applications.reload_resource_details(app_name=app_name, app_source=source)
 
         elif doc_type == "TerraForm":
             srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-            services.reload_service_details(srv_name, srv_source=source)
+            services.reload_resource_details(srv_name, srv_source=source)
 
 
 @torque_ls.feature(TEXT_DOCUMENT_DID_OPEN)
@@ -235,21 +237,23 @@ async def workspace_changed(
 
                     if doc_type == "application":
                         app_name = pathlib.Path(change.uri).name.replace(".yaml", "")
-                        applications.reload_app_details(
-                            app_name=app_name, app_source=source
+                        applications.reload_resource_details(
+                            resource_name=app_name, resource_source=source
                         )
 
                     elif doc_type == "TerraForm":
                         srv_name = pathlib.Path(change.uri).name.replace(".yaml", "")
-                        services.reload_service_details(srv_name, srv_source=source)
+                        services.reload_resource_details(
+                            resource_name=srv_name, resource_source=source
+                        )
                 else:
                     if "/applications/" in change.uri:
                         app_name = pathlib.Path(change.uri).name.replace(".yaml", "")
-                        applications.remove_app_details(app_name=app_name)
+                        applications.remove_resource_details(resource_name=app_name)
 
                     elif "/services/" in change.uri:
                         srv_name = pathlib.Path(change.uri).name.replace(".yaml", "")
-                        services.remove_service_details(srv_name)
+                        services.remove_resource_details(resource_name=srv_name)
         else:
             current_file_changed = True
     try:
@@ -399,11 +403,11 @@ def completions(
                             if len(parts) == 4 and parts[2] != "":
                                 options = ["outputs", "dns"]
                             elif len(parts) == 5 and parts[3] == "outputs":
-                                apps = applications.get_available_applications(root)
+                                apps = applications.get_available_resources(root)
                                 for app in apps:
                                     if app == parts[2]:
-                                        outputs = applications.get_app_outputs(
-                                            app_name=parts[2]
+                                        outputs = applications.get_outputs(
+                                            resource_name=parts[2]
                                         )
                                         if outputs:
                                             options.extend(outputs)
@@ -413,11 +417,11 @@ def completions(
                             if len(parts) == 4 and parts[2] != "":
                                 options.append("outputs")
                             elif len(parts) == 5 and parts[3] == "outputs":
-                                apps = services.get_available_services(root)
+                                apps = services.get_available_resources(root)
                                 for app in apps:
                                     if app == parts[2]:
-                                        outputs = services.get_service_outputs(
-                                            srv_name=parts[2]
+                                        outputs = services.get_outputs(
+                                            resource_name=parts[2]
                                         )
                                         if outputs:
                                             options.extend(outputs)

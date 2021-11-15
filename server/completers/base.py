@@ -10,5 +10,5 @@ class Completer:
         self.params = params
         self.tree = tree
 
-    def get_completions() -> List[CompletionItem]:
+    def get_completions(self) -> List[CompletionItem]:
         pass
