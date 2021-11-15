@@ -1,3 +1,11 @@
+## [0.0.9](https://github.com/QualiTorque/torque-vs-code-extensions/compare/0.0.8...0.0.9) (2021-11-15)
+
+Cleanups and improvements to the extension to provide you with the best experience and performance.
+### Bug Fixes
+
+* Fixed an issue with starting a sandbox from blueprint with whitespace characters
+
+
 ## [0.0.8](https://github.com/QualiTorque/torque-vs-code-extensions/compare/0.0.7...0.0.8) (2021-11-10)
 
 ### Interactive features:
