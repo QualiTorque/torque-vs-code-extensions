@@ -1,7 +1,8 @@
 from typing import List
-from server.ats.trees.common import YamlNode
+
 from server.ats.trees.blueprint import BlueprintTree
 from server.completers.blueprint_completer import BlueprintResourceCompleter
+from server.ats.trees.common import YamlNode
 
 
 class CompletionResolver:

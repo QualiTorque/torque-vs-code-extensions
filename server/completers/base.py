@@ -1,7 +1,11 @@
 from typing import List
-from server.ats.trees.common import BaseTree
-from pygls.lsp.types.language_features.completion import CompletionItem, CompletionParams
+
+from pygls.lsp.types.language_features.completion import (
+    CompletionItem,
+    CompletionParams
+)
 from pygls.workspace import Workspace
+from server.ats.trees.common import BaseTree
 
 
 class Completer:

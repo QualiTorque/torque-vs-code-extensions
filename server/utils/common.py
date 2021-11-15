@@ -6,7 +6,13 @@ from typing import List, Optional, Tuple
 from pygls.lsp import types
 from pygls.workspace import Document, position_from_utf16
 from server.ats.parser import Parser, ParserError
-from server.ats.trees.common import YamlNode, Position, MappingNode, TextNode, BaseTree
+from server.ats.trees.common import (
+    YamlNode,
+    Position,
+    MappingNode,
+    TextNode,
+    BaseTree
+)
 from server.utils.yaml_utils import format_yaml
 
 
@@ -151,8 +157,8 @@ def is_var_allowed(tree: BaseTree, pos: Position) -> bool:
             return True
     elif isinstance(node, TextNode):
         return node.allow_vars
-    else:
-        return False
+
+    return False
 
 
 def get_parent_node(tree: BaseTree, pos: Position):

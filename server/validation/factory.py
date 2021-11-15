@@ -1,15 +1,15 @@
 from pygls.workspace import Document
-from server.validation.srv_validator import ServiceValidationHandler
+from server.ats.trees.common import BaseTree
 from server.validation.app_validator import AppValidationHandler
 from server.validation.bp_validatior import BlueprintValidationHandler
-from server.ats.trees.common import BaseTree
+from server.validation.srv_validator import ServiceValidationHandler
 
 
 class ValidatorFactory:
     kind_validators_map = {
-        'blueprint': BlueprintValidationHandler,
-        'application': AppValidationHandler,
-        'terraform': ServiceValidationHandler
+        "blueprint": BlueprintValidationHandler,
+        "application": AppValidationHandler,
+        "terraform": ServiceValidationHandler
     }
 
     @classmethod

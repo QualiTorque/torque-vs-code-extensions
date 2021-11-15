@@ -1,13 +1,31 @@
 from typing import Tuple
+
 import yaml
-from yaml.tokens import (BlockEndToken, BlockEntryToken, BlockMappingStartToken,
-                         BlockSequenceStartToken, KeyToken,
-                         ScalarToken, Token, ValueToken, StreamStartToken, StreamEndToken)
+from yaml.tokens import (
+    BlockEndToken,
+    BlockEntryToken,
+    BlockMappingStartToken,
+    BlockSequenceStartToken,
+    KeyToken,
+    ScalarToken,
+    StreamStartToken,
+    StreamEndToken,
+    Token,
+    ValueToken,
+)
 
 from .trees.app import AppTree
 from .trees.blueprint import BlueprintTree
-from .trees.common import (PropertyNode, YamlNode, TextNode, MappingNode, BaseTree,
-                           SequenceNode, NodeError, ObjectNode)
+from .trees.common import (
+    BaseTree,
+    MappingNode,
+    NodeError,
+    ObjectNode,
+    PropertyNode,
+    SequenceNode,
+    TextNode,
+    YamlNode,
+)
 from .trees.service import ServiceTree
 
 

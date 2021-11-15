@@ -1,7 +1,7 @@
 import pathlib
 import re
-import yaml
 
+import yaml
 from server.utils.common import ResourcesManager
 
 
@@ -33,7 +33,7 @@ class ServicesManager(ResourcesManager):
                 if file.name.endswith(".tfvars"):
                     item = {
                         "file": pathlib.Path(file).name,
-                        "variables": ServicesManager.get_vars_from_tfvars(file)
+                        "variables": ServicesManager.get_vars_from_tfvars(file.as_posix())
                     }
                     tfvars.append(item)
 

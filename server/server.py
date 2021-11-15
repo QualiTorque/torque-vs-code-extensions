@@ -17,31 +17,18 @@
 import asyncio
 import json
 import logging
-import shlex
-import sys
-import subprocess
-import textwrap
-import tabulate
-import yaml
 import os
 import pathlib
+import shlex
+import subprocess
+import sys
+import textwrap
 from json import JSONDecodeError
 from typing import Optional, List
 from urllib.parse import unquote
 
-from server.completers.resolver import CompletionResolver
-from server.ats.parser import Parser, ParserError
-from server.ats.trees.app import AppTree
-from server.ats.trees.common import BaseTree, PropertyNode
-from server.constants import AWS_REGIONS, AZURE_REGIONS
-from server.utils.common import get_repo_root_path, is_var_allowed
-from server.validation.factory import ValidatorFactory
-from server.utils.applications import ApplicationsManager as applications
-from server.utils.services import ServicesManager as services
-from server.utils import common
-
-from pygls.lsp.types.basic_structures import TextEdit
-
+import tabulate
+import yaml
 from pygls.lsp.methods import (
     CODE_LENS,
     COMPLETION,
@@ -51,7 +38,12 @@ from pygls.lsp.methods import (
     WORKSPACE_DID_CHANGE_WATCHED_FILES,
 )
 from pygls.lsp.types import (
+    CodeLens,
+    CodeLensOptions,
+    CodeLensParams,
+    Command,
     CompletionItem,
+    CompletionItemKind,
     CompletionList,
     CompletionOptions,
     CompletionParams,
@@ -59,21 +51,28 @@ from pygls.lsp.types import (
     ConfigurationParams,
     Diagnostic,
     DidChangeTextDocumentParams,
-    Command,
+    DidChangeWorkspaceFoldersParams,
     DidOpenTextDocumentParams,
+    DocumentLink,
+    DocumentLinkParams,
     MessageType,
     Position,
     Range,
-    DocumentLink,
-    DocumentLinkParams,
-    CodeLens,
-    CodeLensOptions,
-    CodeLensParams,
     workspace,
-    CompletionItemKind,
-    DidChangeWorkspaceFoldersParams,
 )
+from pygls.lsp.types.basic_structures import TextEdit
 from pygls.server import LanguageServer
+from server.ats.parser import Parser, ParserError
+from server.ats.trees.app import AppTree
+from server.ats.trees.common import BaseTree, PropertyNode
+from server.completers.resolver import CompletionResolver
+from server.constants import AWS_REGIONS, AZURE_REGIONS
+from server.utils import common
+from server.utils.applications import ApplicationsManager as applications
+from server.utils.common import get_repo_root_path, is_var_allowed
+from server.utils.services import ServicesManager as services
+from server.validation.factory import ValidatorFactory
+
 
 DEBOUNCE_DELAY = 0.3
 
