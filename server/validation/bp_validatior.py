@@ -1,6 +1,7 @@
+import logging
 import re
 import sys
-import logging
+
 from pygls.lsp.types.basic_structures import (
     Diagnostic,
     DiagnosticSeverity,
@@ -8,11 +9,11 @@ from pygls.lsp.types.basic_structures import (
     Range,
 )
 from server.ats.trees.blueprint import BlueprintTree
-from server.utils.common import get_repo_root_path
-from server.validation.common import ValidationHandler
 from server.constants import PREDEFINED_TORQUE_INPUTS, AWS_REGIONS, AZURE_REGIONS
 from server.utils.applications import ApplicationsManager as applications
+from server.utils.common import get_repo_root_path
 from server.utils.services import ServicesManager as services
+from server.validation.common import ValidationHandler
 
 
 class BlueprintValidationHandler(ValidationHandler):

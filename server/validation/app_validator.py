@@ -1,6 +1,6 @@
 from server.ats.trees.app import AppTree
-from server.validation.common import ValidationHandler
 from server.utils.applications import ApplicationsManager as applications
+from server.validation.common import ValidationHandler
 
 
 class AppValidationHandler(ValidationHandler):

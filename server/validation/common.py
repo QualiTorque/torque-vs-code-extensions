@@ -1,8 +1,9 @@
+import re
 from typing import List
+
 from pygls.lsp.types.basic_structures import Diagnostic, DiagnosticSeverity, Position, Range
 from pygls.workspace import Document
 from server.ats.trees.common import BaseTree, YamlNode
-import re
 
 
 class ValidationHandler:
