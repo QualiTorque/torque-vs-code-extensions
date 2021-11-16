@@ -362,6 +362,27 @@ def completions(
                 is_incomplete=False,
                 items=items,
             )
+        elif parent_node == "artifacts" or parent_node == "depends_on":
+            blueprint_apps = [app.id.text for app in tree.get_applications()]
+            items = []
+            items += [
+                CompletionItem(
+                    label=app_name, kind=CompletionItemKind.File
+                )
+                for app_name in blueprint_apps
+            ]
+            if parent_node == "depends_on":
+                blueprint_srvs = [srv.id.text for srv in tree.get_services()]
+                items += [
+                    CompletionItem(
+                        label=srv_name, kind=CompletionItemKind.File
+                    )
+                    for srv_name in blueprint_srvs
+                ]
+            return CompletionList(
+                is_incomplete=False,
+                items=items,
+            )
 
         items = []
         if last_word.endswith("."):
