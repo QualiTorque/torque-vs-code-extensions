@@ -1,6 +1,14 @@
 from dataclasses import dataclass
-from .common import (BaseTree, ObjectNode, TreeWithOutputs,
-                     TextNode, ScalarNodesSequence, TextMappingSequence, ScalarNode)
+
+from server.ats.trees.common import (
+    BaseTree,
+    ObjectNode,
+    ScalarNode,
+    ScalarNodesSequence,
+    TextMappingSequence,
+    TextNode,
+    TreeWithOutputs,
+)
 
 
 @dataclass

@@ -1,21 +1,19 @@
 import os
+import unittest
 from posixpath import dirname
-from server.ats.trees.common import BaseTree
 
 from server.ats.parser import Parser, ParserError
 from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintTree
-
+from server.ats.trees.common import BaseTree
 from server.ats.trees.service import ServiceTree
 from server.tests.unit.trees import (
-    demoapp_tree,
     azuresimple_bp_tree,
-    sleep_srv_tree,
-    no_indent,
+    demoapp_tree,
     no_child,
+    no_indent,
+    sleep_srv_tree,
 )
-
-import unittest
 
 
 class TestParser(unittest.TestCase):
@@ -94,7 +92,7 @@ spec_version: 1"""
 
     def test_no_value_in_list_without_indent_parsed_correctly(self):
         doc = """kind: TerraForm
-inputs: 
+inputs:
 - DURATION:
 spec_version: 1"""
         tree = self._parse(doc)
@@ -121,7 +119,7 @@ spec_version: 1
 applications:
 - basic-app:
     instances: 1
-- 
+-
 - advanced-app:
 spec_version: 1
 """
@@ -137,7 +135,7 @@ applications:
 - basic-app:
     instances: 1
 - advanced-app:
-- 
+-
 spec_version: 1
 """
         tree = self._parse(doc)
@@ -152,7 +150,7 @@ applications:
     - basic-app:
         instances: 1
     - advanced-app:
-    - 
+    -
 spec_version: 1"""
         tree = self._parse(doc)
         self.assertEqual(len(tree.errors), 1)
@@ -164,14 +162,13 @@ spec_version: 1"""
 applications:
     - basic-app:
         instances: 1
-    -     
+    -
     - advanced-app:
 spec_version: 1"""
         tree = self._parse(doc)
         self.assertEqual(len(tree.errors), 1)
         self.assertEqual(tree.errors[0].start_pos, (4, 4))
         self.assertEqual(tree.errors[0].end_pos, (4, 5))
-
 
     def test_empty_item_deep_in_tree(self):
         doc = """source:
@@ -180,7 +177,7 @@ spec_version: 1"""
     - id: ami-034a66a2fdb1a734e
       region: eu-west-1
       username: ubuntu
-    - 
+    -
     docker_image:
     - name: quali/ubuntu
       tag: elk624-python-2

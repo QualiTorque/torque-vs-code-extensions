@@ -6,6 +6,11 @@ from server.ats.trees.app import (
     DockerImagesSequence,
     SourceNode,
 )
+from server.ats.trees.blueprint import (
+    ApplicationNode,
+    ApplicationResourceNode,
+    BlueprintTree,
+)
 from server.ats.trees.common import (
     NodeError,
     PropertyNode,
@@ -16,11 +21,6 @@ from server.ats.trees.common import (
     TextNode,
 )
 from server.ats.trees.service import ServiceTree
-from server.ats.trees.blueprint import (
-    ApplicationNode,
-    ApplicationResourceNode,
-    BlueprintTree,
-)
 
 ##########################################################################
 simple = ServiceTree(

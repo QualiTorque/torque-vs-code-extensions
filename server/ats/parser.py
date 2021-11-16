@@ -1,19 +1,41 @@
 from typing import Tuple
-import yaml
-from yaml.tokens import (BlockEndToken, BlockEntryToken, BlockMappingStartToken,
-                         BlockSequenceStartToken, KeyToken,
-                         ScalarToken, Token, ValueToken, StreamStartToken, StreamEndToken)
 
-from .trees.app import AppTree
-from .trees.blueprint import BlueprintTree
-from .trees.common import (PropertyNode, YamlNode, TextNode, MappingNode, BaseTree,
-                           SequenceNode, NodeError, ObjectNode)
-from .trees.service import ServiceTree
+import yaml
+from server.ats.trees.app import AppTree
+from server.ats.trees.blueprint import BlueprintTree
+from server.ats.trees.common import (
+    BaseTree,
+    MappingNode,
+    NodeError,
+    ObjectNode,
+    PropertyNode,
+    SequenceNode,
+    TextNode,
+    YamlNode,
+)
+from server.ats.trees.service import ServiceTree
+from yaml.tokens import (
+    BlockEndToken,
+    BlockEntryToken,
+    BlockMappingStartToken,
+    BlockSequenceStartToken,
+    KeyToken,
+    ScalarToken,
+    StreamEndToken,
+    StreamStartToken,
+    Token,
+    ValueToken,
+)
 
 
 class ParserError(Exception):
-
-    def __init__(self, message: str = None, start_pos: tuple = None, end_pos: tuple = None, token: Token = None):
+    def __init__(
+        self,
+        message: str = None,
+        start_pos: tuple = None,
+        end_pos: tuple = None,
+        token: Token = None,
+    ):
         self.message = message
         if token is not None:
             self.start_pos = Parser.get_token_start(token)
@@ -46,7 +68,7 @@ class Parser:
         self.is_array_item: bool = False
 
     def _remove_invalid_characters(self, document: str):
-        return document.replace('\t', '  ')
+        return document.replace("\t", "  ")
 
     @staticmethod
     def get_token_start(token: Token) -> Tuple[int, int]:
@@ -65,10 +87,12 @@ class Parser:
             raise ParserError(message="Wrong structure of sequence", token=token)
 
         seq.nodes.pop()
-        seq.add_error(NodeError(
-            start_pos=self.get_token_start(token),
-            end_pos=self.get_token_end(token),
-            message="Element could not be empty")
+        seq.add_error(
+            NodeError(
+                start_pos=self.get_token_start(token),
+                end_pos=self.get_token_end(token),
+                message="Element could not be empty",
+            )
         )
 
         self.is_array_item = False
@@ -98,11 +122,13 @@ class Parser:
 
         # TODO: replace with parser exception
         except Exception:
-            node.add_error(NodeError(
-                start_pos=Parser.get_token_start(token),
-                end_pos=Parser.get_token_end(token),
-                message=f"Parent node doesn't have child with name '{token.value}'"
-            ))
+            node.add_error(
+                NodeError(
+                    start_pos=Parser.get_token_start(token),
+                    end_pos=Parser.get_token_end(token),
+                    message=f"Parent node does not have child with name '{token.value}'",
+                )
+            )
             self.nodes_stack.append(UnprocessedNode())
             return
 
@@ -114,8 +140,11 @@ class Parser:
         self.nodes_stack.append(child_node)
 
     def _process_token(self, token: Token) -> None:
-        if (self.nodes_stack and isinstance(self.nodes_stack[-1], PropertyNode)
-                and isinstance(token, (KeyToken, BlockEndToken))):
+        if (
+            self.nodes_stack
+            and isinstance(self.nodes_stack[-1], PropertyNode)
+            and isinstance(token, (KeyToken, BlockEndToken))
+        ):
 
             self.nodes_stack[-1].end_pos = self.get_token_end(token)
             self.nodes_stack.pop()
@@ -150,7 +179,7 @@ class Parser:
                 node = self.nodes_stack[-1].add()
                 self.nodes_stack.append(node)
             except Exception:
-                raise ParserError("Wrong stucture of document", token=token)
+                raise ParserError("Wrong structure of document", token=token)
                 # raise Exception(f"Unable to add item to the node's container : {e}")
 
         if isinstance(token, StreamEndToken):
@@ -161,7 +190,9 @@ class Parser:
         if isinstance(token, BlockMappingStartToken):
             last_node = self.nodes_stack[-1]
 
-            if isinstance(last_node, MappingNode) and not isinstance(self.tokens_stack[-1], BlockEntryToken):
+            if isinstance(last_node, MappingNode) and not isinstance(
+                self.tokens_stack[-1], BlockEntryToken
+            ):
                 self.tokens_stack.append(token)
                 value_node = last_node.get_value()
                 self.nodes_stack.append(value_node)
@@ -188,8 +219,11 @@ class Parser:
                 top = self.tokens_stack.pop()
 
             # TODO: refactor condition
-            if (isinstance(top, (BlockMappingStartToken, BlockSequenceStartToken))
-                    and isinstance(self.tokens_stack[-1], (ValueToken, BlockEntryToken, StreamStartToken))):
+            if isinstance(
+                top, (BlockMappingStartToken, BlockSequenceStartToken)
+            ) and isinstance(
+                self.tokens_stack[-1], (ValueToken, BlockEntryToken, StreamStartToken)
+            ):
                 node = self.nodes_stack.pop()
                 node.end_pos = self.get_token_end(token)
                 self.tokens_stack.pop()
@@ -204,12 +238,19 @@ class Parser:
                     # remove last Node and ValueToken and BlockEndToken as well
                     node = self.nodes_stack.pop()
                     node.end_pos = self.get_token_end(token)
-                    if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
-                        raise Exception("Wrong structure of document")  # TODO: provide better message
+                    if not isinstance(
+                        self.tokens_stack[-1],
+                        (BlockMappingStartToken, BlockSequenceStartToken),
+                    ):
+                        raise Exception(
+                            "Wrong structure of document"
+                        )  # TODO: provide better message
                     self.tokens_stack.pop()
 
                     if not isinstance(self.tokens_stack[-1], BlockEntryToken):
-                        raise Exception("Wrong structure of document")  # TODO: provide better message
+                        raise Exception(
+                            "Wrong structure of document"
+                        )  # TODO: provide better message
                     self.tokens_stack.pop()
                     self.is_array_item = False
 
@@ -230,8 +271,13 @@ class Parser:
                         self.nodes_stack.pop()
 
                     # then check if after ValueToken removal we have any start token on the top of the tokens stack
-                    if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
-                        raise Exception("Wrong structure of document")  # TODO: provide better message
+                    if not isinstance(
+                        self.tokens_stack[-1],
+                        (BlockMappingStartToken, BlockSequenceStartToken),
+                    ):
+                        raise Exception(
+                            "Wrong structure of document"
+                        )  # TODO: provide better message
 
                     # and remove it from the token stack
                     self.tokens_stack.pop()
@@ -270,7 +316,9 @@ class Parser:
 
             # Case when key followed after sequence with no indentation
             # and the last element of this sequence was empty
-            if self.is_array_item and isinstance(self.tokens_stack[-1], BlockEntryToken):
+            if self.is_array_item and isinstance(
+                self.tokens_stack[-1], BlockEntryToken
+            ):
                 self._handle_hanging_dash(self.tokens_stack[-1])
                 self.tokens_stack.pop()  # remove BlockEntryToken
                 node = self.nodes_stack.pop()  # remove sequence
@@ -291,7 +339,9 @@ class Parser:
             self.tokens_stack.append(token)
             return
 
-        if isinstance(token, ScalarToken) and isinstance(self.tokens_stack[-1], ValueToken):
+        if isinstance(token, ScalarToken) and isinstance(
+            self.tokens_stack[-1], ValueToken
+        ):
             node = self.nodes_stack[-1]
             if isinstance(node, UnprocessedNode):
                 self.nodes_stack.pop()
@@ -303,7 +353,10 @@ class Parser:
             try:
                 value_node = node.get_value(expected_type=TextNode)
             except ValueError:
-                raise ParserError(message="Scalar cannot be accepted here. Object expected", token=token)
+                raise ParserError(
+                    message="Scalar cannot be accepted here. Object expected",
+                    token=token,
+                )
             self.nodes_stack.append(value_node)
 
             self._process_scalar_token(token)
@@ -313,14 +366,18 @@ class Parser:
                 self.is_array_item = False
             return
 
-        if isinstance(token, ScalarToken) and isinstance(self.tokens_stack[-1], (KeyToken, BlockEntryToken)):
+        if isinstance(token, ScalarToken) and isinstance(
+            self.tokens_stack[-1], (KeyToken, BlockEntryToken)
+        ):
             if not self.is_array_item:
                 self._process_object_child(token)
 
             else:
                 node = self.nodes_stack[-1]
 
-                if isinstance(node, UnprocessedNode) and isinstance(self.tokens_stack[-1], BlockEntryToken):
+                if isinstance(node, UnprocessedNode) and isinstance(
+                    self.tokens_stack[-1], BlockEntryToken
+                ):
                     self.nodes_stack.pop()
                     self.is_array_item = False
                     self.tokens_stack.pop()
@@ -369,15 +426,17 @@ class Parser:
 
     def _get_tree(self) -> BaseTree:
         trees = {
-            'application': AppTree,
-            'blueprint': BlueprintTree,
-            'TerraForm': ServiceTree
+            "application": AppTree,
+            "blueprint": BlueprintTree,
+            "TerraForm": ServiceTree,
         }
 
         yaml_obj = yaml.load(self.document, Loader=yaml.FullLoader)
-        doc_type = yaml_obj.get('kind', '')
+        doc_type = yaml_obj.get("kind", "")
 
         if doc_type not in trees:
-            raise ValueError(f"Unable to initialize tree from document kind '{doc_type}'")
+            raise ValueError(
+                f"Unable to initialize tree from document kind '{doc_type}'"
+            )
 
         return trees[doc_type]()

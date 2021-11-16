@@ -1,13 +1,13 @@
 from server.ats.trees.blueprint import (
-    BlueprintTree,
     ApplicationNode,
     ApplicationResourceNode,
+    BlueprintTree,
 )
 from server.ats.trees.common import (
     PropertyNode,
-    ScalarNode,
-    ScalarMappingsSequence,
     ScalarMappingNode,
+    ScalarMappingsSequence,
+    ScalarNode,
     TextNode,
 )
 

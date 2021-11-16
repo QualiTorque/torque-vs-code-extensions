@@ -38,3 +38,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: master
+          VALIDATE_PYTHON_MYPY: false

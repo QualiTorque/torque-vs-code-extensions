@@ -27,3 +27,4 @@ coverage.xml
 *.vsix
 client/README.md
 client/LICENSE
+client/CHANGELOG.md
