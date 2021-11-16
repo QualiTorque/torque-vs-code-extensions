@@ -2,7 +2,7 @@ from typing import List
 
 from pygls.lsp.types.language_features.completion import (
     CompletionItem,
-    CompletionParams
+    CompletionParams,
 )
 from pygls.workspace import Workspace
 from server.ats.trees.common import BaseTree

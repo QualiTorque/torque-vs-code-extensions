@@ -3,13 +3,10 @@ from typing import List
 from pygls.lsp.types.language_features.completion import (
     CompletionItem,
     CompletionItemKind,
-    CompletionParams
+    CompletionParams,
 )
 from pygls.workspace import Workspace
-from server.ats.trees.blueprint import (
-    BlueprintResourceMappingNode,
-    BlueprintTree
-)
+from server.ats.trees.blueprint import BlueprintResourceMappingNode, BlueprintTree
 from server.ats.trees.common import BaseTree, ScalarNode
 from server.completers.base import Completer
 from server.utils.applications import ApplicationsManager as applications
