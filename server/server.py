@@ -362,12 +362,13 @@ def completions(
                 is_incomplete=False,
                 items=items,
             )
-        elif parent_node == "artifacts" or parent_node == "depends_on":
+        elif parent_node == "artifacts" or parent_node == "depends_on" \
+                or (parent_node == "rules" and last_word == "application:"):
             blueprint_apps = [app.id.text for app in tree.get_applications()]
             items = []
             items += [
                 CompletionItem(
-                    label=app_name, kind=CompletionItemKind.Reference
+                    label=app_name, detail="Application", kind=CompletionItemKind.Reference
                 )
                 for app_name in blueprint_apps
             ]
@@ -375,7 +376,7 @@ def completions(
                 blueprint_srvs = [srv.id.text for srv in tree.get_services()]
                 items += [
                     CompletionItem(
-                        label=srv_name, kind=CompletionItemKind.Reference
+                        label=srv_name, detail="Service", kind=CompletionItemKind.Reference
                     )
                     for srv_name in blueprint_srvs
                 ]

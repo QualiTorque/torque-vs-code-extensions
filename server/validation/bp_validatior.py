@@ -8,7 +8,6 @@ from pygls.lsp.types.basic_structures import (
     Position,
     Range,
 )
-
 from server.ats.trees.blueprint import BlueprintTree
 from server.constants import (
     AWS_REGIONS,
