@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.0.9](https://github.com/QualiTorque/torque-vs-code-extensions/compare/0.0.8...0.0.9) (2021-11-15)
+## [0.0.9](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.8...v0.0.9) (2021-11-15)
 
 Cleanups and improvements to the extension to provide you with the best experience and performance.
 ### Bug Fixes
@@ -12,7 +12,7 @@ Cleanups and improvements to the extension to provide you with the best experien
 * A few more completions in Blueprints for artifacts, depends_on and rules
 
 
-## [0.0.8](https://github.com/QualiTorque/torque-vs-code-extensions/compare/0.0.7...0.0.8) (2021-11-10)
+## [0.0.8](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.7...v0.0.8) (2021-11-10)
 
 ### Interactive features
 A new Torque icon is now available in the sidebar, opening the access to the creation of Profiles, view online Blueprints, and view of active Sandboxes.
@@ -26,7 +26,7 @@ A few more code completions are available and some other bug fixes are included.
 
 
 
-## [0.0.7](https://github.com/QualiTorque/torque-vs-code-extensions/compare/0.0.6...0.0.7) (2021-08-31)
+## [0.0.7](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.6...v0.0.7) (2021-08-31)
 
 
 ### Bug Fixes
@@ -35,7 +35,7 @@ A few more code completions are available and some other bug fixes are included.
 
 
 
-## [0.0.6](https://github.com/QualiTorque/torque-vs-code-extensions/compare/0.0.5...0.0.6) (2021-03-10)
+## [0.0.6](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.5...v0.0.6) (2021-03-10)
 
 
 ## Rebrand as Torque VS code extension
@@ -47,7 +47,7 @@ A few more code completions are available and some other bug fixes are included.
 
 
 
-## [0.0.5](https://github.com/QualiTorque/torque-vs-code-extensions/compare/0.0.4...0.0.5) (2021-08-24)
+## [0.0.5](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.4...v0.0.5) (2021-08-24)
 
 ### Bug Fixes
 
@@ -72,7 +72,7 @@ A few more code completions are available and some other bug fixes are included.
 * Validate that a variable is used only in places it’s allowed
 
 
-## [0.0.4](https://github.com/QualiTorque/torque-vs-code-extensions/compare/0.0.3...0.0.4) (2021-08-10)
+## [0.0.4](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.3...v0.0.4) (2021-08-10)
 
 ### Bug Fixes
 
@@ -102,4 +102,4 @@ A few more code completions are available and some other bug fixes are included.
   * Completions for available script files
 
 
-## [Older versions](https://github.com/QualiTorque/torque-vs-code-extensions/compare/0.0.2...0.0.3)
+## [Older versions](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.2...v0.0.3)
