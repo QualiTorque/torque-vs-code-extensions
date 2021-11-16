@@ -24,7 +24,7 @@ import subprocess
 import sys
 import textwrap
 from json import JSONDecodeError
-from typing import Optional, List
+from typing import List, Optional
 from urllib.parse import unquote
 
 import tabulate
@@ -72,7 +72,6 @@ from server.utils.applications import ApplicationsManager as applications
 from server.utils.common import get_repo_root_path, is_var_allowed
 from server.utils.services import ServicesManager as services
 from server.validation.factory import ValidatorFactory
-
 
 DEBOUNCE_DELAY = 0.3
 
@@ -1004,7 +1003,10 @@ async def torque_login(server: TorqueLanguageServer, *args):
         return 1
 
     try:
-        command = f"torque --disable-version-check configure set -P {params.profile} -a {params.account} -s {params.space}"
+        command = (f"torque --disable-version-check configure set "
+                   " -P {params.profile}" 
+                   " -a {params.account}" 
+                   " -s {params.space}")
 
         if params.email and params.password:
             command = command + f" --login -e {params.email} -p {params.password}"
@@ -1036,7 +1038,7 @@ async def remove_profile(server: TorqueLanguageServer, *args):
 
     profile_name = args[0][0]
     try:
-        _, __ = _run_torque_cli_command(
+        _, _ = _run_torque_cli_command(
             f"torque --disable-version-check configure remove {profile_name}"
         )
         server.show_message(f"Profile '{profile_name}' deleted.")
@@ -1139,7 +1141,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
     server.show_message("Validating blueprint: " + blueprint_name)
     server.show_message_log("Validating blueprint: " + blueprint_name)
     try:
-        stdout, stderr = _run_torque_cli_command(
+        _, stderr = _run_torque_cli_command(
             f'torque --disable-version-check --profile {active_profile} bp validate "{blueprint_name}" --output=json',
             cwd=server.workspace.root_path,
         )

@@ -1,13 +1,14 @@
 from abc import ABC
 from dataclasses import dataclass
-from .common import (
+
+from server.ats.trees.common import (
     BaseTree,
+    ObjectNode,
     ResourceMappingNode,
+    ScalarNode,
     SequenceNode,
     TextNode,
     TreeWithOutputs,
-    ScalarNode,
-    ObjectNode,
 )
 
 

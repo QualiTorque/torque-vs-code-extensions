@@ -8,15 +8,15 @@ from yaml.tokens import (
     BlockSequenceStartToken,
     KeyToken,
     ScalarToken,
-    StreamStartToken,
     StreamEndToken,
+    StreamStartToken,
     Token,
     ValueToken,
 )
 
-from .trees.app import AppTree
-from .trees.blueprint import BlueprintTree
-from .trees.common import (
+from server.ats.trees.app import AppTree
+from server.ats.trees.blueprint import BlueprintTree
+from server.ats.trees.common import (
     BaseTree,
     MappingNode,
     NodeError,
@@ -26,7 +26,7 @@ from .trees.common import (
     TextNode,
     YamlNode,
 )
-from .trees.service import ServiceTree
+from server.ats.trees.service import ServiceTree
 
 
 class ParserError(Exception):

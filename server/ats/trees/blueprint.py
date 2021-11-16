@@ -1,18 +1,19 @@
 from dataclasses import dataclass
-from .common import (
+from typing import List, Union
+
+from server.ats.trees.common import (
     BaseTree,
-    ScalarMappingsSequence,
     MappingNode,
+    ObjectNode,
+    ScalarMappingsSequence,
+    ScalarNode,
+    ScalarNodesSequence,
     SequenceNode,
     TextMapping,
     TextMappingSequence,
     TextNode,
-    ScalarNodesSequence,
-    ScalarNode,
     TextNodesSequence,
-    ObjectNode,
 )
-from typing import List, Union
 
 
 @dataclass
