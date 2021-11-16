@@ -7,6 +7,10 @@ Cleanups and improvements to the extension to provide you with the best experien
 
 * Fixed an issue with starting a sandbox from blueprint with whitespace characters
 
+### Features
+
+* A few more completions in Blueprints for artifacts, depends_on and rules
+
 
 ## [0.0.8](https://github.com/QualiTorque/torque-vs-code-extensions/compare/0.0.7...0.0.8) (2021-11-10)
 
