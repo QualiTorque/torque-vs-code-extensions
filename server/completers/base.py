@@ -5,7 +5,6 @@ from pygls.lsp.types.language_features.completion import (
     CompletionParams,
 )
 from pygls.workspace import Workspace
-
 from server.ats.trees.common import BaseTree
 
 

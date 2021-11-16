@@ -3,7 +3,6 @@ from typing import Tuple
 from unittest.mock import MagicMock
 
 from pygls.lsp.types.basic_structures import Position, Range
-
 from server.ats.trees.blueprint import (
     ApplicationNode,
     ApplicationResourceNode,
@@ -22,7 +21,11 @@ from server.ats.trees.common import (
     TextMappingSequence,
     TreeWithOutputs,
 )
-from server.tests.unit.trees import azuresimple_bp_tree, demoapp_tree, sleep_srv_tree
+from server.tests.unit.trees import (
+    azuresimple_bp_tree,
+    demoapp_tree,
+    sleep_srv_tree,
+)
 from server.validation.app_validator import AppValidationHandler
 from server.validation.bp_validatior import BlueprintValidationHandler
 from server.validation.common import ValidationHandler

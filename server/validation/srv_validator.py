@@ -3,7 +3,6 @@ import re
 import sys
 
 from pygls.lsp.types.basic_structures import DiagnosticSeverity
-
 from server.ats.trees.service import ServiceTree
 from server.utils.services import ServicesManager as services
 from server.validation.common import ValidationHandler

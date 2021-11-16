@@ -1,19 +1,6 @@
 from typing import Tuple
 
 import yaml
-from yaml.tokens import (
-    BlockEndToken,
-    BlockEntryToken,
-    BlockMappingStartToken,
-    BlockSequenceStartToken,
-    KeyToken,
-    ScalarToken,
-    StreamEndToken,
-    StreamStartToken,
-    Token,
-    ValueToken,
-)
-
 from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintTree
 from server.ats.trees.common import (
@@ -27,6 +14,18 @@ from server.ats.trees.common import (
     YamlNode,
 )
 from server.ats.trees.service import ServiceTree
+from yaml.tokens import (
+    BlockEndToken,
+    BlockEntryToken,
+    BlockMappingStartToken,
+    BlockSequenceStartToken,
+    KeyToken,
+    ScalarToken,
+    StreamEndToken,
+    StreamStartToken,
+    Token,
+    ValueToken,
+)
 
 
 class ParserError(Exception):

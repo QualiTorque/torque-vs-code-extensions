@@ -8,7 +8,6 @@ from pygls.lsp.types.basic_structures import (
     Range,
 )
 from pygls.workspace import Document
-
 from server.ats.trees.common import BaseTree, YamlNode
 
 

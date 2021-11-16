@@ -10,7 +10,11 @@ from pygls.lsp.types.basic_structures import (
 )
 
 from server.ats.trees.blueprint import BlueprintTree
-from server.constants import AWS_REGIONS, AZURE_REGIONS, PREDEFINED_TORQUE_INPUTS
+from server.constants import (
+    AWS_REGIONS,
+    AZURE_REGIONS,
+    PREDEFINED_TORQUE_INPUTS,
+)
 from server.utils.applications import ApplicationsManager as applications
 from server.utils.common import get_repo_root_path
 from server.utils.services import ServicesManager as services

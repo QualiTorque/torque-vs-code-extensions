@@ -5,9 +5,14 @@ from typing import List, Optional, Tuple
 
 from pygls.lsp import types
 from pygls.workspace import Document, position_from_utf16
-
 from server.ats.parser import Parser, ParserError
-from server.ats.trees.common import BaseTree, MappingNode, Position, TextNode, YamlNode
+from server.ats.trees.common import (
+    BaseTree,
+    MappingNode,
+    Position,
+    TextNode,
+    YamlNode,
+)
 from server.utils.yaml_utils import format_yaml
 
 

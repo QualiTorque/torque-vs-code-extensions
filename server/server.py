@@ -62,7 +62,6 @@ from pygls.lsp.types import (
 )
 from pygls.lsp.types.basic_structures import TextEdit
 from pygls.server import LanguageServer
-
 from server.ats.parser import Parser, ParserError
 from server.ats.trees.app import AppTree
 from server.ats.trees.common import BaseTree, PropertyNode
@@ -876,7 +875,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                 server.show_message_log(error_msg)
         if error_msg:
             server.show_message(
-                'Sandbox creation failed. Check the "Torque" Output view for more details.'
+                "Sandbox creation failed. Check the 'Torque' Output view for more details."
             )
         else:
             server.show_message(
@@ -1005,10 +1004,10 @@ async def torque_login(server: TorqueLanguageServer, *args):
 
     try:
         command = (
-            f"torque --disable-version-check configure set "
-            " -P {params.profile}"
-            " -a {params.account}"
-            " -s {params.space}"
+            "torque --disable-version-check configure set "
+            f" -P {params.profile}"
+            f" -a {params.account}"
+            f" -s {params.space}"
         )
 
         if params.email and params.password:
