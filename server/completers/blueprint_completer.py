@@ -15,7 +15,9 @@ from server.utils.services import ServicesManager as services
 
 
 class BlueprintResourceCompleter(Completer):
-    def __init__(self, workspace: Workspace, params: CompletionParams, tree: BlueprintTree) -> None:
+    def __init__(
+        self, workspace: Workspace, params: CompletionParams, tree: BlueprintTree
+    ) -> None:
         super().__init__(workspace, params, tree)
         self.path = get_path_to_pos(self.tree, self.params.position)
 
@@ -47,8 +49,10 @@ class BlueprintResourceCompleter(Completer):
                     props = "- " + props
                     label = "- " + res
 
-            elif not (isinstance(self.path[-1], ScalarNode)
-                      and isinstance(self.path[-2], BlueprintResourceMappingNode)):
+            elif not (
+                isinstance(self.path[-1], ScalarNode)
+                and isinstance(self.path[-2], BlueprintResourceMappingNode)
+            ):
                 seq = self._get_resource_sequence()
                 col = seq.nodes[0].start_pos[1] if seq.nodes else 4  # get default
                 char = self.params.position.character
@@ -59,16 +63,18 @@ class BlueprintResourceCompleter(Completer):
                 else:
                     props = "- " + props
 
-            items.append(CompletionItem(
-                label=label,
-                kind=CompletionItemKind.Reference,
-                insert_text=props
-            ))
+            items.append(
+                CompletionItem(
+                    label=label, kind=CompletionItemKind.Reference, insert_text=props
+                )
+            )
         return items
 
     def _get_resource_sequence(self):
         for item in self.path:
-            if isinstance(item, (BlueprintTree.AppsSequence, BlueprintTree.ServicesSequence)):
+            if isinstance(
+                item, (BlueprintTree.AppsSequence, BlueprintTree.ServicesSequence)
+            ):
                 return item
         raise ValueError
 
@@ -77,10 +83,14 @@ class BlueprintResourceCompleter(Completer):
             seq = self._get_resource_sequence()
         except ValueError:
             raise
-        root = self.workspace.root_path  # TODO: workspace's root could not be a root of blueprint repo. Handle
-        return (applications.get_available_resources(root)
-                if isinstance(seq, BlueprintTree.AppsSequence)
-                else services.get_available_resources(root))
+        root = (
+            self.workspace.root_path
+        )  # TODO: workspace's root could not be a root of blueprint repo. Handle
+        return (
+            applications.get_available_resources(root)
+            if isinstance(seq, BlueprintTree.AppsSequence)
+            else services.get_available_resources(root)
+        )
 
     def _build_resource_completion(self, resource_name: str, tree: BaseTree) -> str:
         tab = "  "

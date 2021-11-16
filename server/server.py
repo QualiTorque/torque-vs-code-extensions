@@ -200,11 +200,15 @@ def did_change(server: TorqueLanguageServer, params: DidChangeTextDocumentParams
 
         if doc_type == "application":
             app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-            applications.reload_resource_details(resource_name=app_name, resource_source=source)
+            applications.reload_resource_details(
+                resource_name=app_name, resource_source=source
+            )
 
         elif doc_type == "TerraForm":
             srv_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
-            services.reload_resource_details(resource_name=srv_name, resource_source=source)
+            services.reload_resource_details(
+                resource_name=srv_name, resource_source=source
+            )
 
 
 @torque_ls.feature(TEXT_DOCUMENT_DID_OPEN)

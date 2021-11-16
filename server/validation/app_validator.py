@@ -31,4 +31,6 @@ class AppValidationHandler(ValidationHandler):
                 continue
 
             if node.script.text not in scripts:
-                self._add_diagnostic(node.script.value, f"File {node.script.text} doesn't exist")
+                self._add_diagnostic(
+                    node.script.value, f"File {node.script.text} doesn't exist"
+                )

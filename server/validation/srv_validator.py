@@ -21,8 +21,16 @@ class ServiceValidationHandler(ValidationHandler):
             self._check_for_deprecated_properties(deprecated_properties)
 
         except Exception as ex:
-            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
-            logging.error('Error on line {}'.format(sys.exc_info()[-1].tb_lineno), type(ex).__name__, ex)
+            print(
+                "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
+                type(ex).__name__,
+                ex,
+            )
+            logging.error(
+                "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
+                type(ex).__name__,
+                ex,
+            )
 
         return self._diagnostics
 
@@ -43,7 +51,7 @@ class ServiceValidationHandler(ValidationHandler):
                     self._add_diagnostic(
                         input.key,
                         message=message.format(input.key.text),
-                        diag_severity=DiagnosticSeverity.Warning
+                        diag_severity=DiagnosticSeverity.Warning,
                     )
 
     def _validate_variables_file_exist(self):

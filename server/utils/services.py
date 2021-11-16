@@ -28,12 +28,16 @@ class ServicesManager(ResourcesManager):
 
         if doc_type == "TerraForm":
             tfvars = []
-            files = pathlib.Path(service_dir_path.replace("file://", "")).parent.glob("./*")
+            files = pathlib.Path(service_dir_path.replace("file://", "")).parent.glob(
+                "./*"
+            )
             for file in files:
                 if file.name.endswith(".tfvars"):
                     item = {
                         "file": pathlib.Path(file).name,
-                        "variables": ServicesManager.get_vars_from_tfvars(file.as_posix())
+                        "variables": ServicesManager.get_vars_from_tfvars(
+                            file.as_posix()
+                        ),
                     }
                     tfvars.append(item)
 

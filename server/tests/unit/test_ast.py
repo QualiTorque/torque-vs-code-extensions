@@ -172,7 +172,6 @@ spec_version: 1"""
         self.assertEqual(tree.errors[0].start_pos, (4, 4))
         self.assertEqual(tree.errors[0].end_pos, (4, 5))
 
-
     def test_empty_item_deep_in_tree(self):
         doc = """source:
   image:

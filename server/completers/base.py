@@ -9,7 +9,9 @@ from server.ats.trees.common import BaseTree
 
 
 class Completer:
-    def __init__(self, workspace: Workspace, params: CompletionParams, tree: BaseTree) -> None:
+    def __init__(
+        self, workspace: Workspace, params: CompletionParams, tree: BaseTree
+    ) -> None:
         self.workspace = workspace
         self.params = params
         self.tree = tree

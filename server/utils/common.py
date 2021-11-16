@@ -6,13 +6,7 @@ from typing import List, Optional, Tuple
 from pygls.lsp import types
 from pygls.workspace import Document, position_from_utf16
 from server.ats.parser import Parser, ParserError
-from server.ats.trees.common import (
-    YamlNode,
-    Position,
-    MappingNode,
-    TextNode,
-    BaseTree
-)
+from server.ats.trees.common import YamlNode, Position, MappingNode, TextNode, BaseTree
 from server.utils.yaml_utils import format_yaml
 
 
@@ -29,7 +23,9 @@ class ResourcesManager:
             output += "    input_values:\n"
             for input_node in inputs:
                 if input_node.value:
-                    output += f"      - {input_node.key.text}: {input_node.value.text}\n"
+                    output += (
+                        f"      - {input_node.key.text}: {input_node.value.text}\n"
+                    )
                 else:
                     output += f"      - {input_node.key.text}: \n"
         return output
@@ -42,13 +38,17 @@ class ResourcesManager:
             resource_tree = Parser(document=resource_source).parse()
             output = cls.build_completion_text(resource_name, resource_tree)
         except ParserError as e:
-            logging.warning(f"Unable to load {cls.resource_type} '{resource_name}.yaml' due to error: {e.message}")
+            logging.warning(
+                f"Unable to load {cls.resource_type} '{resource_name}.yaml' due to error: {e.message}"
+            )
         except Exception as e:
-            logging.warning(f"Unable to load {cls.resource_type} '{resource_name}.yaml' due to error: {str(e)}")
+            logging.warning(
+                f"Unable to load {cls.resource_type} '{resource_name}.yaml' due to error: {str(e)}"
+            )
 
         cls.cache[resource_name] = {
             "tree": resource_tree,
-            "completion": format_yaml(output) if output else None
+            "completion": format_yaml(output) if output else None,
         }
 
     @classmethod
@@ -97,7 +97,9 @@ class ResourcesManager:
             if resource_tree and resource_tree.inputs_node:
                 inputs = {}
                 for input_node in resource_tree.get_inputs():
-                    inputs[input_node.key.text] = input_node.value.text if input_node.value else None
+                    inputs[input_node.key.text] = (
+                        input_node.value.text if input_node.value else None
+                    )
                 return inputs
 
         return {}
@@ -115,7 +117,9 @@ class ResourcesManager:
 class Visitor:
     def __init__(self, cursor_position: types.Position):
         self.found_node = None
-        self.cursor_position = Position(line=cursor_position.line, col=cursor_position.character)
+        self.cursor_position = Position(
+            line=cursor_position.line, col=cursor_position.character
+        )
 
     def visit_node(self, node: YamlNode):
         start = Position(node.start_pos[0], node.start_pos[1])
@@ -171,7 +175,10 @@ def get_parent_node(tree: BaseTree, pos: Position):
         node = path.pop()
         if node.parent is None:
             break
-        if node.parent.start_pos[0] < pos.line and node.parent.start_pos[1] < pos.character:
+        if (
+            node.parent.start_pos[0] < pos.line
+            and node.parent.start_pos[1] < pos.character
+        ):
             return node.parent
 
     return None
@@ -195,7 +202,9 @@ def get_line_before_position(document: Document, position: types.Position):
     return line[:col]
 
 
-def preceding_words(document: Document, position: types.Position) -> Optional[Tuple[str, str]]:
+def preceding_words(
+    document: Document, position: types.Position
+) -> Optional[Tuple[str, str]]:
     """
     Get the word under the cursor returning the start and end positions.
     """
@@ -216,4 +225,6 @@ def get_repo_root_path(path: str) -> str:
         return full_path.parents[2].absolute().as_posix()
 
     else:
-        raise ValueError(f"Wrong document path of blueprint file: {full_path.as_posix()}")
+        raise ValueError(
+            f"Wrong document path of blueprint file: {full_path.as_posix()}"
+        )

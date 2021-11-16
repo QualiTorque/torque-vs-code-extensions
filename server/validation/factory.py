@@ -9,13 +9,15 @@ class ValidatorFactory:
     kind_validators_map = {
         "blueprint": BlueprintValidationHandler,
         "application": AppValidationHandler,
-        "terraform": ServiceValidationHandler
+        "terraform": ServiceValidationHandler,
     }
 
     @classmethod
     def get_validator(cls, tree: BaseTree, text_doc: Document):
         if tree.kind is None:
-            raise ValueError("Unable to validate document. 'kind' property is not defined")
+            raise ValueError(
+                "Unable to validate document. 'kind' property is not defined"
+            )
 
         kind = tree.kind.text.lower()
 

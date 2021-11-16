@@ -19,19 +19,15 @@ class Position:
     def __lt__(self, other):
         if not isinstance(other, Position):
             return NotImplementedError
-        return (
-            self.line < other.line or (
-                self.line == other.line and self.col < other.col
-            )
+        return self.line < other.line or (
+            self.line == other.line and self.col < other.col
         )
 
     def __gt__(self, other):
         if not isinstance(other, Position):
             return NotImplemented
-        return (
-            self.line > other.line or (
-                self.line == other.line and self.col > other.col
-            )
+        return self.line > other.line or (
+            self.line == other.line and self.col > other.col
         )
 
     def __le__(self, other):
@@ -152,8 +148,10 @@ class MappingNode(YamlNode):  # TODO: actually all torque nodes must inherit thi
         When value has Union typing annotation it will try to initialize it with provided expected_type
         If expected_type is not provided, first type from Union will be used"""
         if self.value is None:
-            value_class = self.__dataclass_fields__['value'].type
-            result_class = self._get_annotated_class(value_class=value_class, expected=expected_type)
+            value_class = self.__dataclass_fields__["value"].type
+            result_class = self._get_annotated_class(
+                value_class=value_class, expected=expected_type
+            )
             self.value = result_class(parent=self.key)
 
         return self.value
@@ -184,7 +182,9 @@ class MappingNode(YamlNode):  # TODO: actually all torque nodes must inherit thi
             elif isinstance(value_class, type) and issubclass(value_class, expected):
                 result_class = value_class
             else:
-                raise ValueError(f"Mapping value cannot be initiated with type '{expected}'")
+                raise ValueError(
+                    f"Mapping value cannot be initiated with type '{expected}'"
+                )
 
         else:
             result_class = value_class if not possible_types else possible_types[0]
@@ -201,7 +201,9 @@ class PropertyNode(MappingNode):
     def get_value(self, expected_type: type = None):
         if self.value is None:
             value_class = self.parent.__dataclass_fields__[self.identifier].type
-            result_class = self._get_annotated_class(value_class=value_class, expected=expected_type)
+            result_class = self._get_annotated_class(
+                value_class=value_class, expected=expected_type
+            )
             self.value = result_class(parent=self.key)
 
         return self.value
@@ -214,7 +216,9 @@ class PropertyNode(MappingNode):
         else:
             value_class = self.parent.__dataclass_fields__[self.identifier].type
             if name not in value_class.__dataclass_fields__:
-                raise AttributeError(f"Value of PropertyNode '{self.identifier}' does not not have attribute '{name}'")
+                raise AttributeError(
+                    f"Value of PropertyNode '{self.identifier}' does not not have attribute '{name}'"
+                )
 
             return None
 
@@ -229,7 +233,11 @@ class ObjectNode(YamlNode, ABC):
         If the value is None, creates a child of type
         specified in type annotations and returns it
         """
-        attr = child_name if hasattr(self, child_name) else self._get_field_mapping().get(child_name, None)
+        attr = (
+            child_name
+            if hasattr(self, child_name)
+            else self._get_field_mapping().get(child_name, None)
+        )
 
         # attribute could not be found in both object itself and mapping table
         if attr is None:
@@ -258,7 +266,11 @@ class ObjectNode(YamlNode, ABC):
         """Returns all child nodes. Nodes are actually
         attributes which are not excluded and do not equal None"""
         fields = vars(self)
-        return [val for key, val in fields.items() if val and key not in self.non_child_attributes]
+        return [
+            val
+            for key, val in fields.items()
+            if val and key not in self.non_child_attributes
+        ]
 
     def _get_seq_nodes(self, property_name) -> List[Any]:
         if not hasattr(self, property_name):
@@ -333,9 +345,7 @@ class BaseTree(ObjectNode):
 
     def _get_field_mapping(self) -> {str: str}:
         mapping = super()._get_field_mapping()
-        mapping.update(
-            {"inputs": "inputs_node"}
-        )
+        mapping.update({"inputs": "inputs_node"})
         return mapping
 
     def get_inputs(self) -> List[ScalarMappingNode]:

@@ -1,7 +1,14 @@
 from abc import ABC
 from dataclasses import dataclass
-from .common import (BaseTree, ResourceMappingNode, SequenceNode,
-                     TextNode, TreeWithOutputs, ScalarNode, ObjectNode)
+from .common import (
+    BaseTree,
+    ResourceMappingNode,
+    SequenceNode,
+    TextNode,
+    TreeWithOutputs,
+    ScalarNode,
+    ObjectNode,
+)
 
 
 @dataclass
@@ -41,11 +48,13 @@ class IngressHealthCheckNode(ObjectNode):
 
     def _get_field_mapping(self) -> {str: str}:
         mapping = super()._get_field_mapping()
-        mapping.update({
-            "healthy-threshold": "healthy_threshold",
-            "status-codes": "status_codes",
-            "unhealthy-threshold": "unhealthy_threshold"
-        })
+        mapping.update(
+            {
+                "healthy-threshold": "healthy_threshold",
+                "status-codes": "status_codes",
+                "unhealthy-threshold": "unhealthy_threshold",
+            }
+        )
         return mapping
 
 
@@ -62,10 +71,9 @@ class PortInfoInternalNode(PortInfoNode):
 
     def _get_field_mapping(self) -> {str: str}:
         mapping = super()._get_field_mapping()
-        mapping.update({
-            "port-range": "port_range",
-            "ingress-healthcheck": "ingress_healthcheck"
-        })
+        mapping.update(
+            {"port-range": "port_range", "ingress-healthcheck": "ingress_healthcheck"}
+        )
         return mapping
 
 

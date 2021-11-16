@@ -1,7 +1,17 @@
 from dataclasses import dataclass
-from .common import (BaseTree, ScalarMappingsSequence, MappingNode, SequenceNode, TextMapping,
-                     TextMappingSequence, TextNode, ScalarNodesSequence, ScalarNode,
-                     TextNodesSequence, ObjectNode)
+from .common import (
+    BaseTree,
+    ScalarMappingsSequence,
+    MappingNode,
+    SequenceNode,
+    TextMapping,
+    TextMappingSequence,
+    TextNode,
+    ScalarNodesSequence,
+    ScalarNode,
+    TextNodesSequence,
+    ObjectNode,
+)
 from typing import List, Union
 
 

@@ -30,8 +30,13 @@ from .trees.service import ServiceTree
 
 
 class ParserError(Exception):
-
-    def __init__(self, message: str = None, start_pos: tuple = None, end_pos: tuple = None, token: Token = None):
+    def __init__(
+        self,
+        message: str = None,
+        start_pos: tuple = None,
+        end_pos: tuple = None,
+        token: Token = None,
+    ):
         self.message = message
         if token is not None:
             self.start_pos = Parser.get_token_start(token)
@@ -136,9 +141,11 @@ class Parser:
         self.nodes_stack.append(child_node)
 
     def _process_token(self, token: Token) -> None:
-        if (self.nodes_stack
+        if (
+            self.nodes_stack
             and isinstance(self.nodes_stack[-1], PropertyNode)
-            and isinstance(token, (KeyToken, BlockEndToken))):
+            and isinstance(token, (KeyToken, BlockEndToken))
+        ):
 
             self.nodes_stack[-1].end_pos = self.get_token_end(token)
             self.nodes_stack.pop()
@@ -184,7 +191,9 @@ class Parser:
         if isinstance(token, BlockMappingStartToken):
             last_node = self.nodes_stack[-1]
 
-            if isinstance(last_node, MappingNode) and not isinstance(self.tokens_stack[-1], BlockEntryToken):
+            if isinstance(last_node, MappingNode) and not isinstance(
+                self.tokens_stack[-1], BlockEntryToken
+            ):
                 self.tokens_stack.append(token)
                 value_node = last_node.get_value()
                 self.nodes_stack.append(value_node)
@@ -211,8 +220,11 @@ class Parser:
                 top = self.tokens_stack.pop()
 
             # TODO: refactor condition
-            if (isinstance(top, (BlockMappingStartToken, BlockSequenceStartToken))
-                    and isinstance(self.tokens_stack[-1], (ValueToken, BlockEntryToken, StreamStartToken))):
+            if isinstance(
+                top, (BlockMappingStartToken, BlockSequenceStartToken)
+            ) and isinstance(
+                self.tokens_stack[-1], (ValueToken, BlockEntryToken, StreamStartToken)
+            ):
                 node = self.nodes_stack.pop()
                 node.end_pos = self.get_token_end(token)
                 self.tokens_stack.pop()
@@ -227,12 +239,19 @@ class Parser:
                     # remove last Node and ValueToken and BlockEndToken as well
                     node = self.nodes_stack.pop()
                     node.end_pos = self.get_token_end(token)
-                    if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
-                        raise Exception("Wrong structure of document")  # TODO: provide better message
+                    if not isinstance(
+                        self.tokens_stack[-1],
+                        (BlockMappingStartToken, BlockSequenceStartToken),
+                    ):
+                        raise Exception(
+                            "Wrong structure of document"
+                        )  # TODO: provide better message
                     self.tokens_stack.pop()
 
                     if not isinstance(self.tokens_stack[-1], BlockEntryToken):
-                        raise Exception("Wrong structure of document")  # TODO: provide better message
+                        raise Exception(
+                            "Wrong structure of document"
+                        )  # TODO: provide better message
                     self.tokens_stack.pop()
                     self.is_array_item = False
 
@@ -253,8 +272,13 @@ class Parser:
                         self.nodes_stack.pop()
 
                     # then check if after ValueToken removal we have any start token on the top of the tokens stack
-                    if not isinstance(self.tokens_stack[-1], (BlockMappingStartToken, BlockSequenceStartToken)):
-                        raise Exception("Wrong structure of document")  # TODO: provide better message
+                    if not isinstance(
+                        self.tokens_stack[-1],
+                        (BlockMappingStartToken, BlockSequenceStartToken),
+                    ):
+                        raise Exception(
+                            "Wrong structure of document"
+                        )  # TODO: provide better message
 
                     # and remove it from the token stack
                     self.tokens_stack.pop()
@@ -293,7 +317,9 @@ class Parser:
 
             # Case when key followed after sequence with no indentation
             # and the last element of this sequence was empty
-            if self.is_array_item and isinstance(self.tokens_stack[-1], BlockEntryToken):
+            if self.is_array_item and isinstance(
+                self.tokens_stack[-1], BlockEntryToken
+            ):
                 self._handle_hanging_dash(self.tokens_stack[-1])
                 self.tokens_stack.pop()  # remove BlockEntryToken
                 node = self.nodes_stack.pop()  # remove sequence
@@ -314,7 +340,9 @@ class Parser:
             self.tokens_stack.append(token)
             return
 
-        if isinstance(token, ScalarToken) and isinstance(self.tokens_stack[-1], ValueToken):
+        if isinstance(token, ScalarToken) and isinstance(
+            self.tokens_stack[-1], ValueToken
+        ):
             node = self.nodes_stack[-1]
             if isinstance(node, UnprocessedNode):
                 self.nodes_stack.pop()
@@ -339,14 +367,18 @@ class Parser:
                 self.is_array_item = False
             return
 
-        if isinstance(token, ScalarToken) and isinstance(self.tokens_stack[-1], (KeyToken, BlockEntryToken)):
+        if isinstance(token, ScalarToken) and isinstance(
+            self.tokens_stack[-1], (KeyToken, BlockEntryToken)
+        ):
             if not self.is_array_item:
                 self._process_object_child(token)
 
             else:
                 node = self.nodes_stack[-1]
 
-                if isinstance(node, UnprocessedNode) and isinstance(self.tokens_stack[-1], BlockEntryToken):
+                if isinstance(node, UnprocessedNode) and isinstance(
+                    self.tokens_stack[-1], BlockEntryToken
+                ):
                     self.nodes_stack.pop()
                     self.is_array_item = False
                     self.tokens_stack.pop()
