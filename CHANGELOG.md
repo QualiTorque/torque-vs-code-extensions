@@ -1,3 +1,5 @@
+# Change Log
+
 ## [0.0.9](https://github.com/QualiTorque/torque-vs-code-extensions/compare/0.0.8...0.0.9) (2021-11-15)
 
 Cleanups and improvements to the extension to provide you with the best experience and performance.
