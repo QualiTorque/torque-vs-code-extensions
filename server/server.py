@@ -197,7 +197,7 @@ def did_change(server: TorqueLanguageServer, params: DidChangeTextDocumentParams
         yaml_obj = yaml.load(source, Loader=yaml.FullLoader)  # todo: refactor
         doc_type = yaml_obj.get("kind", "")
 
-        if doc_type == "application":
+        if doc_type == "application": 
             app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
             applications.reload_resource_details(
                 resource_name=app_name, resource_source=source
@@ -1004,9 +1004,10 @@ async def torque_login(server: TorqueLanguageServer, *args):
 
     try:
         command = (f"torque --disable-version-check configure set "
-                   " -P {params.profile}" 
-                   " -a {params.account}" 
-                   " -s {params.space}")
+            " -P {params.profile}" 
+            " -a {params.account}" 
+            " -s {params.space}"
+        )
 
         if params.email and params.password:
             command = command + f" --login -e {params.email} -p {params.password}"

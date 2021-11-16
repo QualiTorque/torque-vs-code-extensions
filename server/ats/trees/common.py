@@ -1,7 +1,7 @@
 import re
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Any, List, Optional, ClassVar, Tuple
+from typing import Any, ClassVar, List, Optional, Tuple
 
 from pygls.lsp import types
 

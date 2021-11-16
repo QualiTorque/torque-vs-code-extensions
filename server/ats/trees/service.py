@@ -1,4 +1,4 @@
- from dataclasses import dataclass
+from dataclasses import dataclass
 
 from server.ats.trees.common import (
     BaseTree,
@@ -8,7 +8,7 @@ from server.ats.trees.common import (
     TextMappingSequence,
     TextNode,
     TreeWithOutputs,
- )
+)
 
 
 @dataclass
