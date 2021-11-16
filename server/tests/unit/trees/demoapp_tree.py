@@ -1,10 +1,3 @@
-from server.ats.trees.common import (
-    PropertyNode,
-    ScalarMappingNode,
-    ScalarMappingsSequence,
-    ScalarNode,
-    TextNode,
-)
 from server.ats.trees.app import (
     AmiImageNode,
     AmiSequenceNode,
@@ -19,6 +12,13 @@ from server.ats.trees.app import (
     PortInfoInternalNode,
     SourceNode,
     SpecNode,
+)
+from server.ats.trees.common import (
+    PropertyNode,
+    ScalarMappingNode,
+    ScalarMappingsSequence,
+    ScalarNode,
+    TextNode,
 )
 
 tree = AppTree(

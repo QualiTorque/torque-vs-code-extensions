@@ -1,11 +1,5 @@
-from server.ats.trees.common import (
-    NodeError,
-    PropertyNode,
-    ScalarNode,
-)
-from server.ats.trees.blueprint import (
-    BlueprintTree,
-)
+from server.ats.trees.blueprint import BlueprintTree
+from server.ats.trees.common import NodeError, PropertyNode, ScalarNode
 
 no_child_simple = BlueprintTree(
     start_pos=(0, 0),

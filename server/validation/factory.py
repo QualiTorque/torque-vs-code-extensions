@@ -1,4 +1,5 @@
 from pygls.workspace import Document
+
 from server.ats.trees.common import BaseTree
 from server.validation.app_validator import AppValidationHandler
 from server.validation.bp_validatior import BlueprintValidationHandler

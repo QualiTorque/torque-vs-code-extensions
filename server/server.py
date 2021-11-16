@@ -62,6 +62,7 @@ from pygls.lsp.types import (
 )
 from pygls.lsp.types.basic_structures import TextEdit
 from pygls.server import LanguageServer
+
 from server.ats.parser import Parser, ParserError
 from server.ats.trees.app import AppTree
 from server.ats.trees.common import BaseTree, PropertyNode

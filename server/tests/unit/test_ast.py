@@ -1,6 +1,5 @@
 import os
 import unittest
-
 from posixpath import dirname
 
 from server.ats.parser import Parser, ParserError

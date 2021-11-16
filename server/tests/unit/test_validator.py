@@ -1,27 +1,33 @@
+import unittest
 from typing import Tuple
+from unittest.mock import MagicMock
 
 from pygls.lsp.types.basic_structures import Position, Range
+
+from server.ats.trees.blueprint import (
+    ApplicationNode,
+    ApplicationResourceNode,
+    BlueprintTree,
+    ServiceNode,
+    ServiceResourceNode,
+)
+from server.ats.trees.common import (
+    BaseTree,
+    PropertyNode,
+    ScalarMappingNode,
+    ScalarMappingsSequence,
+    ScalarNode,
+    ScalarNodesSequence,
+    TextMapping,
+    TextMappingSequence,
+    TreeWithOutputs,
+)
+from server.tests.unit.trees import azuresimple_bp_tree, demoapp_tree, sleep_srv_tree
 from server.validation.app_validator import AppValidationHandler
 from server.validation.bp_validatior import BlueprintValidationHandler
-from server.validation.srv_validator import ServiceValidationHandler
 from server.validation.common import ValidationHandler
-from server.ats.trees.common import (
-    PropertyNode, ScalarNode, ScalarMappingNode, ScalarMappingsSequence, BaseTree,
-    ScalarNodesSequence, TreeWithOutputs, TextMappingSequence, TextMapping
-)
-
-from server.ats.trees.blueprint import BlueprintTree, ApplicationNode, ServiceNode, ApplicationResourceNode, \
-    ServiceResourceNode
 from server.validation.factory import ValidatorFactory
-
-from server.tests.unit.trees import (
-    demoapp_tree,
-    azuresimple_bp_tree,
-    sleep_srv_tree,
-)
-
-import unittest
-from unittest.mock import MagicMock
+from server.validation.srv_validator import ServiceValidationHandler
 
 
 class TestValidationFactory(unittest.TestCase):
