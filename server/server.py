@@ -198,7 +198,7 @@ def did_change(server: TorqueLanguageServer, params: DidChangeTextDocumentParams
         yaml_obj = yaml.load(source, Loader=yaml.FullLoader)  # todo: refactor
         doc_type = yaml_obj.get("kind", "")
 
-        if doc_type == "application": 
+        if doc_type == "application":
             app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
             applications.reload_resource_details(
                 resource_name=app_name, resource_source=source
