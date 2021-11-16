@@ -8,7 +8,7 @@ Cleanups and improvements to the extension to provide you with the best experien
 
 ## [0.0.8](https://github.com/QualiTorque/torque-vs-code-extensions/compare/0.0.7...0.0.8) (2021-11-10)
 
-### Interactive features:
+### Interactive features
 A new Torque icon is now available in the sidebar, opening the access to the creation of Profiles, view online Blueprints, and view of active Sandboxes.
 You can create one or more profiles to connect you to a certain account/space and switch between the profiles as needed.
 
@@ -56,11 +56,11 @@ A few more code completions are available and some other bug fixes are included.
 
 ### Features
 
-#### Blueprints:
+#### Blueprints
 * Additional completions for allowed colony variables
 * Additional validation for missing dependencies
 
-#### All:
+#### All
 * Completion for variables from inputs defined in the file
 * Additional validation on reserved words (torque/colony cannot be used as an input prefix)
 * Validate that a variable is used only in places it’s allowed
