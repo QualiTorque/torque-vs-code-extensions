@@ -19,35 +19,9 @@ from server.validation.common import ValidationHandler
 
 class BlueprintValidationHandler(ValidationHandler):
     def __init__(self, tree: BlueprintTree, document_path: str):
+        self.blueprint_apps = [app.id.text for app in tree.get_applications()]
+        self.blueprint_services = [srv.id.text for srv in tree.get_services()]
         super().__init__(tree, document_path)
-        self.blueprint_apps = [app.id.text for app in self._tree.get_applications()]
-        self.blueprint_services = [srv.id.text for srv in self._tree.get_services()]
-
-    def _check_for_deprecated_properties(self):
-        deprecated_properties = {
-            "availability": "bastion_availability",
-            "environmentType": None,
-        }
-        message_dep = "Deprecated property '{}'."
-        message_replace = "Please use '{}' instead."
-        line_num = 0
-        for line in self._document.lines:
-            for prop in deprecated_properties.keys():
-                found = re.findall("^[^#\\n]*(\\b" + prop + "\\b:)", line)
-                if len(found) > 0:
-                    col = line.find(prop)
-                    message = message_dep.format(prop)
-                    if deprecated_properties[prop]:
-                        message += " " + message_replace.format(
-                            deprecated_properties[prop]
-                        )
-                    self._add_diagnostic_for_range(
-                        message,
-                        range_start_tuple=(line_num, col),
-                        range_end_tuple=(line_num, col + len(prop)),
-                        diag_severity=DiagnosticSeverity.Warning,
-                    )
-            line_num += 1
 
     def _check_for_deprecated_syntax(self):
         deprecated_syntax = {
@@ -502,12 +476,16 @@ class BlueprintValidationHandler(ValidationHandler):
         try:
             # prep
             root_path = get_repo_root_path(self._document.path)
+            deprecated_properties = {
+                "availability": "bastion_availability",
+                "environmentType": None,
+            }
 
             _ = applications.get_available_resources(root_path)
             _ = services.get_available_resources(root_path)
             # warnings
             self._check_for_unused_blueprint_inputs()
-            self._check_for_deprecated_properties()
+            self._check_for_deprecated_properties(deprecated_properties)
             self._check_for_deprecated_syntax()
             # errors
             self._validate_blueprint_resources_have_input_values()
