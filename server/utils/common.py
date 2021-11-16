@@ -17,7 +17,7 @@ from server.utils.yaml_utils import format_yaml
 
 
 class ResourcesManager:
-    cache = {}
+    cache = None
     resource_folder = ""
     resource_type = ""
 

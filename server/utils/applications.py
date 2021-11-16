@@ -3,10 +3,12 @@ import pathlib
 from server.ats.trees.common import BaseTree
 from server.utils.common import ResourcesManager
 
+APPLICATIONS = {}
 
 class ApplicationsManager(ResourcesManager):
     resource_folder = "applications"
     resource_type = "application"
+    cache = APPLICATIONS
 
     @staticmethod
     def build_completion_text(resource_name: str, resource_tree: BaseTree):

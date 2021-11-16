@@ -4,10 +4,12 @@ import re
 import yaml
 from server.utils.common import ResourcesManager
 
+SERVICES = {}
 
 class ServicesManager(ResourcesManager):
     resource_type = "service"
     resource_folder = "services"
+    cache = SERVICES
 
     @staticmethod
     def get_vars_from_tfvars(file_path: str):
