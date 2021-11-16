@@ -367,7 +367,7 @@ def completions(
             items = []
             items += [
                 CompletionItem(
-                    label=app_name, kind=CompletionItemKind.File
+                    label=app_name, kind=CompletionItemKind.Reference
                 )
                 for app_name in blueprint_apps
             ]
@@ -375,7 +375,7 @@ def completions(
                 blueprint_srvs = [srv.id.text for srv in tree.get_services()]
                 items += [
                     CompletionItem(
-                        label=srv_name, kind=CompletionItemKind.File
+                        label=srv_name, kind=CompletionItemKind.Reference
                     )
                     for srv_name in blueprint_srvs
                 ]
