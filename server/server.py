@@ -1004,9 +1004,10 @@ async def torque_login(server: TorqueLanguageServer, *args):
         return 1
 
     try:
-        command = (f"torque --disable-version-check configure set "
-            " -P {params.profile}" 
-            " -a {params.account}" 
+        command = (
+            f"torque --disable-version-check configure set "
+            " -P {params.profile}"
+            " -a {params.account}"
             " -s {params.space}"
         )
 

@@ -7,6 +7,7 @@ from server.utils.common import ResourcesManager
 
 SERVICES = {}
 
+
 class ServicesManager(ResourcesManager):
     resource_type = "service"
     resource_folder = "services"

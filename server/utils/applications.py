@@ -5,6 +5,7 @@ from server.utils.common import ResourcesManager
 
 APPLICATIONS = {}
 
+
 class ApplicationsManager(ResourcesManager):
     resource_folder = "applications"
     resource_type = "application"

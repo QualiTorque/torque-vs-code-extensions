@@ -12,7 +12,7 @@ from server.utils.yaml_utils import format_yaml
 
 
 class ResourcesManager:
-    cache = None
+    cache = {}
     resource_folder = ""
     resource_type = ""
 
