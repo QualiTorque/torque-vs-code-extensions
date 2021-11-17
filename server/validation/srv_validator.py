@@ -3,7 +3,6 @@ import re
 import sys
 
 from pygls.lsp.types.basic_structures import DiagnosticSeverity
-
 from server.ats.trees.service import ServiceTree
 from server.utils.services import ServicesManager as services
 from server.validation.common import ValidationHandler
@@ -47,7 +46,15 @@ class ServiceValidationHandler(ValidationHandler):
                         name_only_var_values.append(var.key.text)
 
             for input in self._tree.get_inputs():
-                found = re.findall('^[^#\\n]*(\$\{'+input.key.text+'\}|\$'+input.key.text+'\\b)', source, re.MULTILINE)
+                found = re.findall(
+                    "^[^#\\n]*(\$\{"
+                    + input.key.text
+                    + "\}|\$"
+                    + input.key.text
+                    + "\\b)",
+                    source,
+                    re.MULTILINE,
+                )
                 if len(found) == 0 and input.key.text not in name_only_var_values:
                     self._add_diagnostic(
                         input.key,

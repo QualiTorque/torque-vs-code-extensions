@@ -2,7 +2,6 @@ import pathlib
 import re
 
 import yaml
-
 from server.utils.common import ResourcesManager
 
 SERVICES = {}

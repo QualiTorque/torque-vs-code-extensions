@@ -3,7 +3,6 @@ from typing import Tuple
 from unittest.mock import MagicMock
 
 from pygls.lsp.types.basic_structures import Position, Range
-
 from server.ats.trees.blueprint import (
     ApplicationNode,
     ApplicationResourceNode,
@@ -22,7 +21,11 @@ from server.ats.trees.common import (
     TextMappingSequence,
     TreeWithOutputs,
 )
-from server.tests.unit.trees import azuresimple_bp_tree, demoapp_tree, sleep_srv_tree
+from server.tests.unit.trees import (
+    azuresimple_bp_tree,
+    demoapp_tree,
+    sleep_srv_tree,
+)
 from server.validation.app_validator import AppValidationHandler
 from server.validation.bp_validatior import BlueprintValidationHandler
 from server.validation.common import ValidationHandler
@@ -72,8 +75,10 @@ class TestValidationHandler(unittest.TestCase):
 
     @staticmethod
     def _get_range(start: Tuple[int, int], end: Tuple[int, int]):
-        return Range(start=Position(line=start[0], character=start[1]),
-                     end=Position(line=end[0], character=end[1]))
+        return Range(
+            start=Position(line=start[0], character=start[1]),
+            end=Position(line=end[0], character=end[1]),
+        )
 
     def test_validate_inputs_duplicates(self):
         word = "PORT"
@@ -82,11 +87,26 @@ class TestValidationHandler(unittest.TestCase):
             inputs_node=PropertyNode(
                 key=ScalarNode(start_pos=(1, 0), end_pos=(1, 6), _text="inputs_node"),
                 value=ScalarMappingsSequence(
-                    nodes=[ScalarMappingNode(key=ScalarNode(start_pos=(2, 4), end_pos=(2, 8), _text=word),
-                                             value=ScalarNode(start_pos=(2, 10), end_pos=(2, 14), _text="3001")
-                                             ),
-                           ScalarMappingNode(key=ScalarNode(start_pos=(3, 4), end_pos=(3, 16), _text=word),
-                                             value=ScalarNode(start_pos=(3, 18), end_pos=(3, 63), _text="3002"))])),
+                    nodes=[
+                        ScalarMappingNode(
+                            key=ScalarNode(
+                                start_pos=(2, 4), end_pos=(2, 8), _text=word
+                            ),
+                            value=ScalarNode(
+                                start_pos=(2, 10), end_pos=(2, 14), _text="3001"
+                            ),
+                        ),
+                        ScalarMappingNode(
+                            key=ScalarNode(
+                                start_pos=(3, 4), end_pos=(3, 16), _text=word
+                            ),
+                            value=ScalarNode(
+                                start_pos=(3, 18), end_pos=(3, 63), _text="3002"
+                            ),
+                        ),
+                    ]
+                )
+            ),
         )
         validator = ValidationHandler(tree, self.test_doc)
         validator._validate_no_duplicates_in_inputs()
@@ -105,8 +125,16 @@ class TestValidationHandler(unittest.TestCase):
             outputs=PropertyNode(
                 key=ScalarNode(_text="inputs_node"),
                 value=ScalarNodesSequence(
-                    nodes=[ScalarNode(start_pos=(5, 2), end_pos=(5, 6), _text=word),
-                           ScalarNode(start_pos=(6, 2), end_pos=(6, 6), _text=word)]))
+                    nodes=[
+                        ScalarNode(
+                            start_pos=(5, 2), end_pos=(5, 6), _text=word
+                        ),
+                        ScalarNode(
+                            start_pos=(6, 2), end_pos=(6, 6), _text=word
+                        ),
+                    ]
+                ),
+            )
         )
         validator = ValidationHandler(tree, self.test_doc)
         validator._validate_no_duplicates_in_outputs()
@@ -114,7 +142,10 @@ class TestValidationHandler(unittest.TestCase):
 
         self.assertEqual(len(diags), 2)
         for d in diags:
-            self.assertEqual(d.message, f"Multiple declarations of output '{word}'. Outputs are not case sensitive.")
+            self.assertEqual(
+                d.message,
+                f"Multiple declarations of output '{word}'. Outputs are not case sensitive."
+            )
         self.assertEqual(diags[0].range, self._get_range((5, 2), (5, 6)))
         self.assertEqual(diags[1].range, self._get_range((6, 2), (6, 6)))
 

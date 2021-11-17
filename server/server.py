@@ -62,7 +62,6 @@ from pygls.lsp.types import (
 )
 from pygls.lsp.types.basic_structures import TextEdit
 from pygls.server import LanguageServer
-
 from server.ats.parser import Parser, ParserError
 from server.ats.trees.app import AppTree
 from server.ats.trees.common import BaseTree, PropertyNode
@@ -198,7 +197,7 @@ def did_change(server: TorqueLanguageServer, params: DidChangeTextDocumentParams
         yaml_obj = yaml.load(source, Loader=yaml.FullLoader)  # todo: refactor
         doc_type = yaml_obj.get("kind", "")
 
-        if doc_type == "application": 
+        if doc_type == "application":
             app_name = pathlib.Path(params.text_document.uri).name.replace(".yaml", "")
             applications.reload_resource_details(
                 resource_name=app_name, resource_source=source
@@ -359,6 +358,28 @@ def completions(
                 for script in AZURE_REGIONS
             ]
 
+            return CompletionList(
+                is_incomplete=False,
+                items=items,
+            )
+        elif parent_node == "artifacts" or parent_node == "depends_on" \
+                or (parent_node == "rules" and last_word == "application:"):
+            blueprint_apps = [app.id.text for app in tree.get_applications()]
+            items = []
+            items += [
+                CompletionItem(
+                    label=app_name, detail="Application", kind=CompletionItemKind.Reference
+                )
+                for app_name in blueprint_apps
+            ]
+            if parent_node == "depends_on":
+                blueprint_srvs = [srv.id.text for srv in tree.get_services()]
+                items += [
+                    CompletionItem(
+                        label=srv_name, detail="Service", kind=CompletionItemKind.Reference
+                    )
+                    for srv_name in blueprint_srvs
+                ]
             return CompletionList(
                 is_incomplete=False,
                 items=items,
@@ -543,8 +564,15 @@ def code_lens(
 ) -> Optional[List[CodeLens]]:
     if "/blueprints/" in params.text_document.uri:
         doc = server.workspace.get_document(params.text_document.uri)
+
         try:
-            bp_tree = Parser(doc.source).parse()
+            yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
+        except yaml.MarkedYAMLError:
+            yaml_obj = None
+
+        try:
+            if yaml_obj:
+                bp_tree = Parser(doc.source).parse()
         except Exception as ex:
             import sys
 
@@ -558,34 +586,35 @@ def code_lens(
         def to_bool(val: str):
             return val.lower() == "true"
 
-        inputs = []
-        bp_inputs = bp_tree.get_inputs()
-        for inp in bp_inputs:
-            props = inp.value
-            item = {}
-            item["name"] = inp.key.text
-            item["default_value"] = (
-                inp.default_value.text if (props and inp.default_value) else ""
-            )
+        if yaml_obj and bp_tree:
+            inputs = []
+            bp_inputs = bp_tree.get_inputs()
+            for inp in bp_inputs:
+                props = inp.value
+                item = {}
+                item["name"] = inp.key.text
+                item["default_value"] = (
+                    inp.default_value.text if (props and inp.default_value) else ""
+                )
 
-            item["optional"] = (
-                to_bool(props.optional.text)
-                if (props and hasattr(props, "optional") and props.optional)
-                else False
-            )
+                item["optional"] = (
+                    to_bool(props.optional.text)
+                    if (props and hasattr(props, "optional") and props.optional)
+                    else False
+                )
 
-            item["display_style"] = (
-                props.display_style.text
-                if (props and hasattr(props, "display_style") and props.display_style)
-                else "text"
-            )
-            inputs.append(item)
-        artifacts = {}
-        bp_arts = bp_tree.get_artifacts()
-        for art in bp_arts:
-            artifacts[art.key.text] = art.value.text if art.value else ""
+                item["display_style"] = (
+                    props.display_style.text
+                    if (props and hasattr(props, "display_style") and props.display_style)
+                    else "text"
+                )
+                inputs.append(item)
+            artifacts = {}
+            bp_arts = bp_tree.get_artifacts()
+            for art in bp_arts:
+                artifacts[art.key.text] = art.value.text if art.value else ""
 
-        return [
+        output = [
             CodeLens(
                 range=Range(
                     start=Position(line=0, character=0),
@@ -597,18 +626,24 @@ def code_lens(
                     arguments=[params.text_document.uri],
                 ),
             ),
-            CodeLens(
-                range=Range(
-                    start=Position(line=0, character=0),
-                    end=Position(line=1, character=1),
-                ),
-                command=Command(
-                    title="Start Sandbox",
-                    command="extension.openReserveForm",
-                    arguments=[params.text_document.uri, inputs, artifacts, ""],
-                ),
-            ),
         ]
+
+        if yaml_obj and bp_tree:
+            output += [
+                CodeLens(
+                    range=Range(
+                        start=Position(line=0, character=0),
+                        end=Position(line=1, character=1),
+                    ),
+                    command=Command(
+                        title="Start Sandbox",
+                        command="extension.openReserveForm",
+                        arguments=[params.text_document.uri, inputs, artifacts, ""],
+                    ),
+                ),
+            ]
+
+        return output
     else:
         return None
 
@@ -876,7 +911,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                 server.show_message_log(error_msg)
         if error_msg:
             server.show_message(
-                'Sandbox creation failed. Check the "Torque" Output view for more details.'
+                "Sandbox creation failed. Check the 'Torque' Output view for more details."
             )
         else:
             server.show_message(
@@ -1005,10 +1040,10 @@ async def torque_login(server: TorqueLanguageServer, *args):
 
     try:
         command = (
-            f"torque --disable-version-check configure set "
-            " -P {params.profile}"
-            " -a {params.account}"
-            " -s {params.space}"
+            "torque --disable-version-check configure set "
+            f" -P {params.profile}"
+            f" -a {params.account}"
+            f" -s {params.space}"
         )
 
         if params.email and params.password:
