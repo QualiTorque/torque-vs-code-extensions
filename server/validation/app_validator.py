@@ -1,5 +1,5 @@
 from server.ats.trees.app import AppTree
-from server.utils.applications import ApplicationsManager as applications
+from server.utils.applications import ApplicationsManager as AppMgr
 from server.validation.common import ValidationHandler
 
 
@@ -15,7 +15,7 @@ class AppValidationHandler(ValidationHandler):
         return self._diagnostics
 
     def _validate_script_files_exist(self):
-        scripts = applications.get_app_scripts(self._document.path)
+        scripts = AppMgr.get_app_scripts(self._document.path)
         tree: AppTree = self._tree
         if tree.configuration is None:
             return

@@ -10,9 +10,9 @@ from pygls.workspace import Workspace
 from server.ats.trees.blueprint import BlueprintResourceMappingNode, BlueprintTree
 from server.ats.trees.common import BaseTree, ScalarNode
 from server.completers.base import Completer
-from server.utils.applications import ApplicationsManager as applications
+from server.utils.applications import ApplicationsManager as AppMgr
 from server.utils.common import get_line_before_position, get_path_to_pos
-from server.utils.services import ServicesManager as services
+from server.utils.services import ServicesManager as SrvMgr
 
 
 class BlueprintResourceCompleter(Completer):
@@ -66,16 +66,16 @@ class BlueprintResourceCompleter(Completer):
 
             items.append(
                 CompletionItem(
-                    label=label, kind=CompletionItemKind.Reference, insert_text=props
+                    label=label,
+                    kind=CompletionItemKind.Reference,
+                    insert_text=props
                 )
             )
         return items
 
     def _get_resource_sequence(self):
         for item in self.path:
-            if isinstance(
-                item, (BlueprintTree.AppsSequence, BlueprintTree.ServicesSequence)
-            ):
+            if isinstance(item, (BlueprintTree.AppsSequence, BlueprintTree.ServicesSequence)):
                 return item
         raise ValueError
 
@@ -86,14 +86,15 @@ class BlueprintResourceCompleter(Completer):
             raise
         root = (
             self.workspace.root_path
-        )  # TODO: workspace's root could not be a root of blueprint repo. Handle
+        )  # TODO: workspace root could not be a root of blueprint repo. Handle
         return (
-            applications.get_available_resources(root)
+            AppMgr.get_available_resources(root)
             if isinstance(seq, BlueprintTree.AppsSequence)
-            else services.get_available_resources(root)
+            else SrvMgr.get_available_resources(root)
         )
 
-    def _build_resource_completion(self, resource_name: str, tree: BaseTree) -> str:
+    @staticmethod
+    def _build_resource_completion(resource_name: str, tree: BaseTree) -> str:
         tab = "  "
         output = f"{resource_name}:\n"
         if tree.kind.text == "application":
@@ -102,10 +103,10 @@ class BlueprintResourceCompleter(Completer):
         inputs = tree.get_inputs()
         if inputs:
             output += tab * 2 + "input_values:\n"
-            for input in inputs:
-                if input.value:
-                    output += tab * 3 + f"- {input.key.text}: {input.value.text}\n"
+            for input_node in inputs:
+                if input_node.value:
+                    output += tab * 3 + f"- {input_node.key.text}: {input_node.value.text}\n"
                 else:
-                    output += tab * 3 + f"- {input.key.text}: \n"
+                    output += tab * 3 + f"- {input_node.key.text}: \n"
 
         return output

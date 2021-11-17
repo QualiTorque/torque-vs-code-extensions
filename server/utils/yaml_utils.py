@@ -13,9 +13,9 @@ class StringYAML(YAML):
             return stream.getvalue()
 
 
-def format_yaml(input):
+def format_yaml(value: str):
     yaml = StringYAML()
-    data = yaml.load(input)
+    data = yaml.load(value)
     yaml.indent(sequence=4, offset=2)
     output = yaml.dump(data)
     return output

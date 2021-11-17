@@ -11,9 +11,9 @@ from pygls.lsp.types.basic_structures import (
 
 from server.ats.trees.blueprint import BlueprintTree
 from server.constants import AWS_REGIONS, AZURE_REGIONS, PREDEFINED_TORQUE_INPUTS
-from server.utils.applications import ApplicationsManager as applications
+from server.utils.applications import ApplicationsManager as AppMgr
 from server.utils.common import get_repo_root_path
-from server.utils.services import ServicesManager as services
+from server.utils.services import ServicesManager as SrvMgr
 from server.validation.common import ValidationHandler
 
 
@@ -93,14 +93,14 @@ class BlueprintValidationHandler(ValidationHandler):
 
     def _validate_non_existing_app_is_used(self):
         message = "The app '{}' could not be found in the /applications folder"
-        available_apps = applications.get_available_resources_names()
+        available_apps = AppMgr.get_available_resources_names()
         for app in self._tree.get_applications():
             if app.id.text not in available_apps:
                 self._add_diagnostic(app.id, message=message.format(app.id.text))
 
     def _validate_used_apps_are_valid(self):
         message = "The app '{}' is not valid. Open the file to get more details."
-        available_apps = applications.get_available_resources()
+        available_apps = AppMgr.get_available_resources()
         for app in self._tree.get_applications():
             if app.id.text in available_apps:
                 if available_apps[app.id.text]["tree"] is None:
@@ -124,14 +124,14 @@ class BlueprintValidationHandler(ValidationHandler):
 
     def _validate_non_existing_service_is_used(self):
         message = "The service '{}' could not be found in the /services folder"
-        available_srvs = services.get_available_resources_names()
+        available_srvs = SrvMgr.get_available_resources_names()
         for srv in self._tree.get_services():
             if srv.id.text not in available_srvs:
                 self._add_diagnostic(srv.id, message=message.format(srv.id.text))
 
     def _validate_used_services_are_valid(self):
         message = "The service '{}' is not valid. Open the file to get more details."
-        available_srvs = services.get_available_resources()
+        available_srvs = SrvMgr.get_available_resources()
         for srv in self._tree.get_services():
             if srv.id.text in available_srvs:
                 if available_srvs[srv.id.text]["tree"] is None:
@@ -223,7 +223,7 @@ class BlueprintValidationHandler(ValidationHandler):
                         f"{var_name} is not a valid Torque-generated variable (no such app in the blueprint)",
                     )
 
-                app_outputs = applications.get_outputs(resource_name=parts[2])
+                app_outputs = AppMgr.get_outputs(resource_name=parts[2])
                 if parts[4] not in app_outputs:
                     return (
                         False,
@@ -238,7 +238,7 @@ class BlueprintValidationHandler(ValidationHandler):
                         f"variable (no such service in the blueprint)"
                     )
 
-                srv_outputs = services.get_outputs(resource_name=parts[2])
+                srv_outputs = SrvMgr.get_outputs(resource_name=parts[2])
                 if parts[4] not in srv_outputs:
                     return False, (
                         f"{var_name} is not a valid Torque-generated variable ('{parts[2]}' "
@@ -395,10 +395,10 @@ class BlueprintValidationHandler(ValidationHandler):
                         duplicated[prev_art.key.text] = 1
 
     def _validate_apps_inputs_exists(self):
-        apps = applications.get_available_resources_names()
+        apps = AppMgr.get_available_resources_names()
         for app in self._tree.get_applications():
             if app.id.text in apps:
-                app_inputs = applications.get_inputs(app.id.text)
+                app_inputs = AppMgr.get_inputs(app.id.text)
                 used_inputs = []
                 for input in app.inputs:
                     used_inputs.append(input.key.text)
@@ -419,10 +419,10 @@ class BlueprintValidationHandler(ValidationHandler):
                     )
 
     def _validate_services_inputs_exists(self):
-        srvs = services.get_available_resources_names()
+        srvs = SrvMgr.get_available_resources_names()
         for srv in self._tree.get_services():
             if srv.id.text in srvs:
-                srv_inputs = services.get_inputs(srv.id.text)
+                srv_inputs = SrvMgr.get_inputs(srv.id.text)
                 used_inputs = []
 
                 for input in srv.inputs:
@@ -481,8 +481,8 @@ class BlueprintValidationHandler(ValidationHandler):
                 "environmentType": None,
             }
 
-            _ = applications.get_available_resources(root_path)
-            _ = services.get_available_resources(root_path)
+            _ = AppMgr.get_available_resources(root_path)
+            _ = SrvMgr.get_available_resources(root_path)
             # warnings
             self._check_for_unused_blueprint_inputs()
             self._check_for_deprecated_properties(deprecated_properties)
