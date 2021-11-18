@@ -251,11 +251,15 @@ async def workspace_changed(
                 else:
                     if "/applications/" in change.uri:
                         app_name = pathlib.Path(change.uri).name.replace(".yaml", "")
-                        applications.remove_resource_details(resource_name=app_name)
+                        parent_folder = pathlib.Path(change.uri).parent.name
+                        if app_name == parent_folder:
+                            applications.remove_resource_details(resource_name=app_name)
 
                     elif "/services/" in change.uri:
                         srv_name = pathlib.Path(change.uri).name.replace(".yaml", "")
-                        services.remove_resource_details(resource_name=srv_name)
+                        parent_folder = pathlib.Path(change.uri).parent.name
+                        if srv_name == parent_folder:
+                            services.remove_resource_details(resource_name=srv_name)
         else:
             current_file_changed = True
     try:
