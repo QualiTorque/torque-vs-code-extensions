@@ -1180,8 +1180,12 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
         return
 
     blueprint_name = unquote(pathlib.Path(args[0][0]).name.replace(".yaml", ""))
-    server.show_message("Validating blueprint: " + blueprint_name)
-    server.show_message_log("Validating blueprint: " + blueprint_name)
+
+    info_msg = f"Validating blueprint: {blueprint_name}"
+    success_msg = f"Validation completed. The blueprint '{blueprint_name}' and its dependencies are valid."
+
+    server.show_message(info_msg)
+    server.show_message_log(info_msg)
     try:
         _, stderr = _run_torque_cli_command(
             f'torque --disable-version-check --profile {active_profile} bp validate "{blueprint_name}" --output=json',
@@ -1212,9 +1216,8 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                     "Unable to get the list of issues. Try to validate blueprint using Torque CLI"
                 )
         else:
-            server.show_message_log(
-                f"Validation completed. The blueprint '{blueprint_name}' and its dependencies are valid."
-            )
+            server.show_message_log(success_msg)
+            server.show_message(success_msg)
 
     except Exception as ex:
         logging.error(ex)
