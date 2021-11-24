@@ -814,11 +814,10 @@ def _run_torque_cli_command(command: str, **kwargs):
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        universal_newlines=True,
+        # universal_newlines=True,
         **kwargs,
     )
-
-    return res.stdout, res.stderr
+    return res.stdout.decode("utf-8"), res.stderr.decode("utf-8")
 
 
 async def _get_profile(server: TorqueLanguageServer):
