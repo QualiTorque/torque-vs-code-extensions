@@ -84,7 +84,7 @@ async function installRequirements(python: string, cwd: string) {
   if (existsSync(cwd)) {
     if (IS_WIN && !python.startsWith('"'))
         python = `"${python}"`;
-    await execAsync(`${python} -m pip install --upgrade --force-reinstall -r requirements.txt`, { cwd });
+    await execAsync(`${python} -m pip install --upgrade --force-reinstall -r requirements.txt --log torque-extension-req-install.log`, { cwd });
   }
 }
 
