@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.0.10](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.9...v0.0.10) (2021-11-29)
+
+Cleanups and improvements to the extension to provide you with the best experience and performance.
+### Bug Fixes
+
+* Fixed an issue with starting a sandbox or validating a local blueprint that failed on Windows
+* Hide Terraform Blueprints until they will be fully supported
+
+### Features
+
+* Add a notificatio when the validation of a blueprint completes
+
 ## [0.0.9](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.8...v0.0.9) (2021-11-15)
 
 Cleanups and improvements to the extension to provide you with the best experience and performance.
