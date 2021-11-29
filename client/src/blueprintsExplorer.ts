@@ -61,10 +61,12 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
 								const bpj = blueprintsJson[b];
 								if (bpj.errors.length==0 && bpj.enabled) {
 									let re = new RegExp('(?<=blob\/)(.*)(?=\/blueprints)');
-									const branch = bpj.url.match(re)[0]
-
-									const bp = toBp(bpj.blueprint_name, bpj.description, bpj.is_sample, bpj.inputs, bpj.artifacts, branch);
-									bps.push(bp);
+									var branch;
+									if (bpj.url) {
+										branch = bpj.url.match(re)[0];
+										const bp = toBp(bpj.blueprint_name, bpj.description, bpj.is_sample, bpj.inputs, bpj.artifacts, branch);
+										bps.push(bp);
+									}
 								}
 							}
 							return resolve(bps);
