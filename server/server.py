@@ -944,7 +944,7 @@ async def get_profiles(server: TorqueLanguageServer, *_):
         )
         return []
 
-    lines = stdout.split("\n")
+    lines = stdout.strip().split("\n")
 
     for i in range(2, len(lines)):
         if lines[i]:
