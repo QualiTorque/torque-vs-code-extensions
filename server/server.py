@@ -806,7 +806,10 @@ async def lsp_document_link(
     return links
 
 
-def _run_torque_cli_command(command: str, **kwargs):
+def _run_torque_cli_command(command: str, log_command: bool = True, log_output: bool = False, **kwargs):
+    if log_command:
+        logging.info(f"Running command: {command}")
+
     cmd_list = [sys.executable, "-m"] + shlex.split(command)
 
     res = subprocess.run(
@@ -817,6 +820,11 @@ def _run_torque_cli_command(command: str, **kwargs):
         # universal_newlines=True,
         **kwargs,
     )
+
+    if log_output:
+        logging.info(f"Command output: {res.stdout.decode('utf-8')}")
+        logging.info(f"Command error: {res.stderr.decode('utf-8')}")
+
     return res.stdout.decode("utf-8"), res.stderr.decode("utf-8")
 
 
@@ -1055,7 +1063,7 @@ async def torque_login(server: TorqueLanguageServer, *args):
         elif params.token:
             command = command + f" -t {params.token}"
 
-        _, stderr = _run_torque_cli_command(command)
+        _, stderr = _run_torque_cli_command(command, log_command=False)
 
         exit_code = 1 if "Login Failed" in stderr else 0
         if exit_code != 0:
