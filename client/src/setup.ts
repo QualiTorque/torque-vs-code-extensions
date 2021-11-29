@@ -66,7 +66,7 @@ async function getPythonVersion(python: string): Promise<number[]> {
         python = `"${python}"`;
   const getPythonVersionCmd = `${python} --version`;
   const version = await execAsync(getPythonVersionCmd);
-  return version.match(new RegExp(/\d/g)).map((v) => Number.parseInt(v));
+  return version.match(new RegExp(/\d+/g)).map((v) => Number.parseInt(v));
 }
 
 // async function getVenvPackageVersion(python: string, name: string): Promise<number[] | null> {
