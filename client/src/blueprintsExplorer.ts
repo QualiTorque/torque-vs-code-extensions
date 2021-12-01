@@ -34,7 +34,7 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
                     return resolve(results)
                 }
                 else {
-                    var bps = []
+                    let bps = []
 
                     vscode.commands.executeCommand('list_blueprints')
                     .then(async (result:string) => {
@@ -52,15 +52,15 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
                                     title: '',
                                     arguments: [blueprintName, inputs, artifacts, branch]
                                 })
-                            };
+                            }
 
                             for (let b = 0; b < blueprintsJson.length; b++) {
                                 const bpj = blueprintsJson[b]
                                 if (bpj.errors.length === 0 && bpj.enabled) {
                                     const re = new RegExp('(?<=blob\/)(.*)(?=\/blueprints)')
-                                    var branch
+                                    let branch = ''
                                     if (bpj.url) {
-                                        branch = bpj.url.match(re)[0];
+                                        branch = bpj.url.match(re)[0]
                                         const bp = toBp(bpj.blueprint_name, bpj.description, bpj.is_sample, bpj.inputs, bpj.artifacts, branch)
                                         bps.push(bp)
                                     }
@@ -75,7 +75,7 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
         })
     }
 
-    private getLoginTreeItem() : vscode.TreeItem {
+    private getLoginTreeItem(): vscode.TreeItem {
         const message = new vscode.TreeItem('Login to Torque', vscode.TreeItemCollapsibleState.None)
         message.command = { command: 'profilesView.addProfile', title: 'Login' }
         message.tooltip = "Currently you don't have any profiles configured. Login to Torque in order to create the first profile"
