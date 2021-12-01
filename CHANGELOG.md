@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.0.10](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.9...v0.0.10) (2021-11-29)
+## [0.0.10](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.9...v0.0.10) (2021-12-01)
 
 Cleanups and improvements to the extension to provide you with the best experience and performance.
 ### Bug Fixes
@@ -10,7 +10,7 @@ Cleanups and improvements to the extension to provide you with the best experien
 
 ### Features
 
-* Add a notificatio when the validation of a blueprint completes
+* Add a notification when the validation of a blueprint completes
 
 ## [0.0.9](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.8...v0.0.9) (2021-11-15)
 
