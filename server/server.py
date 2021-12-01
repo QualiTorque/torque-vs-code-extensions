@@ -251,11 +251,15 @@ async def workspace_changed(
                 else:
                     if "/applications/" in change.uri:
                         app_name = pathlib.Path(change.uri).name.replace(".yaml", "")
-                        applications.remove_resource_details(resource_name=app_name)
+                        parent_folder = pathlib.Path(change.uri).parent.name
+                        if app_name == parent_folder:
+                            applications.remove_resource_details(resource_name=app_name)
 
                     elif "/services/" in change.uri:
                         srv_name = pathlib.Path(change.uri).name.replace(".yaml", "")
-                        services.remove_resource_details(resource_name=srv_name)
+                        parent_folder = pathlib.Path(change.uri).parent.name
+                        if srv_name == parent_folder:
+                            services.remove_resource_details(resource_name=srv_name)
         else:
             current_file_changed = True
     try:
@@ -802,7 +806,10 @@ async def lsp_document_link(
     return links
 
 
-def _run_torque_cli_command(command: str, **kwargs):
+def _run_torque_cli_command(command: str, log_command: bool = True, log_output: bool = False, **kwargs):
+    if log_command:
+        logging.info(f"Running command: {command}")
+
     cmd_list = [sys.executable, "-m"] + shlex.split(command)
 
     res = subprocess.run(
@@ -810,11 +817,15 @@ def _run_torque_cli_command(command: str, **kwargs):
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        universal_newlines=True,
+        # universal_newlines=True,
         **kwargs,
     )
 
-    return res.stdout, res.stderr
+    if log_output:
+        logging.info(f"Command output: {res.stdout.decode('utf-8')}")
+        logging.info(f"Command error: {res.stderr.decode('utf-8')}")
+
+    return res.stdout.decode("utf-8"), res.stderr.decode("utf-8")
 
 
 async def _get_profile(server: TorqueLanguageServer):
@@ -941,7 +952,7 @@ async def get_profiles(server: TorqueLanguageServer, *_):
         )
         return []
 
-    lines = stdout.split("\n")
+    lines = stdout.strip().split("\n")
 
     for i in range(2, len(lines)):
         if lines[i]:
@@ -1052,7 +1063,7 @@ async def torque_login(server: TorqueLanguageServer, *args):
         elif params.token:
             command = command + f" -t {params.token}"
 
-        _, stderr = _run_torque_cli_command(command)
+        _, stderr = _run_torque_cli_command(command, log_command=False)
 
         exit_code = 1 if "Login Failed" in stderr else 0
         if exit_code != 0:
@@ -1176,8 +1187,12 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
         return
 
     blueprint_name = unquote(pathlib.Path(args[0][0]).name.replace(".yaml", ""))
-    server.show_message("Validating blueprint: " + blueprint_name)
-    server.show_message_log("Validating blueprint: " + blueprint_name)
+
+    info_msg = f"Validating blueprint: {blueprint_name}"
+    success_msg = f"Validation completed. The blueprint '{blueprint_name}' and its dependencies are valid."
+
+    server.show_message(info_msg)
+    server.show_message_log(info_msg)
     try:
         _, stderr = _run_torque_cli_command(
             f'torque --disable-version-check --profile {active_profile} bp validate "{blueprint_name}" --output=json',
@@ -1208,9 +1223,8 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                     "Unable to get the list of issues. Try to validate blueprint using Torque CLI"
                 )
         else:
-            server.show_message_log(
-                f"Validation completed. The blueprint '{blueprint_name}' and its dependencies are valid."
-            )
+            server.show_message_log(success_msg)
+            server.show_message(success_msg)
 
     except Exception as ex:
         logging.error(ex)
