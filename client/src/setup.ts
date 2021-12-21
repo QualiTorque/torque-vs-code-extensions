@@ -33,7 +33,7 @@ export async function getPython(): Promise<string> {
 
   python = await window.showInputBox({
     ignoreFocusOut: true,
-    placeHolder: 'Enter a path to a python v3.6.x-v3.9.x.',
+    placeHolder: 'Enter a path to a python v3.6+.',
     prompt: 'This python will be used to create a virtual environment inside the extension directory.',
     validateInput: async (value: string) => {
       if (await checkPythonVersion(value)) {
