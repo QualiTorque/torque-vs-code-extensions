@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.0.11](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.10...v0.0.11) (2021-12-24)
+
+Add python 3.10 support
+
 ## [0.0.10](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.9...v0.0.10) (2021-12-01)
 
 Cleanups and improvements to the extension to provide you with the best experience and performance.
