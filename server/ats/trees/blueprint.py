@@ -81,6 +81,7 @@ class BlueprintFullInputNode(ObjectNode):
     description: ScalarNode = None
     default_value: ScalarNode = None
     optional: ScalarNode = None
+    possible_values: ScalarNodesSequence = None
 
 
 @dataclass
