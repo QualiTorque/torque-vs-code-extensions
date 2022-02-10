@@ -145,6 +145,12 @@
                 "optional": {
                     "type": "boolean",
                     "description": "When optional is set to true, the user can leave the parameter empty. When optional is set to false, empty value(s) will result in validation error(s)."
+                },
+                "possible_values": {
+                    "type": "array",
+                    "items": {
+                        "type": ["integer", "string", "boolean"]
+                    }
                 }
             }            
         },
