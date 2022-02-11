@@ -473,6 +473,19 @@ class BlueprintValidationHandler(ValidationHandler):
                             "be used as management or application subnet.",
                         )
 
+    def _validate_default_value_in_possible_values(self):
+        bp_inputs = self._tree.get_inputs()
+        for input_node in bp_inputs:
+            if input_node.value:
+                default_val = input_node.default_value
+                possible_values = [value.text for value in input_node.possible_values]
+
+                if possible_values and default_val.text not in possible_values:
+                    self._add_diagnostic(
+                        default_val.value,
+                        message=f"Default value '{default_val.value.text}' must be in a list of possible values")
+
+
     def validate(self):
         super().validate()
 
@@ -491,6 +504,7 @@ class BlueprintValidationHandler(ValidationHandler):
             self._check_for_deprecated_properties(deprecated_properties)
             self._check_for_deprecated_syntax()
             # errors
+            self._validate_default_value_in_possible_values()
             self._validate_blueprint_resources_have_input_values()
             self._validate_dependency_exists()
             self._validate_var_being_used_is_defined()
