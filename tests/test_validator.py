@@ -21,7 +21,7 @@ from server.ats.trees.common import (
     TextMappingSequence,
     TreeWithOutputs,
 )
-from server.tests.unit.trees import (
+from trees import (
     azuresimple_bp_tree,
     demoapp_tree,
     sleep_srv_tree,

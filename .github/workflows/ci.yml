@@ -23,7 +23,7 @@ jobs:
 
       - name: Test with unittest
         run: |
-          python -m unittest discover -v
+          python -m unittest discover tests/
 
   lint:
     name: lint and format
