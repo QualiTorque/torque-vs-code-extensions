@@ -483,7 +483,7 @@ class BlueprintValidationHandler(ValidationHandler):
                 if possible_values and default_val.text not in possible_values:
                     self._add_diagnostic(
                         default_val.value,
-                        message=f"Default value '{default_val.value.text}' must be in a list of possible values")
+                        message=f"Default value '{default_val.value.text}' must be in the list of possible values")
 
 
     def validate(self):
