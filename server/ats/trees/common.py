@@ -209,6 +209,8 @@ class PropertyNode(MappingNode):
         return self.value
 
     def __getattr__(self, name: str) -> Any:
+        if self.value is None:
+            return None
         val = getattr(self.value, name, None)
 
         if val is not None:
