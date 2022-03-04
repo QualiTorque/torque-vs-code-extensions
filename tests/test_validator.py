@@ -164,7 +164,11 @@ class TestBlueprintValidationHandler(TestValidationHandler):
                                 display_style=None,
                                 description=None,
                                 default_value=PropertyNode(
-                                    key=ScalarNode(_text="default_value"),
+                                    key=ScalarNode(
+                                        _text="default_value",
+                                        start_pos=(18, 6),
+                                        end_pos=(18, 19)
+                                    ),
                                     value=ScalarNode(
                                         _text=f"{wrong_value}",
                                         start_pos=(18, 21),
@@ -182,7 +186,7 @@ class TestBlueprintValidationHandler(TestValidationHandler):
                                     ),
                                 ),
                             ),
-                        )
+                        ),
                     ]
                 ),
             ),
@@ -193,6 +197,15 @@ class TestBlueprintValidationHandler(TestValidationHandler):
         d = validator._diagnostics[0]
         self.assertEqual(f"Default value '{wrong_value}' must be in the list of possible values", d.message)
         self.assertEqual(d.range, self._get_range((18, 21), (18, 23)))
+
+        # check for none
+        tree.inputs_node.nodes[0].value.default_value.value = None
+        validator = BlueprintValidationHandler(tree, self.test_doc)
+        validator._validate_default_value_in_possible_values()
+        self.assertEqual(len(validator._diagnostics), 1)
+        d = validator._diagnostics[0]
+        self.assertEqual(f"The default value cannot be empty if possible_values are set", d.message)
+        self.assertEqual(d.range, self._get_range((18, 6), (18, 19)))
 
 
     def test_validate_resources_have_inputs(self):
