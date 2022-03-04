@@ -480,7 +480,12 @@ class BlueprintValidationHandler(ValidationHandler):
                 default_val = input_node.default_value
                 possible_values = [value.text for value in input_node.possible_values]
 
-                if possible_values and default_val.text not in possible_values:
+                if default_val.value is None and possible_values:
+                    self._add_diagnostic(
+                        default_val.key,
+                        message="The default value cannot be empty if possible_values are set")
+
+                elif possible_values and default_val.text not in possible_values:
                     self._add_diagnostic(
                         default_val.value,
                         message=f"Default value '{default_val.value.text}' must be in the list of possible values")

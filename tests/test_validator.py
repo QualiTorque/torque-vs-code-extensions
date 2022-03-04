@@ -192,7 +192,6 @@ class TestBlueprintValidationHandler(TestValidationHandler):
         self.assertEqual(len(validator._diagnostics), 1)
         d = validator._diagnostics[0]
         self.assertEqual(f"Default value '{wrong_value}' must be in the list of possible values", d.message)
-
         self.assertEqual(d.range, self._get_range((18, 21), (18, 23)))
 
 
