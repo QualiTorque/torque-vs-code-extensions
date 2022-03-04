@@ -343,9 +343,10 @@ def completions(
             )
 
     root = get_repo_root_path(doc.path)
+    path = common.get_path_to_pos(tree, params.position)
 
     if doc_type == "blueprint":
-        parent_node = common.get_parent_node_text(tree, params.position)
+        parent_node = common.get_nearest_text_key(path, params.position)
         if parent_node == "clouds":
             items = []
             items += [
@@ -388,6 +389,21 @@ def completions(
                 is_incomplete=False,
                 items=items,
             )
+
+        elif last_word == "default_value:":
+            items = []
+            pos_values = []
+
+            tree_inputs = tree.get_inputs()
+            for inp in tree_inputs:
+                if inp.key.text == parent_node:
+                    pos_values = inp.possible_values
+                    break
+
+            for val in pos_values:
+                items.append(CompletionItem(label=val.text, kind=CompletionItemKind.Text))
+                
+            return CompletionList(is_incomplete=True, items=items)
 
         items = []
         if last_word.endswith("."):
@@ -490,7 +506,6 @@ def completions(
 
         else:
             try:
-                path = common.get_path_to_pos(tree, params.position)
                 completer = CompletionResolver.get_completer(path)
                 completions = completer(
                     server.workspace, params, tree

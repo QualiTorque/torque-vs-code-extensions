@@ -171,9 +171,20 @@ def is_var_allowed(tree: BaseTree, pos: Position) -> bool:
     return False
 
 
-def get_parent_node(tree: BaseTree, pos: Position):
-    path = get_path_to_pos(tree, pos)
+def get_nearest_text_key(path: List[YamlNode], pos: Position):
+    node = get_parent_node(path=path, pos=pos)
+    while path:
+        key = getattr(node, "text", None) or getattr(node, "identifier", None)
+        
+        if key is not None:
+            break
+        else:
+            node = get_parent_node(path, pos)
+    
+    return key
 
+
+def get_parent_node(path: List[YamlNode], pos: Position):
     if not path:
         return None
 
@@ -182,20 +193,12 @@ def get_parent_node(tree: BaseTree, pos: Position):
         if node.parent is None:
             break
         if (
-            node.parent.start_pos[0] < pos.line
+            node.parent.start_pos[0] <= pos.line
             and node.parent.start_pos[1] < pos.character
         ):
             return node.parent
 
     return None
-
-
-def get_parent_node_text(tree: BaseTree, pos: Position):
-    parent_node = get_parent_node(tree, pos)
-    if parent_node and hasattr(parent_node, "text"):
-        return parent_node.text
-    else:
-        return ""
 
 
 def get_line_before_position(document: Document, position: types.Position):
