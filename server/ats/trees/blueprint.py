@@ -81,6 +81,7 @@ class BlueprintFullInputNode(ObjectNode):
     description: ScalarNode = None
     default_value: ScalarNode = None
     optional: ScalarNode = None
+    possible_values: ScalarNodesSequence = None
 
 
 @dataclass
@@ -95,6 +96,13 @@ class BlueprintInputNode(MappingNode):
 
         if isinstance(self.value, ScalarNode):
             return self.value
+
+    @property
+    def possible_values(self):
+        if isinstance(self.value, BlueprintFullInputNode):
+            return self.value._get_seq_nodes("possible_values")
+        
+        return []
 
 
 @dataclass
@@ -189,9 +197,6 @@ class BlueprintTree(BaseTree):
     infrastructure: InfrastructureNode = None
     # old syntax
     environmentType: TextNode = None
-
-    def get_inputs(self) -> List[BlueprintInputsSequence]:
-        return self._get_seq_nodes("inputs_node")
 
     def get_artifacts(self) -> List[TextMappingSequence]:
         return self._get_seq_nodes("artifacts")

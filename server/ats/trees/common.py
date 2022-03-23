@@ -209,6 +209,8 @@ class PropertyNode(MappingNode):
         return self.value
 
     def __getattr__(self, name: str) -> Any:
+        if self.value is None:
+            return None
         val = getattr(self.value, name, None)
 
         if val is not None:
@@ -330,10 +332,6 @@ class ScalarMappingNode(MappingNode):
 
 @dataclass
 class ScalarMappingsSequence(SequenceNode):
-    """
-    Node representing the list of inputs
-    """
-
     node_type = ScalarMappingNode
 
 
@@ -348,7 +346,7 @@ class BaseTree(ObjectNode):
         mapping.update({"inputs": "inputs_node"})
         return mapping
 
-    def get_inputs(self) -> List[ScalarMappingNode]:
+    def get_inputs(self) -> List[MappingNode]:
         return self._get_seq_nodes("inputs_node")
 
 

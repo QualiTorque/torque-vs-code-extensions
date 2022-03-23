@@ -9,7 +9,7 @@ no_child_simple = BlueprintTree(
         NodeError(
             start_pos=(1, 0),
             end_pos=(1, 4),
-            message="Parent node doesn't have child with name 'test'",
+            message="Parent node does not have child with name 'test'",
         )
     ],
     inputs_node=None,
@@ -76,7 +76,7 @@ no_child_object = BlueprintTree(
         NodeError(
             start_pos=(1, 0),
             end_pos=(1, 15),
-            message="Parent node doesn't have child with name 'iInfrastructure'",
+            message="Parent node does not have child with name 'iInfrastructure'",
         )
     ],
     inputs_node=None,
