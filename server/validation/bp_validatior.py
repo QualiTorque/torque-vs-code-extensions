@@ -9,6 +9,7 @@ from pygls.lsp.types.basic_structures import (
     Range,
 )
 from server.ats.trees.blueprint import BlueprintTree
+from server.ats.trees.common import ScalarNode
 from server.constants import (
     AWS_REGIONS,
     AZURE_REGIONS,
@@ -478,6 +479,8 @@ class BlueprintValidationHandler(ValidationHandler):
         for input_node in bp_inputs:
             if input_node.value:
                 default_val = input_node.default_value
+                if isinstance(default_val, ScalarNode):
+                    continue
                 possible_values = [value.text for value in input_node.possible_values]
 
                 if default_val.value is None and possible_values:
