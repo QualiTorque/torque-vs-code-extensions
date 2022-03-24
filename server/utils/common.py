@@ -172,8 +172,10 @@ def is_var_allowed(tree: BaseTree, pos: Position) -> bool:
 
 
 def get_nearest_text_key(path: List[YamlNode], pos: Position):
-    node = get_parent_node(path=path, pos=pos)
-    while path:
+    key = None
+    node = path[-1] if path else None
+
+    while node:
         key = getattr(node, "text", None) or getattr(node, "identifier", None)
         
         if key is not None:
@@ -218,7 +220,7 @@ def preceding_words(
     """
     line = get_line_before_position(document, position)
     try:
-        word = line.strip().split()[-2:]
+        word = line.strip().split()[-2:] if line else None
         return word
     except ValueError:
         return None
