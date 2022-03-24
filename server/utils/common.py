@@ -188,8 +188,7 @@ def get_parent_node(path: List[YamlNode], pos: Position):
     if not path:
         return None
 
-    while path:
-        node = path.pop()
+    for node in reversed(path):
         if node.parent is None:
             break
         if (
