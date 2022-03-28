@@ -64,6 +64,7 @@ from pygls.lsp.types.basic_structures import TextEdit
 from pygls.server import LanguageServer
 from server.ats.parser import Parser, ParserError
 from server.ats.trees.app import AppTree
+from server.ats.trees.blueprint import BlueprintInputNode
 from server.ats.trees.common import BaseTree, PropertyNode
 from server.completers.resolver import CompletionResolver
 from server.constants import AWS_REGIONS, AZURE_REGIONS
@@ -392,13 +393,14 @@ def completions(
 
         elif last_word == "default_value:":
             items = []
-            pos_values = []
 
-            tree_inputs = tree.get_inputs()
-            for inp in tree_inputs:
-                if inp.key.text == parent_node:
-                    pos_values = inp.possible_values
-                    break
+            # Get input node from the path
+            try:
+                input_node = next(i for i in path if isinstance(i, BlueprintInputNode))
+            except StopIteration: 
+                pos_values = []
+            else:
+                pos_values = input_node.possible_values
 
             for val in pos_values:
                 items.append(CompletionItem(label=val.text, kind=CompletionItemKind.Text))
