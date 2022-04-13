@@ -18,6 +18,17 @@ jobs:
         with:
           node-version: '16.x'
 
+      - name: get project info
+        id: get_project_info
+        run: |
+          echo ::set-output name=PROJECT::$(basename `pwd`)
+          echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
+      - name: check project.json version
+        run: |
+          TO_FIND=$(echo ${{ steps.get_project_info.outputs.VERSION }} | sed 's/v//g')
+          ( grep $TO_FIND ./client/package.json | grep version ) || echo "Version in project.json != version in tag"; exit 1
+
       - name: compile and create vsix
         run: |
           cd client
@@ -26,12 +37,6 @@ jobs:
           npm run compile 
           npm run webpack 
           vsce package -o ${{ steps.get_project_info.outputs.PROJECT }}-${{ steps.get_project_info.outputs.VERSION }}.vsix
-
-      - name: get project info
-        id: get_project_info
-        run: |
-          echo ::set-output name=PROJECT::$(basename `pwd`)
-          echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
 
       - name: create release
         id: create_release
