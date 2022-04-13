@@ -27,7 +27,9 @@ jobs:
       - name: check project.json version
         run: |
           TO_FIND=$(echo ${{ steps.get_project_info.outputs.VERSION }} | sed 's/v//g')
-          ( grep $TO_FIND ./client/package.json | grep version ) || echo "Version in project.json != version in tag"; exit 1
+          echo "Checking if tag version is present in package.json"
+          
+          (grep $TO_FIND ./client/package.json | grep version > /dev/null) || (echo "Version in project.json != version in tag" && exit 1)
 
       - name: compile and create vsix
         run: |
@@ -56,6 +58,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./${{ steps.get_project_info.outputs.PROJECT }}-${{ steps.get_project_info.outputs.VERSION }}.vsix
+          asset_path: ./client/${{ steps.get_project_info.outputs.PROJECT }}-${{ steps.get_project_info.outputs.VERSION }}.vsix
           asset_name: ${{ steps.get_project_info.outputs.PROJECT }}-${{ steps.get_project_info.outputs.VERSION }}.vsix
           asset_content_type: application/octet-stream
