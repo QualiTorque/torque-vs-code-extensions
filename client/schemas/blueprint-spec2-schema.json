@@ -7,38 +7,55 @@
             "additionalProperties": false,
             "properties": {
                 "spec_version": {
-                    "type": "integer",
+                    "type": "string",
                     "enum": [
-                        2
+                        "2-preview"
                     ]
                 },
                 "description": {
                     "type": "string"
                 },
                 "inputs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/BlueprintInputElement"
+                    "type": "object",
+                    "patternProperties": {
+                        "^[a-zA-Z0-9-_]{3,45}$": { 
+                            "oneOf": [
+                                {"$ref": "#/definitions/BlueprintInputObject"},
+                                {
+                                    "type": "null"
+                                }                        
+                            ]                    
+                        }
                     },
-                    "minItems": 1
+                    "title": "Grains"
                 },
                 "outputs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/BlueprintOutputElement"
-                    }
+                    "type": "object",
+                    "patternProperties": {
+                        "^[a-zA-Z0-9-_]{3,45}$": { 
+                            "oneOf": [
+                                {"$ref": "#/definitions/BlueprintOutputObject"},
+                                {
+                                    "type": "null"
+                                }                        
+                            ]                    
+                        }
+                    },
+                    "title": "Object"
                 },
                 "grains": {
-                    "type": "array",
-                    "items": {
-                        "anyOf": [
-                            {
-                                "$ref": "#/definitions/GrainElement"
-                            }
-                        ]
+                    "type": "object",
+                    "patternProperties": {
+                        "^[a-zA-Z0-9-_]{3,45}$": { 
+                            "oneOf": [
+                                {"$ref": "#/definitions/GrainObject"},
+                                {
+                                    "type": "null"
+                                }                        
+                            ]                    
+                        }
                     },
-                    "title": "Grains",
-                    "minItems": 1
+                    "title": "Grains"
                 }
             },
             "required": [
@@ -49,15 +66,6 @@
                 "spec_version"
             ],
             "title": "Torque Blueprint Spec 2"
-        },
-        "GrainElement": {
-            "type": "object",
-            "patternProperties": {
-                "^[\\w\\-]+$": { 
-                    "$ref": "#/definitions/GrainObject"
-                }
-            },
-            "title": "Blueprint Input"
         },
         "GrainObject": {
             "type": "object",
@@ -74,10 +82,7 @@
                     "$ref": "#/definitions/GrainSpecObject"
                 },
                 "depends-on": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "type": "string"
                 }
             },
             "required": [
@@ -94,7 +99,7 @@
                     "$ref": "#/definitions/GrainSpecSourceObject"
                 },
                 "host": {
-                    "type": "string"
+                    "$ref": "#/definitions/GrainSpecHostObject"
                 },
                 "inputs": {
                     "type": "array",
@@ -102,10 +107,16 @@
                         "$ref": "#/definitions/GrainInput"
                     }
                 },
-                "ouputs": {
+                "outputs": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/GrainOutput"
+                    }
+                },
+                "commands": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GrainCommand"
                     }
                 }
             },
@@ -135,6 +146,24 @@
             "additionalProperties": true,
             "title": "Grain Output"
         },
+        "GrainCommand": {
+            "type": "string",
+            "additionalProperties": true,
+            "title": "Grain Command"
+        },
+        "GrainSpecHostObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "cloud-account": {
+                    "type": "string"
+                },
+                "compute-service": {
+                    "type": "string"
+                }
+            },
+            "title": "Spec Host Properties"
+        },
         "GrainSpecSourceObject": {
             "type": "object",
             "additionalProperties": false,
@@ -150,15 +179,6 @@
                 "path"
             ],
             "title": "PurpleSource"
-        },
-        "BlueprintInputElement": {
-            "type": "object",
-            "patternProperties": {
-                "^[\\w\\-]+$": {
-                    "$ref": "#/definitions/BlueprintInputObject"
-                }
-            },
-            "title": "Blueprint Input"
         },
         "BlueprintInputObject": {
             "title": "Blueprint Input Object",
@@ -177,7 +197,8 @@
                     "type": "string",
                     "enum": [
                         "multiline",
-                        "normal"
+                        "normal",
+                        "masked"
                     ],
                     "default": "normal"
                 },
@@ -191,19 +212,13 @@
                         "string",
                         "boolean"
                     ]
+                },
+                "sensitive": {
+                    "type": "boolean"
                 }
             }
         },
-        "BlueprintOutputElement": {
-            "type": "object",
-            "patternProperties": {
-                "^[\\w\\-]+$": {
-                    "$ref": "#/definitions/BlueptintOutputObject"
-                }
-            },
-            "title": "Blueprint Output Element"
-        },
-        "BlueptintOutputObject": {
+        "BlueprintOutputObject": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
