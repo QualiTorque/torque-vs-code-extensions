@@ -28,12 +28,12 @@ simple = ServiceTree(
     end_pos=(4, 15),
     errors=[],
     outputs=None,
-    inputs_node=PropertyNode(
+    inputs=PropertyNode(
         start_pos=(1, 0),
         end_pos=(4, 0),
         errors=[],
         key=ScalarNode(
-            start_pos=(1, 0), end_pos=(1, 6), errors=[], _text="inputs_node"
+            start_pos=(1, 0), end_pos=(1, 6), errors=[], _text="inputs"
         ),
         value=ScalarMappingsSequence(
             start_pos=(2, 0),
@@ -100,12 +100,12 @@ no_indent_colon = ServiceTree(
     end_pos=(3, 15),
     errors=[],
     outputs=None,
-    inputs_node=PropertyNode(
+    inputs=PropertyNode(
         start_pos=(1, 0),
         end_pos=(3, 0),
         errors=[],
         key=ScalarNode(
-            start_pos=(1, 0), end_pos=(1, 6), errors=[], _text="inputs_node"
+            start_pos=(1, 0), end_pos=(1, 6), errors=[], _text="inputs"
         ),
         value=ScalarMappingsSequence(
             start_pos=(2, 0),
@@ -153,7 +153,7 @@ no_indent_inside_no_indent = BlueprintTree(
     start_pos=(0, 0),
     end_pos=(9, 0),
     errors=[],
-    inputs_node=None,
+    inputs=None,
     kind=PropertyNode(
         start_pos=(0, 0),
         end_pos=(1, 0),
@@ -292,7 +292,7 @@ empty_item_middle_no_indent = BlueprintTree(
             start_pos=(4, 0), end_pos=(4, 1), message="Element could not be empty"
         )
     ],
-    inputs_node=None,
+    inputs=None,
     kind=PropertyNode(
         start_pos=(0, 0),
         end_pos=(1, 0),
@@ -473,7 +473,7 @@ empty_item_end_no_indent = BlueprintTree(
             start_pos=(5, 0), end_pos=(5, 1), message="Element could not be empty"
         )
     ],
-    inputs_node=None,
+    inputs=None,
     kind=PropertyNode(
         start_pos=(0, 0),
         end_pos=(1, 0),
@@ -653,7 +653,7 @@ app_no_indent_deep = AppTree(
             start_pos=(6, 4), end_pos=(6, 5), message="Element could not be empty"
         )
     ],
-    inputs_node=None,
+    inputs=None,
     kind=PropertyNode(
         start_pos=(11, 0),
         end_pos=(12, 0),

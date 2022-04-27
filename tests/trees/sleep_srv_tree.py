@@ -35,12 +35,12 @@ tree = ServiceTree(
             ],
         ),
     ),
-    inputs_node=PropertyNode(
+    inputs=PropertyNode(
         start_pos=(3, 0),
         end_pos=(6, 0),
         errors=[],
         key=ScalarNode(
-            start_pos=(3, 0), end_pos=(3, 6), errors=[], _text="inputs_node"
+            start_pos=(3, 0), end_pos=(3, 6), errors=[], _text="inputs"
         ),
         value=ScalarMappingsSequence(
             start_pos=(4, 2),

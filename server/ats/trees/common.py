@@ -192,6 +192,13 @@ class MappingNode(YamlNode):  # TODO: actually all torque nodes must inherit thi
         return result_class
 
 
+# For now it's just a child of sequence node.
+# will see in the future if we need to have a real map here
+@dataclass
+class MapNode(SequenceNode):
+    node_type: ClassVar[type] = MappingNode
+
+
 class PropertyNode(MappingNode):
     @property
     def identifier(self):
@@ -246,7 +253,6 @@ class ObjectNode(YamlNode, ABC):
             raise AttributeError(f"There is no attribute with name {child_name}")
 
         child = getattr(self, attr)
-
         # obj has not been instantiated yet
         if child is None:
             child = PropertyNode(parent=self)
@@ -337,17 +343,12 @@ class ScalarMappingsSequence(SequenceNode):
 
 @dataclass
 class BaseTree(ObjectNode):
-    inputs_node: ScalarMappingsSequence = None
+    inputs: ScalarMappingsSequence = None
     kind: ScalarNode = None
     spec_version: ScalarNode = None
 
-    def _get_field_mapping(self) -> {str: str}:
-        mapping = super()._get_field_mapping()
-        mapping.update({"inputs": "inputs_node"})
-        return mapping
-
     def get_inputs(self) -> List[MappingNode]:
-        return self._get_seq_nodes("inputs_node")
+        return self._get_seq_nodes("inputs")
 
 
 @dataclass

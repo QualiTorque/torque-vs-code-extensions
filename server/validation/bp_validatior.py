@@ -150,7 +150,7 @@ class BlueprintValidationHandler(ValidationHandler):
                     self._add_diagnostic(cloud.value, message=message.format(region))
 
     def _check_for_unused_blueprint_inputs(self):
-        if self._tree.inputs_node:
+        if self._tree.inputs:
             message = "Unused variable {}"
             source = self._document.source
             # build a list of inputs used as "name only" to be matched with a blueprint input
@@ -260,7 +260,7 @@ class BlueprintValidationHandler(ValidationHandler):
     def _validate_var_being_used_is_defined(self):
         bp_inputs = (
             {input.key.text for input in self._tree.get_inputs()}
-            if self._tree.inputs_node
+            if self._tree.inputs
             else {}
         )
 

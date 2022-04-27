@@ -87,8 +87,8 @@ class TestValidationHandler(unittest.TestCase):
         word = "PORT"
 
         tree = BaseTree(
-            inputs_node=PropertyNode(
-                key=ScalarNode(start_pos=(1, 0), end_pos=(1, 6), _text="inputs_node"),
+            inputs=PropertyNode(
+                key=ScalarNode(start_pos=(1, 0), end_pos=(1, 6), _text="inputs"),
                 value=ScalarMappingsSequence(
                     nodes=[
                         ScalarMappingNode(
@@ -126,7 +126,7 @@ class TestValidationHandler(unittest.TestCase):
 
         tree = TreeWithOutputs(
             outputs=PropertyNode(
-                key=ScalarNode(_text="inputs_node"),
+                key=ScalarNode(_text="inputs"),
                 value=ScalarNodesSequence(
                     nodes=[
                         ScalarNode(start_pos=(5, 2), end_pos=(5, 6), _text=word),
@@ -154,8 +154,8 @@ class TestBlueprintValidationHandler(TestValidationHandler):
         wrong_value = "ba"
 
         tree = BlueprintTree(
-            inputs_node=PropertyNode(
-                key=ScalarNode(_text="inputs_node"),
+            inputs=PropertyNode(
+                key=ScalarNode(_text="inputs"),
                 value=BlueprintInputsSequence(
                     nodes=[
                         BlueprintInputNode(
@@ -199,7 +199,7 @@ class TestBlueprintValidationHandler(TestValidationHandler):
         self.assertEqual(d.range, self._get_range((18, 21), (18, 23)))
 
         # check for none
-        tree.inputs_node.nodes[0].value.default_value.value = None
+        tree.inputs.nodes[0].value.default_value.value = None
         validator = BlueprintValidationHandler(tree, self.test_doc)
         validator._validate_default_value_in_possible_values()
         self.assertEqual(len(validator._diagnostics), 1)
@@ -210,7 +210,7 @@ class TestBlueprintValidationHandler(TestValidationHandler):
 
     def test_validate_resources_have_inputs(self):
         tree = BlueprintTree(
-            inputs_node=None,
+            inputs=None,
             applications=PropertyNode(
                 key=ScalarNode(_text="applications"),
                 value=BlueprintTree.AppsSequence(
