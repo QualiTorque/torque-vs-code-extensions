@@ -3,8 +3,10 @@ from typing import Tuple
 import yaml
 from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintTree
+from server.ats.trees.blueprint_v2 import BlueprintV2Tree
 from server.ats.trees.common import (
     BaseTree,
+    MapNode,
     MappingNode,
     NodeError,
     ObjectNode,
@@ -66,6 +68,7 @@ class Parser:
         self.tokens_stack: [Token] = []
 
         self.is_array_item: bool = False
+        self.processing_map_element: bool = False
 
     def _remove_invalid_characters(self, document: str):
         return document.replace("\t", "  ")
@@ -110,6 +113,9 @@ class Parser:
             # TODO: replace with parser exception
             raise Exception("Wrong node. Expected TextNode")
 
+    def _process_map_element(self, token: ScalarToken):
+        pass
+
     def _process_object_child(self, token: ScalarToken):
         """Gets the property of the last Node in a stack and puts
         it to the stack (where property name equals scalar token's value)"""
@@ -121,7 +127,7 @@ class Parser:
             child_node.start_pos = self.get_token_start(token)
 
         # TODO: replace with parser exception
-        except Exception:
+        except AttributeError:
             node.add_error(
                 NodeError(
                     start_pos=Parser.get_token_start(token),
@@ -202,7 +208,7 @@ class Parser:
                     self.is_array_item = False
 
                 return
-
+            
             self.tokens_stack.append(token)
             last_node.start_pos = self.get_token_start(token)
 
@@ -225,7 +231,14 @@ class Parser:
                 self.tokens_stack[-1], (ValueToken, BlockEntryToken, StreamStartToken)
             ):
                 node = self.nodes_stack.pop()
-                node.end_pos = self.get_token_end(token)
+                end_pos = self.get_token_end(token)
+                node.end_pos = end_pos
+                
+                if len(self.nodes_stack) > 1 and isinstance(self.nodes_stack[-2], MapNode):
+                    self.nodes_stack[-1].end_pos = end_pos
+                    self.nodes_stack.pop()
+                    self.processing_map_element = False
+
                 self.tokens_stack.pop()
 
             elif isinstance(top, ValueToken):
@@ -332,6 +345,12 @@ class Parser:
                     prop = self.nodes_stack.pop()
                     prop.end_pos = self.get_token_end(token)
 
+            if isinstance(self.nodes_stack[-1], MapNode):
+                mapping = self.nodes_stack[-1].add()
+                self.nodes_stack.append(mapping)
+                mapping.start_pos = self.get_token_start(token)
+                self.processing_map_element = True
+
             self.tokens_stack.append(token)
             return
 
@@ -369,12 +388,19 @@ class Parser:
         if isinstance(token, ScalarToken) and isinstance(
             self.tokens_stack[-1], (KeyToken, BlockEntryToken)
         ):
+            node = self.nodes_stack[-1]
+
             if not self.is_array_item:
-                self._process_object_child(token)
-
+                if isinstance(node, MappingNode):
+                    key_node = node.get_key()
+                    self.nodes_stack.append(key_node)
+                    self._process_scalar_token(token)
+                    self.tokens_stack.pop()
+                else:
+                    self._process_object_child(token)
+                return
+            
             else:
-                node = self.nodes_stack[-1]
-
                 if isinstance(node, UnprocessedNode) and isinstance(
                     self.tokens_stack[-1], BlockEntryToken
                 ):
@@ -432,11 +458,17 @@ class Parser:
         }
 
         yaml_obj = yaml.load(self.document, Loader=yaml.FullLoader)
-        doc_type = yaml_obj.get("kind", "")
+        spec_version = yaml_obj.get("spec_version", None)
 
-        if doc_type not in trees:
-            raise ValueError(
-                f"Unable to initialize tree from document kind '{doc_type}'"
-            )
+        if spec_version == 1:
+            doc_type = yaml_obj.get("kind", "")
+            if doc_type not in trees:
+                raise ValueError(
+                    f"Unable to initialize tree from document kind '{doc_type}'"
+                )
+            return trees[doc_type]()
+        elif spec_version == "2-preview":
+            return BlueprintV2Tree()
 
-        return trees[doc_type]()
+        else:
+            return None
