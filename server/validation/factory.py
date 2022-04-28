@@ -14,7 +14,11 @@ class ValidatorFactory:
 
     @classmethod
     def get_validator(cls, tree: BaseTree, text_doc: Document):
+        if tree.spec_version.text != "1":
+            return None
+        
         if tree.kind is None:
+
             raise ValueError(
                 "Unable to validate document. 'kind' property is not defined"
             )

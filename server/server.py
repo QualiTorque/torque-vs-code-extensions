@@ -127,7 +127,8 @@ def _validate(ls, params):
             tree = Parser(source).parse()
             diagnostics += _diagnose_tree_errors(tree)
             validator = ValidatorFactory.get_validator(tree, text_doc)
-            diagnostics += validator.validate()
+            if validator is not None:
+                diagnostics += validator.validate()
         except ParserError as e:
             diagnostics.append(
                 Diagnostic(
@@ -594,6 +595,8 @@ def code_lens(
         try:
             if yaml_obj:
                 bp_tree = Parser(doc.source).parse()
+                if bp_tree.kind is None:
+                    return
         except Exception as ex:
             import sys
 
@@ -609,7 +612,10 @@ def code_lens(
 
         if yaml_obj and bp_tree:
             inputs = []
-            bp_inputs = bp_tree.get_inputs()
+            try:
+                bp_inputs = bp_tree.get_inputs()
+            except NotImplementedError:
+                bp_inputs = []
             for inp in bp_inputs:
                 props = inp.value
                 item = {}

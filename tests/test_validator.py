@@ -58,6 +58,10 @@ class TestValidationFactory(unittest.TestCase):
 
     def test_factory_raise_error(self):
         tree = BlueprintTree(
+            spec_version=PropertyNode(
+                key=ScalarNode(_text="spec_version"),
+                value=ScalarNode(_text="1")
+            ),
             kind=PropertyNode(
                 key=ScalarNode(
                     start_pos=(0, 0), end_pos=(0, 4), errors=[], _text="kind"

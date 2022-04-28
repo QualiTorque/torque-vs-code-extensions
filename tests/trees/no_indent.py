@@ -647,7 +647,7 @@ empty_item_end_no_indent = BlueprintTree(
 ##########################################################################
 app_no_indent_deep = AppTree(
     start_pos=(0, 0),
-    end_pos=(12, 0),
+    end_pos=(13, 0),
     errors=[
         NodeError(
             start_pos=(6, 4), end_pos=(6, 5), message="Element could not be empty"
@@ -663,7 +663,13 @@ app_no_indent_deep = AppTree(
             start_pos=(11, 6), end_pos=(11, 17), errors=[], _text="application"
         ),
     ),
-    spec_version=None,
+    spec_version=PropertyNode(
+        start_pos=(12, 0),
+        end_pos=(13, 0),
+        errors=[],
+        key=ScalarNode(start_pos=(12, 0), end_pos=(12, 12), errors=[], _text="spec_version"),
+        value=ScalarNode(start_pos=(12, 14), end_pos=(12, 15), errors=[], _text="1")
+    ),
     outputs=None,
     configuration=None,
     source=PropertyNode(
