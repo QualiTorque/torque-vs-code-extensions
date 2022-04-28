@@ -291,7 +291,7 @@ def completions(
     try:
         yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
         if yaml_obj:
-            doc_type = yaml_obj.get("kind", "")
+            doc_type = yaml_obj.get("kind", None)
         else:
             return CompletionList(is_incomplete=True, items=[])
     except yaml.MarkedYAMLError:
@@ -311,6 +311,9 @@ def completions(
 
     words = common.preceding_words(doc, params.position)
     last_word = words[-1] if words else ""
+
+    if doc_type is None:
+        return CompletionList(is_incomplete=True, items=[])
 
     if last_word.endswith("$") or last_word.endswith(":"):
         if is_var_allowed(tree, params.position):

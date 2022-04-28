@@ -16,12 +16,12 @@ export async function addSchemasToYamlConfig(extensionPath: string) {
         newValue = Object.assign({}, config!.globalValue);
     }
     
-    // const blueprint_scheme_path = path.join(extensionPath, 'schemas', 'blueprint-schema.json').toString();
-    // newValue = addSchemaToConfigAtScope(
-    //     Uri.file(blueprint_scheme_path).toString(),
-    //     BLUEPRINT_SCHEME_TARGET_FILES,
-    //     newValue
-    // );
+    const blueprint_scheme_path = path.join(extensionPath, 'schemas', 'blueprint-schema.json').toString();
+    newValue = addSchemaToConfigAtScope(
+        Uri.file(blueprint_scheme_path).toString(),
+        BLUEPRINT_SCHEME_TARGET_FILES,
+        newValue
+    );
     const application_scheme_path = path.join(extensionPath, 'schemas', 'application-schema.json').toString();
     newValue = addSchemaToConfigAtScope(
         Uri.file(application_scheme_path).toString(),
@@ -34,12 +34,12 @@ export async function addSchemasToYamlConfig(extensionPath: string) {
         SERVICE_SCHEME_TARGET_FILES,
         newValue
     );
-    const blueprint_v2_scheme_path = path.join(extensionPath, 'schemas', 'blueprint-spec2-schema.json').toString();
-    newValue = addSchemaToConfigAtScope(
-        Uri.file(blueprint_v2_scheme_path).toString(),
-        BLUEPRINT_SCHEME_TARGET_FILES,
-        newValue
-    );
+    // const blueprint_v2_scheme_path = path.join(extensionPath, 'schemas', 'blueprint-spec2-schema.json').toString();
+    // newValue = addSchemaToConfigAtScope(
+    //     Uri.file(blueprint_v2_scheme_path).toString(),
+    //     BLUEPRINT_SCHEME_TARGET_FILES,
+    //     newValue
+    // );
 
     await workspace.getConfiguration().update(YAML_SCHEMA_CONFIG_NAME_OF_VSCODE_YAML_EXTENSION, newValue, ConfigurationTarget.Global);
 }
