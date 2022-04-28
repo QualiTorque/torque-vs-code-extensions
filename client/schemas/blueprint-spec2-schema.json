@@ -160,6 +160,9 @@
                 },
                 "compute-service": {
                     "type": "string"
+                },
+                "region": {
+                    "type": "string"
                 }
             },
             "title": "Spec Host Properties"
@@ -212,9 +215,6 @@
                         "string",
                         "boolean"
                     ]
-                },
-                "sensitive": {
-                    "type": "boolean"
                 }
             }
         },

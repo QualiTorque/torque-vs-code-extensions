@@ -10,7 +10,7 @@ class BlueprintV2InputObject(ObjectNode):
     display_style: ScalarNode = None
     default: TextNode = None
     description: TextNode = None
-    sensitive: ScalarNode = None
+    # sensitive: ScalarNode = None
 
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping = super()._get_field_mapping()
@@ -49,6 +49,7 @@ class GrainSpecNode(ObjectNode):
     class SpecHostNode(ObjectNode):
         cloud_account: ScalarNode = None
         compute_service: ScalarNode = None
+        region: ScalarNode = None
 
         def _get_field_mapping(self) -> Dict[str, str]:
             mapping = super()._get_field_mapping()
