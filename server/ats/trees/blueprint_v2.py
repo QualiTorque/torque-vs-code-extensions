@@ -87,6 +87,11 @@ class GrainNode(MappingNode):
     key: ScalarNode = None
     value: GrainObject = None
 
+    @property
+    def identifier(self):
+        if self.key:
+            return self.key.text
+
 
 ## Maps:
 @dataclass
@@ -116,3 +121,6 @@ class BlueprintV2Tree(BaseTree):
 
     def get_inputs(self):
         raise NotImplementedError
+
+    def get_grains_names(self):
+        return [node.key.text for node in self.grains.nodes]
