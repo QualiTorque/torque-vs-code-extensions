@@ -1,6 +1,7 @@
 from pygls.workspace import Document
 from server.ats.trees.common import BaseTree
 from server.validation.app_validator import AppValidationHandler
+from server.validation.bp_v2_validator import BlueprintSpec2Validator
 from server.validation.bp_validatior import BlueprintValidationHandler
 from server.validation.srv_validator import ServiceValidationHandler
 
@@ -14,21 +15,26 @@ class ValidatorFactory:
 
     @classmethod
     def get_validator(cls, tree: BaseTree, text_doc: Document):
-        if tree.spec_version.text != "1":
-            return None
-        
-        if tree.kind is None:
+        spec = tree.spec_version.text
 
-            raise ValueError(
-                "Unable to validate document. 'kind' property is not defined"
-            )
+        if spec == "2-preview":
+            return BlueprintSpec2Validator(tree, text_doc)
 
-        kind = tree.kind.text.lower()
+        elif spec == "1":
+            if tree.kind is None:
+                raise ValueError(
+                    "Unable to validate document. 'kind' property is not defined"
+                )
 
-        if kind not in cls.kind_validators_map:
-            options = ", ".join(list(cls.kind_validators_map.keys()))
-            raise ValueError(f"'kind' property is not correct. Must be in {options}")
+            kind = tree.kind.text.lower()
 
-        validator_cls: type = cls.kind_validators_map[kind]
+            if kind not in cls.kind_validators_map:
+                options = ", ".join(list(cls.kind_validators_map.keys()))
+                raise ValueError(f"'kind' property is not correct. Must be in {options}")
 
-        return validator_cls(tree, text_doc)
+            validator_cls: type = cls.kind_validators_map[kind]
+
+            return validator_cls(tree, text_doc)
+
+        else:
+            return None   
