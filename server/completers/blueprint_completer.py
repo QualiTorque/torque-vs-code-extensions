@@ -10,7 +10,7 @@ from server.ats.trees.blueprint import (
     BlueprintResourceMappingNode,
     BlueprintTree,
 )
-from server.ats.trees.common import BaseTree, ScalarNode
+from server.ats.trees.common import BaseTree, ScalarNode, YamlNode
 from server.completers.base import Completer
 from server.utils.applications import ApplicationsManager as applications
 from server.utils.common import get_line_before_position, get_path_to_pos
@@ -18,12 +18,6 @@ from server.utils.services import ServicesManager as services
 
 
 class BlueprintResourceCompleter(Completer):
-    def __init__(
-        self, workspace: Workspace, params: CompletionParams, tree: BlueprintTree
-    ) -> None:
-        super().__init__(workspace, params, tree)
-        self.path = get_path_to_pos(self.tree, self.params.position)
-
     def get_completions(self) -> List[CompletionItem]:
         if len(self.path) < 3:
             return []
@@ -49,7 +43,7 @@ class BlueprintResourceCompleter(Completer):
 
             if self.path[-1] == self._get_resource_sequence():
                 if line_before_pos.endswith("-"):
-                    props = "- " + props
+                    props = " " + props
                     label = "- " + res
 
             elif not (
