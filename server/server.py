@@ -312,8 +312,20 @@ def completions(
     words = common.preceding_words(doc, params.position)
     last_word = words[-1] if words else ""
 
+    root = get_repo_root_path(doc.path)
+    path = common.get_path_to_pos(tree, params.position)
+
     if doc_type is None:
-        return CompletionList(is_incomplete=True, items=[])
+        try:
+            completer = CompletionResolver.get_completer(path)
+            completions = completer(
+                server.workspace, params, tree, path
+            ).get_completions()
+        except ValueError:
+            logging.error("Unable to build a completions list")
+            completions = []
+
+        return CompletionList(is_incomplete=True, items=completions)
 
     if last_word.endswith("$") or last_word.endswith(":"):
         if is_var_allowed(tree, params.position):
@@ -346,9 +358,6 @@ def completions(
             return CompletionList(
                 is_incomplete=(len(suggested_vars) == 0), items=suggested_vars
             )
-
-    root = get_repo_root_path(doc.path)
-    path = common.get_path_to_pos(tree, params.position)
 
     if doc_type == "blueprint":
         parent_node = common.get_nearest_text_key(path, params.position)
@@ -514,7 +523,7 @@ def completions(
             try:
                 completer = CompletionResolver.get_completer(path)
                 completions = completer(
-                    server.workspace, params, tree
+                    server.workspace, params, tree, path
                 ).get_completions()
                 items += completions
             except ValueError:
@@ -563,7 +572,7 @@ def completions(
             is_incomplete=False,
             items=[
                 CompletionItem(
-                    label="No suggestions.",
+                    # label="No suggestions.",
                     kind=CompletionItemKind.Text,
                     text_edit=TextEdit(
                         new_text="",
