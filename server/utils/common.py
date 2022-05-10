@@ -133,9 +133,9 @@ class Visitor:
 
         if start <= self.cursor_position <= end:
             self.found_node = node
-            return True
 
-        return False
+            for child in node.get_children():
+                self.visit_node(child)
 
 
 def get_path_to_pos(tree: BaseTree, pos: Position) -> List[YamlNode]:

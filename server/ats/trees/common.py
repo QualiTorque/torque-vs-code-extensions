@@ -63,11 +63,7 @@ class YamlNode(ABC):
             self.parent.add_error(error)
 
     def accept(self, visitor):
-        v = visitor.visit_node(self)
-
-        if v and self.get_children():
-            for child in self.get_children():
-                child.accept(visitor)
+        visitor.visit_node(self)
 
     def get_children(self):
         return []
@@ -117,10 +113,10 @@ class ScalarNode(TextNode):
     allow_vars = False
 
     def _validate(self, v: str):
-        regex = re.compile("(\$\{.+?\}|^\$.+?$)")
+        regex = re.compile("(\$\{.+?\}|^\$.+?$)|\{\{.+\}}")
         # find first
         m = regex.search(v)
-        if m and self.allow_vars is False:
+        if m:
             offset = m.span()
             raise NodeError(
                 start_pos=(self.start_pos[0], self.start_pos[1] + offset[0]),
