@@ -125,10 +125,10 @@ def _validate(ls, params):
     if not diagnostics:
         try:
             tree = Parser(source).parse()
-            diagnostics += _diagnose_tree_errors(tree)
             validator = ValidatorFactory.get_validator(tree, text_doc)
             if validator is not None:
                 diagnostics += validator.validate()
+            diagnostics += _diagnose_tree_errors(tree)
         except ParserError as e:
             diagnostics.append(
                 Diagnostic(
