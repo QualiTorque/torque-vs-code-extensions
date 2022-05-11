@@ -113,16 +113,18 @@ class ScalarNode(TextNode):
     allow_vars = False
 
     def _validate(self, v: str):
-        regex = re.compile("(\$\{.+?\}|^\$.+?$)|\{\{.+\}}")
+        regex = re.compile("(\$\{.+?\}|^\$.+?$)|\{\{[^\{\}]*\}\}")
         # find first
-        m = regex.search(v)
-        if m:
+        # m = regex.search(v)
+        found = regex.finditer(v)
+
+        for m in found:
             offset = m.span()
-            raise NodeError(
+            self.add_error(NodeError(
                 start_pos=(self.start_pos[0], self.start_pos[1] + offset[0]),
-                end_pos=(self.end_pos[0], self.end_pos[1] + offset[1]),
+                end_pos=(self.end_pos[0], self.start_pos[1] + offset[1]),
                 message="Variables are not allowed here",
-            )
+            ))
 
 
 @dataclass
