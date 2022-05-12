@@ -62,22 +62,25 @@ class BlueprintSpec2Validator(ValidationHandler):
         for grain in self.tree.grains.nodes:
             grain_name = grain.key.text
             grains_list = self._get_grains_names()
-            depend = grain.value.depends_on if grain.value else None
+            # depend = grain.value.depends_on if grain.value else None
+            deps = grain.value.get_deps() if grain.value else None
 
-            if depend is None:
+            if deps is None:
                 continue
-                
-            if depend.text not in grains_list:
-                self._add_diagnostic(
-                    depend.value,
-                    message=f"The grain '{grain_name}' depends on undefined resource",
-                )
-            
-            if depend.text == grain_name:
-                self._add_diagnostic(
-                    depend.value,
-                    message=f"The grain '{grain_name}' cannot be dependent onx§x itself",
-                )
+
+            for d, pos in deps.items():
+                if d not in grains_list:
+                    self._add_diagnostic(
+                        start_pos=(pos[0].line, pos[0].col),
+                        end_pos=(pos[1].line, pos[1].col),
+                        message=f"The grain '{grain_name}' depends on undefined grain {d}"
+                    )
+                if d == grain_name:
+                    self._add_diagnostic(
+                        dstart_pos=(pos[0].line, pos[0].col),
+                        end_pos=(pos[1].line, pos[1].col),
+                        message=f"The grain '{grain_name}' cannot be dependent onx§x itself",
+                    )
             
     def validate(self):
         visitor = ExpressionValidationVisitor()

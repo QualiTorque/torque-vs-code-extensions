@@ -48,10 +48,10 @@ class BlueprintValidationHandler(ValidationHandler):
                         .replace("{", "")
                         .replace("}", "")
                     )
-                    self._add_diagnostic_for_range(
-                        message.format(old_syntax, deprecated_syntax[prop]),
-                        range_start_tuple=(line_num, col[0]),
-                        range_end_tuple=(line_num, col[1]),
+                    self._add_diagnostic(
+                        message=message.format(old_syntax, deprecated_syntax[prop]),
+                        start_pos=(line_num, col[0]),
+                        end_pos=(line_num, col[1]),
                         diag_severity=DiagnosticSeverity.Warning,
                     )
 

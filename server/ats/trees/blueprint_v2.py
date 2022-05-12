@@ -1,7 +1,7 @@
 from typing import Dict
 from dataclasses import dataclass
 
-from server.ats.trees.common import BaseTree, MapNode, MappingNode, ObjectNode, ScalarNode, ScalarNodesSequence, TextMappingSequence, TextNode, TextNodesSequence
+from server.ats.trees.common import BaseTree, MapNode, MappingNode, ObjectNode, Position, ScalarNode, ScalarNodesSequence, TextMappingSequence, TextNode, TextNodesSequence
 
 
 @dataclass
@@ -47,9 +47,9 @@ class GrainSpecNode(ObjectNode):
     
     @dataclass
     class SpecHostNode(ObjectNode):
-        cloud_account: ScalarNode = None
-        compute_service: ScalarNode = None
-        region: ScalarNode = None
+        cloud_account: TextNode = None
+        compute_service: TextNode = None
+        region: TextNode = None
 
         def _get_field_mapping(self) -> Dict[str, str]:
             mapping = super()._get_field_mapping()
@@ -73,6 +73,33 @@ class GrainObject(ObjectNode):
     kind: ScalarNode = None
     spec: GrainSpecNode = None
     depends_on: ScalarNode = None
+
+    def get_deps(self):
+        if self.depends_on is None:
+            return {}
+
+        result = {}
+
+        deps = self.depends_on.text.split(",")
+        word_end = 0
+
+        for d in deps:
+            if d == "":
+                continue
+
+            d = d.strip()
+
+            found_on = self.depends_on.value.text.index(d, word_end)
+            column_start = found_on + self.depends_on.value.start_pos[1]
+            column_end = found_on + self.depends_on.value.start_pos[1] + len(d)
+
+            start_pos = Position(self.depends_on.value.start_pos[0], column_start)
+            end_pos = Position(self.depends_on.value.end_pos[0], column_end)
+
+            result[d] = (start_pos, end_pos)
+            word_end = found_on + len(d) - 1
+
+        return result
 
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping =  super()._get_field_mapping()

@@ -85,7 +85,8 @@
                     "$ref": "#/definitions/GrainSpecObject"
                 },
                 "depends-on": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^((\\w+)(,\\s*)?)+[^,]$"
                 }
             },
             "required": [

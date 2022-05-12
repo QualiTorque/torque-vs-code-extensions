@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import List, Tuple
 
 from pygls.lsp.types.basic_structures import (
     Diagnostic,
@@ -19,42 +19,41 @@ class ValidationHandler:
 
     def _add_diagnostic(
         self,
-        node: YamlNode,
+        node: YamlNode = None,
+        start_pos: Tuple[int, int] = None,
+        end_pos: Tuple[int, int] = None,
         message: str = "",
         diag_severity: DiagnosticSeverity = None,
     ):
-        if node:
-            self._diagnostics.append(
-                Diagnostic(
-                    range=Range(
-                        start=Position(
-                            line=node.start_pos[0], character=node.start_pos[1]
-                        ),
-                        end=Position(line=node.end_pos[0], character=node.end_pos[1]),
-                    ),
-                    message=message,
-                    severity=diag_severity,
-                )
-            )
+        if node is None and not all([start_pos, end_pos]):
+            raise ValueError("Neither node object nor position tuples were provided")
 
-    def _add_diagnostic_for_range(
-        self,
-        message: str = "",
-        range_start_tuple=None,
-        range_end_tuple=None,
-        diag_severity: DiagnosticSeverity = None,
-    ):
-        if range_start_tuple and range_end_tuple:
-            self._diagnostics.append(
-                Diagnostic(
-                    range=Range(
-                        start=Position(
-                            line=range_start_tuple[0], character=range_start_tuple[1]
-                        ),
-                        end=Position(
-                            line=range_end_tuple[0], character=range_end_tuple[1]
-                        ),
-                    ),
+        if node is not None:
+            start = {
+                "line": node.start_pos[0],
+                "character": node.start_pos[1]
+            }
+            end = {
+                "line": node.end_pos[0],
+                "character": node.end_pos[1]
+            }
+        elif len(start_pos) == 2 and len(end_pos) == 2:
+            start = {
+                "line": start_pos[0],
+                "character": start_pos[1]
+            }
+            end = {
+                "line": end_pos[0],
+                "character": end_pos[1]
+            }
+        else:
+            raise ValueError
+
+        range = Range(start=Position(**start), end=Position(**end))
+
+        self._diagnostics.append(
+            Diagnostic(
+                    range=range,
                     message=message,
                     severity=diag_severity,
                 )
@@ -111,10 +110,10 @@ class ValidationHandler:
                         message += " " + message_replace.format(
                             deprecated_properties[prop]
                         )
-                    self._add_diagnostic_for_range(
-                        message,
-                        range_start_tuple=(line_num, col),
-                        range_end_tuple=(line_num, col + len(prop)),
+                    self._add_diagnostic(
+                        message=message,
+                        start_pos=(line_num, col),
+                        end_pos=(line_num, col + len(prop)),
                         diag_severity=DiagnosticSeverity.Warning,
                     )
             line_num += 1
