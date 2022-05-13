@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 from dataclasses import dataclass
 
 from server.ats.trees.common import BaseTree, MapNode, MappingNode, ObjectNode, Position, ScalarNode, ScalarNodesSequence, TextMappingSequence, TextNode, TextNodesSequence
@@ -8,8 +8,8 @@ from server.ats.trees.common import BaseTree, MapNode, MappingNode, ObjectNode, 
 class BlueprintV2InputObject(ObjectNode):
     input_type: ScalarNode = None
     display_style: ScalarNode = None
-    default: TextNode = None
-    description: TextNode = None
+    default: ScalarNode = None
+    description: ScalarNode = None
     # sensitive: ScalarNode = None
 
     def _get_field_mapping(self) -> Dict[str, str]:
@@ -60,6 +60,9 @@ class GrainSpecNode(ObjectNode):
                 }
             )
             return mapping
+
+    def get_outputs(self) -> List[ScalarNode]:
+        return self._get_seq_nodes("outputs")
 
     source: SpecSourceNode = None
     host: SpecHostNode = None

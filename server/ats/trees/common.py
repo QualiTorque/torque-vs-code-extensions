@@ -197,6 +197,12 @@ class MappingNode(YamlNode):  # TODO: actually all torque nodes must inherit thi
 class MapNode(SequenceNode):
     node_type: ClassVar[type] = MappingNode
 
+    def get_mapping_by_key(self, key: str ) -> MappingNode:
+        for node in self.nodes:
+            if node.key and node.key.text == key:
+                return node
+        return None 
+
 
 class PropertyNode(MappingNode):
     @property
