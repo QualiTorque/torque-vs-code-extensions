@@ -291,6 +291,8 @@ class BlueprintValidationHandler(ValidationHandler):
                 for match in iterator:
                     cur_var = match.group()
                     pos = match.span()
+                    if input.value.style:
+                        pos = (pos[0] + 1, pos[1] + 1)
                     if cur_var.startswith("${") and cur_var.endswith("}"):
                         cur_var = "$" + cur_var[2:-1]
 
