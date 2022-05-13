@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.0.12](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.11...v0.0.12) (2022-04-13)
+
+Add possible_values support
+
+* AST and schema were updated
+* Validation and completion features were added
+
 ## [0.0.11](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.10...v0.0.11) (2021-12-24)
 
 Add python 3.10 support
