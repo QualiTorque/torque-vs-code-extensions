@@ -92,6 +92,7 @@ class SequenceNode(YamlNode):
 class TextNode(YamlNode):
     allow_vars: ClassVar[bool] = True
     _text: str = ""
+    style: str = None
 
     @property
     def text(self):
