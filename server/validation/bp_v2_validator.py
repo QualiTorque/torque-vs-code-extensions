@@ -8,7 +8,7 @@ from pygls.workspace import Document
 
 
 class ExpressionValidationVisitor:
-    reserved_words = ["sandboxId"]
+    reserved_words = ["sandboxid"]
     prefixes = ["inputs", "grains"]
     pipe_commands = ["downcase"]
 
@@ -17,7 +17,6 @@ class ExpressionValidationVisitor:
         self.processors_map = {
             GrainNode: self._do_process_grain,
             BlueprintV2OutputNode: self._do_process_blueprint_output,
-            # BlueprintV2OutputObject: self._do_prcess_bp_output,
         }
         
     def visit_node(self, node: YamlNode):
