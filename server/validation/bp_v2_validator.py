@@ -59,7 +59,7 @@ class ExpressionValidationVisitor:
                 expression = parts[0]
 
         if not expression.startswith("."):
-            if expression not in self.reserved_words:
+            if expression.lower() not in self.reserved_words:
                 return f"The value '{expression}' is not a reserved variable"
 
         else:
@@ -116,8 +116,12 @@ class ExpressionValidationVisitor:
                     return f"You can access only 'outputs' property of grain '{dep_grain}'"
 
                 output = parts[3]
+                
+                dep_grain_node = self.tree.grains.get_mapping_by_key(dep_grain)
+                if dep_grain_node is None:
+                    return f"Grain {dep_grain} is not defined"
+                    
                 error_msg = f"Output '{output}' is not defined in spec of grain '{dep_grain}'"
-                dep_grain_node = self.tree.grains.get_mapping_by_key(dep_grain)                
                 spec_node = dep_grain_node.get_value().spec
 
                 if spec_node is None or spec_node.value is None:
