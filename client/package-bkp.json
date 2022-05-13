@@ -31,13 +31,38 @@
 	],
 	"activationEvents": [
 		"onLanguage:yaml",
+		"onView:profilesView",
+		"onView:sandboxesExplorerView",
+		"onView:blueprintsExplorerView",
 		"onStartupFinished"
 	],
 	"contributes": {
 		"viewsContainers": {
-			"activitybar": []
+			"activitybar": [
+				{
+					"id": "torque-view-container",
+					"title": "Torque",
+					"icon": "icon/Quali_Q_white.svg"
+				}
+			]
 		},
 		"views": {
+			"torque-view-container": [
+				{
+					"id": "blueprintsExplorerView",
+					"name": "Blueprints Explorer",
+					"contextualTitle": "Blueprints Explorer"
+				},
+				{
+					"id": "sandboxesExplorerView",
+					"name": "Sandboxes Explorer",
+					"contextualTitle": "Sandboxes Explorer"
+				},
+				{
+					"id": "profilesView",
+					"name": "Profiles"
+				}
+			]
 		},
 		"commands": [
 			{

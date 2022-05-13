@@ -589,102 +589,102 @@ def completions(
         )
 
 
-@torque_ls.feature(
-    CODE_LENS,
-    CodeLensOptions(resolve_provider=False),
-)
-def code_lens(
-    server: TorqueLanguageServer, params: Optional[CodeLensParams] = None
-) -> Optional[List[CodeLens]]:
-    if "/blueprints/" in params.text_document.uri:
-        doc = server.workspace.get_document(params.text_document.uri)
+# @torque_ls.feature(
+#     CODE_LENS,
+#     CodeLensOptions(resolve_provider=False),
+# )
+# def code_lens(
+#     server: TorqueLanguageServer, params: Optional[CodeLensParams] = None
+# ) -> Optional[List[CodeLens]]:
+#     if "/blueprints/" in params.text_document.uri:
+#         doc = server.workspace.get_document(params.text_document.uri)
 
-        try:
-            yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
-        except yaml.MarkedYAMLError:
-            yaml_obj = None
+#         try:
+#             yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
+#         except yaml.MarkedYAMLError:
+#             yaml_obj = None
 
-        try:
-            if yaml_obj:
-                bp_tree = Parser(doc.source).parse()
-                if bp_tree.kind is None:
-                    return
-        except Exception as ex:
-            import sys
+#         try:
+#             if yaml_obj:
+#                 bp_tree = Parser(doc.source).parse()
+#                 if bp_tree.kind is None:
+#                     return
+#         except Exception as ex:
+#             import sys
 
-            logging.error(
-                "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
-                type(ex).__name__,
-                ex,
-            )
-            return None
+#             logging.error(
+#                 "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
+#                 type(ex).__name__,
+#                 ex,
+#             )
+#             return None
 
-        def to_bool(val: str):
-            return val.lower() == "true"
+#         def to_bool(val: str):
+#             return val.lower() == "true"
 
-        if yaml_obj and bp_tree:
-            inputs = []
-            try:
-                bp_inputs = bp_tree.get_inputs()
-            except NotImplementedError:
-                bp_inputs = []
-            for inp in bp_inputs:
-                props = inp.value
-                item = {}
-                item["name"] = inp.key.text
-                item["default_value"] = (
-                    inp.default_value.text if (props and inp.default_value) else ""
-                )
+#         if yaml_obj and bp_tree:
+#             inputs = []
+#             try:
+#                 bp_inputs = bp_tree.get_inputs()
+#             except NotImplementedError:
+#                 bp_inputs = []
+#             for inp in bp_inputs:
+#                 props = inp.value
+#                 item = {}
+#                 item["name"] = inp.key.text
+#                 item["default_value"] = (
+#                     inp.default_value.text if (props and inp.default_value) else ""
+#                 )
 
-                item["optional"] = (
-                    to_bool(props.optional.text)
-                    if (props and hasattr(props, "optional") and props.optional)
-                    else False
-                )
+#                 item["optional"] = (
+#                     to_bool(props.optional.text)
+#                     if (props and hasattr(props, "optional") and props.optional)
+#                     else False
+#                 )
 
-                item["display_style"] = (
-                    props.display_style.text
-                    if (props and hasattr(props, "display_style") and props.display_style)
-                    else "text"
-                )
-                inputs.append(item)
-            artifacts = {}
-            bp_arts = bp_tree.get_artifacts()
-            for art in bp_arts:
-                artifacts[art.key.text] = art.value.text if art.value else ""
+#                 item["display_style"] = (
+#                     props.display_style.text
+#                     if (props and hasattr(props, "display_style") and props.display_style)
+#                     else "text"
+#                 )
+#                 inputs.append(item)
+#             artifacts = {}
+#             bp_arts = bp_tree.get_artifacts()
+#             for art in bp_arts:
+#                 artifacts[art.key.text] = art.value.text if art.value else ""
 
-        output = [
-            CodeLens(
-                range=Range(
-                    start=Position(line=0, character=0),
-                    end=Position(line=1, character=1),
-                ),
-                command=Command(
-                    title="Validate with Torque",
-                    command=TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT,
-                    arguments=[params.text_document.uri],
-                ),
-            ),
-        ]
+#         output = [
+#             CodeLens(
+#                 range=Range(
+#                     start=Position(line=0, character=0),
+#                     end=Position(line=1, character=1),
+#                 ),
+#                 command=Command(
+#                     title="Validate with Torque",
+#                     command=TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT,
+#                     arguments=[params.text_document.uri],
+#                 ),
+#             ),
+#         ]
 
-        if yaml_obj and bp_tree:
-            output += [
-                CodeLens(
-                    range=Range(
-                        start=Position(line=0, character=0),
-                        end=Position(line=1, character=1),
-                    ),
-                    command=Command(
-                        title="Start Sandbox",
-                        command="extension.openReserveForm",
-                        arguments=[params.text_document.uri, inputs, artifacts, ""],
-                    ),
-                ),
-            ]
+#         if yaml_obj and bp_tree:
+#             output += [
+#                 CodeLens(
+#                     range=Range(
+#                         start=Position(line=0, character=0),
+#                         end=Position(line=1, character=1),
+#                     ),
+#                     command=Command(
+#                         title="Start Sandbox",
+#                         command="extension.openReserveForm",
+#                         arguments=[params.text_document.uri, inputs, artifacts, ""],
+#                     ),
+#                 ),
+#             ]
 
-        return output
-    else:
-        return None
+#         return output
+#     else:
+#         return None
 
 
 @torque_ls.feature(DOCUMENT_LINK)
