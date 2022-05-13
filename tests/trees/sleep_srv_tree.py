@@ -216,6 +216,7 @@ tree = ServiceTree(
                             end_pos=(21, 25),
                             errors=[],
                             _text="torque",
+                            style="'",
                         ),
                     ),
                 ),

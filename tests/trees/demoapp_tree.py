@@ -694,6 +694,7 @@ tree = AppTree(
                                                 end_pos=(11, 18),
                                                 errors=[],
                                                 _text="",
+                                                style="'",
                                             ),
                                         ),
                                         ingress_healthcheck=None,
