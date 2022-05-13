@@ -106,8 +106,9 @@ class Parser:
         node.start_pos = self.get_token_start(token)
         node.end_pos = self.get_token_end(token)
 
-        if isinstance(node, TextNode):
+        if isinstance(node, TextNode):                
             node.text = token.value
+            node.style = token.style
 
         else:
             # TODO: replace with parser exception
