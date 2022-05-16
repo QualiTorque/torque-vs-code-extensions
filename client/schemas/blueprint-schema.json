@@ -62,10 +62,6 @@
                 }
             },
             "required": [
-                "description",
-                "grains",
-                "inputs",
-                "outputs",
                 "spec_version"
             ],
             "title": "Torque Blueprint Spec 2"
@@ -220,7 +216,8 @@
                         "boolean"
                     ]
                 }
-            }
+            },
+            "required": ["type"]
         },
         "BlueprintOutputObject": {
             "type": "object",
