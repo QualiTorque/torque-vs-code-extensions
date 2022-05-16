@@ -186,7 +186,7 @@ class BlueprintTree(BaseTree):
         # old syntax
         availability: ScalarNode = None
 
-    inputs_node: BlueprintInputsSequence = None
+    inputs: BlueprintInputsSequence = None
     applications: AppsSequence = None
     services: ServicesSequence = None
     artifacts: TextMappingSequence = None

@@ -25,12 +25,12 @@ tree = AppTree(
     start_pos=(0, 0),
     end_pos=(42, 0),
     errors=[],
-    inputs_node=PropertyNode(
+    inputs=PropertyNode(
         start_pos=(1, 0),
         end_pos=(6, 0),
         errors=[],
         key=ScalarNode(
-            start_pos=(1, 0), end_pos=(1, 6), errors=[], _text="inputs_node"
+            start_pos=(1, 0), end_pos=(1, 6), errors=[], _text="inputs"
         ),
         value=ScalarMappingsSequence(
             start_pos=(2, 2),
@@ -694,6 +694,7 @@ tree = AppTree(
                                                 end_pos=(11, 18),
                                                 errors=[],
                                                 _text="",
+                                                style="'",
                                             ),
                                         ),
                                         ingress_healthcheck=None,

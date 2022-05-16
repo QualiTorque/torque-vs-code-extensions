@@ -100,7 +100,7 @@ class ResourcesManager:
     def get_inputs(cls, resource_name):
         if resource_name in cls.cache:
             resource_tree = cls.cache[resource_name]["tree"]
-            if resource_tree and resource_tree.inputs_node:
+            if resource_tree and resource_tree.inputs:
                 inputs = {}
                 for input_node in resource_tree.get_inputs():
                     inputs[input_node.key.text] = (
@@ -133,9 +133,9 @@ class Visitor:
 
         if start <= self.cursor_position <= end:
             self.found_node = node
-            return True
 
-        return False
+            for child in node.get_children():
+                self.visit_node(child)
 
 
 def get_path_to_pos(tree: BaseTree, pos: Position) -> List[YamlNode]:

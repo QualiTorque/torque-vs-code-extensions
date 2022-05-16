@@ -35,7 +35,7 @@ class ServiceValidationHandler(ValidationHandler):
         return self._diagnostics
 
     def _check_for_unused_service_inputs(self):
-        if self._tree.inputs_node:
+        if self._tree.inputs:
             message = "Unused variable {}"
             source = self._document.source
             name_only_var_values = []

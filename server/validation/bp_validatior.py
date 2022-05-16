@@ -48,10 +48,10 @@ class BlueprintValidationHandler(ValidationHandler):
                         .replace("{", "")
                         .replace("}", "")
                     )
-                    self._add_diagnostic_for_range(
-                        message.format(old_syntax, deprecated_syntax[prop]),
-                        range_start_tuple=(line_num, col[0]),
-                        range_end_tuple=(line_num, col[1]),
+                    self._add_diagnostic(
+                        message=message.format(old_syntax, deprecated_syntax[prop]),
+                        start_pos=(line_num, col[0]),
+                        end_pos=(line_num, col[1]),
                         diag_severity=DiagnosticSeverity.Warning,
                     )
 
@@ -150,7 +150,7 @@ class BlueprintValidationHandler(ValidationHandler):
                     self._add_diagnostic(cloud.value, message=message.format(region))
 
     def _check_for_unused_blueprint_inputs(self):
-        if self._tree.inputs_node:
+        if self._tree.inputs:
             message = "Unused variable {}"
             source = self._document.source
             # build a list of inputs used as "name only" to be matched with a blueprint input
@@ -260,7 +260,7 @@ class BlueprintValidationHandler(ValidationHandler):
     def _validate_var_being_used_is_defined(self):
         bp_inputs = (
             {input.key.text for input in self._tree.get_inputs()}
-            if self._tree.inputs_node
+            if self._tree.inputs
             else {}
         )
 
@@ -291,6 +291,8 @@ class BlueprintValidationHandler(ValidationHandler):
                 for match in iterator:
                     cur_var = match.group()
                     pos = match.span()
+                    if input.value.style:
+                        pos = (pos[0] + 1, pos[1] + 1)
                     if cur_var.startswith("${") and cur_var.endswith("}"):
                         cur_var = "$" + cur_var[2:-1]
 

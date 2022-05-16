@@ -12,7 +12,7 @@ no_child_simple = BlueprintTree(
             message="Parent node does not have child with name 'test'",
         )
     ],
-    inputs_node=None,
+    inputs=None,
     kind=PropertyNode(
         start_pos=(0, 0),
         end_pos=(1, 0),
@@ -79,7 +79,7 @@ no_child_object = BlueprintTree(
             message="Parent node does not have child with name 'iInfrastructure'",
         )
     ],
-    inputs_node=None,
+    inputs=None,
     kind=PropertyNode(
         start_pos=(0, 0),
         end_pos=(1, 0),
