@@ -64,7 +64,7 @@ class ExpressionValidationVisitor:
 
         else:
             if expression.endswith("."):
-                return "trailing period symbol is not allowed"
+                return "Trailing period symbol is not allowed"
 
             expr_parts = expression.split(".")[1:]
             if expr_parts[0] not in self.prefixes:
