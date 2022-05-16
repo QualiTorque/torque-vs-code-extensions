@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.0.16](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.12...v0.0.16) (2022-05-16)
+
+Add Torque spec 2 support [WIP]
+
+* added init json schema for new spec
+* added parser/tree 
+* implemented server-side validation for grain dependecies and expressions
+* auto-completions for grains deps
+* disabled UI blueprints/sandboxes explorers (temporary)
+ 
+[NOTE] The last stable version with spec version 1 is 0.0.12
+
 ## [0.0.12](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.11...v0.0.12) (2022-04-13)
 
 Add possible_values support
