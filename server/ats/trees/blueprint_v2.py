@@ -78,7 +78,7 @@ class GrainObject(ObjectNode):
     depends_on: ScalarNode = None
 
     def get_deps(self):
-        if self.depends_on is None:
+        if self.depends_on is None or self.depends_on.text is None:
             return {}
 
         result = {}
