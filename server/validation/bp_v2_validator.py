@@ -152,6 +152,24 @@ class BlueprintSpec2Validator(ValidationHandler):
 
     def _get_grains_names(self):
         return [node.key.text for node in self.tree.grains.nodes]
+
+    def _validate_no_duplicates_in_grain_outputs(self):
+        message = "Multiple declarations of output '{}'"
+
+        for grain in self.tree.grains.nodes:
+            grain_obj = grain.value
+
+            if grain_obj is None or grain_obj.spec is None:
+                continue
+
+            outputs_list = grain_obj.spec.get_outputs()
+            outputs_names = [output.text.lower() for output in outputs_list]
+
+            for output_node in outputs_list: 
+                if outputs_names.count(output_node.text.lower()) > 1:
+                    self._add_diagnostic(
+                        output_node, message=message.format(output_node.text)
+                    )
     
     def _validate_grain_dep_exists(self):
         for grain in self.tree.grains.nodes:
@@ -182,4 +200,5 @@ class BlueprintSpec2Validator(ValidationHandler):
         self.tree.accept(visitor)
 
         self._validate_grain_dep_exists()
+        self._validate_no_duplicates_in_grain_outputs()
         return self._diagnostics
