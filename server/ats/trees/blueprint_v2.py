@@ -50,13 +50,15 @@ class GrainSpecNode(ObjectNode):
         cloud_account: TextNode = None
         compute_service: TextNode = None
         region: TextNode = None
+        service_account: TextNode = None
 
         def _get_field_mapping(self) -> Dict[str, str]:
             mapping = super()._get_field_mapping()
             mapping.update(
                 {
                     "cloud-account": "cloud_account",
-                    "compute-service": "compute_service"
+                    "compute-service": "compute_service",
+                    "service-account": "service_account"
                 }
             )
             return mapping

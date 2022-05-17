@@ -159,6 +159,9 @@
                 },
                 "region": {
                     "type": "string"
+                },
+                "service-account": {
+                    "type": "string"
                 }
             },
             "title": "Spec Host Properties"
