@@ -50,13 +50,15 @@ class GrainSpecNode(ObjectNode):
         cloud_account: TextNode = None
         compute_service: TextNode = None
         region: TextNode = None
+        service_account: TextNode = None
 
         def _get_field_mapping(self) -> Dict[str, str]:
             mapping = super()._get_field_mapping()
             mapping.update(
                 {
                     "cloud-account": "cloud_account",
-                    "compute-service": "compute_service"
+                    "compute-service": "compute_service",
+                    "service-account": "service_account"
                 }
             )
             return mapping
@@ -76,9 +78,10 @@ class GrainObject(ObjectNode):
     kind: ScalarNode = None
     spec: GrainSpecNode = None
     depends_on: ScalarNode = None
+    tf_version: ScalarNode = None
 
     def get_deps(self):
-        if self.depends_on is None:
+        if self.depends_on is None or self.depends_on.text is None:
             return {}
 
         result = {}
@@ -107,7 +110,8 @@ class GrainObject(ObjectNode):
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping =  super()._get_field_mapping()
         mapping.update({
-            "depends-on": "depends_on"
+            "depends-on": "depends_on",
+            "tf-version": "tf_version"
         })
         return mapping
 

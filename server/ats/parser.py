@@ -468,7 +468,7 @@ class Parser:
                     f"Unable to initialize tree from document kind '{doc_type}'"
                 )
             return trees[doc_type]()
-        elif spec_version == "2-preview":
+        elif spec_version in ["2-preview", 2]:
             return BlueprintV2Tree()
 
         else:

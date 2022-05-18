@@ -17,10 +17,10 @@ class ValidatorFactory:
     def get_validator(cls, tree: BaseTree, text_doc: Document):
         spec = tree.spec_version.text
 
-        if spec == "2-preview":
+        if spec in ["2-preview", '2', 2]:
             return BlueprintSpec2Validator(tree, text_doc)
 
-        elif spec == "1":
+        elif spec in [1, "1"]:
             if tree.kind is None:
                 raise ValueError(
                     "Unable to validate document. 'kind' property is not defined"

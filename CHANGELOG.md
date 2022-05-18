@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.0.18](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.17...v0.0.18) (2022-05-18)
+
+* some schema updates
+
+## [0.0.17](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.16...v0.0.17) (2022-05-18)
+
+* check duplicates in grains outputs
+* fix several bugs around depends-on field
+* update schema
+
 ## [0.0.16](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.12...v0.0.16) (2022-05-16)
 
 Add Torque spec 2 support [WIP]
