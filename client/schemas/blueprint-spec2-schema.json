@@ -118,7 +118,6 @@
             },
             "required": [
                 "host",
-                "inputs",
                 "source"
             ],
             "title": "Grain Spec Object"
