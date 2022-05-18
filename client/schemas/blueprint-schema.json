@@ -10,9 +10,15 @@
             "additionalProperties": false,
             "properties": {
                 "spec_version": {
-                    "type": "string",
-                    "enum": [
-                        "2-preview"
+                    "oneOf": [
+                        {
+                            "type": "string",
+                            "enum": ["2-preview"]
+                        },
+                        {
+                            "type": "integer",
+                            "enum": [2]
+                        }
                     ]
                 },
                 "description": {
@@ -83,6 +89,9 @@
                 "depends-on": {
                     "type": "string",
                     "pattern": "^((\\w+)(,\\s*)?)+[^,]$"
+                },
+                "tf-version": {
+                    "type": "string"
                 }
             },
             "required": [

@@ -78,6 +78,7 @@ class GrainObject(ObjectNode):
     kind: ScalarNode = None
     spec: GrainSpecNode = None
     depends_on: ScalarNode = None
+    tf_version: ScalarNode = None
 
     def get_deps(self):
         if self.depends_on is None or self.depends_on.text is None:
@@ -109,7 +110,8 @@ class GrainObject(ObjectNode):
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping =  super()._get_field_mapping()
         mapping.update({
-            "depends-on": "depends_on"
+            "depends-on": "depends_on",
+            "tf-version": "tf_version"
         })
         return mapping
 
