@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.0.18](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.17...v0.0.18) (2022-05-18)
+
+* some schema updates
+
 ## [0.0.17](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.16...v0.0.17) (2022-05-18)
 
 * check duplicates in grains outputs
