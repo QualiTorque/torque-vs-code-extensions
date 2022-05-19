@@ -65,6 +65,9 @@ class GrainSpecNode(ObjectNode):
 
     def get_outputs(self) -> List[ScalarNode]:
         return self._get_seq_nodes("outputs")
+    
+    def get_inputs(self):
+        return self._get_seq_nodes("inputs")
 
     source: SpecSourceNode = None
     host: SpecHostNode = None

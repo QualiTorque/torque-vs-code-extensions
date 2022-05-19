@@ -173,6 +173,23 @@ class BlueprintSpec2Validator(ValidationHandler):
                         output_node, message=message.format(output_node.text)
                     )
     
+    def _validate_no_duplicates_in_grain_spec(self):
+        for grain in self.tree.grains.nodes:
+            grain_obj: GrainObject = grain.value
+
+            if not grain_obj or not grain_obj.spec:
+                return
+
+            grain_inputs = grain_obj.spec.get_inputs()
+            inputs_keys = [i.key.text for i in grain_inputs]
+
+            for input_node in grain_inputs:
+                if inputs_keys.count(input_node.key.text) > 1:
+                    self._add_diagnostic(
+                        node=input_node.key,
+                        message=f"Duplicated input name '{input_node.key.text}'")
+
+            
     def _validate_grain_dep_exists(self):
         for grain in self.tree.grains.nodes:
             grain_name = grain.key.text
@@ -227,4 +244,5 @@ class BlueprintSpec2Validator(ValidationHandler):
         self._validate_grain_dep_exists()
         self._validate_no_duplicates_in_grain_outputs()
         self._validate_no_duplicates_in_deps()
+        self._validate_no_duplicates_in_grain_spec()
         return self._diagnostics
