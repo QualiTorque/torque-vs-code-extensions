@@ -7,7 +7,7 @@ The Quali Torque language extension aims to ease the life of the Torque content 
 ### Code auto-completion
 
 - When designing a blueprint, you can get code suggestions based on a document schema. For example, it may help you to figure out
-what other properties could be added to document.
+what other properties could be added to the document.
 - When designing a grain, under the __depends-on__ field, intellisense can provide you with a list of the available grains names.
 
 ![completions](https://user-images.githubusercontent.com/8643801/169277560-b0b8889d-9258-4f0a-8dc8-02ae38512107.gif)
