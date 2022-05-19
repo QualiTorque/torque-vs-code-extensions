@@ -80,11 +80,11 @@ class GrainObject(ObjectNode):
     depends_on: ScalarNode = None
     tf_version: ScalarNode = None
 
-    def get_deps(self):
+    def get_deps(self) -> List[Dict]:
         if self.depends_on is None or self.depends_on.text is None:
-            return {}
+            return []
 
-        result = {}
+        result = []
 
         deps = self.depends_on.text.split(",")
         word_end = 0
@@ -102,7 +102,13 @@ class GrainObject(ObjectNode):
             start_pos = Position(self.depends_on.value.start_pos[0], column_start)
             end_pos = Position(self.depends_on.value.end_pos[0], column_end)
 
-            result[d] = (start_pos, end_pos)
+            result.append(
+                {
+                    "name": d,
+                    "start": start_pos,
+                    "end": end_pos
+                }
+            )
             word_end = found_on + len(d) - 1
 
         return result

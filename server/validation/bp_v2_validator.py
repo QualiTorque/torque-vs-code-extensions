@@ -1,7 +1,8 @@
 import re
+from tracemalloc import start
 from typing import List
 
-from server.ats.trees.blueprint_v2 import BlueprintV2OutputNode, BlueprintV2Tree, GrainNode
+from server.ats.trees.blueprint_v2 import BlueprintV2OutputNode, BlueprintV2Tree, GrainNode, GrainObject
 from server.ats.trees.common import NodeError, TextNode, YamlNode
 from server.validation.common import ValidationHandler
 from pygls.workspace import Document
@@ -102,10 +103,11 @@ class ExpressionValidationVisitor:
                 dep_grain = parts[1]
 
                 if is_grain_object:
+                    refered_deps_names = [d["name"] for d in node.value.get_deps()]
                     # check grain name
                     if dep_grain == node.identifier:
                         return "Grain cannot refer to itself"
-                    elif dep_grain not in node.value.get_deps():
+                    elif dep_grain not in refered_deps_names:
                         return f"You must list referred grain '{dep_grain}' in depends-on property"
 
                 elif dep_grain not in self.tree.get_grains_names():
@@ -175,24 +177,47 @@ class BlueprintSpec2Validator(ValidationHandler):
         for grain in self.tree.grains.nodes:
             grain_name = grain.key.text
             grains_list = self._get_grains_names()
-            # depend = grain.value.depends_on if grain.value else None
             deps = grain.value.get_deps() if grain.value else None
 
             if deps is None:
                 continue
 
-            for d, pos in deps.items():
-                if d not in grains_list:
+            for d in deps:
+                start_pos = d["start"]
+                end_pos = d["end"]
+
+                if d["name"] not in grains_list:
                     self._add_diagnostic(
-                        start_pos=(pos[0].line, pos[0].col),
-                        end_pos=(pos[1].line, pos[1].col),
-                        message=f"The grain '{grain_name}' depends on undefined grain {d}"
+                        start_pos=(start_pos.line, start_pos.col),
+                        end_pos=(end_pos.line, end_pos.col),
+                        message=f"The grain '{grain_name}' depends on undefined grain {d['name']}"
                     )
-                if d == grain_name:
+                if d["name"] == grain_name:
                     self._add_diagnostic(
-                        start_pos=(pos[0].line, pos[0].col),
-                        end_pos=(pos[1].line, pos[1].col),
+                        start_pos=(start_pos.line, start_pos.col),
+                        end_pos=(end_pos.line, end_pos.col),
                         message=f"The grain '{grain_name}' cannot be dependent on itself",
+                    )
+
+    def _validate_no_duplicates_in_deps(self):
+        for grain in self.tree.grains.nodes:
+            grain_obj: GrainObject = grain.value
+
+            if not grain_obj:
+                return
+
+            deps = grain_obj.get_deps()
+            deps_names = [d["name"] for d in deps]
+
+            for d in deps:
+                start_pos = d["start"]
+                end_pos = d["end"]
+                grain = d["name"]
+                if deps_names.count(d["name"]) > 1:
+                    self._add_diagnostic(
+                        start_pos=(start_pos.line, start_pos.col),
+                        end_pos=(end_pos.line, end_pos.col),
+                        message=f"Multiple mentioning of grain '{grain}'",
                     )
             
     def validate(self):
@@ -201,4 +226,5 @@ class BlueprintSpec2Validator(ValidationHandler):
 
         self._validate_grain_dep_exists()
         self._validate_no_duplicates_in_grain_outputs()
+        self._validate_no_duplicates_in_deps()
         return self._diagnostics
