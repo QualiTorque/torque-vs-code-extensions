@@ -1,10 +1,12 @@
 import re
+from tracemalloc import start
 from typing import List
 
-from server.ats.trees.blueprint_v2 import BlueprintV2OutputNode, BlueprintV2Tree, GrainNode
+from server.ats.trees.blueprint_v2 import BlueprintV2OutputNode, BlueprintV2Tree, GrainNode, GrainObject
 from server.ats.trees.common import NodeError, TextNode, YamlNode
 from server.validation.common import ValidationHandler
 from pygls.workspace import Document
+from pygls.lsp.types.basic_structures import DiagnosticSeverity
 
 
 class ExpressionValidationVisitor:
@@ -102,10 +104,11 @@ class ExpressionValidationVisitor:
                 dep_grain = parts[1]
 
                 if is_grain_object:
+                    refered_deps_names = [d["name"] for d in node.value.get_deps()]
                     # check grain name
                     if dep_grain == node.identifier:
                         return "Grain cannot refer to itself"
-                    elif dep_grain not in node.value.get_deps():
+                    elif dep_grain not in refered_deps_names:
                         return f"You must list referred grain '{dep_grain}' in depends-on property"
 
                 elif dep_grain not in self.tree.get_grains_names():
@@ -121,7 +124,7 @@ class ExpressionValidationVisitor:
                 if dep_grain_node is None:
                     return f"Grain {dep_grain} is not defined"
                     
-                error_msg = f"Output '{output}' is not defined in spec of grain '{dep_grain}'"
+                error_msg = f"Output '{output}' is not part of the '{dep_grain}' grain's outputs"
                 spec_node = dep_grain_node.get_value().spec
 
                 if spec_node is None or spec_node.value is None:
@@ -171,34 +174,100 @@ class BlueprintSpec2Validator(ValidationHandler):
                         output_node, message=message.format(output_node.text)
                     )
     
+    def _validate_no_duplicates_in_grain_spec(self):
+        for grain in self.tree.grains.nodes:
+            grain_obj: GrainObject = grain.value
+
+            if not grain_obj or not grain_obj.spec:
+                return
+
+            grain_inputs = grain_obj.spec.get_inputs()
+            inputs_keys = [i.key.text for i in grain_inputs]
+
+            for input_node in grain_inputs:
+                if inputs_keys.count(input_node.key.text) > 1:
+                    self._add_diagnostic(
+                        node=input_node.key,
+                        message=f"Duplicated input name '{input_node.key.text}'")
+
+    def _check_unused_blueprint_inputs(self):
+        bp_inputs = self.tree.get_inputs()
+
+        for input_node in bp_inputs:
+            input_name = input_node.key.text
+            doc_lines = self._document.lines
+            match = []
+            
+            regex = re.compile("^(?!.*#).*\{\{\s*.inputs\.(" + input_name + ")\s*\}\}")
+
+            for line in doc_lines:
+                match += regex.findall(line)
+    
+            if not match:
+
+                self._add_diagnostic(
+                    node = input_node.key,
+                    message=f"The defined input '{input_name}' is not accessed",
+                    diag_severity=DiagnosticSeverity.Warning
+                )
+            
     def _validate_grain_dep_exists(self):
         for grain in self.tree.grains.nodes:
             grain_name = grain.key.text
             grains_list = self._get_grains_names()
-            # depend = grain.value.depends_on if grain.value else None
             deps = grain.value.get_deps() if grain.value else None
 
             if deps is None:
                 continue
 
-            for d, pos in deps.items():
-                if d not in grains_list:
+            for d in deps:
+                start_pos = d["start"]
+                end_pos = d["end"]
+
+                if d["name"] not in grains_list:
                     self._add_diagnostic(
-                        start_pos=(pos[0].line, pos[0].col),
-                        end_pos=(pos[1].line, pos[1].col),
-                        message=f"The grain '{grain_name}' depends on undefined grain {d}"
+                        start_pos=(start_pos.line, start_pos.col),
+                        end_pos=(end_pos.line, end_pos.col),
+                        message=f"The grain '{grain_name}' depends on undefined grain {d['name']}"
                     )
-                if d == grain_name:
+                if d["name"] == grain_name:
                     self._add_diagnostic(
-                        start_pos=(pos[0].line, pos[0].col),
-                        end_pos=(pos[1].line, pos[1].col),
+                        start_pos=(start_pos.line, start_pos.col),
+                        end_pos=(end_pos.line, end_pos.col),
                         message=f"The grain '{grain_name}' cannot be dependent on itself",
+                    )
+
+    def _validate_no_duplicates_in_deps(self):
+        for grain in self.tree.grains.nodes:
+            grain_obj: GrainObject = grain.value
+
+            if not grain_obj:
+                return
+
+            deps = grain_obj.get_deps()
+            deps_names = [d["name"] for d in deps]
+
+            for d in deps:
+                start_pos = d["start"]
+                end_pos = d["end"]
+                grain = d["name"]
+                if deps_names.count(d["name"]) > 1:
+                    self._add_diagnostic(
+                        start_pos=(start_pos.line, start_pos.col),
+                        end_pos=(end_pos.line, end_pos.col),
+                        message=f"Multiple mentioning of grain '{grain}'",
                     )
             
     def validate(self):
         visitor = ExpressionValidationVisitor(self.tree)
         self.tree.accept(visitor)
 
+        # warnings
+        self._check_unused_blueprint_inputs()
+
+        # errors
         self._validate_grain_dep_exists()
         self._validate_no_duplicates_in_grain_outputs()
+        self._validate_no_duplicates_in_deps()
+        self._validate_no_duplicates_in_grain_spec()
         return self._diagnostics
