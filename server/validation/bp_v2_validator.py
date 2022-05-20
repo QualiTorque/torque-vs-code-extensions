@@ -6,6 +6,7 @@ from server.ats.trees.blueprint_v2 import BlueprintV2OutputNode, BlueprintV2Tree
 from server.ats.trees.common import NodeError, TextNode, YamlNode
 from server.validation.common import ValidationHandler
 from pygls.workspace import Document
+from pygls.lsp.types.basic_structures import DiagnosticSeverity
 
 
 class ExpressionValidationVisitor:
@@ -189,6 +190,26 @@ class BlueprintSpec2Validator(ValidationHandler):
                         node=input_node.key,
                         message=f"Duplicated input name '{input_node.key.text}'")
 
+    def _check_unused_blueprint_inputs(self):
+        bp_inputs = self.tree.get_inputs()
+
+        for input_node in bp_inputs:
+            input_name = input_node.key.text
+            doc_lines = self._document.lines
+            match = []
+            
+            regex = re.compile("^(?!.*#).*\{\{\s*.inputs\.(" + input_name + ")\s*\}\}")
+
+            for line in doc_lines:
+                match += regex.findall(line)
+    
+            if not match:
+
+                self._add_diagnostic(
+                    node = input_node.key,
+                    message=f"The defined input '{input_name}' is not accessed",
+                    diag_severity=DiagnosticSeverity.Warning
+                )
             
     def _validate_grain_dep_exists(self):
         for grain in self.tree.grains.nodes:
@@ -241,6 +262,10 @@ class BlueprintSpec2Validator(ValidationHandler):
         visitor = ExpressionValidationVisitor(self.tree)
         self.tree.accept(visitor)
 
+        # warnings
+        self._check_unused_blueprint_inputs()
+
+        # errors
         self._validate_grain_dep_exists()
         self._validate_no_duplicates_in_grain_outputs()
         self._validate_no_duplicates_in_deps()

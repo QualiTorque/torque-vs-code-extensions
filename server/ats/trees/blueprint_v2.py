@@ -163,7 +163,7 @@ class BlueprintV2Tree(BaseTree):
     grains: GrainsMap = None
 
     def get_inputs(self):
-        raise NotImplementedError
+        return self._get_seq_nodes("inputs")
 
     def get_grains_names(self):
         return [node.key.text for node in self.grains.nodes]
