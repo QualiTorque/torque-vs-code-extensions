@@ -30,7 +30,7 @@ class GrainObjectCompleter(Completer):
         cur_grain_name = self._get_grain_name()
         grains_names_list = self.tree.get_grains_names()
         deps_text = "" if property_node.value is None else property_node.value.text
-        deps = deps_text.split(",") if deps_text is not None else []
+        deps = [d.strip() for d in deps_text.split(",")] if deps_text is not None else []
         typed = deps[-1].strip()
 
         for name in grains_names_list:
