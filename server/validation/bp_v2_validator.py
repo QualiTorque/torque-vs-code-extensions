@@ -123,7 +123,7 @@ class ExpressionValidationVisitor:
                 if dep_grain_node is None:
                     return f"Grain {dep_grain} is not defined"
                     
-                error_msg = f"Output '{output}' is not defined in spec of grain '{dep_grain}'"
+                error_msg = f"Output '{output}' is not part of the '{dep_grain}' grain's outputs"
                 spec_node = dep_grain_node.get_value().spec
 
                 if spec_node is None or spec_node.value is None:
