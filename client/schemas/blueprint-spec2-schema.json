@@ -84,7 +84,8 @@
                     "$ref": "#/definitions/GrainSpecObject"
                 },
                 "depends-on": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^((.+)(,\\s*)?)+[^,]$"
                 },
                 "tf-version": {
                     "type": "string"

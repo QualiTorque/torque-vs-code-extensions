@@ -88,7 +88,7 @@
                 },
                 "depends-on": {
                     "type": "string",
-                    "pattern": "^((\\w+)(,\\s*)?)+[^,]$"
+                    "pattern": "^((.+)(,\\s*)?)+[^,]$"
                 },
                 "tf-version": {
                     "type": "string"
