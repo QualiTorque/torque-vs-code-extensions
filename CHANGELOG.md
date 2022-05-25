@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.0.20](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.19...v0.0.20) (2022-05-25)
+
+* minor fixes
+
 ## [0.0.19](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.18...v0.0.19) (2022-05-20)
 
 * added validation for depend-on duplicates
