@@ -7,9 +7,15 @@
             "additionalProperties": false,
             "properties": {
                 "spec_version": {
-                    "type": "string",
-                    "enum": [
-                        "2-preview"
+                    "oneOf": [
+                        {
+                            "type": "string",
+                            "enum": ["2-preview"]
+                        },
+                        {
+                            "type": "integer",
+                            "enum": [2]
+                        }
                     ]
                 },
                 "description": {
@@ -78,6 +84,10 @@
                     "$ref": "#/definitions/GrainSpecObject"
                 },
                 "depends-on": {
+                    "type": "string",
+                    "pattern": "^((.+)(,\\s*)?)+[^,]$"
+                },
+                "tf-version": {
                     "type": "string"
                 }
             },
@@ -118,7 +128,6 @@
             },
             "required": [
                 "host",
-                "inputs",
                 "source"
             ],
             "title": "Grain Spec Object"

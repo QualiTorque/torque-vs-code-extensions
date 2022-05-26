@@ -65,6 +65,9 @@ class GrainSpecNode(ObjectNode):
 
     def get_outputs(self) -> List[ScalarNode]:
         return self._get_seq_nodes("outputs")
+    
+    def get_inputs(self):
+        return self._get_seq_nodes("inputs")
 
     source: SpecSourceNode = None
     host: SpecHostNode = None
@@ -78,12 +81,13 @@ class GrainObject(ObjectNode):
     kind: ScalarNode = None
     spec: GrainSpecNode = None
     depends_on: ScalarNode = None
+    tf_version: ScalarNode = None
 
-    def get_deps(self):
+    def get_deps(self) -> List[Dict]:
         if self.depends_on is None or self.depends_on.text is None:
-            return {}
+            return []
 
-        result = {}
+        result = []
 
         deps = self.depends_on.text.split(",")
         word_end = 0
@@ -101,7 +105,13 @@ class GrainObject(ObjectNode):
             start_pos = Position(self.depends_on.value.start_pos[0], column_start)
             end_pos = Position(self.depends_on.value.end_pos[0], column_end)
 
-            result[d] = (start_pos, end_pos)
+            result.append(
+                {
+                    "name": d,
+                    "start": start_pos,
+                    "end": end_pos
+                }
+            )
             word_end = found_on + len(d) - 1
 
         return result
@@ -109,7 +119,8 @@ class GrainObject(ObjectNode):
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping =  super()._get_field_mapping()
         mapping.update({
-            "depends-on": "depends_on"
+            "depends-on": "depends_on",
+            "tf-version": "tf_version"
         })
         return mapping
 
@@ -152,7 +163,7 @@ class BlueprintV2Tree(BaseTree):
     grains: GrainsMap = None
 
     def get_inputs(self):
-        raise NotImplementedError
+        return self._get_seq_nodes("inputs")
 
     def get_grains_names(self):
         return [node.key.text for node in self.grains.nodes]

@@ -27,18 +27,19 @@ class GrainObjectCompleter(Completer):
     def _process_depends_on(self, property_node: PropertyNode):
         completions_items = []
 
-        cur_grain_name = self._get_grain_name()
+        cur_grain_name = self._get_grain_name().lower()
         grains_names_list = self.tree.get_grains_names()
         deps_text = "" if property_node.value is None else property_node.value.text
-        deps = deps_text.split(",") if deps_text is not None else []
-        typed = deps[-1].strip()
+        deps = [d.strip().lower() for d in deps_text.split(",")] if deps_text is not None else []
+        typed = deps[-1].strip().lower()
 
         for name in grains_names_list:
-            if name in [cur_grain_name, typed]:
+            lower_name = name.lower()
+            if lower_name in [cur_grain_name, typed]:
                 continue
 
             insert_index = 1 if len(typed) == 1 else None
-            if name.startswith(typed) and name not in deps:
+            if lower_name.startswith(typed) and lower_name not in deps:
                 completions_items.append(
                     CompletionItem(
                         label=name,

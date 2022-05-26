@@ -1,5 +1,19 @@
 # Change Log
 
+## [0.0.20](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.19...v0.0.20) (2022-05-25)
+
+* minor fixes
+
+## [0.0.19](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.18...v0.0.19) (2022-05-20)
+
+* added validation for depend-on duplicates
+* added validation for grain inputs duplicates
+* added warning for unused blueprint inputs
+
+## [0.0.18](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.17...v0.0.18) (2022-05-18)
+
+* some schema updates
+
 ## [0.0.17](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.16...v0.0.17) (2022-05-18)
 
 * check duplicates in grains outputs
