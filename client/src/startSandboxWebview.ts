@@ -51,7 +51,7 @@ export class SandboxStartPanel {
 			column || vscode.ViewColumn.One,
 			getWebviewOptions(extensionUri),
 		);
-		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, inputs, artifacts, branch);
+		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, branch);
 	}
 
 	private startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, artifacts:object, branch:string) {

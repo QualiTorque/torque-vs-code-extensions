@@ -910,6 +910,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     duration = args[0][2]
     inputs_args = args[0][3]
     artifacts_args = args[0][4]
+    branch_args = args[0][5]
 
     server.show_message("Starting sandbox from blueprint: " + blueprint_name)
     server.show_message_log("Starting sandbox from blueprint: " + blueprint_name)
@@ -927,9 +928,8 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
             command += f' -a "{artifacts_args}"'
         if sandbox_name:
             command += f' -n "{sandbox_name}"'
-        if not dev_mode:
-            branch = args[0][5]
-            command += f" -t 0 -b {branch}"
+        if not dev_mode and branch_args:
+            command += f" -t 0 -b {branch_args}"
 
         cwd = server.workspace.root_path if dev_mode else None
         stdout, stderr = _run_torque_cli_command(command, cwd=cwd)
