@@ -88,6 +88,7 @@ class TorqueLanguageServer(LanguageServer):
     CMD_LIST_BLUEPRINTS = "list_blueprints"
     CMD_GET_SANDBOX = "get_sandbox"
     CMD_END_SANDBOX = "end_sandbox"
+    CMD_GET_BLUEPRINT = "get_blueprint"
     latest_opened_document = None
 
 
@@ -1131,6 +1132,37 @@ async def remove_profile(server: TorqueLanguageServer, *args):
             MessageType.Error,
         )
 
+@torque_ls.command(TorqueLanguageServer.CMD_GET_BLUEPRINT)
+async def get_blueprint(server: TorqueLanguageServer, *args):
+    if not args or not args[0]:
+        server.show_message("No blueprint name provided", MessageType.Error)
+        return 1
+    
+    active_profile = await _get_profile(server)
+
+    if not active_profile:
+        server.show_message(
+            "Please have at least one profile set as the default one.",
+            MessageType.Error,
+        )
+        return
+
+    bp_name = args[0].pop()
+    try:
+        stdout, stderr = _run_torque_cli_command(
+            f"torque --disable-version-check --profile {active_profile} bp get {bp_name} --output=json --detail"
+        )
+        if stderr:
+            server.show_message(
+                f"An error occurred while executing the command: {stderr}",
+                MessageType.Error,
+            )
+        return stdout
+    except Exception as ex:
+        server.show_message(
+            f"Failed to get details of blueprint {bp_name}. Reason: {str(ex)}",
+            MessageType.Error,
+        )
 
 @torque_ls.command(TorqueLanguageServer.CMD_GET_SANDBOX)
 async def get_sandbox(server: TorqueLanguageServer, *args):
@@ -1146,6 +1178,7 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
             MessageType.Error,
         )
         return
+
 
     sb_id = args[0].pop()
     try:

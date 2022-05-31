@@ -28,8 +28,7 @@ export class SandboxStartPanel {
 	private readonly _extensionUri: vscode.Uri;
 
     private _bpname: string;
-    private _inputs: Array<string>;
-    private _artifacts: object;
+	private _blueprintDetails: string;
 	private _disposables: vscode.Disposable[] = [];
 	private readonly _branch: string;
 
@@ -66,16 +65,16 @@ export class SandboxStartPanel {
 		})
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, artifacts: object, branch: string) {
+	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, branch: string) {
 		this._panel = panel;
 		this._extensionUri = extensionUri;
         this._bpname = decodeURI(bpname);
-        this._inputs = inputs;
-        this._artifacts = artifacts;
 		this._branch = branch;
+		this._blueprintDetails = null;
 
 		// Set the webview's initial html content
 		this._update();
+		this.reloadBlueprintDetails();		
 
 		// Listen for when the panel is disposed
 		// This happens when the user closes the panel or when the panel is closed programmatically
@@ -89,9 +88,12 @@ export class SandboxStartPanel {
 						vscode.window.showErrorMessage(message.text);
 						return;
                     case 'run-command':
-                        if (message.name == 'start-sandbox') {
+						if (message.name == 'reload-blueprint') {
+                            this.reloadBlueprintDetails();
+						}
+                        else if (message.name == 'start-sandbox') {
                             this.startSandbox(this._bpname, message.sandbox_name, message.duration, message.inputs, message.artifacts, this._branch);
-                        }
+						}
                         return;
 				}
 			},
@@ -100,14 +102,27 @@ export class SandboxStartPanel {
 		);
 	}
 
+	private async reloadBlueprintDetails() {
+		return vscode.window.withProgress({location: vscode.ProgressLocation.Notification}, (progress): Promise<string> => {
+            return new Promise<string>(async (resolve) => {
+                progress.report({ message: "Loading blueprint details" });
+                await vscode.commands.executeCommand('get_blueprint', this._bpname)
+                .then(async (result:string) => {
+                    if (result.length > 0)
+                        this._blueprintDetails = result;
+                        this._update();
+                })
+                resolve("")
+            })
+        })
+	}
+
     public updatePanel(bpname:string, inputs:Array<string>, artifacts: object) {
         this._bpname = decodeURI(bpname);
-        // this._space = space;
-        this._inputs = inputs;
-        this._artifacts = artifacts;
-
+		this._blueprintDetails = null;
 		// Set the webview's initial html content
 		this._update();
+		this.reloadBlueprintDetails();
     }
 
 	public dispose() {
@@ -156,56 +171,83 @@ export class SandboxStartPanel {
 		const stylesPathMainPath = vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css');
 
 		const stylesMainUri = webview.asWebviewUri(stylesPathMainPath);
+		const nonce = getNonce();
 
 		let cleanName = this._bpname;
 		if (cleanName.endsWith('.yaml'))
 			cleanName = cleanName.replace('.yaml', '').split('/').slice(-1)[0]	
 		if (cleanName.startsWith('[Sample]'))
 			cleanName = cleanName.replace('[Sample]','');
+
+		if (!this._blueprintDetails) {
+			return `
+				<body>
+					<div style="vertical-align: top; display: inline-block; margin-top: 5px">
+						<h2>${cleanName}</h2>
+						<br/>
+						</div>
+						<div style="vertical-align: top;">
+						<h4>Loading details...</h4>
+					</div>
+				</body>`;
+		}
 		
 		let generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         generalHtml += "<tr><td width='180px'>" + "Name" + "</td><td>" + "<input type='text' id='sandbox_name' value='" + cleanName + "'></td></tr>";
         generalHtml += "<tr><td width='180px'>" + "Duration (minutes) *" + "</td><td>" + "<input type='number' id='duration' value='" + default_duration.toString() + "' min='10' max='3600'></td></tr>";
         generalHtml += "</table>";
+
+		let blueprintJson = JSON.parse(this._blueprintDetails);
+
+		// spec2 check
+		if ("details" in blueprintJson)
+			blueprintJson = blueprintJson['details'];
+
 		let inputsHtml = "";
-		let postMessageProperties = "sandbox_name: document.getElementById('sandbox_name').value, duration: document.getElementById('duration').value"
-        if (this._inputs.length > 0) {
-            inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+		let postMessageProperties = "sandbox_name: document.getElementById('sandbox_name').value, duration: document.getElementById('duration').value";
+		let inputs = blueprintJson['inputs'];
+		let inputs_size = inputs.length;
+
+		if (inputs_size > 0) {
+			// let inputs = blueprintJson['inputs'];
+			inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
             postMessageProperties += ", inputs: {";        
-            for (let i=0; i<this._inputs.length; i++)
-            {
-                inputsHtml += "<tr><td width='180px'>" + this._inputs[i]['name'] + (!this._inputs[i]['optional']? ' *': '') + "</td><td>" + "<input type=" + (this._inputs[i]['display_style']=='masked'?'password':'text') + " id='" + this._inputs[i]['name'] + "' value='" + (this._inputs[i]['default_value'] ? this._inputs[i]['default_value'] : '') + "'></td></tr>";
-                postMessageProperties += `"${this._inputs[i]['name']}": document.getElementById('${this._inputs[i]['name']}').value,`;
+            for (let i = 0; i < inputs_size; i++){
+                inputsHtml += ("<tr><td width='180px'>" 
+							+ inputs[i]['name'] + (!inputs[i]['optional']? ' *': '')
+							+ "</td><td>" + "<input type=" + (inputs[i]['display_style']=='masked'?'password':'text') + " id='"
+							+ inputs[i]['name'] + "' value='" + (inputs[i]['default_value'] ? inputs[i]['default_value'] : '')
+							+ "'></td></tr>");
+                postMessageProperties += `"${inputs[i]['name']}": document.getElementById('${inputs[i]['name']}').value,`;
             }
             inputsHtml += "</table>";
             postMessageProperties += "}";            
         }
         else
-            postMessageProperties += ", inputs: {}";   
+            postMessageProperties += ", inputs: {}";
 
 		let artifactsHtml = "";
-        if (!this._isEmpty(this._artifacts)) {
-            artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-            postMessageProperties += ", artifacts: {";
-            for (const [key, value] of Object.entries(this._artifacts)) {
-                artifactsHtml += "<tr><td width='180px'>" + key + ' *' + "</td><td>" + "<input type='text' id='art_" + key + "' value='" + (value ? value : '') + "'></td></tr>";
-                postMessageProperties += `"${key}": document.getElementById('art_${key}').value,`;
-            }
-            artifactsHtml += "</table>";
-            postMessageProperties += "}";
-            if (this._inputs.length > 0)
-                artifactsHtml = "<br/>" + artifactsHtml;
-        }
-        else
-            postMessageProperties += ", artifacts: {}";
+		if ('artifacts' in blueprintJson && !this._isEmpty(blueprintJson['artifacts'])) {
+			artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
+			postMessageProperties += ", artifacts: {";
+			for (const [key, value] of Object.entries(blueprintJson['artifacts'])) {
+				artifactsHtml += "<tr><td width='180px'>" + key + ' *' + "</td><td>" + "<input type='text' id='art_" + key + "' value='" + (value ? value : '') + "'></td></tr>";
+				postMessageProperties += `"${key}": document.getElementById('art_${key}').value,`;
+			}
+			artifactsHtml += "</table>";
+			postMessageProperties += "}";
+			if (inputs_size > 0)
+				artifactsHtml = "<br/>" + artifactsHtml;
+		}
+		else
+			postMessageProperties += ", artifacts: {}";
 
-        
         let startHtml = "<br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-        startHtml += "<tr><td width='180px'><input type='button' id='start-btn' value='Start'></td><td></td></tr>";
+        startHtml += ("<tr><td width='180px'><input type='button' id='start-btn' value='Start'></td>"
+						+ "<td width='180px'><input type='button' id='reload-btn' value='Refresh'></td></tr>");
         startHtml += "</table>";
         
 		// Use a nonce to only allow specific scripts to be run
-		const nonce = getNonce();
 		
 		let html = `<!DOCTYPE html>
 			<html lang="en">
@@ -232,11 +274,17 @@ export class SandboxStartPanel {
 				${generalHtml}
                 <br/>
 				${inputsHtml}
-                ${artifactsHtml}
+				${artifactsHtml}
                 ${startHtml}
 			</body>
             <script nonce="${nonce}">
                 const vscode = acquireVsCodeApi();
+				document.getElementById("reload-btn").addEventListener("click", function() {
+					vscode.postMessage({
+						command: 'run-command',
+						name: 'reload-blueprint'                 
+					});
+				});
                 document.getElementById("start-btn").addEventListener("click", function() {
 					this.disabled = true;
 					startSandbox();
