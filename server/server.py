@@ -928,8 +928,10 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
             command += f' -a "{artifacts_args}"'
         if sandbox_name:
             command += f' -n "{sandbox_name}"'
-        if not dev_mode and branch_args:
-            command += f" -t 0 -b {branch_args}"
+        if not dev_mode:
+            command += " -t 0"
+            if branch_args:
+                command += f" -b {branch_args}"
 
         cwd = server.workspace.root_path if dev_mode else None
         stdout, stderr = _run_torque_cli_command(command, cwd=cwd)
@@ -948,15 +950,21 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         if stderr:
             # server.show_message_log('Error while starting the sandbox:')
             for line in stderr:
-                # error_msg += line.decode().strip() + "\n"
-                error_msg += line.strip() + "\n"
-                # server.show_message_log(line.decode().strip())
+                if line == "":
+                    continue
+                if line.lower().startswith("warning"):
+                    server.show_message_log(line)
+                else:
+                    # error_msg += line.decode().strip() + "\n"
+                    error_msg += line.strip() + "\n"
+                    # server.show_message_log(line.decode().strip())
             if error_msg:
                 error_msg = "Error while starting the sandbox:\n" + error_msg
                 server.show_message_log(error_msg)
         if error_msg:
             server.show_message(
-                "Sandbox creation failed. Check the 'Torque' Output view for more details."
+                "Sandbox creation failed. Check the 'Torque' Output view for more details.",
+                MessageType.Error
             )
         else:
             server.show_message(
