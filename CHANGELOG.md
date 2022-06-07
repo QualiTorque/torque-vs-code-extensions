@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.2.0]https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.20...v0.2.0) (2022-06-07)
+
+* some schema updates
+* switch to new torque-cli
+* return UI part of extension
+
 ## [0.0.20](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.19...v0.0.20) (2022-05-25)
 
 * minor fixes
