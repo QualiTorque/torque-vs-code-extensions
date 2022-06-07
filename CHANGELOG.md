@@ -1,5 +1,44 @@
 # Change Log
 
+## [0.0.20](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.19...v0.0.20) (2022-05-25)
+
+* minor fixes
+
+## [0.0.19](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.18...v0.0.19) (2022-05-20)
+
+* added validation for depend-on duplicates
+* added validation for grain inputs duplicates
+* added warning for unused blueprint inputs
+
+## [0.0.18](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.17...v0.0.18) (2022-05-18)
+
+* some schema updates
+
+## [0.0.17](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.16...v0.0.17) (2022-05-18)
+
+* check duplicates in grains outputs
+* fix several bugs around depends-on field
+* update schema
+
+## [0.0.16](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.12...v0.0.16) (2022-05-16)
+
+Add Torque spec 2 support [WIP]
+
+* added init json schema for new spec
+* added parser/tree 
+* implemented server-side validation for grain dependecies and expressions
+* auto-completions for grains deps
+* disabled UI blueprints/sandboxes explorers (temporary)
+ 
+[NOTE] The last stable version with spec version 1 is 0.0.12
+
+## [0.0.12](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.11...v0.0.12) (2022-04-13)
+
+Add possible_values support
+
+* AST and schema were updated
+* Validation and completion features were added
+
 ## [0.0.11](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.10...v0.0.11) (2021-12-24)
 
 Add python 3.10 support

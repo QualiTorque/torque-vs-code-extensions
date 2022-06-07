@@ -100,7 +100,7 @@ class ResourcesManager:
     def get_inputs(cls, resource_name):
         if resource_name in cls.cache:
             resource_tree = cls.cache[resource_name]["tree"]
-            if resource_tree and resource_tree.inputs_node:
+            if resource_tree and resource_tree.inputs:
                 inputs = {}
                 for input_node in resource_tree.get_inputs():
                     inputs[input_node.key.text] = (
@@ -133,9 +133,9 @@ class Visitor:
 
         if start <= self.cursor_position <= end:
             self.found_node = node
-            return True
 
-        return False
+            for child in node.get_children():
+                self.visit_node(child)
 
 
 def get_path_to_pos(tree: BaseTree, pos: Position) -> List[YamlNode]:
@@ -171,31 +171,35 @@ def is_var_allowed(tree: BaseTree, pos: Position) -> bool:
     return False
 
 
-def get_parent_node(tree: BaseTree, pos: Position):
-    path = get_path_to_pos(tree, pos)
+def get_nearest_text_key(path: List[YamlNode], pos: Position):
+    key = None
+    node = path[-1] if path else None
 
+    while node:
+        key = getattr(node, "text", None) or getattr(node, "identifier", None)
+        
+        if key is not None:
+            break
+        else:
+            node = get_parent_node(path, pos)
+    
+    return key
+
+
+def get_parent_node(path: List[YamlNode], pos: Position):
     if not path:
         return None
 
-    while path:
-        node = path.pop()
+    for node in reversed(path):
         if node.parent is None:
             break
         if (
-            node.parent.start_pos[0] < pos.line
+            node.parent.start_pos[0] <= pos.line
             and node.parent.start_pos[1] < pos.character
         ):
             return node.parent
 
     return None
-
-
-def get_parent_node_text(tree: BaseTree, pos: Position):
-    parent_node = get_parent_node(tree, pos)
-    if parent_node and hasattr(parent_node, "text"):
-        return parent_node.text
-    else:
-        return ""
 
 
 def get_line_before_position(document: Document, position: types.Position):
@@ -216,7 +220,7 @@ def preceding_words(
     """
     line = get_line_before_position(document, position)
     try:
-        word = line.strip().split()[-2:]
+        word = line.strip().split()[-2:] if line else None
         return word
     except ValueError:
         return None

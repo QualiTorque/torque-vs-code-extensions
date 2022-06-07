@@ -9,6 +9,7 @@ from pygls.lsp.types.basic_structures import (
     Range,
 )
 from server.ats.trees.blueprint import BlueprintTree
+from server.ats.trees.common import ScalarNode
 from server.constants import (
     AWS_REGIONS,
     AZURE_REGIONS,
@@ -47,10 +48,10 @@ class BlueprintValidationHandler(ValidationHandler):
                         .replace("{", "")
                         .replace("}", "")
                     )
-                    self._add_diagnostic_for_range(
-                        message.format(old_syntax, deprecated_syntax[prop]),
-                        range_start_tuple=(line_num, col[0]),
-                        range_end_tuple=(line_num, col[1]),
+                    self._add_diagnostic(
+                        message=message.format(old_syntax, deprecated_syntax[prop]),
+                        start_pos=(line_num, col[0]),
+                        end_pos=(line_num, col[1]),
                         diag_severity=DiagnosticSeverity.Warning,
                     )
 
@@ -149,7 +150,7 @@ class BlueprintValidationHandler(ValidationHandler):
                     self._add_diagnostic(cloud.value, message=message.format(region))
 
     def _check_for_unused_blueprint_inputs(self):
-        if self._tree.inputs_node:
+        if self._tree.inputs:
             message = "Unused variable {}"
             source = self._document.source
             # build a list of inputs used as "name only" to be matched with a blueprint input
@@ -259,7 +260,7 @@ class BlueprintValidationHandler(ValidationHandler):
     def _validate_var_being_used_is_defined(self):
         bp_inputs = (
             {input.key.text for input in self._tree.get_inputs()}
-            if self._tree.inputs_node
+            if self._tree.inputs
             else {}
         )
 
@@ -290,6 +291,8 @@ class BlueprintValidationHandler(ValidationHandler):
                 for match in iterator:
                     cur_var = match.group()
                     pos = match.span()
+                    if input.value.style:
+                        pos = (pos[0] + 1, pos[1] + 1)
                     if cur_var.startswith("${") and cur_var.endswith("}"):
                         cur_var = "$" + cur_var[2:-1]
 
@@ -473,6 +476,26 @@ class BlueprintValidationHandler(ValidationHandler):
                             "be used as management or application subnet.",
                         )
 
+    def _validate_default_value_in_possible_values(self):
+        bp_inputs = self._tree.get_inputs()
+        for input_node in bp_inputs:
+            if input_node.value:
+                default_val = input_node.default_value
+                if isinstance(default_val, ScalarNode):
+                    continue
+                possible_values = [value.text for value in input_node.possible_values]
+
+                if default_val.value is None and possible_values:
+                    self._add_diagnostic(
+                        default_val.key,
+                        message="The default value cannot be empty if possible_values are set")
+
+                elif possible_values and default_val.text not in possible_values:
+                    self._add_diagnostic(
+                        default_val.value,
+                        message=f"Default value '{default_val.value.text}' must be in the list of possible values")
+
+
     def validate(self):
         super().validate()
 
@@ -491,6 +514,7 @@ class BlueprintValidationHandler(ValidationHandler):
             self._check_for_deprecated_properties(deprecated_properties)
             self._check_for_deprecated_syntax()
             # errors
+            self._validate_default_value_in_possible_values()
             self._validate_blueprint_resources_have_input_values()
             self._validate_dependency_exists()
             self._validate_var_being_used_is_defined()

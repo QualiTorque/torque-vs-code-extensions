@@ -63,11 +63,7 @@ class YamlNode(ABC):
             self.parent.add_error(error)
 
     def accept(self, visitor):
-        v = visitor.visit_node(self)
-
-        if v and self.get_children():
-            for child in self.get_children():
-                child.accept(visitor)
+        visitor.visit_node(self)
 
     def get_children(self):
         return []
@@ -96,6 +92,7 @@ class SequenceNode(YamlNode):
 class TextNode(YamlNode):
     allow_vars: ClassVar[bool] = True
     _text: str = ""
+    style: str = None
 
     @property
     def text(self):
@@ -117,16 +114,18 @@ class ScalarNode(TextNode):
     allow_vars = False
 
     def _validate(self, v: str):
-        regex = re.compile("(\$\{.+?\}|^\$.+?$)")
+        regex = re.compile("(\$\{.+?\}|^\$.+?$)|\{\{[^\{\}]*\}\}")
         # find first
-        m = regex.search(v)
-        if m and self.allow_vars is False:
+        # m = regex.search(v)
+        found = regex.finditer(v)
+
+        for m in found:
             offset = m.span()
-            raise NodeError(
+            self.add_error(NodeError(
                 start_pos=(self.start_pos[0], self.start_pos[1] + offset[0]),
-                end_pos=(self.end_pos[0], self.end_pos[1] + offset[1]),
+                end_pos=(self.end_pos[0], self.start_pos[1] + offset[1]),
                 message="Variables are not allowed here",
-            )
+            ))
 
 
 @dataclass
@@ -192,6 +191,19 @@ class MappingNode(YamlNode):  # TODO: actually all torque nodes must inherit thi
         return result_class
 
 
+# For now it's just a child of sequence node.
+# will see in the future if we need to have a real map here
+@dataclass
+class MapNode(SequenceNode):
+    node_type: ClassVar[type] = MappingNode
+
+    def get_mapping_by_key(self, key: str ) -> MappingNode:
+        for node in self.nodes:
+            if node.key and node.key.text == key:
+                return node
+        return None 
+
+
 class PropertyNode(MappingNode):
     @property
     def identifier(self):
@@ -209,6 +221,8 @@ class PropertyNode(MappingNode):
         return self.value
 
     def __getattr__(self, name: str) -> Any:
+        if self.value is None:
+            return None
         val = getattr(self.value, name, None)
 
         if val is not None:
@@ -244,7 +258,6 @@ class ObjectNode(YamlNode, ABC):
             raise AttributeError(f"There is no attribute with name {child_name}")
 
         child = getattr(self, attr)
-
         # obj has not been instantiated yet
         if child is None:
             child = PropertyNode(parent=self)
@@ -330,26 +343,17 @@ class ScalarMappingNode(MappingNode):
 
 @dataclass
 class ScalarMappingsSequence(SequenceNode):
-    """
-    Node representing the list of inputs
-    """
-
     node_type = ScalarMappingNode
 
 
 @dataclass
 class BaseTree(ObjectNode):
-    inputs_node: ScalarMappingsSequence = None
+    inputs: ScalarMappingsSequence = None
     kind: ScalarNode = None
     spec_version: ScalarNode = None
 
-    def _get_field_mapping(self) -> {str: str}:
-        mapping = super()._get_field_mapping()
-        mapping.update({"inputs": "inputs_node"})
-        return mapping
-
-    def get_inputs(self) -> List[ScalarMappingNode]:
-        return self._get_seq_nodes("inputs_node")
+    def get_inputs(self) -> List[MappingNode]:
+        return self._get_seq_nodes("inputs")
 
 
 @dataclass

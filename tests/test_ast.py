@@ -7,7 +7,7 @@ from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintTree
 from server.ats.trees.common import BaseTree
 from server.ats.trees.service import ServiceTree
-from server.tests.unit.trees import (
+from trees import (
     azuresimple_bp_tree,
     demoapp_tree,
     no_child,
@@ -58,7 +58,7 @@ class TestParser(unittest.TestCase):
             self.assertIsInstance(parser.tree, v)
 
     def test_wrong_king_causes_exception(self):
-        content = "kind: bblueprint"
+        content = "kind: bblueprint\nspec_version: 1"
         with self.assertRaises(ParserError):
             _ = Parser(content)
 
@@ -183,8 +183,11 @@ spec_version: 1"""
       tag: elk624-python-2
   os_type: linux
 kind: application
+spec_version: 1
 """
         tree = self._parse(doc)
+        print(tree)
+        print(no_indent.app_no_indent_deep)
         self.assertEqual(len(tree.errors), 1)
         self.assertEqual(tree, no_indent.app_no_indent_deep)
 

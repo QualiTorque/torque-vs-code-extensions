@@ -28,12 +28,12 @@ simple = ServiceTree(
     end_pos=(4, 15),
     errors=[],
     outputs=None,
-    inputs_node=PropertyNode(
+    inputs=PropertyNode(
         start_pos=(1, 0),
         end_pos=(4, 0),
         errors=[],
         key=ScalarNode(
-            start_pos=(1, 0), end_pos=(1, 6), errors=[], _text="inputs_node"
+            start_pos=(1, 0), end_pos=(1, 6), errors=[], _text="inputs"
         ),
         value=ScalarMappingsSequence(
             start_pos=(2, 0),
@@ -100,12 +100,12 @@ no_indent_colon = ServiceTree(
     end_pos=(3, 15),
     errors=[],
     outputs=None,
-    inputs_node=PropertyNode(
+    inputs=PropertyNode(
         start_pos=(1, 0),
         end_pos=(3, 0),
         errors=[],
         key=ScalarNode(
-            start_pos=(1, 0), end_pos=(1, 6), errors=[], _text="inputs_node"
+            start_pos=(1, 0), end_pos=(1, 6), errors=[], _text="inputs"
         ),
         value=ScalarMappingsSequence(
             start_pos=(2, 0),
@@ -153,7 +153,7 @@ no_indent_inside_no_indent = BlueprintTree(
     start_pos=(0, 0),
     end_pos=(9, 0),
     errors=[],
-    inputs_node=None,
+    inputs=None,
     kind=PropertyNode(
         start_pos=(0, 0),
         end_pos=(1, 0),
@@ -292,7 +292,7 @@ empty_item_middle_no_indent = BlueprintTree(
             start_pos=(4, 0), end_pos=(4, 1), message="Element could not be empty"
         )
     ],
-    inputs_node=None,
+    inputs=None,
     kind=PropertyNode(
         start_pos=(0, 0),
         end_pos=(1, 0),
@@ -473,7 +473,7 @@ empty_item_end_no_indent = BlueprintTree(
             start_pos=(5, 0), end_pos=(5, 1), message="Element could not be empty"
         )
     ],
-    inputs_node=None,
+    inputs=None,
     kind=PropertyNode(
         start_pos=(0, 0),
         end_pos=(1, 0),
@@ -647,13 +647,13 @@ empty_item_end_no_indent = BlueprintTree(
 ##########################################################################
 app_no_indent_deep = AppTree(
     start_pos=(0, 0),
-    end_pos=(12, 0),
+    end_pos=(13, 0),
     errors=[
         NodeError(
             start_pos=(6, 4), end_pos=(6, 5), message="Element could not be empty"
         )
     ],
-    inputs_node=None,
+    inputs=None,
     kind=PropertyNode(
         start_pos=(11, 0),
         end_pos=(12, 0),
@@ -663,7 +663,13 @@ app_no_indent_deep = AppTree(
             start_pos=(11, 6), end_pos=(11, 17), errors=[], _text="application"
         ),
     ),
-    spec_version=None,
+    spec_version=PropertyNode(
+        start_pos=(12, 0),
+        end_pos=(13, 0),
+        errors=[],
+        key=ScalarNode(start_pos=(12, 0), end_pos=(12, 12), errors=[], _text="spec_version"),
+        value=ScalarNode(start_pos=(12, 14), end_pos=(12, 15), errors=[], _text="1")
+    ),
     outputs=None,
     configuration=None,
     source=PropertyNode(
