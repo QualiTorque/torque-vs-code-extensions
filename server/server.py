@@ -88,6 +88,7 @@ class TorqueLanguageServer(LanguageServer):
     CMD_LIST_BLUEPRINTS = "list_blueprints"
     CMD_GET_SANDBOX = "get_sandbox"
     CMD_END_SANDBOX = "end_sandbox"
+    CMD_GET_BLUEPRINT = "get_blueprint"
     latest_opened_document = None
 
 
@@ -589,102 +590,100 @@ def completions(
         )
 
 
-# @torque_ls.feature(
-#     CODE_LENS,
-#     CodeLensOptions(resolve_provider=False),
-# )
-# def code_lens(
-#     server: TorqueLanguageServer, params: Optional[CodeLensParams] = None
-# ) -> Optional[List[CodeLens]]:
-#     if "/blueprints/" in params.text_document.uri:
-#         doc = server.workspace.get_document(params.text_document.uri)
+@torque_ls.feature(CODE_LENS, CodeLensOptions(resolve_provider=False))
+def code_lens(
+    server: TorqueLanguageServer, params: Optional[CodeLensParams] = None
+) -> Optional[List[CodeLens]]:
+    if "/blueprints/" in params.text_document.uri:
+        doc = server.workspace.get_document(params.text_document.uri)
 
-#         try:
-#             yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
-#         except yaml.MarkedYAMLError:
-#             yaml_obj = None
+        try:
+            yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
+        except yaml.MarkedYAMLError:
+            yaml_obj = None
 
-#         try:
-#             if yaml_obj:
-#                 bp_tree = Parser(doc.source).parse()
-#                 if bp_tree.kind is None:
-#                     return
-#         except Exception as ex:
-#             import sys
+        try:
+            if yaml_obj:
+                bp_tree = Parser(doc.source).parse()
+                # disable for spec2
+                if bp_tree.kind is None:
+                    return
+        except Exception as ex:
+            import sys
 
-#             logging.error(
-#                 "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
-#                 type(ex).__name__,
-#                 ex,
-#             )
-#             return None
+            logging.error(
+                "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
+                type(ex).__name__,
+                ex,
+            )
+            return None
 
-#         def to_bool(val: str):
-#             return val.lower() == "true"
+        def to_bool(val: str):
+            return val.lower() == "true"
 
-#         if yaml_obj and bp_tree:
-#             inputs = []
-#             try:
-#                 bp_inputs = bp_tree.get_inputs()
-#             except NotImplementedError:
-#                 bp_inputs = []
-#             for inp in bp_inputs:
-#                 props = inp.value
-#                 item = {}
-#                 item["name"] = inp.key.text
-#                 item["default_value"] = (
-#                     inp.default_value.text if (props and inp.default_value) else ""
-#                 )
+        if yaml_obj and bp_tree:
+            inputs = []
+            try:
+                bp_inputs = bp_tree.get_inputs()
+            except NotImplementedError:
+                bp_inputs = []
+            for inp in bp_inputs:
+                props = inp.value
+                item = {}
+                item["name"] = inp.key.text
+                item["default_value"] = (
+                    inp.default_value.text if (props and inp.default_value) else ""
+                )
 
-#                 item["optional"] = (
-#                     to_bool(props.optional.text)
-#                     if (props and hasattr(props, "optional") and props.optional)
-#                     else False
-#                 )
+                item["optional"] = (
+                    to_bool(props.optional.text)
+                    if (props and hasattr(props, "optional") and props.optional)
+                    else False
+                )
 
-#                 item["display_style"] = (
-#                     props.display_style.text
-#                     if (props and hasattr(props, "display_style") and props.display_style)
-#                     else "text"
-#                 )
-#                 inputs.append(item)
-#             artifacts = {}
-#             bp_arts = bp_tree.get_artifacts()
-#             for art in bp_arts:
-#                 artifacts[art.key.text] = art.value.text if art.value else ""
+                item["display_style"] = (
+                    props.display_style.text
+                    if (props and hasattr(props, "display_style") and props.display_style)
+                    else "text"
+                )
+                inputs.append(item)
+            artifacts = {}
+            bp_arts = bp_tree.get_artifacts()
+            for art in bp_arts:
+                artifacts[art.key.text] = art.value.text if art.value else ""
 
-#         output = [
-#             CodeLens(
-#                 range=Range(
-#                     start=Position(line=0, character=0),
-#                     end=Position(line=1, character=1),
-#                 ),
-#                 command=Command(
-#                     title="Validate with Torque",
-#                     command=TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT,
-#                     arguments=[params.text_document.uri],
-#                 ),
-#             ),
-#         ]
+        output = [
+            CodeLens(
+                range=Range(
+                    start=Position(line=0, character=0),
+                    end=Position(line=1, character=1),
+                ),
+                command=Command(
+                    title="Validate with Torque",
+                    command=TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT,
+                    arguments=[params.text_document.uri],
+                ),
+            ),
+        ]
 
-#         if yaml_obj and bp_tree:
-#             output += [
-#                 CodeLens(
-#                     range=Range(
-#                         start=Position(line=0, character=0),
-#                         end=Position(line=1, character=1),
-#                     ),
-#                     command=Command(
-#                         title="Start Sandbox",
-#                         command="extension.openReserveForm",
-#                         arguments=[params.text_document.uri, inputs, artifacts, ""],
-#                     ),
-#                 ),
-#             ]
+        if yaml_obj and bp_tree:
+            output += [
+                CodeLens(
+                    range=Range(
+                        start=Position(line=0, character=0),
+                        end=Position(line=1, character=1),
+                    ),
+                    command=Command(
+                        title="Start Sandbox",
+                        command="extension.openReserveForm",
+                        arguments=[params.text_document.uri, inputs, artifacts, ""],
+                    ),
+                ),
+            ]
 
-#         return output
-#     else:
-#         return None
+        return output
+    else:
+        return None
 
 
 @torque_ls.feature(DOCUMENT_LINK)
@@ -911,6 +910,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     duration = args[0][2]
     inputs_args = args[0][3]
     artifacts_args = args[0][4]
+    branch_args = args[0][5]
 
     server.show_message("Starting sandbox from blueprint: " + blueprint_name)
     server.show_message_log("Starting sandbox from blueprint: " + blueprint_name)
@@ -929,8 +929,9 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         if sandbox_name:
             command += f' -n "{sandbox_name}"'
         if not dev_mode:
-            branch = args[0][5]
-            command += f" -t 0 -b {branch}"
+            command += " -t 0"
+            if branch_args:
+                command += f" -b {branch_args}"
 
         cwd = server.workspace.root_path if dev_mode else None
         stdout, stderr = _run_torque_cli_command(command, cwd=cwd)
@@ -949,15 +950,21 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         if stderr:
             # server.show_message_log('Error while starting the sandbox:')
             for line in stderr:
-                # error_msg += line.decode().strip() + "\n"
-                error_msg += line.strip() + "\n"
-                # server.show_message_log(line.decode().strip())
+                if line == "":
+                    continue
+                if line.lower().startswith("warning"):
+                    server.show_message_log(line)
+                else:
+                    # error_msg += line.decode().strip() + "\n"
+                    error_msg += line.strip() + "\n"
+                    # server.show_message_log(line.decode().strip())
             if error_msg:
                 error_msg = "Error while starting the sandbox:\n" + error_msg
                 server.show_message_log(error_msg)
         if error_msg:
             server.show_message(
-                "Sandbox creation failed. Check the 'Torque' Output view for more details."
+                "Sandbox creation failed. Check the 'Torque' Output view for more details.",
+                MessageType.Error
             )
         else:
             server.show_message(
@@ -1133,6 +1140,37 @@ async def remove_profile(server: TorqueLanguageServer, *args):
             MessageType.Error,
         )
 
+@torque_ls.command(TorqueLanguageServer.CMD_GET_BLUEPRINT)
+async def get_blueprint(server: TorqueLanguageServer, *args):
+    if not args or not args[0]:
+        server.show_message("No blueprint name provided", MessageType.Error)
+        return 1
+    
+    active_profile = await _get_profile(server)
+
+    if not active_profile:
+        server.show_message(
+            "Please have at least one profile set as the default one.",
+            MessageType.Error,
+        )
+        return
+
+    bp_name = args[0].pop()
+    try:
+        stdout, stderr = _run_torque_cli_command(
+            f"torque --disable-version-check --profile {active_profile} bp get '{bp_name}' --output=json --detail"
+        )
+        if stderr:
+            server.show_message(
+                f"An error occurred while executing the command: {stderr}",
+                MessageType.Error,
+            )
+        return stdout
+    except Exception as ex:
+        server.show_message(
+            f"Failed to get details of blueprint {bp_name}. Reason: {str(ex)}",
+            MessageType.Error,
+        )
 
 @torque_ls.command(TorqueLanguageServer.CMD_GET_SANDBOX)
 async def get_sandbox(server: TorqueLanguageServer, *args):
@@ -1148,6 +1186,7 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
             MessageType.Error,
         )
         return
+
 
     sb_id = args[0].pop()
     try:
