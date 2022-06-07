@@ -102,6 +102,7 @@ class GrainSpecNode(ObjectNode):
         compute_service: TextNode = None
         region: TextNode = None
         service_account: TextNode = None
+        name: ScalarNode = None
 
         def _get_field_mapping(self) -> Dict[str, str]:
             mapping = super()._get_field_mapping()

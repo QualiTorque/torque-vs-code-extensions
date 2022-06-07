@@ -217,6 +217,9 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "name": {
+                    "type": "string"
+                },
                 "cloud-account": {
                     "type": "string"
                 },
