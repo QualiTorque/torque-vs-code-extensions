@@ -134,6 +134,20 @@
                 }
             }
         },
+        "GrainTag": {
+            "type": "object",
+            "properties": {
+                "auto-tag": {
+                    "type": "boolean"
+                },
+                "disable-tags-for": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "GrainSpecObject": {
             "type": "object",
             "additionalProperties": false,
@@ -164,6 +178,9 @@
                 },
                 "scripts": {
                     "$ref": "#/definitions/GrainScripts"
+                },
+                "tags": {
+                    "$ref": "#/definitions/GrainTag"
                 }
             },
             "required": [

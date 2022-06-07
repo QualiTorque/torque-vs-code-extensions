@@ -80,6 +80,21 @@ class GrainSpecNode(ObjectNode):
     class SpecSourceNode(ObjectNode):
         store: ScalarNode = None
         path: ScalarNode = None
+    
+    @dataclass
+    class GrainSpecTag(ObjectNode):
+        auto_tag: ScalarNode = None
+        disable_tags_for: ScalarNodesSequence = None
+
+        def _get_field_mapping(self) -> Dict[str, str]:
+            mapping = super()._get_field_mapping()
+            mapping.update(
+                {
+                    "disable-tags-for": "disable_tags_for",
+                    "auto-tag": "auto_tag",
+                }
+            )
+            return mapping
 
     @dataclass
     class SpecHostNode(ObjectNode):
@@ -111,6 +126,7 @@ class GrainSpecNode(ObjectNode):
     outputs: ScalarNodesSequence = None
     commands: TextNodesSequence = None
     scripts: GrainSpecScripts = None
+    tags: GrainSpecTag = None
 
 
 @dataclass
