@@ -1,7 +1,19 @@
 from typing import Dict, List
 from dataclasses import dataclass
 
-from server.ats.trees.common import BaseTree, MapNode, MappingNode, ObjectNode, Position, ScalarNode, ScalarNodesSequence, TextMappingSequence, TextNode, TextNodesSequence
+from server.ats.trees.common import (
+    BaseTree,
+    MapNode,
+    MappingNode,
+    ObjectNode,
+    Position,
+    ScalarNode,
+    ScalarNodesSequence,
+    SequenceNode,
+    TextMappingSequence,
+    TextNode,
+    TextNodesSequence,
+)
 
 
 @dataclass
@@ -14,12 +26,7 @@ class BlueprintV2InputObject(ObjectNode):
 
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping = super()._get_field_mapping()
-        mapping.update(
-            {
-                "type": "input_type",
-                "display-style": "display_style"
-            }
-        )
+        mapping.update({"type": "input_type", "display-style": "display_style"})
         return mapping
 
 
@@ -28,14 +35,44 @@ class BluetpintV2InputNode(MappingNode):
     key: ScalarNode = None
     value: BlueprintV2InputObject = None
 
+
 @dataclass
 class BlueprintV2OutputObject(ObjectNode):
     value: TextNode = None
+
 
 @dataclass
 class BlueprintV2OutputNode(MappingNode):
     key: ScalarNode = None
     value: BlueprintV2OutputObject = None
+
+
+@dataclass
+class ScriptSource(ObjectNode):
+    path: ScalarNode = None
+    store: ScalarNode = None
+
+
+@dataclass
+class ScriptObject(ObjectNode):
+    source: ScriptSource = None
+    arguments: TextNode = None
+
+
+@dataclass
+class GrainSpecScripts(ObjectNode):
+    pre_tf_init: ScriptObject = None
+    pre_tf_destroy: ScriptObject = None
+
+    def _get_field_mapping(self) -> Dict[str, str]:
+        mapping = super()._get_field_mapping()
+        mapping.update(
+            {
+                "pre-tf-init": "pre_tf_init",
+                "pre-tf-destroy": "pre_tf_destroy",
+            }
+        )
+        return mapping
 
 
 @dataclass
@@ -46,11 +83,27 @@ class GrainSpecNode(ObjectNode):
         path: ScalarNode = None
     
     @dataclass
+    class GrainSpecTag(ObjectNode):
+        auto_tag: ScalarNode = None
+        disable_tags_for: ScalarNodesSequence = None
+
+        def _get_field_mapping(self) -> Dict[str, str]:
+            mapping = super()._get_field_mapping()
+            mapping.update(
+                {
+                    "disable-tags-for": "disable_tags_for",
+                    "auto-tag": "auto_tag",
+                }
+            )
+            return mapping
+
+    @dataclass
     class SpecHostNode(ObjectNode):
         cloud_account: TextNode = None
         compute_service: TextNode = None
         region: TextNode = None
         service_account: TextNode = None
+        name: ScalarNode = None
 
         def _get_field_mapping(self) -> Dict[str, str]:
             mapping = super()._get_field_mapping()
@@ -58,14 +111,14 @@ class GrainSpecNode(ObjectNode):
                 {
                     "cloud-account": "cloud_account",
                     "compute-service": "compute_service",
-                    "service-account": "service_account"
+                    "service-account": "service_account",
                 }
             )
             return mapping
 
     def get_outputs(self) -> List[ScalarNode]:
         return self._get_seq_nodes("outputs")
-    
+
     def get_inputs(self):
         return self._get_seq_nodes("inputs")
 
@@ -74,6 +127,19 @@ class GrainSpecNode(ObjectNode):
     inputs: TextMappingSequence = None
     outputs: ScalarNodesSequence = None
     commands: TextNodesSequence = None
+    scripts: GrainSpecScripts = None
+    tags: GrainSpecTag = None
+
+
+@dataclass
+class EnvironmentVarialble(ObjectNode):
+    name: ScalarNode = None
+    value: TextNode = None
+
+
+@dataclass
+class EnvVarsSequence(SequenceNode):
+    node_type = EnvironmentVarialble
 
 
 @dataclass
@@ -82,6 +148,7 @@ class GrainObject(ObjectNode):
     spec: GrainSpecNode = None
     depends_on: ScalarNode = None
     tf_version: ScalarNode = None
+    env_vars: EnvVarsSequence = None
 
     def get_deps(self) -> List[Dict]:
         if self.depends_on is None or self.depends_on.text is None:
@@ -105,23 +172,20 @@ class GrainObject(ObjectNode):
             start_pos = Position(self.depends_on.value.start_pos[0], column_start)
             end_pos = Position(self.depends_on.value.end_pos[0], column_end)
 
-            result.append(
-                {
-                    "name": d,
-                    "start": start_pos,
-                    "end": end_pos
-                }
-            )
+            result.append({"name": d, "start": start_pos, "end": end_pos})
             word_end = found_on + len(d) - 1
 
         return result
 
     def _get_field_mapping(self) -> Dict[str, str]:
-        mapping =  super()._get_field_mapping()
-        mapping.update({
-            "depends-on": "depends_on",
-            "tf-version": "tf_version"
-        })
+        mapping = super()._get_field_mapping()
+        mapping.update(
+            {
+                "depends-on": "depends_on",
+                "tf-version": "tf_version",
+                "env-vars": "env_vars"
+            }
+        )
         return mapping
 
 
@@ -153,6 +217,7 @@ class BlueprintV2OutputsMap(MapNode):
 
 
 ## The Blueprint Spec2 Tree
+
 
 @dataclass
 class BlueprintV2Tree(BaseTree):
