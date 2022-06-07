@@ -28,8 +28,7 @@
                 ],
                 "justMyCode": false,
                 "env": {
-                    "PYTHONPATH": "${workspaceFolder}/server",
-                    "TORQUE_HOSTNAME": "review1.qualilabs.net"
+                    "PYTHONPATH": "${workspaceFolder}/server"
                 }
             }
     ],

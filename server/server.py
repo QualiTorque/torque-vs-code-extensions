@@ -1158,7 +1158,7 @@ async def get_blueprint(server: TorqueLanguageServer, *args):
     bp_name = args[0].pop()
     try:
         stdout, stderr = _run_torque_cli_command(
-            f"torque --disable-version-check --profile {active_profile} bp get {bp_name} --output=json --detail"
+            f"torque --disable-version-check --profile {active_profile} bp get '{bp_name}' --output=json --detail"
         )
         if stderr:
             server.show_message(
