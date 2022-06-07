@@ -148,6 +148,17 @@
                 }
             }
         },
+        "EnvironementVariable": {
+            "type": "object",
+            "properties": {
+                "name" : {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "GrainSpecObject": {
             "type": "object",
             "additionalProperties": false,
@@ -181,6 +192,12 @@
                 },
                 "tags": {
                     "$ref": "#/definitions/GrainTag"
+                },
+                "env-vars": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/EnvironementVariable"
+                    }
                 }
             },
             "required": [

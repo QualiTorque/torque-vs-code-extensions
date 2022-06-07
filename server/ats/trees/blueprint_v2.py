@@ -9,6 +9,7 @@ from server.ats.trees.common import (
     Position,
     ScalarNode,
     ScalarNodesSequence,
+    SequenceNode,
     TextMappingSequence,
     TextNode,
     TextNodesSequence,
@@ -131,11 +132,23 @@ class GrainSpecNode(ObjectNode):
 
 
 @dataclass
+class EnvironmentVarialble(ObjectNode):
+    name: ScalarNode = None
+    value: TextNode = None
+
+
+@dataclass
+class EnvVarsSequence(SequenceNode):
+    node_type = EnvironmentVarialble
+
+
+@dataclass
 class GrainObject(ObjectNode):
     kind: ScalarNode = None
     spec: GrainSpecNode = None
     depends_on: ScalarNode = None
     tf_version: ScalarNode = None
+    env_vars: EnvVarsSequence = None
 
     def get_deps(self) -> List[Dict]:
         if self.depends_on is None or self.depends_on.text is None:
@@ -166,7 +179,13 @@ class GrainObject(ObjectNode):
 
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping = super()._get_field_mapping()
-        mapping.update({"depends-on": "depends_on", "tf-version": "tf_version"})
+        mapping.update(
+            {
+                "depends-on": "depends_on",
+                "tf-version": "tf_version",
+                "env-vars": "env_vars"
+            }
+        )
         return mapping
 
 
