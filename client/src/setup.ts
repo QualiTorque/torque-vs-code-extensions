@@ -7,7 +7,7 @@ import { execAsync } from './utils'
 async function checkPythonVersion(python: string): Promise<boolean> {
   try {
     const [major, minor] = await getPythonVersion(python)
-    return major === 3 && minor > 5 && minor < 10
+    return major === 3 && minor > 5 && minor < 11
   } catch {
     return false
   }
