@@ -97,6 +97,40 @@
             ],
             "title": "Grain Object"
         },
+        "GrainScripts": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "pre-tf-init": {
+                    "$ref": "#/definitions/ScriptObject"
+                },
+                "pre-tf-destroy": {
+                    "$ref": "#/definitions/ScriptObject"
+                }
+            }
+        },
+        "ScriptSource": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string"
+                },
+                "store": {
+                    "type":"string"
+                }
+            }
+        },
+        "ScriptObject": {
+            "type": "object",
+            "properties": {
+                "source": {
+                    "$ref": "#/definitions/ScriptSource"
+                },
+                "arguments": {
+                    "type": "string"
+                }
+            }
+        },
         "GrainSpecObject": {
             "type": "object",
             "additionalProperties": false,
@@ -124,6 +158,9 @@
                     "items": {
                         "$ref": "#/definitions/GrainCommand"
                     }
+                },
+                "scripts": {
+                    "$ref": "#/definitions/GrainScripts"
                 }
             },
             "required": [
@@ -136,7 +173,7 @@
             "type": "object",
             "additionalProperties": false,
             "patternProperties": {
-                "^[\\w\\-]+$": {
+                "^[\\w\\-\\.]+$": {
                     "type": [
                         "string",
                         "number",
