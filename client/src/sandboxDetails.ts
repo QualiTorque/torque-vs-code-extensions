@@ -201,11 +201,9 @@ export class SandboxDetailsPanel {
                         </div>
                         </body>`;
         }
-        else
-        {            
-            // htmlBody = this._getMainBody(nonce)
+        else         
             htmlBody = this._getBaseInfo(nonce)
-        }
+
         return htmlHeader + htmlBody + closeHtml;
     }
 
@@ -223,59 +221,31 @@ export class SandboxDetailsPanel {
     
         var generalHtml = "<table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         generalHtml += "<tr><td width='180px'>" + "ID" + "</td><td>" + this._sandbox_id + "</td></tr>";
-        generalHtml += "<tr><td width='180px'>" + "Status" + "</td><td>" + sandboxJson.sandbox_status + "</td></tr>";
+        generalHtml += "<tr><td width='180px'>" + "Status" + "</td><td>" + sandboxJson.details.computed_status + "</td></tr>";
 
-        let date = new Date(sandboxJson.scheduled_end_time);
+        let date = new Date(sandboxJson.details.state.execution.retention.time);
         generalHtml += "<tr><td width='180px'>" + "End time" + "</td><td>" + date.toLocaleString() + "</td></tr>";
     
         if (acct !== "") {
-            const sandbox_url = `https://${acct}.qtorque.io/${space}/sandboxes/${this._sandbox_id}`
+            const sandbox_url = `https://portal.qtorque.io/${space}/sandboxes/${this._sandbox_id}`
             generalHtml += "<tr><td width='180px'><a href='" + sandbox_url +"' target='_blank'/>" + "Open in Torque" + "</td><td></td></tr>";
         }
     
         generalHtml += "</table>";
 
-        var shortcutsHtml = "";
-        if (sandboxJson.applications.length > 0) {
-            for (var i = 0; i < sandboxJson.applications.length; i++) {
-                let appName = sandboxJson.applications[i]['name'];
-                let shortcuts = sandboxJson.applications[i]['shortcuts'];
-
-                if (shortcuts.length > 0) {
-                    shortcutsHtml += `<tr><td width='180px'>${appName}</td>`;
-
-                    for (var j = 0; j < shortcuts.length; j++)
-                        shortcutsHtml += `<td><a href='${shortcuts[j]}' target='_blank'/>link${j+1}</a></td>`;
-
-                    shortcutsHtml += "<td></tr>"
-                }
-            }
-        }
-        
-        if (shortcutsHtml !== "")
-            shortcutsHtml = `<b>Quick Links</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>${shortcutsHtml}</table><br/>`
-
-        if (sandboxJson.inputs.length > 0) {
+        var sandboxInputs = sandboxJson.details.definition.inputs;
+        if (sandboxInputs.length > 0) {
             var inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
 
-            for (var i=0; i<sandboxJson.inputs.length; i++)
+            for (var i=0; i<sandboxInputs.length; i++)
             {
-                inputsHtml += "<tr><td width='180px'>" + sandboxJson.inputs[i]['name'] + "</td>";
-                inputsHtml += "<td>" + (sandboxJson.inputs[i]['display_style'] == 'masked' ? '******' : sandboxJson.inputs[i]['value']) + "</td><td></tr>";
+                inputsHtml += "<tr><td width='180px'>" + sandboxInputs[i]['name'] + "</td>";
+                inputsHtml += "<td>" + (sandboxInputs[i]['display_style'] == 'masked' ? '******' : sandboxInputs[i]['value']) + "</td><td></tr>";
             }
             inputsHtml += "</table><br/>";
         } else 
             var inputsHtml = "";
 
-        if (!this._isEmpty(sandboxJson.artifacts)) {
-            var artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-            for (const [key, value] of Object.entries(sandboxJson.artifacts)) {
-                artifactsHtml += "<tr><td width='180px'>" + key  + "</td><td>" + value + "</td></tr>";
-            }
-            artifactsHtml += "</table>";
-        }
-        else 
-            var artifactsHtml = "";
         
         const html = `
             <body>
@@ -292,9 +262,9 @@ export class SandboxDetailsPanel {
             <div style="vertical-align: top;">
             ${generalHtml}
             <br/>
-            ${shortcutsHtml}
+            
             ${inputsHtml}
-            ${artifactsHtml} 
+         
             </div>              
             </body>`;
         
