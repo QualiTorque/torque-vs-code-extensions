@@ -1,6 +1,11 @@
 # Change Log
 
-## [0.2.0]https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.20...v0.2.0) (2022-06-07)
+## [0.2.1](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.2.0...v0.2.1) (2022-06-08)
+
+* fix bug with grain completer
+* hide autogen prefix in blueprint explorer
+
+## [0.2.0](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.0.20...v0.2.0) (2022-06-07)
 
 * some schema updates
 * switch to new torque-cli
