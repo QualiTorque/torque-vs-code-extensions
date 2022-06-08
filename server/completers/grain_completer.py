@@ -17,6 +17,8 @@ class GrainObjectCompleter(Completer):
             "depends_on": self._process_depends_on
         }
         n_property = self._find_nearest_prop()
+        if n_property is None:
+            return []
         func = processing_funcs.get(n_property.identifier, None)
 
         if func is None:
