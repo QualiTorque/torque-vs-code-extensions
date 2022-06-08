@@ -44,9 +44,11 @@ export class BlueprintsProvider implements vscode.TreeDataProvider<Blueprint> {
                             const toBp = (blueprintName: string, description: string, isSample: boolean, inputs: Array<string>, artifacts: string, branch: string):
                             Blueprint => {
                                 let cleanName = blueprintName
-                                if (isSample) {
+                                if (isSample) 
                                     cleanName = cleanName.replace('[Sample]', '')
-                                }
+                                if (cleanName.startsWith("autogen_"))
+                                    cleanName = cleanName.replace("autogen_", '')
+
                                 return new Blueprint(cleanName, description, vscode.TreeItemCollapsibleState.None, {
                                     command: 'extension.openReserveForm',
                                     title: '',
