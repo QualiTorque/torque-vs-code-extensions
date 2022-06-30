@@ -121,6 +121,11 @@ class GrainSpecNode(ObjectNode):
 
     def get_inputs(self):
         return self._get_seq_nodes("inputs")
+    
+    def _get_field_mapping(self) -> Dict[str, str]:
+        mapping = super()._get_field_mapping()
+        mapping.update({"env-vars": "env_vars"})
+        return mapping
 
     source: SpecSourceNode = None
     host: SpecHostNode = None
@@ -129,17 +134,7 @@ class GrainSpecNode(ObjectNode):
     commands: TextNodesSequence = None
     scripts: GrainSpecScripts = None
     tags: GrainSpecTag = None
-
-
-@dataclass
-class EnvironmentVarialble(ObjectNode):
-    name: ScalarNode = None
-    value: TextNode = None
-
-
-@dataclass
-class EnvVarsSequence(SequenceNode):
-    node_type = EnvironmentVarialble
+    env_vars: TextMappingSequence = None
 
 
 @dataclass
@@ -148,7 +143,6 @@ class GrainObject(ObjectNode):
     spec: GrainSpecNode = None
     depends_on: ScalarNode = None
     tf_version: ScalarNode = None
-    env_vars: EnvVarsSequence = None
 
     def get_deps(self) -> List[Dict]:
         if self.depends_on is None or self.depends_on.text is None:
