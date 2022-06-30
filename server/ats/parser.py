@@ -185,12 +185,21 @@ class Parser:
             try:
                 node = self.nodes_stack[-1].add()
                 self.nodes_stack.append(node)
+
+                if isinstance(node, ObjectNode):
+                    node.start_pos = self.get_token_end(token)
+
             except Exception:
                 raise ParserError("Wrong structure of document", token=token)
                 # raise Exception(f"Unable to add item to the node's container : {e}")
 
         if isinstance(token, StreamEndToken):
             self.tree.end_pos = self.get_token_start(token)
+            # since there could be unclosed nodes due to errors
+            # we need to set end_pos for them as well
+            while self.nodes_stack:
+                node: YamlNode = self.nodes_stack.pop()
+                node.end_pos = self.get_token_start(token)
             return
 
         # the beginning of the object or mapping
