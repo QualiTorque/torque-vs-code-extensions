@@ -150,14 +150,17 @@
         },
         "EnvironementVariable": {
             "type": "object",
-            "properties": {
-                "name" : {
-                    "type": "string"
-                },
-                "value": {
-                    "type": "string"
+            "additionalProperties": false,
+            "patternProperties": {
+                "^[A-Z0-9_]+": {
+                    "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                    ]
                 }
-            }
+            },
+            "title": "Envrironment Variable"
         },
         "GrainSpecObject": {
             "type": "object",
@@ -300,6 +303,9 @@
                         "string",
                         "boolean"
                     ]
+                },
+                "sensitive": {
+                    "type": "boolean"
                 }
             },
             "required": ["type"]

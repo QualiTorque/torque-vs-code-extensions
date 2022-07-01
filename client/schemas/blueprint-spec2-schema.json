@@ -300,6 +300,9 @@
                         "string",
                         "boolean"
                     ]
+                },
+                "sensitive": {
+                    "type": "boolean"
                 }
             },
             "required": ["type"]

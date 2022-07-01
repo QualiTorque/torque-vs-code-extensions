@@ -22,7 +22,7 @@ class BlueprintV2InputObject(ObjectNode):
     display_style: ScalarNode = None
     default: ScalarNode = None
     description: ScalarNode = None
-    # sensitive: ScalarNode = None
+    sensitive: ScalarNode = None
 
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping = super()._get_field_mapping()
@@ -143,7 +143,6 @@ class GrainObject(ObjectNode):
     spec: GrainSpecNode = None
     depends_on: ScalarNode = None
     tf_version: ScalarNode = None
-    env_vars: EnvVarsSequence = None
 
     def get_deps(self) -> List[Dict]:
         if self.depends_on is None or self.depends_on.text is None:
@@ -178,7 +177,6 @@ class GrainObject(ObjectNode):
             {
                 "depends-on": "depends_on",
                 "tf-version": "tf_version",
-                "env-vars": "env_vars"
             }
         )
         return mapping
