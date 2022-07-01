@@ -103,7 +103,7 @@ class GrainSpecNode(ObjectNode):
         compute_service: TextNode = None
         region: TextNode = None
         service_account: TextNode = None
-        name: ScalarNode = None
+        name: TextNode = None
 
         def _get_field_mapping(self) -> Dict[str, str]:
             mapping = super()._get_field_mapping()
@@ -121,6 +121,11 @@ class GrainSpecNode(ObjectNode):
 
     def get_inputs(self):
         return self._get_seq_nodes("inputs")
+    
+    def _get_field_mapping(self) -> Dict[str, str]:
+        mapping = super()._get_field_mapping()
+        mapping.update({"env-vars": "env_vars"})
+        return mapping
 
     source: SpecSourceNode = None
     host: SpecHostNode = None
@@ -129,17 +134,7 @@ class GrainSpecNode(ObjectNode):
     commands: TextNodesSequence = None
     scripts: GrainSpecScripts = None
     tags: GrainSpecTag = None
-
-
-@dataclass
-class EnvironmentVarialble(ObjectNode):
-    name: ScalarNode = None
-    value: TextNode = None
-
-
-@dataclass
-class EnvVarsSequence(SequenceNode):
-    node_type = EnvironmentVarialble
+    env_vars: TextMappingSequence = None
 
 
 @dataclass

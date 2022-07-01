@@ -201,11 +201,9 @@ export class SandboxDetailsPanel {
                         </div>
                         </body>`;
         }
-        else
-        {            
-            // htmlBody = this._getMainBody(nonce)
+        else         
             htmlBody = this._getBaseInfo(nonce)
-        }
+
         return htmlHeader + htmlBody + closeHtml;
     }
 
@@ -229,31 +227,12 @@ export class SandboxDetailsPanel {
         generalHtml += "<tr><td width='180px'>" + "End time" + "</td><td>" + date.toLocaleString() + "</td></tr>";
     
         if (acct !== "") {
-            const sandbox_url = `https://${acct}.qtorque.io/${space}/sandboxes/${this._sandbox_id}`
+            const sandbox_url = `https://portal.qtorque.io/${space}/sandboxes/${this._sandbox_id}`
             generalHtml += "<tr><td width='180px'><a href='" + sandbox_url +"' target='_blank'/>" + "Open in Torque" + "</td><td></td></tr>";
         }
     
         generalHtml += "</table>";
 
-        // var shortcutsHtml = "";
-        // if (sandboxJson.applications.length > 0) {
-        //     for (var i = 0; i < sandboxJson.applications.length; i++) {
-        //         let appName = sandboxJson.applications[i]['name'];
-        //         let shortcuts = sandboxJson.applications[i]['shortcuts'];
-
-        //         if (shortcuts.length > 0) {
-        //             shortcutsHtml += `<tr><td width='180px'>${appName}</td>`;
-
-        //             for (var j = 0; j < shortcuts.length; j++)
-        //                 shortcutsHtml += `<td><a href='${shortcuts[j]}' target='_blank'/>link${j+1}</a></td>`;
-
-        //             shortcutsHtml += "<td></tr>"
-        //         }
-        //     }
-        // }
-        
-        // if (shortcutsHtml !== "")
-        //     shortcutsHtml = `<b>Quick Links</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>${shortcutsHtml}</table><br/>`
         var sandboxInputs = sandboxJson.details.definition.inputs;
         if (sandboxInputs.length > 0) {
             var inputsHtml = "<b>Inputs</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
