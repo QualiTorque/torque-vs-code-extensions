@@ -316,6 +316,13 @@
             "properties": {
                 "value": {
                     "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "regular",
+                        "link"
+                    ]
                 }
             },
             "required": [

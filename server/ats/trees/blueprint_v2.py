@@ -39,6 +39,7 @@ class BluetpintV2InputNode(MappingNode):
 @dataclass
 class BlueprintV2OutputObject(ObjectNode):
     value: TextNode = None
+    kind: ScalarNode = None
 
 
 @dataclass
