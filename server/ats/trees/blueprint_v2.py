@@ -22,7 +22,7 @@ class BlueprintV2InputObject(ObjectNode):
     display_style: ScalarNode = None
     default: ScalarNode = None
     description: ScalarNode = None
-    # sensitive: ScalarNode = None
+    sensitive: ScalarNode = None
 
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping = super()._get_field_mapping()
@@ -39,6 +39,7 @@ class BluetpintV2InputNode(MappingNode):
 @dataclass
 class BlueprintV2OutputObject(ObjectNode):
     value: TextNode = None
+    kind: ScalarNode = None
 
 
 @dataclass
@@ -121,6 +122,11 @@ class GrainSpecNode(ObjectNode):
 
     def get_inputs(self):
         return self._get_seq_nodes("inputs")
+    
+    def _get_field_mapping(self) -> Dict[str, str]:
+        mapping = super()._get_field_mapping()
+        mapping.update({"env-vars": "env_vars"})
+        return mapping
 
     source: SpecSourceNode = None
     host: SpecHostNode = None
@@ -129,17 +135,7 @@ class GrainSpecNode(ObjectNode):
     commands: TextNodesSequence = None
     scripts: GrainSpecScripts = None
     tags: GrainSpecTag = None
-
-
-@dataclass
-class EnvironmentVarialble(ObjectNode):
-    name: ScalarNode = None
-    value: TextNode = None
-
-
-@dataclass
-class EnvVarsSequence(SequenceNode):
-    node_type = EnvironmentVarialble
+    env_vars: TextMappingSequence = None
 
 
 @dataclass
@@ -148,7 +144,6 @@ class GrainObject(ObjectNode):
     spec: GrainSpecNode = None
     depends_on: ScalarNode = None
     tf_version: ScalarNode = None
-    env_vars: EnvVarsSequence = None
 
     def get_deps(self) -> List[Dict]:
         if self.depends_on is None or self.depends_on.text is None:
@@ -183,7 +178,6 @@ class GrainObject(ObjectNode):
             {
                 "depends-on": "depends_on",
                 "tf-version": "tf_version",
-                "env-vars": "env_vars"
             }
         )
         return mapping
@@ -227,8 +221,13 @@ class BlueprintV2Tree(BaseTree):
     outputs: BlueprintV2OutputsMap = None
     grains: GrainsMap = None
 
-    def get_inputs(self):
+    @property
+    def input_list(self):
         return self._get_seq_nodes("inputs")
 
     def get_grains_names(self):
         return [node.key.text for node in self.grains.nodes]
+
+    @property
+    def grain_nodes(self):
+        return self._get_seq_nodes("grains")

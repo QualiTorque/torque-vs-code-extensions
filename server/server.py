@@ -291,7 +291,7 @@ def completions(
 
     try:
         yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
-        if yaml_obj:
+        if yaml_obj and isinstance(yaml_obj, dict):
             doc_type = yaml_obj.get("kind", None)
         else:
             return CompletionList(is_incomplete=True, items=[])
@@ -700,7 +700,7 @@ async def lsp_document_link(
     doc = server.workspace.get_document(params.text_document.uri)
     try:
         yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
-        if yaml_obj:
+        if yaml_obj and isinstance(yaml_obj, dict):
             doc_type = yaml_obj.get("kind", "")
         else:
             return links

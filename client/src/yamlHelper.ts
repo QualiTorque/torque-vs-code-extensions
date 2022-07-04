@@ -16,12 +16,12 @@ export async function addSchemasToYamlConfig(extensionPath: string) {
         newValue = Object.assign({}, config!.globalValue);
     }
     
-    const blueprint_scheme_path = path.join(extensionPath, 'schemas', 'blueprint-schema.json').toString();
-    newValue = addSchemaToConfigAtScope(
-        Uri.file(blueprint_scheme_path).toString(),
-        BLUEPRINT_SCHEME_TARGET_FILES,
-        newValue
-    );
+    // const blueprint_scheme_path = path.join(extensionPath, 'schemas', 'blueprint-schema.json').toString();
+    // newValue = addSchemaToConfigAtScope(
+    //     Uri.file(blueprint_scheme_path).toString(),
+    //     BLUEPRINT_SCHEME_TARGET_FILES,
+    //     newValue
+    // );
     const application_scheme_path = path.join(extensionPath, 'schemas', 'application-schema.json').toString();
     newValue = addSchemaToConfigAtScope(
         Uri.file(application_scheme_path).toString(),

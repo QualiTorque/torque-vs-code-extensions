@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.2.2](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.2.1...v0.2.2) (2022-07-04)
+
+* some fixes
+* schema updates:
+  - fix env_vars
+  - add outputs 'kind' prop
+  - add inputs 'sensitive' prop
+
 ## [0.2.1](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.2.0...v0.2.1) (2022-06-08)
 
 * fix bug with grain completer
