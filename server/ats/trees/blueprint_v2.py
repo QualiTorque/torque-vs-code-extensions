@@ -221,8 +221,13 @@ class BlueprintV2Tree(BaseTree):
     outputs: BlueprintV2OutputsMap = None
     grains: GrainsMap = None
 
-    def get_inputs(self):
+    @property
+    def input_list(self):
         return self._get_seq_nodes("inputs")
 
     def get_grains_names(self):
         return [node.key.text for node in self.grains.nodes]
+
+    @property
+    def grain_nodes(self):
+        return self._get_seq_nodes("grains")
