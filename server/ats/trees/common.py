@@ -303,8 +303,10 @@ class ObjectNode(YamlNode, ABC):
 
 @dataclass
 class ScalarNodesSequence(SequenceNode):
-    """Container for simple text arrays
-    like outputs, depends on"""
+    """
+    Container for simple text arrays
+    like outputs, depends on
+    """
 
     node_type = ScalarNode
 

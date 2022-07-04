@@ -159,7 +159,7 @@ class BlueprintSpec2Validator(ValidationHandler):
     def _validate_no_duplicates_in_grain_outputs(self):
         message = "Multiple declarations of output '{}'"
 
-        for grain in self.tree.grains.nodes:
+        for grain in self.tree.grain_nodes:
             grain_obj = grain.value
 
             if grain_obj is None or grain_obj.spec is None:
@@ -175,7 +175,7 @@ class BlueprintSpec2Validator(ValidationHandler):
                     )
     
     def _validate_no_duplicates_in_grain_spec(self):
-        for grain in self.tree.grains.nodes:
+        for grain in self.tree.grain_nodes:
             grain_obj: GrainObject = grain.value
 
             if not grain_obj or not grain_obj.spec:
@@ -191,9 +191,7 @@ class BlueprintSpec2Validator(ValidationHandler):
                         message=f"Duplicated input name '{input_node.key.text}'")
 
     def _check_unused_blueprint_inputs(self):
-        bp_inputs = self.tree.get_inputs()
-
-        for input_node in bp_inputs:
+        for input_node in self.tree.input_list:
             input_name = input_node.key.text
             doc_lines = self._document.lines
             match = []
@@ -212,7 +210,7 @@ class BlueprintSpec2Validator(ValidationHandler):
                 )
             
     def _validate_grain_dep_exists(self):
-        for grain in self.tree.grains.nodes:
+        for grain in self.tree.grain_nodes:
             grain_name = grain.key.text
             grains_list = self._get_grains_names()
             deps = grain.value.get_deps() if grain.value else None
@@ -238,7 +236,7 @@ class BlueprintSpec2Validator(ValidationHandler):
                     )
 
     def _validate_no_duplicates_in_deps(self):
-        for grain in self.tree.grains.nodes:
+        for grain in self.tree.grain_nodes:
             grain_obj: GrainObject = grain.value
 
             if not grain_obj:

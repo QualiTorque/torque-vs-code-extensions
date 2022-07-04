@@ -22,7 +22,7 @@ class BlueprintV2InputObject(ObjectNode):
     display_style: ScalarNode = None
     default: ScalarNode = None
     description: ScalarNode = None
-    # sensitive: ScalarNode = None
+    sensitive: ScalarNode = None
 
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping = super()._get_field_mapping()
@@ -39,6 +39,7 @@ class BluetpintV2InputNode(MappingNode):
 @dataclass
 class BlueprintV2OutputObject(ObjectNode):
     value: TextNode = None
+    kind: ScalarNode = None
 
 
 @dataclass
@@ -177,7 +178,6 @@ class GrainObject(ObjectNode):
             {
                 "depends-on": "depends_on",
                 "tf-version": "tf_version",
-                "env-vars": "env_vars"
             }
         )
         return mapping
@@ -221,8 +221,13 @@ class BlueprintV2Tree(BaseTree):
     outputs: BlueprintV2OutputsMap = None
     grains: GrainsMap = None
 
-    def get_inputs(self):
+    @property
+    def input_list(self):
         return self._get_seq_nodes("inputs")
 
     def get_grains_names(self):
         return [node.key.text for node in self.grains.nodes]
+
+    @property
+    def grain_nodes(self):
+        return self._get_seq_nodes("grains")
