@@ -608,6 +608,9 @@ def code_lens(
                 # disable for spec2
                 if bp_tree.kind is None:
                     return
+        except ParserError as ex:
+            return
+
         except Exception as ex:
             import sys
 
@@ -708,134 +711,6 @@ async def lsp_document_link(
         return links
 
     root = get_repo_root_path(doc.path)
-
-    if doc_type == "blueprint":
-        try:
-            bp_tree = Parser(doc.source).parse()
-        except Exception as ex:
-            import sys
-
-            logging.error(
-                "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
-                type(ex).__name__,
-                ex,
-            )
-            return links
-
-        resources = {
-            "service": bp_tree.get_services,
-            "application": bp_tree.get_applications,
-        }
-
-        for res_type, func in resources.items():
-            for res in func():
-                target_path = os.path.join(
-                    root, f"{res_type}s", res.id.text, res.id.text + ".yaml"
-                )
-                if os.path.exists(target_path) and os.path.isfile(target_path):
-                    tooltip = f"Open the {res_type} file at " + target_path
-                    links.append(
-                        DocumentLink(
-                            range=Range(
-                                start=Position(
-                                    line=res.id.start_pos[0],
-                                    character=res.id.start_pos[1],
-                                ),
-                                end=Position(
-                                    line=res.id.start_pos[0],
-                                    character=res.start_pos[1] + len(res.id.text),
-                                ),
-                            ),
-                            target=pathlib.Path(target_path).as_uri(),
-                            tooltip=tooltip,
-                        )
-                    )
-
-    elif doc_type == "application":
-        try:
-            app_tree: AppTree = Parser(doc.source).parse()
-            app_name = doc.filename.replace(".yaml", "")
-        except Exception as ex:
-            import sys
-
-            logging.error(
-                "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
-                type(ex).__name__,
-                ex,
-            )
-            return links
-
-        if app_tree.configuration:
-            for state in ["healthcheck", "initialization", "start"]:
-                state_block = getattr(app_tree.configuration, state, None)
-
-                if state_block is None or state_block.script is None:
-                    continue
-
-                script: PropertyNode = state_block.script
-                if not script.value:
-                    continue
-
-                file_name = script.text
-                target_path = os.path.join(root, "applications", app_name, file_name)
-                if os.path.exists(target_path) and os.path.isfile(target_path):
-                    tooltip = "Open the script file at " + target_path
-                    links.append(
-                        DocumentLink(
-                            range=Range(
-                                start=Position(
-                                    line=script.value.start_pos[0],
-                                    character=script.value.start_pos[1],
-                                ),
-                                end=Position(
-                                    line=script.value.start_pos[0],
-                                    character=script.value.start_pos[1]
-                                    + len(script.text),
-                                ),
-                            ),
-                            target=pathlib.Path(target_path).as_uri(),
-                            tooltip=tooltip,
-                        )
-                    )
-
-    elif doc_type == "TerraForm":
-        try:
-            srv_tree = Parser(doc.source).parse()
-            srv_name = doc.filename.replace(".yaml", "")
-        except Exception as ex:
-            import sys
-
-            logging.error(
-                "Error on line {}".format(sys.exc_info()[-1].tb_lineno),
-                type(ex).__name__,
-                ex,
-            )
-            return links
-
-        if srv_tree.variables:
-            script: PropertyNode = srv_tree.variables.var_file
-            if script and script.value:
-                file_name = script.text
-                target_path = os.path.join(root, "services", srv_name, file_name)
-                if os.path.exists(target_path) and os.path.isfile(target_path):
-                    tooltip = "Open the variables file at " + target_path
-                    links.append(
-                        DocumentLink(
-                            range=Range(
-                                start=Position(
-                                    line=script.value.start_pos[0],
-                                    character=script.value.start_pos[1],
-                                ),
-                                end=Position(
-                                    line=script.value.start_pos[0],
-                                    character=script.value.start_pos[1]
-                                    + len(script.text),
-                                ),
-                            ),
-                            target=pathlib.Path(target_path).as_uri(),
-                            tooltip=tooltip,
-                        )
-                    )
 
     return links
 

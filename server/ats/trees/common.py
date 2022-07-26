@@ -68,12 +68,15 @@ class YamlNode(ABC):
     def get_children(self):
         return []
 
+    def get_shortened_form_property(self):
+        return None
+
 
 @dataclass
 class SequenceNode(YamlNode):
     node_type: ClassVar[type] = YamlNode
 
-    nodes: [node_type] = field(default_factory=list)
+    nodes: List[node_type] = field(default_factory=list)
 
     def add(self, node: node_type = None):
         if node is None:
@@ -242,22 +245,31 @@ class ObjectNode(YamlNode, ABC):
     def _get_field_mapping(self) -> {str: str}:
         return {}
 
+    def _check_attr(self, attr_name) -> str:
+        attr = (
+            attr_name
+            if attr_name in self.__dict__
+            else self._get_field_mapping().get(attr_name, None)
+        )
+        if attr is None:
+            raise AttributeError(f"There is no attribute with name {attr_name}")
+
+        return attr
+
+    def __getattr__(self, attr_name) -> Any:
+        attr = self._check_attr(attr_name)  
+        return getattr(self, attr)
+
+
     def get_child(self, child_name: str):
         """Returns value of node attribute.
         If the value is None, creates a child of type
         specified in type annotations and returns it
         """
-        attr = (
-            child_name
-            if hasattr(self, child_name)
-            else self._get_field_mapping().get(child_name, None)
-        )
-
-        # attribute could not be found in both object itself and mapping table
-        if attr is None:
-            raise AttributeError(f"There is no attribute with name {child_name}")
+        attr = self._check_attr(child_name)
 
         child = getattr(self, attr)
+        
         # obj has not been instantiated yet
         if child is None:
             child = PropertyNode(parent=self)

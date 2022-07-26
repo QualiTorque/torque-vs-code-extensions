@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 
 import yaml
 from server.ats.trees.app import AppTree
@@ -62,10 +62,10 @@ class Parser:
         try:
             self.tree = self._get_tree()
         except ValueError as ve:
-            raise ParserError(str(ve))
+            raise ParserError(str(ve), (0,0), (0,0))
 
-        self.nodes_stack: [YamlNode] = []
-        self.tokens_stack: [Token] = []
+        self.nodes_stack: List[YamlNode] = []
+        self.tokens_stack: List[Token] = []
 
         self.is_array_item: bool = False
         self.processing_map_element: bool = False
@@ -120,7 +120,7 @@ class Parser:
     def _process_object_child(self, token: ScalarToken):
         """Gets the property of the last Node in a stack and puts
         it to the stack (where property name equals scalar token's value)"""
-        self.tokens_stack.pop()
+        _ = self.tokens_stack.pop()
         node: ObjectNode = self.nodes_stack[-1]
 
         try:
@@ -420,7 +420,7 @@ class Parser:
                     return
 
                 # process object first
-                if not isinstance(node, (MappingNode, TextNode)):
+                if not isinstance(node, (MappingNode, TextNode)) and isinstance(self.tokens_stack[-1], KeyToken):
                     self.is_array_item = False
                     self._process_object_child(token)
                     return
@@ -434,7 +434,13 @@ class Parser:
                     # inputs:
                     #   - A
                     #   - B
-                    last_node = self.nodes_stack[-1]  # store TextNode before deleting
+                    last_node: YamlNode = self.nodes_stack[-1]  # store TextNode before deleting
+                    if last_node.get_shortened_form_property() is not None:
+                        last_node.end_pos = self.get_token_end(token)
+                        _ = self.nodes_stack.pop()
+                        self.nodes_stack.append(last_node.get_shortened_form_property())
+
+
                     self._process_scalar_token(token)
 
                     self.nodes_stack[-1].end_pos = last_node.end_pos
@@ -442,7 +448,7 @@ class Parser:
 
                     if isinstance(node, MappingNode):
                         # Sequence was processed as a list of Mapping Nodes
-                        self.nodes_stack.pop()
+                        _ = self.nodes_stack.pop()
 
                     self.is_array_item = False
 
@@ -453,10 +459,12 @@ class Parser:
 
     def parse(self) -> BaseTree:
         data = yaml.scan(self.document, Loader=yaml.FullLoader)
-        self.nodes_stack.append(self.tree)
 
-        for token in data:
-            self._process_token(token)
+        if self.tree:
+            self.nodes_stack.append(self.tree)
+
+            for token in data:
+                self._process_token(token)
 
         return self.tree
 
@@ -481,4 +489,4 @@ class Parser:
             return BlueprintV2Tree()
 
         else:
-            return None
+            raise ValueError("Unable to build a tree. Unknown spec_version")

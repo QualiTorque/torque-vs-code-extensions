@@ -2,7 +2,7 @@ import re
 from tracemalloc import start
 from typing import List
 
-from server.ats.trees.blueprint_v2 import BlueprintV2OutputNode, BlueprintV2Tree, GrainNode, GrainObject
+from server.ats.trees.blueprint_v2 import BlueprintV2OutputNode, BlueprintV2Tree, GrainNode, GrainObject, GrainSpecNode, GrainSpecScripts, ScriptObject, ScriptOutputsObject
 from server.ats.trees.common import NodeError, TextNode, YamlNode
 from server.validation.common import ValidationHandler
 from pygls.workspace import Document
@@ -11,8 +11,9 @@ from pygls.lsp.types.basic_structures import DiagnosticSeverity
 
 class ExpressionValidationVisitor:
     reserved_words = ["sandboxid"]
-    prefixes = ["inputs", "grains"]
+    prefixes = ["inputs", "grains", "params"]
     pipe_commands = ["downcase"]
+    grains_props = ["outputs", "scripts"]
 
     def __init__(self, tree: BlueprintV2Tree) -> None:
         self.tree = tree
@@ -115,26 +116,49 @@ class ExpressionValidationVisitor:
                     return f"Grain '{dep_grain}' is not defined"
 
                 # check if 'outputs' is followed after grain name
-                if parts[2] != "outputs":
-                    return f"You can access only 'outputs' property of grain '{dep_grain}'"
+                if parts[2] not in self.grains_props:
+                    return f"Wrong property '{parts[2]}'. Must be in {self.grains_props}."
 
-                output = parts[3]
-                
+                grain_prop = parts[2]
+                output: str = ''
+
                 dep_grain_node = self.tree.grains.get_mapping_by_key(dep_grain)
+
                 if dep_grain_node is None:
                     return f"Grain {dep_grain} is not defined"
-                    
-                error_msg = f"Output '{output}' is not part of the '{dep_grain}' grain's outputs"
-                spec_node = dep_grain_node.get_value().spec
+
+                spec_node: GrainSpecNode = dep_grain_node.get_value().spec
 
                 if spec_node is None or spec_node.value is None:
-                    return error_msg
+                    return f"Grain '{dep_grain}' does not have outputs"
 
-                outputs_names = [spec.text for spec in spec_node.value.get_outputs()]
+                if grain_prop == "scripts":
+                    script_type = parts[3]
+                    scripts: GrainSpecScripts = spec_node.scripts.value
+ 
+                    if scripts is None:
+                        return f"Scripts are not a defined in the grain '{dep_grain}'"
+                    script = getattr(scripts, script_type, None)
+
+                    if not script or not script.value or not isinstance(script.value, ScriptOutputsObject):
+                        return f"Wrong type of the script '{script_type}'"
+
+                    else:
+                        script = script.value
+
+                    if parts[4] != "outputs":
+                        return f"Wrong script property '{parts[5]}."
+
+                    output = parts[5]
+                    outputs_names = [output.text for output in script.get_outputs()]
+                else:
+                    output = parts[3]
+                    outputs_names = [spec.text for spec in spec_node.value.get_outputs()]
+                error_msg = f"Output '{output}' is not part of the '{dep_grain}' grain's outputs"
                 if output not in outputs_names:
                     return error_msg
 
-            except IndexError:
+            except IndexError: 
                 return f"Incomplete expression"
 
         elif parts[0] == "inputs":
