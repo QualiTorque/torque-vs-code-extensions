@@ -6,7 +6,7 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-                "spec_version": {
+                "spec_version": { 
                     "oneOf": [
                         {
                             "type": "string",
@@ -77,7 +77,13 @@
                     "type": "string",
                     "enum": [
                         "terraform",
-                        "helm"
+                        "helm",
+                        "ansible",
+                        "blueprint",
+                        "arm",
+                        "cloudformation",
+                        "kubernetes",
+                        "shell"
                     ]
                 },
                 "spec": {
@@ -106,6 +112,12 @@
                 },
                 "pre-tf-destroy": {
                     "$ref": "#/definitions/ScriptObject"
+                },
+                "post-helm-install": {
+                    "$ref": "#/definitions/ScriptOutputsObject"
+                },
+                "post-kubernetes-install": {
+                    "$ref": "#/definitions/ScriptOutputsObject"
                 }
             }
         },
@@ -123,6 +135,23 @@
         "ScriptObject": {
             "type": "object",
             "properties": {
+                "source": {
+                    "$ref": "#/definitions/ScriptSource"
+                },
+                "arguments": {
+                    "type": "string"
+                }
+            }
+        },
+        "ScriptOutputsObject": {
+            "type": "object",
+            "properties": {
+                "outputs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "source": {
                     "$ref": "#/definitions/ScriptSource"
                 },
@@ -198,13 +227,83 @@
                     "items": {
                         "$ref": "#/definitions/EnvironementVariable"
                     }
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "authentication": {
+                    "$ref": "#/definitions/Authentication"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "activities": {
+                    "$ref": "#/definitions/ActivitiesObject"
+                },
+                "inventory-file": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
                 }
             },
             "required": [
-                "host",
-                "source"
+                "host"
             ],
             "title": "Grain Spec Object"
+        },
+        "Authentication": {
+            "type": "object",
+            "properties": {
+                "role-arn": { 
+                    "type": "string"
+                },
+                "external-id": {
+                    "type": "string"
+                }
+            }
+        },
+        "ActivitiesObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "deploy": {
+                    "type": "object",
+                    "$ref": "#/definitions/ActivityObject"
+                },
+                "destroy": {
+                    "type": "object",
+                    "$ref": "#/definitions/ActivityObject"
+                }
+            }
+        },
+        "ActivityObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "commands": {
+                    "type": "array",
+                    "items": {
+                        "anyOf": [
+                            {"$ref": "#/definitions/CommandObject"},
+                            {"type": "string"}
+                        ]
+                    }
+                }
+            }
+        },
+        "CommandObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "command": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
         },
         "GrainInput": {
             "type": "object",
@@ -247,6 +346,9 @@
                     "type": "string"
                 },
                 "service-account": {
+                    "type": "string"
+                },
+                "image": {
                     "type": "string"
                 }
             },
