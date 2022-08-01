@@ -52,7 +52,7 @@
                 "grains": {
                     "type": "object",
                     "patternProperties": {
-                        "^[a-zA-Z0-9-_]{3,45}$": { 
+                        "^[a-zA-Z0-9-_]{1,45}$": { 
                             "oneOf": [
                                 {"$ref": "#/definitions/GrainObject"},
                                 {
@@ -303,9 +303,14 @@
                 },
                 "sensitive": {
                     "type": "boolean"
+                },
+                "allowed-values": {
+                    "type": "array",
+                    "items": {
+                        "type": ["string", "integer", "boolean"]
+                    }
                 }
-            },
-            "required": ["type"]
+            }
         },
         "BlueprintOutputObject": {
             "type": "object",
