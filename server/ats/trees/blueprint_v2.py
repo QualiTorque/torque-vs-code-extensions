@@ -23,10 +23,17 @@ class BlueprintV2InputObject(ObjectNode):
     default: ScalarNode = None
     description: ScalarNode = None
     sensitive: ScalarNode = None
+    allowed_values: ScalarNodesSequence = None
 
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping = super()._get_field_mapping()
-        mapping.update({"type": "input_type", "display-style": "display_style"})
+        mapping.update(
+            {
+                "type": "input_type",
+                "display-style": "display_style",
+                "allowed-values": "allowed_values",
+            }
+        )
         return mapping
 
 
