@@ -7,16 +7,8 @@
             "additionalProperties": false,
             "properties": {
                 "spec_version": { 
-                    "oneOf": [
-                        {
-                            "type": "string",
-                            "enum": ["2-preview"]
-                        },
-                        {
-                            "type": "integer",
-                            "enum": [2]
-                        }
-                    ]
+                    "type": "integer",
+                    "enum": [2]
                 },
                 "description": {
                     "type": "string"
