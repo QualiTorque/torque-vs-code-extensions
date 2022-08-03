@@ -23,10 +23,17 @@ class BlueprintV2InputObject(ObjectNode):
     default: ScalarNode = None
     description: ScalarNode = None
     sensitive: ScalarNode = None
+    allowed_values: ScalarNodesSequence = None
 
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping = super()._get_field_mapping()
-        mapping.update({"type": "input_type", "display-style": "display_style"})
+        mapping.update(
+            {
+                "type": "input_type",
+                "display-style": "display_style",
+                "allowed-values": "allowed_values",
+            }
+        )
         return mapping
 
 
@@ -59,11 +66,20 @@ class ScriptObject(ObjectNode):
     source: ScriptSource = None
     arguments: TextNode = None
 
+@dataclass
+class ScriptOutputsObject(ScriptObject):
+    outputs: ScalarNodesSequence = None
+
+    def get_outputs(self) -> List[ScalarNode]:
+        return self._get_seq_nodes("outputs")
+
 
 @dataclass
 class GrainSpecScripts(ObjectNode):
     pre_tf_init: ScriptObject = None
     pre_tf_destroy: ScriptObject = None
+    post_helm_install: ScriptOutputsObject = None
+    post_kubernetes_install: ScriptOutputsObject = None
 
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping = super()._get_field_mapping()
@@ -71,13 +87,55 @@ class GrainSpecScripts(ObjectNode):
             {
                 "pre-tf-init": "pre_tf_init",
                 "pre-tf-destroy": "pre_tf_destroy",
+                "post-helm-install": "post_helm_install",
+                "post-kubernetes-install": "post_kubernetes_install"
             }
         )
         return mapping
 
 
 @dataclass
+class CommandObject(ObjectNode):
+    command: TextNode = None
+    name: ScalarNode = None
+
+    def get_shortened_form_property(self):
+        self.command = TextNode()
+        return self.command
+
+
+@dataclass
+class CommandsSequence(SequenceNode):
+    node_type = CommandObject
+
+
+@dataclass
+class ActivitiesObject(ObjectNode):
+    @dataclass
+    class ActivityObject(ObjectNode):
+        commands: CommandsSequence = None
+
+    deploy: ActivityObject = None
+    destroy: ActivityObject = None
+
+
+@dataclass
 class GrainSpecNode(ObjectNode):
+    @dataclass
+    class GrainAuthenticationObject(ObjectNode):
+        role_arn: TextNode = None
+        external_id: TextNode = None
+
+        def _get_field_mapping(self) -> Dict[str, str]:
+            mapping = super()._get_field_mapping()
+            mapping.update(
+                {
+                    "role-arn": "role_arn",
+                    "external-id": "external_id",
+                }
+            )
+            return mapping
+
     @dataclass
     class SpecSourceNode(ObjectNode):
         store: ScalarNode = None
@@ -105,6 +163,7 @@ class GrainSpecNode(ObjectNode):
         region: TextNode = None
         service_account: TextNode = None
         name: TextNode = None
+        image: TextNode = None
 
         def _get_field_mapping(self) -> Dict[str, str]:
             mapping = super()._get_field_mapping()
@@ -136,6 +195,10 @@ class GrainSpecNode(ObjectNode):
     scripts: GrainSpecScripts = None
     tags: GrainSpecTag = None
     env_vars: TextMappingSequence = None
+    region: TextNode = None
+    authentication: GrainAuthenticationObject = None
+    activities: ActivitiesObject = None
+    namespace: TextNode = None
 
 
 @dataclass

@@ -30,16 +30,17 @@ export class SandboxStartPanel {
     private _bpname: string;
 	private _blueprintDetails: string;
 	private _disposables: vscode.Disposable[] = [];
+	private _sourceType: string;
 	private readonly _branch: string;
 
-	public static createOrShow(extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, artifacts: object, branch: string) {
+	public static createOrShow(extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, branch: string, sourceType: string) {
 		const column = vscode.window.activeTextEditor
 			? vscode.window.activeTextEditor.viewColumn
 			: undefined;
 
 		// If we already have a panel, show it.
 		if (SandboxStartPanel.currentPanel) {
-			SandboxStartPanel.currentPanel.updatePanel(bpname, inputs, artifacts);
+			SandboxStartPanel.currentPanel.updatePanel(bpname, inputs, sourceType);
             SandboxStartPanel.currentPanel._panel.reveal(column);
             return;
 		}
@@ -51,25 +52,25 @@ export class SandboxStartPanel {
 			column || vscode.ViewColumn.One,
 			getWebviewOptions(extensionUri),
 		);
-		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, branch);
+		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, branch, sourceType);
 	}
 
-	private startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, artifacts:object, branch:string) {
+	private startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, branch:string, sourceType:string) {
 		let inputsString = this._compose_comma_separated_string(inputs);
-		let artifactsString = this._compose_comma_separated_string(artifacts);
 
-		vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputsString, artifactsString, branch)
+		vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputsString, branch, sourceType)
 		.then(async (result:Array<string>) => {
 			vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
 			this._panel.dispose();
 		})
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, branch: string) {
+	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, branch: string, sourceType: string) {
 		this._panel = panel;
 		this._extensionUri = extensionUri;
         this._bpname = decodeURI(bpname);
 		this._branch = branch;
+		this._sourceType = sourceType;
 		this._blueprintDetails = null;
 
 		// Set the webview's initial html content
@@ -92,7 +93,7 @@ export class SandboxStartPanel {
                             this.reloadBlueprintDetails();
 						}
                         else if (message.name == 'start-sandbox') {
-                            this.startSandbox(this._bpname, message.sandbox_name, message.duration, message.inputs, message.artifacts, this._branch);
+                            this.startSandbox(this._bpname, message.sandbox_name, message.duration, message.inputs, this._branch, this._sourceType);
 						}
                         return;
 				}
@@ -106,7 +107,7 @@ export class SandboxStartPanel {
 		return vscode.window.withProgress({location: vscode.ProgressLocation.Notification}, (progress): Promise<string> => {
             return new Promise<string>(async (resolve) => {
                 progress.report({ message: "Loading blueprint details" });
-                await vscode.commands.executeCommand('get_blueprint', this._bpname)
+                await vscode.commands.executeCommand('get_blueprint', this._bpname, this._sourceType)
                 .then(async (result:string) => {
                     if (result.length > 0)
                         this._blueprintDetails = result;
@@ -117,9 +118,10 @@ export class SandboxStartPanel {
         })
 	}
 
-    public updatePanel(bpname:string, inputs:Array<string>, artifacts: object) {
+    public updatePanel(bpname:string, inputs:Array<string>, sourceType: string) {
         this._bpname = decodeURI(bpname);
 		this._blueprintDetails = null;
+		this._sourceType = sourceType;
 		// Set the webview's initial html content
 		this._update();
 		this.reloadBlueprintDetails();
@@ -226,21 +228,6 @@ export class SandboxStartPanel {
         else
             postMessageProperties += ", inputs: {}";
 
-		let artifactsHtml = "";
-		if ('artifacts' in blueprintJson && !this._isEmpty(blueprintJson['artifacts'])) {
-			artifactsHtml = "<b>Artifacts</b><br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
-			postMessageProperties += ", artifacts: {";
-			for (const [key, value] of Object.entries(blueprintJson['artifacts'])) {
-				artifactsHtml += "<tr><td width='180px'>" + key + ' *' + "</td><td>" + "<input type='text' id='art_" + key + "' value='" + (value ? value : '') + "'></td></tr>";
-				postMessageProperties += `"${key}": document.getElementById('art_${key}').value,`;
-			}
-			artifactsHtml += "</table>";
-			postMessageProperties += "}";
-			if (inputs_size > 0)
-				artifactsHtml = "<br/>" + artifactsHtml;
-		}
-		else
-			postMessageProperties += ", artifacts: {}";
 
         let startHtml = "<br/><table width='50%' border='0' cellpadding='1' cellspacing='1'>";
         startHtml += ("<tr><td width='180px'><input type='button' id='start-btn' value='Start'></td>"
@@ -274,7 +261,6 @@ export class SandboxStartPanel {
 				${generalHtml}
                 <br/>
 				${inputsHtml}
-				${artifactsHtml}
                 ${startHtml}
 			</body>
             <script nonce="${nonce}">

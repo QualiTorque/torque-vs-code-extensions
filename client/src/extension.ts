@@ -150,8 +150,8 @@ export async function activate(context: ExtensionContext) {
 
 
     context.subscriptions.push(
-		commands.registerCommand('extension.openReserveForm', (bpname:string, inputs:Array<string>, artifacts: object, branch: string) => {
-            SandboxStartPanel.createOrShow(context.extensionUri, bpname, inputs, artifacts, branch);
+		commands.registerCommand('extension.openReserveForm', (bpname:string, inputs:Array<string>, branch: string, sourceType: string) => {
+            SandboxStartPanel.createOrShow(context.extensionUri, bpname, inputs, branch, sourceType);
         })
 	);
 
