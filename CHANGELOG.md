@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.2.3](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.2.2...v0.2.3) (2022-08-02)
+
+* schema updates:
+  - new grains support
+  - blueprint 'input' property updates
+* add support for blueprint source type
+
 ## [0.2.2](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.2.1...v0.2.2) (2022-07-04)
 
 * some fixes
