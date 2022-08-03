@@ -107,3 +107,5 @@ AZURE_REGIONS = [
     "uaecentral",
     "brazilsoutheast",
 ]
+
+BLUEPRINT_SOURCE_TYPE_MAP = {"git_repository": "git", "qtorque": "torque"}
