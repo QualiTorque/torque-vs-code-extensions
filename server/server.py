@@ -25,7 +25,7 @@ import sys
 import textwrap
 from json import JSONDecodeError
 from typing import List, Optional
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 
 import tabulate
 import yaml
@@ -606,8 +606,8 @@ def code_lens(
             if yaml_obj:
                 bp_tree = Parser(doc.source).parse()
                 # disable for spec2
-                if bp_tree.kind is None:
-                    return
+                # if bp_tree.kind is None:
+                #     return
         except ParserError as ex:
             return
 
@@ -621,39 +621,39 @@ def code_lens(
             )
             return None
 
-        def to_bool(val: str):
-            return val.lower() == "true"
+        # def to_bool(val: str):
+        #     return val.lower() == "true"
 
-        if yaml_obj and bp_tree:
-            inputs = []
-            try:
-                bp_inputs = bp_tree.get_inputs()
-            except NotImplementedError:
-                bp_inputs = []
-            for inp in bp_inputs:
-                props = inp.value
-                item = {}
-                item["name"] = inp.key.text
-                item["default_value"] = (
-                    inp.default_value.text if (props and inp.default_value) else ""
-                )
+        # if yaml_obj and bp_tree:
+        #     inputs = []
+        #     try:
+        #         bp_inputs = bp_tree.get_inputs()
+        #     except NotImplementedError:
+        #         bp_inputs = []
+        #     for inp in bp_inputs:
+        #         props = inp.value
+        #         item = {}
+        #         item["name"] = inp.key.text
+        #         item["default_value"] = (
+        #             inp.default_value.text if (props and inp.default_value) else ""
+        #         )
 
-                item["optional"] = (
-                    to_bool(props.optional.text)
-                    if (props and hasattr(props, "optional") and props.optional)
-                    else False
-                )
+        #         item["optional"] = (
+        #             to_bool(props.optional.text)
+        #             if (props and hasattr(props, "optional") and props.optional)
+        #             else False
+        #         )
 
-                item["display_style"] = (
-                    props.display_style.text
-                    if (props and hasattr(props, "display_style") and props.display_style)
-                    else "text"
-                )
-                inputs.append(item)
-            artifacts = {}
-            bp_arts = bp_tree.get_artifacts()
-            for art in bp_arts:
-                artifacts[art.key.text] = art.value.text if art.value else ""
+        #         item["display_style"] = (
+        #             props.display_style.text
+        #             if (props and hasattr(props, "display_style") and props.display_style)
+        #             else "text"
+        #         )
+        #         inputs.append(item)
+        #     artifacts = {}
+        #     bp_arts = bp_tree.get_artifacts()
+        #     for art in bp_arts:
+        #         artifacts[art.key.text] = art.value.text if art.value else ""
 
         output = [
             CodeLens(
@@ -669,20 +669,20 @@ def code_lens(
             ),
         ]
 
-        if yaml_obj and bp_tree:
-            output += [
-                CodeLens(
-                    range=Range(
-                        start=Position(line=0, character=0),
-                        end=Position(line=1, character=1),
-                    ),
-                    command=Command(
-                        title="Start Sandbox",
-                        command="extension.openReserveForm",
-                        arguments=[params.text_document.uri, inputs, artifacts, ""],
-                    ),
-                ),
-            ]
+        # if yaml_obj and bp_tree:
+        #     output += [
+        #         CodeLens(
+        #             range=Range(
+        #                 start=Position(line=0, character=0),
+        #                 end=Position(line=1, character=1),
+        #             ),
+        #             command=Command(
+        #                 title="Start Sandbox",
+        #                 command="extension.openReserveForm",
+        #                 arguments=[params.text_document.uri, inputs, artifacts, ""],
+        #             ),
+        #         ),
+        #     ]
 
         return output
     else:
@@ -1052,6 +1052,7 @@ async def get_blueprint(server: TorqueLanguageServer, *args):
             MessageType.Error,
         )
 
+
 @torque_ls.command(TorqueLanguageServer.CMD_GET_SANDBOX)
 async def get_sandbox(server: TorqueLanguageServer, *args):
     if not args or not args[0]:
@@ -1139,17 +1140,17 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
             MessageType.Error,
         )
         return
+    blueprint_path = unquote(urlparse(args[0][0]).path)
+    # blueprint_path = unquote(pathlib.Path(args[0][0]).name)#.replace(".yaml", ""))
 
-    blueprint_name = unquote(pathlib.Path(args[0][0]).name.replace(".yaml", ""))
-
-    info_msg = f"Validating blueprint: {blueprint_name}"
-    success_msg = f"Validation completed. The blueprint '{blueprint_name}' and its dependencies are valid."
+    info_msg = f"Validating blueprint: {blueprint_path}"
+    success_msg = f"Validation completed. The blueprint '{blueprint_path}' and its dependencies are valid."
 
     server.show_message(info_msg)
     server.show_message_log(info_msg)
     try:
         _, stderr = _run_torque_cli_command(
-            f'torque --disable-version-check --profile {active_profile} bp validate "{blueprint_name}" --output=json',
+            f'torque --disable-version-check --profile {active_profile} bp validate "{blueprint_path}" --output=json',
             cwd=server.workspace.root_path,
         )
 
