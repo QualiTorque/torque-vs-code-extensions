@@ -184,6 +184,9 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "sources": {
+                    "$ref": "#/definitions/GrainSpecSources"
+                },
                 "source": {
                     "$ref": "#/definitions/GrainSpecSourceObject"
                 },
@@ -231,6 +234,9 @@
                 },
                 "activities": {
                     "$ref": "#/definitions/ActivitiesObject"
+                },
+                "release": {
+                    "type": "string"
                 },
                 "inventory-file": {
                     "type": "object",
@@ -342,6 +348,9 @@
                 },
                 "image": {
                     "type": "string"
+                },
+                "kubernetes": {
+                    "type": "string"
                 }
             },
             "title": "Spec Host Properties"
@@ -362,6 +371,12 @@
             ],
             "title": "PurpleSource"
         },
+        "GrainSpecSources": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/GrainSpecSourceObject"
+            }
+        },
         "BlueprintInputObject": {
             "title": "Blueprint Input Object",
             "type": "object",
@@ -371,8 +386,7 @@
                     "type": "string",
                     "enum": [
                         "string",
-                        "numeric",
-                        "boolean"
+                        "execution-host"
                     ]
                 },
                 "display-style": {
