@@ -50,7 +50,7 @@ export class SandboxDetailsPanel {
 		// Otherwise, create a new panel.
 		const panel = vscode.window.createWebviewPanel(
 			SandboxDetailsPanel.viewType,
-			'Sandbox Details',
+			'Environment Details',
 			column || vscode.ViewColumn.One,
 			getWebviewOptions(extensionUri),
 		);
@@ -62,7 +62,7 @@ export class SandboxDetailsPanel {
 
         return window.withProgress({location: ProgressLocation.Notification}, (progress): Promise<string> => {
             return new Promise<string>(async (resolve) => {
-                progress.report({ message: "Loading sandbox details" });
+                progress.report({ message: "Loading environment details" });
                 await vscode.commands.executeCommand('get_sandbox', this._sandbox_id)
                 .then(async (result:string) => {
                     if (result.length > 0)
@@ -75,14 +75,14 @@ export class SandboxDetailsPanel {
         })
 	}
 
-    private async endSandbox() {
+    private async endEnvironment() {
         var sb = new Sandbox(
             this._sandbox_name,
             vscode.TreeItemCollapsibleState.None,
             this._sandbox_id,
             this._blueprint_name)
                                             
-        vscode.commands.executeCommand('sandboxesExplorerView.endSandbox', sb)
+        vscode.commands.executeCommand('environmentsExplorerView.endEnvironment', sb)
             .then(() => {
                 this._panel.dispose()
             })
@@ -117,7 +117,7 @@ export class SandboxDetailsPanel {
                             this.reloadSandbox();
                         }
                         else if (message.name == 'end-sandbox') {
-                            this.endSandbox();
+                            this.endEnvironment();
                         }
                         return;
 				}
@@ -157,7 +157,7 @@ export class SandboxDetailsPanel {
 	private _update() {
 		const webview = this._panel.webview;
 
-		this._panel.title = 'Sandbox Details';
+		this._panel.title = 'Environments Details';
 		this._panel.webview.html = this._getHtmlForWebview(webview);
 	}
 
@@ -181,7 +181,7 @@ export class SandboxDetailsPanel {
 
             <link href="${stylesMainUri}" rel="stylesheet">
 
-            <title>Sandbox Details</title>
+            <title>Environment Details</title>
             
         </head>`
 
@@ -257,7 +257,7 @@ export class SandboxDetailsPanel {
             <div style="vertical-align: top; display: inline-block; float:right; margin-top: 5px">
             <input type='button' id='reload-btn' value='Refresh' style="width:100px;display: inline-block;">
             &nbsp;
-            <input type='button' id='end-btn' value='End Sandbox' style="width:100px;display: inline-block;">
+            <input type='button' id='end-btn' value='End Environment' style="width:100px;display: inline-block;">
             </div>
             <div style="vertical-align: top;">
             ${generalHtml}
