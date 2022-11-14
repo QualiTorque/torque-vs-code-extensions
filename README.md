@@ -44,4 +44,4 @@ Coming soon...
   or directly in VS Code settings (under __pyhon.pythonPath__)
 - Open any folder with a Torque blueprint repository and get an enhanced experience working on your Torque files!
 
-The extension will be activated automatically when loading Torque's blueprint, application, or service YAMLs located in a [blueprint repository folder structure](https://community.qtorque.io/developing-blueprints-61/setting-up-a-blueprint-repository-258), or when opening the Torque view in the activity bar.
+The extension will be activated automatically when loading Torque's blueprint located in a [blueprint repository folder structure](https://community.qtorque.io/developing-blueprints-61/setting-up-a-blueprint-repository-258), or when opening the Torque view in the activity bar.
