@@ -677,7 +677,7 @@ def code_lens(
         #                 end=Position(line=1, character=1),
         #             ),
         #             command=Command(
-        #                 title="Start Sandbox",
+        #                 title="Start Environment",
         #                 command="extension.openReserveForm",
         #                 arguments=[params.text_document.uri, inputs, artifacts, ""],
         #             ),
@@ -759,7 +759,7 @@ async def _get_profile(server: TorqueLanguageServer):
 async def start_sandbox(server: TorqueLanguageServer, *args):
     if len(args[0]) == 0:
         server.show_message(
-            "Please start the sandbox from the command in the blueprint file.",
+            "Please start the environment from the command in the blueprint file.",
             MessageType.Error,
         )
         return
@@ -788,15 +788,15 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     source_type = args[0][5]
 
     source = BLUEPRINT_SOURCE_TYPE_MAP.get(source_type, None)
-    server.show_message("Starting sandbox from blueprint: " + blueprint_name)
-    server.show_message_log("Starting sandbox from blueprint: " + blueprint_name)
+    server.show_message("Starting environment from blueprint: " + blueprint_name)
+    server.show_message_log("Starting environment from blueprint: " + blueprint_name)
     if dev_mode:
         server.show_message_log(
             "If there are local changes it might take some more time to get ready."
         )
 
     try:
-        command = f'torque --profile {active_profile} sb start "{blueprint_name}" -d {duration}'
+        command = f'torque --profile {active_profile} env start "{blueprint_name}" -d {duration}'
 
         if source:
             command += f" -s {source}"    
@@ -824,7 +824,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
 
         error_msg = ""
         if stderr:
-            # server.show_message_log('Error while starting the sandbox:')
+            # server.show_message_log('Error while starting the Environment:')
             for line in stderr:
                 if line == "":
                     continue
@@ -835,19 +835,19 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                     error_msg += line.strip() + "\n"
                     # server.show_message_log(line.decode().strip())
             if error_msg:
-                error_msg = "Error while starting the sandbox:\n" + error_msg
+                error_msg = "Error while starting the environment:\n" + error_msg
                 server.show_message_log(error_msg)
         if error_msg:
             server.show_message(
-                "Sandbox creation failed. Check the 'Torque' Output view for more details.",
+                "Environment creation failed. Check the 'Torque' Output view for more details.",
                 MessageType.Error
             )
         else:
             server.show_message(
-                "Sandbox was created. See details in the Output view or Sandboxes explorer."
+                "Environment was created. See details in the Output view or Environments explorer."
             )
             server.show_message_log(
-                "Sandbox was created. View current status and more details using the Sandboxes explorer."
+                "Environment was created. View current status and more details using the Environments explorer."
             )
     except Exception as ex:
         server.show_message_log(str(ex), msg_type=MessageType.Error)
@@ -904,7 +904,7 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
 
     try:
         stdout, stderr = _run_torque_cli_command(
-            f"torque --disable-version-check --profile {active_profile} sb list --output=json"
+            f"torque --disable-version-check --profile {active_profile} env list --output=json"
         )
 
         if stderr:
@@ -918,7 +918,7 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
 
     except Exception as ex:
         server.show_message(
-            f"Unable to fetch Torque sandboxes. Reason: {str(ex)}", MessageType.Error
+            f"Unable to fetch Torque Environments. Reason: {str(ex)}", MessageType.Error
         )
     return sbs
 
@@ -948,7 +948,7 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
 
     except Exception as ex:
         server.show_message(
-            f"Unable to fetch Torque sandboxes. Reason: {str(ex)}", MessageType.Error
+            f"Unable to fetch Torque Environments. Reason: {str(ex)}", MessageType.Error
         )
         return None
 
@@ -1056,7 +1056,7 @@ async def get_blueprint(server: TorqueLanguageServer, *args):
 @torque_ls.command(TorqueLanguageServer.CMD_GET_SANDBOX)
 async def get_sandbox(server: TorqueLanguageServer, *args):
     if not args or not args[0]:
-        server.show_message("No sandbox id provided", MessageType.Error)
+        server.show_message("No Environment id provided", MessageType.Error)
         return 1
 
     active_profile = await _get_profile(server)
@@ -1072,7 +1072,7 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
     sb_id = args[0].pop()
     try:
         stdout, stderr = _run_torque_cli_command(
-            f"torque --disable-version-check --profile {active_profile} sb get {sb_id} --output=json --detail"
+            f"torque --disable-version-check --profile {active_profile} env get {sb_id} --output=json --detail"
         )
         if stderr:
             server.show_message(
@@ -1083,7 +1083,7 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
 
     except Exception as ex:
         server.show_message(
-            f"Failed to get status of sandbox {sb_id}. Reason: {str(ex)}",
+            f"Failed to get status of Environment {sb_id}. Reason: {str(ex)}",
             MessageType.Error,
         )
 
@@ -1091,7 +1091,7 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
 @torque_ls.command(TorqueLanguageServer.CMD_END_SANDBOX)
 async def end_sandbox(server: TorqueLanguageServer, *args):
     if not args or not args[0]:
-        server.show_message("No sandbox id provided", MessageType.Error)
+        server.show_message("No Environment id provided", MessageType.Error)
         return 1
 
     active_profile = await _get_profile(server)
@@ -1107,7 +1107,7 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
 
     try:
         stdout, stderr = _run_torque_cli_command(
-            f"torque --disable-version-check --profile {active_profile} sb end {sb_id}"
+            f"torque --disable-version-check --profile {active_profile} env end {sb_id}"
         )
 
         if stderr:
@@ -1119,7 +1119,7 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
 
     except Exception as ex:
         server.show_message(
-            f"Failed to end the sandbox {sb_id}. Reason: {str(ex)}", MessageType.Error
+            f"Failed to end the Environment {sb_id}. Reason: {str(ex)}", MessageType.Error
         )
 
 

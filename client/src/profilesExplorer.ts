@@ -18,7 +18,7 @@ export class ProfilesProvider implements vscode.TreeDataProvider<Profile> {
 		    this.refresh();
         //refresh the other explorers
         vscode.commands.executeCommand('blueprintsExplorerView.refreshEntry')
-        vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
+        vscode.commands.executeCommand('environmentsExplorerView.refreshEntry')
     }
 
     async setAsDefault(profile: Profile): Promise<void> {

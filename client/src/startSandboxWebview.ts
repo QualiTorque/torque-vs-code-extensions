@@ -48,7 +48,7 @@ export class SandboxStartPanel {
 		// Otherwise, create a new panel.
 		const panel = vscode.window.createWebviewPanel(
 			SandboxStartPanel.viewType,
-			'Start Sandbox',
+			'Start Environment',
 			column || vscode.ViewColumn.One,
 			getWebviewOptions(extensionUri),
 		);
@@ -60,7 +60,7 @@ export class SandboxStartPanel {
 
 		vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputsString, branch, sourceType)
 		.then(async (result:Array<string>) => {
-			vscode.commands.executeCommand('sandboxesExplorerView.refreshEntry')
+			vscode.commands.executeCommand('environmentsExplorerView.refreshEntry')
 			this._panel.dispose();
 		})
 	}
@@ -159,7 +159,7 @@ export class SandboxStartPanel {
 	private _update() {
 		const webview = this._panel.webview;
 
-		this._panel.title = 'Start Sandbox';
+		this._panel.title = 'Start Environment';
 		this._panel.webview.html = this._getHtmlForWebview(webview);
 	}
 
@@ -251,11 +251,11 @@ export class SandboxStartPanel {
 
 				<link href="${stylesMainUri}" rel="stylesheet">
 
-				<title>Launch a New Sandbox</title>
+				<title>Launch a New Environment</title>
 			</head>
 			<body>
                 <br/>
-				<h2>Launch a New Sandbox</h2>
+				<h2>Launch a New Environment</h2>
 				<h3>Blueprint: ${cleanName}</h3>
                 <br/>
 				${generalHtml}
