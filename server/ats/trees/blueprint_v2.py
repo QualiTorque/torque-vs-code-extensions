@@ -120,6 +120,17 @@ class ActivitiesObject(ObjectNode):
 
 
 @dataclass
+class SpecSourceNode(ObjectNode):
+    store: ScalarNode = None
+    path: ScalarNode = None
+
+
+@dataclass
+class SpecSourcesSequence(SequenceNode):
+    node_type = SpecSourceNode
+
+
+@dataclass
 class GrainSpecNode(ObjectNode):
     @dataclass
     class GrainAuthenticationObject(ObjectNode):
@@ -135,11 +146,6 @@ class GrainSpecNode(ObjectNode):
                 }
             )
             return mapping
-
-    @dataclass
-    class SpecSourceNode(ObjectNode):
-        store: ScalarNode = None
-        path: ScalarNode = None
     
     @dataclass
     class GrainSpecTag(ObjectNode):
@@ -164,6 +170,7 @@ class GrainSpecNode(ObjectNode):
         service_account: TextNode = None
         name: TextNode = None
         image: TextNode = None
+        kubernetes: TextNode = None
 
         def _get_field_mapping(self) -> Dict[str, str]:
             mapping = super()._get_field_mapping()
@@ -188,6 +195,7 @@ class GrainSpecNode(ObjectNode):
         return mapping
 
     source: SpecSourceNode = None
+    sources: SpecSourcesSequence = None
     host: SpecHostNode = None
     inputs: TextMappingSequence = None
     outputs: ScalarNodesSequence = None
@@ -199,6 +207,7 @@ class GrainSpecNode(ObjectNode):
     authentication: GrainAuthenticationObject = None
     activities: ActivitiesObject = None
     namespace: TextNode = None
+    release: TextNode = None
 
 
 @dataclass

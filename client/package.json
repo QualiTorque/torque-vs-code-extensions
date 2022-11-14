@@ -4,7 +4,7 @@
 	"description": "A VS Code extension for the Torque YAML syntax. Provides YAML schema verification, auto-complete, highlight problems and much more.",
 	"author": "Quali",
 	"license": "MIT",
-	"version": "0.2.4",
+	"version": "0.3.0",
 	"publisher": "Quali-Torque",
 	"repository": {
 		"type": "git",
@@ -32,7 +32,7 @@
 	"activationEvents": [
 		"onLanguage:yaml",
 		"onView:profilesView",
-		"onView:sandboxesExplorerView",
+		"onView:environmentsExplorerView",
 		"onView:blueprintsExplorerView",
 		"onStartupFinished"
 	],
@@ -54,9 +54,9 @@
 					"contextualTitle": "Blueprints Explorer"
 				},
 				{
-					"id": "sandboxesExplorerView",
-					"name": "Sandboxes Explorer",
-					"contextualTitle": "Sandboxes Explorer"
+					"id": "environmentsExplorerView",
+					"name": "Environments Explorer",
+					"contextualTitle": "Environments Explorer"
 				},
 				{
 					"id": "profilesView",
@@ -66,13 +66,13 @@
 		},
 		"commands": [
 			{
-				"command": "sandboxesExplorerView.refreshEntry",
+				"command": "environmentsExplorerView.refreshEntry",
 				"title": "Refresh",
 				"icon": "$(refresh)"
 			},
 			{
-				"command": "sandboxesExplorerView.endSandbox",
-				"title": "End Sandbox",
+				"command": "environmentsExplorerView.endEnvironment",
+				"title": "End Environment",
 				"icon": "$(close)"
 			},
 			{
@@ -109,9 +109,9 @@
 					"when": "view == blueprintsExplorerView"
 				},
 				{
-					"command": "sandboxesExplorerView.refreshEntry",
+					"command": "environmentsExplorerView.refreshEntry",
 					"group": "navigation",
-					"when": "view == sandboxesExplorerView"
+					"when": "view == environmentsExplorerView"
 				},
 				{
 					"command": "profilesView.refreshEntry",
@@ -136,8 +136,8 @@
 					"group": "inline"
 				},
 				{
-					"command": "sandboxesExplorerView.endSandbox",
-					"when": "view == sandboxesExplorerView",
+					"command": "environmentsExplorerView.endEnvironment",
+					"when": "view == environmentsExplorerView",
 					"group": "inline"
 				}
 			]
@@ -153,7 +153,7 @@
 				},
 				"torque.defaultSandboxDuration": {
 					"type": "number",
-					"description": "A default sandbox duration (in minutes) to use when displaying the start sandbox form.",
+					"description": "A default environment duration (in minutes) to use when displaying the start nvironment form.",
 					"default": 120,
 					"scope": "application"
 				}

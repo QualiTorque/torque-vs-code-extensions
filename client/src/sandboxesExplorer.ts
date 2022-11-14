@@ -29,14 +29,14 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 		return element;
 	}
 
-	async endSandbox(sandbox: Sandbox): Promise<any> {
+	async endEnvironment(sandbox: Sandbox): Promise<any> {
 		return vscode.window.showInformationMessage(
-            "Ending a sandbox permanently removes its resources from the cloud. Are you sure you want to end this sandbox?",
+            "Ending an environment permanently removes its resources from the cloud. Are you sure you want to end this environment?",
             ...["No", "Yes"]
         )
         .then((answer) => {
             if (answer === "Yes") {
-				vscode.window.showInformationMessage(`Ending the sandbox ${sandbox.id}...`)
+				vscode.window.showInformationMessage(`Ending the environment ${sandbox.id}...`)
 				vscode.commands.executeCommand('end_sandbox', sandbox.id);
 				vscode.window.showInformationMessage('End request sent');
 				this.refreshDelayed(30);
@@ -46,7 +46,7 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 		
     }
 
-	async getSandboxDetails(sb: any): Promise<void> {
+	async getEnvDetails(sb: any): Promise<void> {
 		vscode.commands.executeCommand('extension.showSandboxDetails', sb)
 	}
 	
@@ -81,8 +81,8 @@ export class SandboxesProvider implements vscode.TreeDataProvider<Sandbox> {
 									sb['id'],
 									sb['blueprint_name'],
 									{
-										command: 'sandboxesExplorerView.getSandboxDetails',
-										title: 'Sandbox Details',
+										command: 'environmentsExplorerView.getEnvDetails',
+										title: 'Environment Details',
 										arguments: [sb] 
 									}
 									)

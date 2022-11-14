@@ -143,10 +143,10 @@ export async function activate(context: ExtensionContext) {
     
     // SANDBOXES
     const sandboxesProvider = new SandboxesProvider();
-    window.registerTreeDataProvider('sandboxesExplorerView', sandboxesProvider);
-	commands.registerCommand('sandboxesExplorerView.refreshEntry', () => sandboxesProvider.refresh());
-    commands.registerCommand('sandboxesExplorerView.getSandboxDetails', (sandbox: any) => sandboxesProvider.getSandboxDetails(sandbox));
-    commands.registerCommand('sandboxesExplorerView.endSandbox', (sandbox: Sandbox) => sandboxesProvider.endSandbox(sandbox));
+    window.registerTreeDataProvider('environmentsExplorerView', sandboxesProvider);
+	commands.registerCommand('environmentsExplorerView.refreshEntry', () => sandboxesProvider.refresh());
+    commands.registerCommand('environmentsExplorerView.getEnvDetails', (sandbox: any) => sandboxesProvider.getEnvDetails(sandbox));
+    commands.registerCommand('environmentsExplorerView.endEnvironment', (sandbox: Sandbox) => sandboxesProvider.endEnvironment(sandbox));
 
 
     context.subscriptions.push(
