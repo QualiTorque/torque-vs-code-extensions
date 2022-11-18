@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.3.1](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.3.0...v0.3.1) (2022-11-18)
+
+* set a VS Code user-agent
+
+## [0.3.0](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.2.4...v0.3.0) (2022-11-14)
+
+* rename sandboxes to environments
+* blueprint schema updates
+* bump-up torque-cli version
+
 ## [0.2.4](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.2.3...v0.2.4) (2022-10-24)
 
 * return blueprint validation feature back
