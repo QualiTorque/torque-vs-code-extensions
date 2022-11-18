@@ -714,6 +714,11 @@ async def lsp_document_link(
 
     return links
 
+def _fetch_version():
+    with open(os.path.join("server/version.txt")) as version_file:
+        version_from_file = version_file.read().strip()
+
+    return version_from_file
 
 def _run_torque_cli_command(command: str, log_command: bool = True, log_output: bool = False, **kwargs):
     if log_command:
@@ -721,12 +726,15 @@ def _run_torque_cli_command(command: str, log_command: bool = True, log_output: 
 
     cmd_list = [sys.executable, "-m"] + shlex.split(command)
 
+    env_override = {"TORQUE_USERAGENT": f"Torque-IDE-VSCode/{_fetch_version()}"}
+
     res = subprocess.run(
         cmd_list,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         # universal_newlines=True,
+        env=env_override,
         **kwargs,
     )
 
