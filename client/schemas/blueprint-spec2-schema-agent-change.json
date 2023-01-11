@@ -183,18 +183,34 @@
         "GrainSpecObject": {
             "type": "object",
             "additionalProperties": false,
+            "oneOf": [
+                {
+                    "properties": {
+                        "agent": {
+                            "$ref": "#/definitions/GrainSpecHostObject"
+                        }
+                    },
+                    "required": [
+                        "agent"
+                    ]
+                },
+                {
+                    "properties": {
+                        "host": {
+                            "$ref": "#/definitions/GrainSpecHostObject"
+                        }
+                    },
+                    "required": [
+                        "host"
+                    ]
+                }
+            ],
             "properties": {
                 "sources": {
                     "$ref": "#/definitions/GrainSpecSources"
                 },
                 "source": {
                     "$ref": "#/definitions/GrainSpecSourceObject"
-                },
-                "agent": {
-                    "$ref": "#/definitions/GrainSpecHostObject"
-                },
-                "host": {
-                    "$ref": "#/definitions/GrainSpecHostObject"
                 },
                 "inputs": {
                     "type": "array",
@@ -249,10 +265,6 @@
                     }
                 }
             },
-            "oneOf": [
-                {"required": ["agent"]},
-                {"required": ["host"]}
-            ],
             "title": "Grain Spec Object"
         },
         "Authentication": {
