@@ -249,7 +249,7 @@
                     }
                 }
             },
-            "anyOf": [
+            "oneOf": [
                 {"required": ["host"]},
                 {"required": ["agent"]}
             ],
