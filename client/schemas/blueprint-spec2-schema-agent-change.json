@@ -253,10 +253,6 @@
                 {"required": ["agent"]},
                 {"required": ["host"]}
             ],
-            "oneOf": [
-                {"required": ["agent"]},
-                {"required": ["host"]}
-            ],
             "title": "Grain Spec Object"
         },
         "Authentication": {
