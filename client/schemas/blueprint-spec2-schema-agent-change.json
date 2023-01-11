@@ -190,10 +190,10 @@
                 "source": {
                     "$ref": "#/definitions/GrainSpecSourceObject"
                 },
-                "host": {
+                "agent": {
                     "$ref": "#/definitions/GrainSpecHostObject"
                 },
-                "agent": {
+                "host": {
                     "$ref": "#/definitions/GrainSpecHostObject"
                 },
                 "inputs": {
@@ -249,7 +249,14 @@
                     }
                 }
             },
-
+            "anyOf": [
+                {"required": ["agent"]},
+                {"required": ["host"]}
+            ],
+            "oneOf": [
+                {"required": ["agent"]},
+                {"required": ["host"]}
+            ],
             "title": "Grain Spec Object"
         },
         "Authentication": {
