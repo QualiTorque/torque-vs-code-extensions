@@ -190,6 +190,9 @@
                 "source": {
                     "$ref": "#/definitions/GrainSpecSourceObject"
                 },
+                "agent": {
+                    "$ref": "#/definitions/GrainSpecHostObject"
+                },
                 "host": {
                     "$ref": "#/definitions/GrainSpecHostObject"
                 },
@@ -246,15 +249,16 @@
                     }
                 }
             },
-            "required": [
-                "host"
+            "oneOf": [
+                {"required": ["agent"]},
+                {"required": ["host"]}
             ],
             "title": "Grain Spec Object"
         },
         "Authentication": {
             "type": "object",
             "properties": {
-                "role-arn": { 
+                "role-arn": {
                     "type": "string"
                 },
                 "external-id": {
@@ -386,7 +390,8 @@
                     "type": "string",
                     "enum": [
                         "string",
-                        "execution-host"
+                        "execution-host",
+                        "agent"
                     ]
                 },
                 "display-style": {
