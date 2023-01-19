@@ -135,6 +135,32 @@
                 }
             }
         },
+        "Backend": {
+            "type": "object",
+            "properties": {                
+                "type": {
+                    "type": "string"
+                },
+                "bucket": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "storage-account-name": {
+                    "type": "string"
+                },
+                "container-name": {
+                    "type": "string"
+                },
+                "base-address": {
+                    "type": "string"
+                },
+                "key-prefix": {
+                    "type": "string"
+                }
+            }
+        },        
         "ScriptOutputsObject": {
             "type": "object",
             "properties": {
@@ -231,6 +257,9 @@
                 },
                 "authentication": {
                     "$ref": "#/definitions/Authentication"
+                },
+                "backend": {
+                    "$ref": "#/definitions/Backend"
                 },
                 "region": {
                     "type": "string"
