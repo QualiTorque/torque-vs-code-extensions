@@ -16,7 +16,7 @@
                 "inputs": {
                     "type": "object",
                     "patternProperties": {
-                        "^[a-zA-Z0-9-_]{3,45}$": { 
+                        "^[a-zA-Z0-9-_ ().]{3,45}$": { 
                             "oneOf": [
                                 {"$ref": "#/definitions/BlueprintInputObject"},
                                 {
@@ -25,12 +25,12 @@
                             ]                    
                         }
                     },
-                    "title": "Grains"
+                    "title": "Inputs"
                 },
                 "outputs": {
                     "type": "object",
                     "patternProperties": {
-                        "^[a-zA-Z0-9-_]{3,45}$": { 
+                        "^[a-zA-Z0-9-_ ().]{3,45}$": { 
                             "oneOf": [
                                 {"$ref": "#/definitions/BlueprintOutputObject"},
                                 {
@@ -39,12 +39,12 @@
                             ]                    
                         }
                     },
-                    "title": "Object"
+                    "title": "Outputs"
                 },
                 "grains": {
                     "type": "object",
                     "patternProperties": {
-                        "^[a-zA-Z0-9-_]{1,45}$": { 
+                        "^[a-zA-Z0-9-_ ().]{3,45}$": { 
                             "oneOf": [
                                 {"$ref": "#/definitions/GrainObject"},
                                 {
@@ -256,7 +256,10 @@
                     "type": "string"
                 },
                 "authentication": {
-                    "$ref": "#/definitions/Authentication"
+                    "type":"array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "backend": {
                     "$ref": "#/definitions/Backend"
@@ -280,20 +283,10 @@
             },
             "oneOf": [
                 {"required": ["agent"]},
-                {"required": ["host"]}
+                {"required": ["host"]},
+                {"required": ["region"]}
             ],
             "title": "Grain Spec Object"
-        },
-        "Authentication": {
-            "type": "object",
-            "properties": {
-                "role-arn": {
-                    "type": "string"
-                },
-                "external-id": {
-                    "type": "string"
-                }
-            }
         },
         "ActivitiesObject": {
             "type": "object",
@@ -365,12 +358,6 @@
             "additionalProperties": false,
             "properties": {
                 "name": {
-                    "type": "string"
-                },
-                "cloud-account": {
-                    "type": "string"
-                },
-                "compute-service": {
                     "type": "string"
                 },
                 "region": {

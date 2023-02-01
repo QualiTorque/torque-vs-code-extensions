@@ -132,21 +132,7 @@ class SpecSourcesSequence(SequenceNode):
 
 @dataclass
 class GrainSpecNode(ObjectNode):
-    @dataclass
-    class GrainAuthenticationObject(ObjectNode):
-        role_arn: TextNode = None
-        external_id: TextNode = None
 
-        def _get_field_mapping(self) -> Dict[str, str]:
-            mapping = super()._get_field_mapping()
-            mapping.update(
-                {
-                    "role-arn": "role_arn",
-                    "external-id": "external_id",
-                }
-            )
-            return mapping
-    
     @dataclass
     class GrainSpecTag(ObjectNode):
         auto_tag: ScalarNode = None
@@ -164,8 +150,6 @@ class GrainSpecNode(ObjectNode):
 
     @dataclass
     class SpecHostNode(ObjectNode):
-        cloud_account: TextNode = None
-        compute_service: TextNode = None
         region: TextNode = None
         service_account: TextNode = None
         name: TextNode = None
@@ -176,8 +160,6 @@ class GrainSpecNode(ObjectNode):
             mapping = super()._get_field_mapping()
             mapping.update(
                 {
-                    "cloud-account": "cloud_account",
-                    "compute-service": "compute_service",
                     "service-account": "service_account",
                 }
             )
@@ -204,10 +186,11 @@ class GrainSpecNode(ObjectNode):
     tags: GrainSpecTag = None
     env_vars: TextMappingSequence = None
     region: TextNode = None
-    authentication: GrainAuthenticationObject = None
+    authentication: ScalarNodesSequence = None
     activities: ActivitiesObject = None
     namespace: TextNode = None
     release: TextNode = None
+    agent: SpecHostNode = None
 
 
 @dataclass
