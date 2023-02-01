@@ -1,5 +1,5 @@
-from typing import Dict, List
 from dataclasses import dataclass
+from typing import Dict, List
 
 from server.ats.trees.common import (
     BaseTree,
@@ -66,6 +66,7 @@ class ScriptObject(ObjectNode):
     source: ScriptSource = None
     arguments: TextNode = None
 
+
 @dataclass
 class ScriptOutputsObject(ScriptObject):
     outputs: ScalarNodesSequence = None
@@ -88,7 +89,7 @@ class GrainSpecScripts(ObjectNode):
                 "pre-tf-init": "pre_tf_init",
                 "pre-tf-destroy": "pre_tf_destroy",
                 "post-helm-install": "post_helm_install",
-                "post-kubernetes-install": "post_kubernetes_install"
+                "post-kubernetes-install": "post_kubernetes_install",
             }
         )
         return mapping
@@ -132,7 +133,6 @@ class SpecSourcesSequence(SequenceNode):
 
 @dataclass
 class GrainSpecNode(ObjectNode):
-
     @dataclass
     class GrainSpecTag(ObjectNode):
         auto_tag: ScalarNode = None
@@ -170,7 +170,7 @@ class GrainSpecNode(ObjectNode):
 
     def get_inputs(self):
         return self._get_seq_nodes("inputs")
-    
+
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping = super()._get_field_mapping()
         mapping.update({"env-vars": "env_vars"})
@@ -249,7 +249,7 @@ class GrainNode(MappingNode):
             return self.key.text
 
 
-## Maps:
+# Maps:
 @dataclass
 class GrainsMap(MapNode):
     node_type = GrainNode
@@ -265,7 +265,7 @@ class BlueprintV2OutputsMap(MapNode):
     node_type = BlueprintV2OutputNode
 
 
-## The Blueprint Spec2 Tree
+# The Blueprint Spec2 Tree
 
 
 @dataclass
