@@ -1,5 +1,5 @@
-from typing import Dict, List
 from dataclasses import dataclass
+from typing import Dict, List
 
 from server.ats.trees.common import (
     BaseTree,
@@ -66,6 +66,7 @@ class ScriptObject(ObjectNode):
     source: ScriptSource = None
     arguments: TextNode = None
 
+
 @dataclass
 class ScriptOutputsObject(ScriptObject):
     outputs: ScalarNodesSequence = None
@@ -88,7 +89,7 @@ class GrainSpecScripts(ObjectNode):
                 "pre-tf-init": "pre_tf_init",
                 "pre-tf-destroy": "pre_tf_destroy",
                 "post-helm-install": "post_helm_install",
-                "post-kubernetes-install": "post_kubernetes_install"
+                "post-kubernetes-install": "post_kubernetes_install",
             }
         )
         return mapping
@@ -133,21 +134,6 @@ class SpecSourcesSequence(SequenceNode):
 @dataclass
 class GrainSpecNode(ObjectNode):
     @dataclass
-    class GrainAuthenticationObject(ObjectNode):
-        role_arn: TextNode = None
-        external_id: TextNode = None
-
-        def _get_field_mapping(self) -> Dict[str, str]:
-            mapping = super()._get_field_mapping()
-            mapping.update(
-                {
-                    "role-arn": "role_arn",
-                    "external-id": "external_id",
-                }
-            )
-            return mapping
-    
-    @dataclass
     class GrainSpecTag(ObjectNode):
         auto_tag: ScalarNode = None
         disable_tags_for: ScalarNodesSequence = None
@@ -164,8 +150,6 @@ class GrainSpecNode(ObjectNode):
 
     @dataclass
     class SpecHostNode(ObjectNode):
-        cloud_account: TextNode = None
-        compute_service: TextNode = None
         region: TextNode = None
         service_account: TextNode = None
         name: TextNode = None
@@ -176,8 +160,6 @@ class GrainSpecNode(ObjectNode):
             mapping = super()._get_field_mapping()
             mapping.update(
                 {
-                    "cloud-account": "cloud_account",
-                    "compute-service": "compute_service",
                     "service-account": "service_account",
                 }
             )
@@ -188,7 +170,7 @@ class GrainSpecNode(ObjectNode):
 
     def get_inputs(self):
         return self._get_seq_nodes("inputs")
-    
+
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping = super()._get_field_mapping()
         mapping.update({"env-vars": "env_vars"})
@@ -204,10 +186,11 @@ class GrainSpecNode(ObjectNode):
     tags: GrainSpecTag = None
     env_vars: TextMappingSequence = None
     region: TextNode = None
-    authentication: GrainAuthenticationObject = None
+    authentication: ScalarNodesSequence = None
     activities: ActivitiesObject = None
     namespace: TextNode = None
     release: TextNode = None
+    agent: SpecHostNode = None
 
 
 @dataclass
@@ -266,7 +249,7 @@ class GrainNode(MappingNode):
             return self.key.text
 
 
-## Maps:
+# Maps:
 @dataclass
 class GrainsMap(MapNode):
     node_type = GrainNode
@@ -282,7 +265,7 @@ class BlueprintV2OutputsMap(MapNode):
     node_type = BlueprintV2OutputNode
 
 
-## The Blueprint Spec2 Tree
+# The Blueprint Spec2 Tree
 
 
 @dataclass
