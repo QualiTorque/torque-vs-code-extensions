@@ -105,11 +105,7 @@ export async function activate(context: ExtensionContext) {
         client = startLangServer(python, ["-m", "server"], cwd);
     }
 
-    activateYamlFeatures(context);    
     context.subscriptions.push(client.start());
-
-    const rootPath = (workspace.workspaceFolders && (workspace.workspaceFolders.length > 0))
-		? workspace.workspaceFolders[0].uri.fsPath : undefined;
 
 	// PROFILES
     const profilesProvider = new ProfilesProvider();
