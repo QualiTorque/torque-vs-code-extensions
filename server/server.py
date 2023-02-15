@@ -1148,7 +1148,6 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
             f"Failed to end the Environment {sb_id}. Reason: {str(ex)}", MessageType.Error
         )
 
-
 @torque_ls.command(TorqueLanguageServer.CMD_VALIDATE_BLUEPRINT)
 async def validate_blueprint(server: TorqueLanguageServer, *args):
     if len(args[0]) == 0:
@@ -1192,7 +1191,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                             "\n".join(textwrap.wrap(err["message"], width=60)),
                         ]
                     )
-                
+
                 server.show_message_log(
                     tabulate.tabulate(table, headers, tablefmt="simple")
                 )
