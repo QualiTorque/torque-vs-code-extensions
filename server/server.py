@@ -1007,11 +1007,13 @@ async def torque_login(server: TorqueLanguageServer, *args):
 
         _, stderr = _run_torque_cli_command(server, command, log_command=False)
 
-        exit_code = 1 if "Login Failed" in stderr else 0
-        if exit_code != 0:
-            return "Login Failed"
-        else:
-            return None
+        # exit_code = 1 if "Login Failed" in stderr else 0
+        # if exit_code != 0:
+        #     return "Login Failed"
+        # else:
+        #     return None
+
+        return stderr or None
 
     except Exception as ex:
         logging.error(ex)
