@@ -26,6 +26,7 @@ import textwrap
 from json import JSONDecodeError
 from typing import List, Optional
 from urllib.parse import unquote, urlparse
+from urllib.request import url2pathname
 
 import tabulate
 import yaml
@@ -1173,8 +1174,8 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
             MessageType.Error,
         )
         return
-    blueprint_path = unquote(urlparse(args[0][0]).path)
-    # blueprint_path = unquote(pathlib.Path(args[0][0]).name)#.replace(".yaml", ""))
+    blueprint_path = url2pathname(unquote(urlparse(args[0][0]).path))
+    # blueprint_path = unquote(pathlib.Path(args[0][0]).absolute())#.replace(".yaml", ""))
 
     info_msg = f"Validating blueprint: {blueprint_path}"
     success_msg = f"Validation completed. The blueprint '{blueprint_path}' and its dependencies are valid."
