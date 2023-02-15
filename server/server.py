@@ -720,27 +720,35 @@ def _fetch_version():
 
     return version_from_file
 
-def _run_torque_cli_command(command: str, log_command: bool = True, log_output: bool = False, **kwargs):
+def _run_torque_cli_command(server: TorqueLanguageServer, command: str, log_command: bool = True, log_output: bool = True, **kwargs):
     if log_command:
-        logging.info(f"Running command: {command}")
+        server.show_message_log(f"Running command: {command}", MessageType.Info)
+        # logging.debug(f"Running command: {command}")
 
     cmd_list = [sys.executable, "-m"] + shlex.split(command)
 
     env_override = {"TORQUE_USERAGENT": f"Torque-IDE-VSCode/{_fetch_version()}"}
 
-    res = subprocess.run(
-        cmd_list,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        # universal_newlines=True,
-        env=env_override,
-        **kwargs,
-    )
+    try:
+        res = subprocess.run(
+            cmd_list,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            # universal_newlines=True,
+            env=env_override,
+            **kwargs,
+        )
+        
+    except Exception as ex:
+        server.show_message_log(f"Error running command: {ex}", MessageType.Error)
+        raise ex
 
     if log_output:
-        logging.info(f"Command output: {res.stdout.decode('utf-8')}")
-        logging.info(f"Command error: {res.stderr.decode('utf-8')}")
+        server.show_message_log(f"Command output: {res.stdout.decode('utf-8')}", MessageType.Info)
+        # logging.debug(f"Command output: {res.stdout.decode('utf-8')}")
+        server.show_message_log(f"Command error: {res.stderr.decode('utf-8')}", MessageType.Error)
+        # logging.debug(f"Command error: {res.stderr.decode('utf-8')}")
 
     return res.stdout.decode("utf-8"), res.stderr.decode("utf-8")
 
@@ -818,7 +826,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                 command += f" -b {branch_args}"
 
         cwd = server.workspace.root_path if dev_mode else None
-        stdout, stderr = _run_torque_cli_command(command, cwd=cwd)
+        stdout, stderr = _run_torque_cli_command(server, command, cwd=cwd)
         stdout = stdout.split("\n") if stdout else []
         stderr = stderr.split("\n") if stderr else []
         sandbox_id = ""
@@ -867,7 +875,7 @@ async def get_profiles(server: TorqueLanguageServer, *_):
     keys = ["profile", "account", "space"]
 
     try:
-        stdout, stderr = _run_torque_cli_command(
+        stdout, stderr = _run_torque_cli_command(server, 
             "torque --disable-version-check configure list"
         )
 
@@ -911,7 +919,7 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
     sbs = []
 
     try:
-        stdout, stderr = _run_torque_cli_command(
+        stdout, stderr = _run_torque_cli_command(server, 
             f"torque --disable-version-check --profile {active_profile} env list --output=json"
         )
 
@@ -943,7 +951,7 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
         return
 
     try:
-        stdout, stderr = _run_torque_cli_command(
+        stdout, stderr = _run_torque_cli_command(server, 
             f"torque --disable-version-check --profile {active_profile} bp list --output=json --detail"
         )
 
@@ -989,7 +997,7 @@ async def torque_login(server: TorqueLanguageServer, *args):
         elif params.token:
             command = command + f" -t {params.token}"
 
-        _, stderr = _run_torque_cli_command(command, log_command=False)
+        _, stderr = _run_torque_cli_command(server, command, log_command=False)
 
         exit_code = 1 if "Login Failed" in stderr else 0
         if exit_code != 0:
@@ -1013,7 +1021,7 @@ async def remove_profile(server: TorqueLanguageServer, *args):
 
     profile_name = args[0][0]
     try:
-        _, _ = _run_torque_cli_command(
+        _, _ = _run_torque_cli_command(server, 
             f"torque --disable-version-check configure remove {profile_name}"
         )
         server.show_message(f"Profile '{profile_name}' deleted.")
@@ -1045,7 +1053,7 @@ async def get_blueprint(server: TorqueLanguageServer, *args):
     # source = BLUEPRINT_SOURCE_TYPE_MAP.get(source_type, None)
     
     try:
-        stdout, stderr = _run_torque_cli_command(
+        stdout, stderr = _run_torque_cli_command(server, 
             f"torque --disable-version-check --profile {active_profile} bp get '{bp_name}' --repo {repo_name} --output=json --detail"
         )
         if stderr:
@@ -1079,7 +1087,7 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
 
     sb_id = args[0].pop()
     try:
-        stdout, stderr = _run_torque_cli_command(
+        stdout, stderr = _run_torque_cli_command(server, 
             f"torque --disable-version-check --profile {active_profile} env get {sb_id} --output=json --detail"
         )
         if stderr:
@@ -1114,7 +1122,7 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
     sb_id = args[0].pop()
 
     try:
-        stdout, stderr = _run_torque_cli_command(
+        stdout, stderr = _run_torque_cli_command(server, 
             f"torque --disable-version-check --profile {active_profile} env end {sb_id}"
         )
 
@@ -1157,7 +1165,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
     server.show_message(info_msg)
     server.show_message_log(info_msg)
     try:
-        _, stderr = _run_torque_cli_command(
+        _, stderr = _run_torque_cli_command(server, 
             f'torque --disable-version-check --profile {active_profile} bp validate "{blueprint_path}" --output=json',
             cwd=server.workspace.root_path,
         )
