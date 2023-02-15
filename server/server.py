@@ -29,45 +29,30 @@ from urllib.parse import unquote, urlparse
 
 import tabulate
 import yaml
-from pygls.lsp.methods import (
-    CODE_LENS,
-    COMPLETION,
-    DOCUMENT_LINK,
-    TEXT_DOCUMENT_DID_CHANGE,
-    TEXT_DOCUMENT_DID_OPEN,
-    WORKSPACE_DID_CHANGE_WATCHED_FILES,
-)
-from pygls.lsp.types import (
-    CodeLens,
-    CodeLensOptions,
-    CodeLensParams,
-    Command,
-    CompletionItem,
-    CompletionItemKind,
-    CompletionList,
-    CompletionOptions,
-    CompletionParams,
-    ConfigurationItem,
-    ConfigurationParams,
-    Diagnostic,
-    DidChangeTextDocumentParams,
-    DidChangeWorkspaceFoldersParams,
-    DidOpenTextDocumentParams,
-    DocumentLink,
-    DocumentLinkParams,
-    MessageType,
-    Position,
-    Range,
-    workspace,
-)
+from pygls.lsp.methods import (CODE_LENS, COMPLETION, DOCUMENT_LINK,
+                               TEXT_DOCUMENT_DID_CHANGE,
+                               TEXT_DOCUMENT_DID_OPEN,
+                               WORKSPACE_DID_CHANGE_WATCHED_FILES)
+from pygls.lsp.types import (CodeLens, CodeLensOptions, CodeLensParams,
+                             Command, CompletionItem, CompletionItemKind,
+                             CompletionList, CompletionOptions,
+                             CompletionParams, ConfigurationItem,
+                             ConfigurationParams, Diagnostic,
+                             DidChangeTextDocumentParams,
+                             DidChangeWorkspaceFoldersParams,
+                             DidOpenTextDocumentParams, DocumentLink,
+                             DocumentLinkParams, MessageType, Position, Range,
+                             workspace)
 from pygls.lsp.types.basic_structures import TextEdit
 from pygls.server import LanguageServer
+
 from server.ats.parser import Parser, ParserError
 from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintInputNode
 from server.ats.trees.common import BaseTree, PropertyNode
 from server.completers.resolver import CompletionResolver
-from server.constants import AWS_REGIONS, AZURE_REGIONS, BLUEPRINT_SOURCE_TYPE_MAP
+from server.constants import (AWS_REGIONS, AZURE_REGIONS,
+                              BLUEPRINT_SOURCE_TYPE_MAP)
 from server.utils import common
 from server.utils.applications import ApplicationsManager as applications
 from server.utils.common import get_repo_root_path, is_var_allowed
@@ -382,13 +367,18 @@ def completions(
                 is_incomplete=False,
                 items=items,
             )
-        elif parent_node == "artifacts" or parent_node == "depends_on" \
-                or (parent_node == "rules" and last_word == "application:"):
+        elif (
+            parent_node == "artifacts"
+            or parent_node == "depends_on"
+            or (parent_node == "rules" and last_word == "application:")
+        ):
             blueprint_apps = [app.id.text for app in tree.get_applications()]
             items = []
             items += [
                 CompletionItem(
-                    label=app_name, detail="Application", kind=CompletionItemKind.Reference
+                    label=app_name,
+                    detail="Application",
+                    kind=CompletionItemKind.Reference,
                 )
                 for app_name in blueprint_apps
             ]
@@ -396,7 +386,9 @@ def completions(
                 blueprint_srvs = [srv.id.text for srv in tree.get_services()]
                 items += [
                     CompletionItem(
-                        label=srv_name, detail="Service", kind=CompletionItemKind.Reference
+                        label=srv_name,
+                        detail="Service",
+                        kind=CompletionItemKind.Reference,
                     )
                     for srv_name in blueprint_srvs
                 ]
@@ -411,14 +403,16 @@ def completions(
             # Get input node from the path
             try:
                 input_node = next(i for i in path if isinstance(i, BlueprintInputNode))
-            except StopIteration: 
+            except StopIteration:
                 pos_values = []
             else:
                 pos_values = input_node.possible_values
 
             for val in pos_values:
-                items.append(CompletionItem(label=val.text, kind=CompletionItemKind.Text))
-                
+                items.append(
+                    CompletionItem(label=val.text, kind=CompletionItemKind.Text)
+                )
+
             return CompletionList(is_incomplete=True, items=items)
 
         items = []
@@ -714,33 +708,56 @@ async def lsp_document_link(
 
     return links
 
+
 def _fetch_version():
     with open(os.path.join("server/version.txt")) as version_file:
         version_from_file = version_file.read().strip()
 
     return version_from_file
 
-def _run_torque_cli_command(command: str, log_command: bool = True, log_output: bool = False, **kwargs):
+
+def _run_torque_cli_command(
+    server: TorqueLanguageServer,
+    command: str,
+    log_command: bool = True,
+    log_output: bool = False,
+    log_error: bool = True,
+    **kwargs,
+):
+
     if log_command:
-        logging.info(f"Running command: {command}")
+        server.show_message_log(f"Running command: {command}", MessageType.Info)
 
     cmd_list = [sys.executable, "-m"] + shlex.split(command)
 
-    env_override = {"TORQUE_USERAGENT": f"Torque-IDE-VSCode/{_fetch_version()}"}
+    env_override = os.environ.copy()
+    env_override["TORQUE_USERAGENT"] = f"Torque-IDE-VSCode/{_fetch_version()}"
 
-    res = subprocess.run(
-        cmd_list,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        # universal_newlines=True,
-        env=env_override,
-        **kwargs,
-    )
+    try:
+        res = subprocess.run(
+            cmd_list,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            # universal_newlines=True,
+            env=env_override,
+            **kwargs,
+        )
+
+    except Exception as ex:
+        server.show_message_log(f"Error running command: {ex}", MessageType.Error)
+        raise ex
 
     if log_output:
-        logging.info(f"Command output: {res.stdout.decode('utf-8')}")
-        logging.info(f"Command error: {res.stderr.decode('utf-8')}")
+        server.show_message_log(
+            f"Command output: {res.stdout.decode('utf-8')}", MessageType.Info
+        )
+        # logging.debug(f"Command output: {res.stdout.decode('utf-8')}")
+    if log_error and res.stderr:
+        server.show_message_log(
+            f"Command error: {res.stderr.decode('utf-8')}", MessageType.Error
+        )
+        # logging.debug(f"Command error: {res.stderr.decode('utf-8')}")
 
     return res.stdout.decode("utf-8"), res.stderr.decode("utf-8")
 
@@ -807,7 +824,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         command = f'torque --profile {active_profile} env start "{blueprint_name}" -d {duration}'
 
         if repo_name and not is_sample:
-            command += f" --repo {repo_name}"    
+            command += f" --repo {repo_name}"
         if inputs_args:
             command += f' -i "{inputs_args}"'
         if sandbox_name:
@@ -818,7 +835,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
                 command += f" -b {branch_args}"
 
         cwd = server.workspace.root_path if dev_mode else None
-        stdout, stderr = _run_torque_cli_command(command, cwd=cwd)
+        stdout, stderr = _run_torque_cli_command(server, command, cwd=cwd)
         stdout = stdout.split("\n") if stdout else []
         stderr = stderr.split("\n") if stderr else []
         sandbox_id = ""
@@ -848,7 +865,7 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
         if error_msg:
             server.show_message(
                 "Environment creation failed. Check the 'Torque' Output view for more details.",
-                MessageType.Error
+                MessageType.Error,
             )
         else:
             server.show_message(
@@ -867,8 +884,8 @@ async def get_profiles(server: TorqueLanguageServer, *_):
     keys = ["profile", "account", "space"]
 
     try:
-        stdout, stderr = _run_torque_cli_command(
-            "torque --disable-version-check configure list"
+        stdout, _ = _run_torque_cli_command(
+            server, "torque --disable-version-check configure list"
         )
 
     except Exception as ex:
@@ -912,7 +929,8 @@ async def list_sandboxes(server: TorqueLanguageServer, *_):
 
     try:
         stdout, stderr = _run_torque_cli_command(
-            f"torque --disable-version-check --profile {active_profile} env list --output=json"
+            server,
+            f"torque --disable-version-check --profile {active_profile} env list --output=json",
         )
 
         if stderr:
@@ -944,7 +962,8 @@ async def list_blueprints(server: TorqueLanguageServer, *_):
 
     try:
         stdout, stderr = _run_torque_cli_command(
-            f"torque --disable-version-check --profile {active_profile} bp list --output=json --detail"
+            server,
+            f"torque --disable-version-check --profile {active_profile} bp list --output=json --detail",
         )
 
         if stderr:
@@ -989,13 +1008,15 @@ async def torque_login(server: TorqueLanguageServer, *args):
         elif params.token:
             command = command + f" -t {params.token}"
 
-        _, stderr = _run_torque_cli_command(command, log_command=False)
+        _, stderr = _run_torque_cli_command(server, command, log_command=False)
 
-        exit_code = 1 if "Login Failed" in stderr else 0
-        if exit_code != 0:
-            return "Login Failed"
-        else:
-            return None
+        # exit_code = 1 if "Login Failed" in stderr else 0
+        # if exit_code != 0:
+        #     return "Login Failed"
+        # else:
+        #     return None
+
+        return stderr or None
 
     except Exception as ex:
         logging.error(ex)
@@ -1014,7 +1035,7 @@ async def remove_profile(server: TorqueLanguageServer, *args):
     profile_name = args[0][0]
     try:
         _, _ = _run_torque_cli_command(
-            f"torque --disable-version-check configure remove {profile_name}"
+            server, f"torque --disable-version-check configure remove {profile_name}"
         )
         server.show_message(f"Profile '{profile_name}' deleted.")
         return True
@@ -1024,12 +1045,13 @@ async def remove_profile(server: TorqueLanguageServer, *args):
             MessageType.Error,
         )
 
+
 @torque_ls.command(TorqueLanguageServer.CMD_GET_BLUEPRINT)
 async def get_blueprint(server: TorqueLanguageServer, *args):
     if not args or not args[0]:
         server.show_message("No blueprint name provided", MessageType.Error)
         return 1
-    
+
     active_profile = await _get_profile(server)
 
     if not active_profile:
@@ -1043,10 +1065,11 @@ async def get_blueprint(server: TorqueLanguageServer, *args):
     repo_name = args[0][1]
 
     # source = BLUEPRINT_SOURCE_TYPE_MAP.get(source_type, None)
-    
+
     try:
         stdout, stderr = _run_torque_cli_command(
-            f"torque --disable-version-check --profile {active_profile} bp get '{bp_name}' --repo {repo_name} --output=json --detail"
+            server,
+            f"torque --disable-version-check --profile {active_profile} bp get '{bp_name}' --repo {repo_name} --output=json --detail",
         )
         if stderr:
             server.show_message(
@@ -1076,11 +1099,11 @@ async def get_sandbox(server: TorqueLanguageServer, *args):
         )
         return
 
-
     sb_id = args[0].pop()
     try:
         stdout, stderr = _run_torque_cli_command(
-            f"torque --disable-version-check --profile {active_profile} env get {sb_id} --output=json --detail"
+            server,
+            f"torque --disable-version-check --profile {active_profile} env get {sb_id} --output=json --detail",
         )
         if stderr:
             server.show_message(
@@ -1115,7 +1138,8 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
 
     try:
         stdout, stderr = _run_torque_cli_command(
-            f"torque --disable-version-check --profile {active_profile} env end {sb_id}"
+            server,
+            f"torque --disable-version-check --profile {active_profile} env end {sb_id}",
         )
 
         if stderr:
@@ -1127,7 +1151,8 @@ async def end_sandbox(server: TorqueLanguageServer, *args):
 
     except Exception as ex:
         server.show_message(
-            f"Failed to end the Environment {sb_id}. Reason: {str(ex)}", MessageType.Error
+            f"Failed to end the Environment {sb_id}. Reason: {str(ex)}",
+            MessageType.Error,
         )
 
 
@@ -1158,6 +1183,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
     server.show_message_log(info_msg)
     try:
         _, stderr = _run_torque_cli_command(
+            server,
             f'torque --disable-version-check --profile {active_profile} bp validate "{blueprint_path}" --output=json',
             cwd=server.workspace.root_path,
         )
@@ -1174,7 +1200,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                             "\n".join(textwrap.wrap(err["message"], width=60)),
                         ]
                     )
-                
+
                 server.show_message_log(
                     tabulate.tabulate(table, headers, tablefmt="simple")
                 )
