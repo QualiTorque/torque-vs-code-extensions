@@ -105,11 +105,7 @@ export async function activate(context: ExtensionContext) {
         client = startLangServer(python, ["-m", "server"], cwd);
     }
 
-    activateYamlFeatures(context);    
     context.subscriptions.push(client.start());
-
-    const rootPath = (workspace.workspaceFolders && (workspace.workspaceFolders.length > 0))
-		? workspace.workspaceFolders[0].uri.fsPath : undefined;
 
 	// PROFILES
     const profilesProvider = new ProfilesProvider();
@@ -150,8 +146,8 @@ export async function activate(context: ExtensionContext) {
 
 
     context.subscriptions.push(
-		commands.registerCommand('extension.openReserveForm', (bpname:string, inputs:Array<string>, branch: string, sourceType: string) => {
-            SandboxStartPanel.createOrShow(context.extensionUri, bpname, inputs, branch, sourceType);
+		commands.registerCommand('extension.openReserveForm', (bpname:string, inputs:Array<string>, branch: string, repoName: string, is_sample: boolean) => {
+            SandboxStartPanel.createOrShow(context.extensionUri, bpname, inputs, branch, repoName, is_sample);
         })
 	);
 

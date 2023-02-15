@@ -31,16 +31,19 @@ export class ProfilesManager {
     }
 
     private async _updateConfiguration(profile: Profile) : Promise<void> {
-        if (profile !== undefined) 
-            await vscode.workspace.getConfiguration("torque").update("activeProfile", profile.label, vscode.ConfigurationTarget.Workspace);
-        else
-            await vscode.workspace.getConfiguration("torque").update("activeProfile", "", vscode.ConfigurationTarget.Workspace);        
+        const name = profile !== undefined ? profile.label : "";
+        const foundProfile = vscode.workspace.getConfiguration('torque');
+        const details = foundProfile.inspect('activeProfile');
+
+        const scope = (details !== undefined && details.workspaceValue !== undefined)
+                        ? vscode.ConfigurationTarget.Workspace
+                        : vscode.ConfigurationTarget.Global;
+        
+        await foundProfile.update('activeProfile', name, scope);    
     }
 
     private _loadConfiguration() : Profile {
         const profile = vscode.workspace.getConfiguration('torque').get<string>("activeProfile", "");
-        
         return new Profile(profile, '', vscode.TreeItemCollapsibleState.None, "", "");
     }
-
 }
