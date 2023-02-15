@@ -117,7 +117,7 @@ def _diagnose_tree_errors(tree: BaseTree) -> list:
     return diagnostics
 
 
-def _validate(ls, params):
+def _validate(ls: LanguageServer, params):
     text_doc = ls.workspace.get_document(params.text_document.uri)
 
     source = text_doc.source
@@ -163,7 +163,7 @@ def _validate(ls, params):
                 type(ex).__name__,
                 ex,
             )
-
+    ls.publish_diagnostics()
     ls.publish_diagnostics(text_doc.uri, diagnostics)
 
 
@@ -789,13 +789,13 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     else:
         dev_mode = False
 
-    sandbox_name = args[0][1]
+    sandbox_name: str = args[0][1]
     duration = args[0][2]
     inputs_args = args[0][3]
     branch_args = args[0][4]
-    source_type = args[0][5]
+    repo_name = args[0][5]
+    is_sample = args[0][6]
 
-    source = BLUEPRINT_SOURCE_TYPE_MAP.get(source_type, None)
     server.show_message("Starting environment from blueprint: " + blueprint_name)
     server.show_message_log("Starting environment from blueprint: " + blueprint_name)
     if dev_mode:
@@ -806,15 +806,15 @@ async def start_sandbox(server: TorqueLanguageServer, *args):
     try:
         command = f'torque --profile {active_profile} env start "{blueprint_name}" -d {duration}'
 
-        if source:
-            command += f" -s {source}"    
+        if repo_name and not is_sample:
+            command += f" --repo {repo_name}"    
         if inputs_args:
             command += f' -i "{inputs_args}"'
         if sandbox_name:
             command += f' -n "{sandbox_name}"'
         if not dev_mode:
             command += " -t 0"
-            if branch_args:
+            if branch_args and not is_sample:
                 command += f" -b {branch_args}"
 
         cwd = server.workspace.root_path if dev_mode else None
@@ -1040,13 +1040,13 @@ async def get_blueprint(server: TorqueLanguageServer, *args):
         return
 
     bp_name = args[0][0]
-    source_type = args[0][1]
+    repo_name = args[0][1]
 
-    source = BLUEPRINT_SOURCE_TYPE_MAP.get(source_type, None)
+    # source = BLUEPRINT_SOURCE_TYPE_MAP.get(source_type, None)
     
     try:
         stdout, stderr = _run_torque_cli_command(
-            f"torque --disable-version-check --profile {active_profile} bp get '{bp_name}' -s {source} --output=json --detail"
+            f"torque --disable-version-check --profile {active_profile} bp get '{bp_name}' --repo {repo_name} --output=json --detail"
         )
         if stderr:
             server.show_message(
@@ -1174,7 +1174,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
                             "\n".join(textwrap.wrap(err["message"], width=60)),
                         ]
                     )
-
+                
                 server.show_message_log(
                     tabulate.tabulate(table, headers, tablefmt="simple")
                 )

@@ -30,17 +30,18 @@ export class SandboxStartPanel {
     private _bpname: string;
 	private _blueprintDetails: string;
 	private _disposables: vscode.Disposable[] = [];
-	private _sourceType: string;
+	private _repoName: string;
+	private _isSample: boolean;
 	private readonly _branch: string;
 
-	public static createOrShow(extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, branch: string, sourceType: string) {
+	public static createOrShow(extensionUri: vscode.Uri, bpname:string, inputs:Array<string>, branch: string, repoName: string, isSample: boolean) {
 		const column = vscode.window.activeTextEditor
 			? vscode.window.activeTextEditor.viewColumn
 			: undefined;
 
 		// If we already have a panel, show it.
 		if (SandboxStartPanel.currentPanel) {
-			SandboxStartPanel.currentPanel.updatePanel(bpname, inputs, sourceType);
+			SandboxStartPanel.currentPanel.updatePanel(bpname, inputs, repoName);
             SandboxStartPanel.currentPanel._panel.reveal(column);
             return;
 		}
@@ -52,25 +53,26 @@ export class SandboxStartPanel {
 			column || vscode.ViewColumn.One,
 			getWebviewOptions(extensionUri),
 		);
-		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, branch, sourceType);
+		SandboxStartPanel.currentPanel = new SandboxStartPanel(panel, extensionUri, bpname, branch, repoName, isSample);
 	}
 
-	private startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, branch:string, sourceType:string) {
+	private startSandbox(bpname: string, sandbox_name: string, duration: number, inputs:object, branch:string, repoName:string, isSample: boolean) {
 		let inputsString = this._compose_comma_separated_string(inputs);
 
-		vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputsString, branch, sourceType)
+		vscode.commands.executeCommand('start_torque_sandbox', bpname, sandbox_name, duration, inputsString, branch, repoName, isSample)
 		.then(async (result:Array<string>) => {
 			vscode.commands.executeCommand('environmentsExplorerView.refreshEntry')
 			this._panel.dispose();
 		})
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, branch: string, sourceType: string) {
+	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, bpname:string, branch: string, repoName: string, isSapmle: boolean) {
 		this._panel = panel;
 		this._extensionUri = extensionUri;
         this._bpname = decodeURI(bpname);
 		this._branch = branch;
-		this._sourceType = sourceType;
+		this._isSample = isSapmle;
+		this._repoName = repoName;
 		this._blueprintDetails = null;
 
 		// Set the webview's initial html content
@@ -93,7 +95,7 @@ export class SandboxStartPanel {
                             this.reloadBlueprintDetails();
 						}
                         else if (message.name == 'start-sandbox') {
-                            this.startSandbox(this._bpname, message.sandbox_name, message.duration, message.inputs, this._branch, this._sourceType);
+                            this.startSandbox(this._bpname, message.sandbox_name, message.duration, message.inputs, this._branch, this._repoName, this._isSample);
 						}
                         return;
 				}
@@ -107,7 +109,7 @@ export class SandboxStartPanel {
 		return vscode.window.withProgress({location: vscode.ProgressLocation.Notification}, (progress): Promise<string> => {
             return new Promise<string>(async (resolve) => {
                 progress.report({ message: "Loading blueprint details" });
-                await vscode.commands.executeCommand('get_blueprint', this._bpname, this._sourceType)
+                await vscode.commands.executeCommand('get_blueprint', this._bpname, this._repoName)
                 .then(async (result:string) => {
                     if (result.length > 0)
                         this._blueprintDetails = result;
@@ -118,10 +120,10 @@ export class SandboxStartPanel {
         })
 	}
 
-    public updatePanel(bpname:string, inputs:Array<string>, sourceType: string) {
+    public updatePanel(bpname:string, inputs:Array<string>, repoName: string) {
         this._bpname = decodeURI(bpname);
 		this._blueprintDetails = null;
-		this._sourceType = sourceType;
+		this._repoName = repoName;
 		// Set the webview's initial html content
 		this._update();
 		this.reloadBlueprintDetails();

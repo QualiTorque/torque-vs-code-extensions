@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.3.2](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.3.1...v0.3.2) (2023-02-01)
+
+* minor schema updates
+
 ## [0.3.1](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.3.0...v0.3.1) (2022-11-18)
 
 * set a VS Code user-agent
