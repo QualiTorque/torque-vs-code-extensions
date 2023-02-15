@@ -257,7 +257,7 @@ export class SandboxDetailsPanel {
             <div style="vertical-align: top; display: inline-block; float:right; margin-top: 5px">
             <input type='button' id='reload-btn' value='Refresh' style="width:100px;display: inline-block;">
             &nbsp;
-            <input type='button' id='end-btn' value='End Environment' style="width:100px;display: inline-block;">
+            <input type='button' id='end-btn' value='End Env' style="width:100px;display: inline-block;">
             </div>
             <div style="vertical-align: top;">
             ${generalHtml}
