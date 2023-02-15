@@ -720,14 +720,21 @@ def _fetch_version():
 
     return version_from_file
 
-def _run_torque_cli_command(server: TorqueLanguageServer, command: str, log_command: bool = True, log_output: bool = True, **kwargs):
+def _run_torque_cli_command(
+        server: TorqueLanguageServer,
+        command: str,
+        log_command: bool = True,
+        log_output: bool = False,
+        log_error: bool = True,
+        **kwargs):
+
     if log_command:
         server.show_message_log(f"Running command: {command}", MessageType.Info)
-        # logging.debug(f"Running command: {command}")
 
     cmd_list = [sys.executable, "-m"] + shlex.split(command)
 
-    env_override = {"TORQUE_USERAGENT": f"Torque-IDE-VSCode/{_fetch_version()}"}
+    env_override = os.environ.copy()
+    env_override["TORQUE_USERAGENT"] = f"Torque-IDE-VSCode/{_fetch_version()}"
 
     try:
         res = subprocess.run(
@@ -747,6 +754,7 @@ def _run_torque_cli_command(server: TorqueLanguageServer, command: str, log_comm
     if log_output:
         server.show_message_log(f"Command output: {res.stdout.decode('utf-8')}", MessageType.Info)
         # logging.debug(f"Command output: {res.stdout.decode('utf-8')}")
+    if log_error and res.stderr:
         server.show_message_log(f"Command error: {res.stderr.decode('utf-8')}", MessageType.Error)
         # logging.debug(f"Command error: {res.stderr.decode('utf-8')}")
 
@@ -875,7 +883,7 @@ async def get_profiles(server: TorqueLanguageServer, *_):
     keys = ["profile", "account", "space"]
 
     try:
-        stdout, stderr = _run_torque_cli_command(server, 
+        stdout, _ = _run_torque_cli_command(server,
             "torque --disable-version-check configure list"
         )
 
