@@ -149,7 +149,6 @@ def _validate(ls: LanguageServer, params):
                 type(ex).__name__,
                 ex,
             )
-    ls.publish_diagnostics()
     ls.publish_diagnostics(text_doc.uri, diagnostics)
 
 
