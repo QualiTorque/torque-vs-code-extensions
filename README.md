@@ -37,11 +37,14 @@ Coming soon...
 
 **Prerequisite:** 
 * **python>=3.6** installed on your system.
+* **git** installed on your system
 
 - Install the extension from the Marketplace.
 - VS Code may require you to reload it. Make sure you do that.
-- If VS Code can't find the python you have installed, you will need to provide its path in the popup that appears 
-  or directly in VS Code settings (under __pyhon.pythonPath__)
+- If VS Code can't find the python you have installed, you will need to provide its path in the popup that appears. For different opeation systems python path could be the following:
+  - for windows: *C:\Users\MyUser\AppData\Local\Programs\Python\Python38\Scripts\python.exe*
+  - for linux: */usr/local/bin/python3.8*
+  - for macos: */Library/Frameworks/Python.framework/Versions/3.8/bin/python3.8*
 - Open any folder with a Torque blueprint repository and get an enhanced experience working on your Torque files!
 
-The extension will be activated automatically when loading Torque's blueprint located in a [blueprint repository folder structure](https://community.qtorque.io/developing-blueprints-61/setting-up-a-blueprint-repository-258), or when opening the Torque view in the activity bar.
+The extension will be activated automatically when loading Torque's blueprint located in a blueprint repository folder, or when opening the Torque view in the activity bar.
