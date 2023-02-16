@@ -1175,10 +1175,10 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
         )
         return
     blueprint_path = url2pathname(unquote(urlparse(args[0][0]).path))
-    # blueprint_path = unquote(pathlib.Path(args[0][0]).absolute())#.replace(".yaml", ""))
+    blueprint_name = os.path.basename(blueprint_path)
 
-    info_msg = f"Validating blueprint: {blueprint_path}"
-    success_msg = f"Validation completed. The blueprint '{blueprint_path}' and its dependencies are valid."
+    info_msg = f"Validating blueprint: {blueprint_name}"
+    success_msg = f"Validation completed. The blueprint '{blueprint_name}' is valid."
 
     server.show_message(info_msg)
     server.show_message_log(info_msg)
@@ -1186,6 +1186,7 @@ async def validate_blueprint(server: TorqueLanguageServer, *args):
         _, stderr = _run_torque_cli_command(
             server,
             f'torque --disable-version-check --profile {active_profile} bp validate "{blueprint_path}" --output=json',
+            log_error=False,
             cwd=server.workspace.root_path,
         )
 
