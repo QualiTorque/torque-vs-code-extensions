@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.3.4](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.3.3...v0.3.4) (2023-02-16)
+
+* fix blueprint validation crashed on windows
+* minor updates of docs
+* fix the LSP bug caused by previons release
+
 ## [0.3.3](https://github.com/QualiTorque/torque-vs-code-extensions/compare/v0.3.2...v0.3.3) (2023-02-15)
 
 * get rid of schemas configutation
