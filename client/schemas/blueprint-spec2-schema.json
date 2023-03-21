@@ -6,9 +6,11 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-                "spec_version": { 
+                "spec_version": {
                     "type": "integer",
-                    "enum": [2]
+                    "enum": [
+                        2
+                    ]
                 },
                 "description": {
                     "type": "string"
@@ -16,13 +18,15 @@
                 "inputs": {
                     "type": "object",
                     "patternProperties": {
-                        "^[a-zA-Z0-9-_ ().]{3,45}$": { 
+                        "^[a-zA-Z0-9-_ ().]{3,45}$": {
                             "oneOf": [
-                                {"$ref": "#/definitions/BlueprintInputObject"},
+                                {
+                                    "$ref": "#/definitions/BlueprintInputObject"
+                                },
                                 {
                                     "type": "null"
-                                }                        
-                            ]                    
+                                }
+                            ]
                         }
                     },
                     "title": "Inputs"
@@ -30,13 +34,15 @@
                 "outputs": {
                     "type": "object",
                     "patternProperties": {
-                        "^[a-zA-Z0-9-_ ().]{3,45}$": { 
+                        "^[a-zA-Z0-9-_ ().]{3,45}$": {
                             "oneOf": [
-                                {"$ref": "#/definitions/BlueprintOutputObject"},
+                                {
+                                    "$ref": "#/definitions/BlueprintOutputObject"
+                                },
                                 {
                                     "type": "null"
-                                }                        
-                            ]                    
+                                }
+                            ]
                         }
                     },
                     "title": "Outputs"
@@ -44,13 +50,15 @@
                 "grains": {
                     "type": "object",
                     "patternProperties": {
-                        "^[a-zA-Z0-9-_ ().]{3,45}$": { 
+                        "^[a-zA-Z0-9-_ ().]{3,45}$": {
                             "oneOf": [
-                                {"$ref": "#/definitions/GrainObject"},
+                                {
+                                    "$ref": "#/definitions/GrainObject"
+                                },
                                 {
                                     "type": "null"
-                                }                        
-                            ]                    
+                                }
+                            ]
                         }
                     },
                     "title": "Grains"
@@ -120,7 +128,7 @@
                     "type": "string"
                 },
                 "store": {
-                    "type":"string"
+                    "type": "string"
                 }
             }
         },
@@ -137,7 +145,7 @@
         },
         "Backend": {
             "type": "object",
-            "properties": {                
+            "properties": {
                 "type": {
                     "type": "string"
                 },
@@ -160,7 +168,7 @@
                     "type": "string"
                 }
             }
-        },        
+        },
         "ScriptOutputsObject": {
             "type": "object",
             "properties": {
@@ -256,7 +264,7 @@
                     "type": "string"
                 },
                 "authentication": {
-                    "type":"array",
+                    "type": "array",
                     "items": {
                         "type": "string"
                     }
@@ -282,9 +290,21 @@
                 }
             },
             "oneOf": [
-                {"required": ["agent"]},
-                {"required": ["host"]},
-                {"required": ["region"]}
+                {
+                    "required": [
+                        "agent"
+                    ]
+                },
+                {
+                    "required": [
+                        "host"
+                    ]
+                },
+                {
+                    "required": [
+                        "region"
+                    ]
+                }
             ],
             "title": "Grain Spec Object"
         },
@@ -310,8 +330,12 @@
                     "type": "array",
                     "items": {
                         "anyOf": [
-                            {"$ref": "#/definitions/CommandObject"},
-                            {"type": "string"}
+                            {
+                                "$ref": "#/definitions/CommandObject"
+                            },
+                            {
+                                "type": "string"
+                            }
                         ]
                     }
                 }
@@ -436,7 +460,11 @@
                 "allowed-values": {
                     "type": "array",
                     "items": {
-                        "type": ["string", "integer", "boolean"]
+                        "type": [
+                            "string",
+                            "integer",
+                            "boolean"
+                        ]
                     }
                 }
             }
@@ -454,6 +482,10 @@
                         "regular",
                         "link"
                     ]
+                },
+                "quick": {
+                    "type": "boolean",
+                    "default": true
                 }
             },
             "required": [
