@@ -83,7 +83,8 @@
                         "arm",
                         "cloudformation",
                         "kubernetes",
-                        "shell"
+                        "shell",
+                        "cloudshell"
                     ]
                 },
                 "spec": {
