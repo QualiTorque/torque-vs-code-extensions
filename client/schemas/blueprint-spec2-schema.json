@@ -288,6 +288,12 @@
                         "type": "object",
                         "additionalProperties": true
                     }
+                },
+                "tfvars-files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/TfVarsFileSourceObject"
+                    }
                 }
             },
             "oneOf": [
@@ -422,6 +428,22 @@
                 "$ref": "#/definitions/GrainSpecSourceObject"
             }
         },
+        "TfVarsFileSourceObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "store": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "path"
+            ],
+            "title": "TfVarsFileSource"
+        }
         "BlueprintInputObject": {
             "title": "Blueprint Input Object",
             "type": "object",
