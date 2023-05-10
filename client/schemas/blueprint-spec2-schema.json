@@ -443,7 +443,7 @@
                 "path"
             ],
             "title": "TfVarsFileSource"
-        }
+        },
         "BlueprintInputObject": {
             "title": "Blueprint Input Object",
             "type": "object",
