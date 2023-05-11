@@ -15,6 +15,31 @@
                 "description": {
                     "type": "string"
                 },
+                "instructions": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "text": {
+                            "type": "string"
+                        },
+                        "source": {
+                            "$ref": "#/definitions/InstructionsSourceObject"
+                        }
+                    },
+                    "oneOf": [
+                    {
+                        "required": [
+                            "text"
+                        ]
+                    },
+                    {
+                        "required": [
+                            "source"
+                        ]
+                    }
+                    ],
+                    "title": "instructions"
+                }
                 "inputs": {
                     "type": "object",
                     "patternProperties": {
@@ -515,6 +540,22 @@
                 "value"
             ],
             "title": "Blueptint Output Object"
-        }
+        },
+        "InstructionsSourceObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "store": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "path", "store"
+            ],
+            "title": "InstructionsSource"
+        }       
     }
 }
