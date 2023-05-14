@@ -39,7 +39,7 @@
                     }
                     ],
                     "title": "instructions"
-                }
+                },
                 "inputs": {
                     "type": "object",
                     "patternProperties": {
