@@ -479,7 +479,8 @@
                     "enum": [
                         "string",
                         "execution-host",
-                        "agent"
+                        "agent",
+                        "credentials"
                     ]
                 },
                 "display-style": {
