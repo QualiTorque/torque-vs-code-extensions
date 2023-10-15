@@ -195,6 +195,23 @@
                 }
             }
         },
+        "TemplateStorage": {
+            "type": "object",
+            "properties": {
+                "bucket-name": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "key-prefix": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "bucket-name", "region"
+            ]
+        },
         "ScriptOutputsObject": {
             "type": "object",
             "properties": {
@@ -319,6 +336,9 @@
                     "items": {
                         "$ref": "#/definitions/TfVarsFileSourceObject"
                     }
+                },
+                "template-storage": {
+                    "$ref": "#/definitions/TemplateStorage"
                 }
             },
             "oneOf": [
