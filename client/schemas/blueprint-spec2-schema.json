@@ -139,6 +139,9 @@
                 "pre-tf-destroy": {
                     "$ref": "#/definitions/ScriptObject"
                 },
+                "post-tf-plan": {
+                    "$ref": "#/definitions/ScriptObject"
+                },
                 "post-helm-install": {
                     "$ref": "#/definitions/ScriptOutputsObject"
                 },
@@ -317,6 +320,9 @@
                 },
                 "region": {
                     "type": "string"
+                },
+                "auto-retry": {
+                    "type": "boolean"
                 },
                 "activities": {
                     "$ref": "#/definitions/ActivitiesObject"
