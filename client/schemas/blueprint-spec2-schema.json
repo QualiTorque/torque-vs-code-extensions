@@ -309,6 +309,9 @@
                 "namespace": {
                     "type": "string"
                 },
+                "runner-namespace": {
+                    "type": "string"
+                },
                 "authentication": {
                     "type": "array",
                     "items": {
@@ -453,6 +456,12 @@
                 },
                 "kubernetes": {
                     "type": "string"
+                },
+                "runner-namespace": {
+                    "type": "string"
+                },
+                "storage-size": {
+                    "type": "integer"
                 }
             },
             "title": "Spec Host Properties"
