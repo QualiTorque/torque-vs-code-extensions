@@ -500,7 +500,7 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-                "parameter_name": {
+                "parameter-name": {
                     "type": "string"
                 },
                 "type": {
