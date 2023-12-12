@@ -309,7 +309,7 @@
                 "namespace": {
                     "type": "string"
                 },
-                "runner-namespace": {
+                "target-namespace": {
                     "type": "string"
                 },
                 "authentication": {
