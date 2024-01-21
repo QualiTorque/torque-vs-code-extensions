@@ -455,7 +455,7 @@
                     "type": "string"
                 },
                 "kubernetes": {
-                    "type": "string"
+                    "$ref": "#/definitions/KubernetesObject"
                 },
                 "runner-namespace": {
                     "type": "string"
@@ -466,6 +466,28 @@
             },
             "title": "Spec Host Properties"
         },
+        "KubernetesObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "permissions": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "destination-context-name": {
+                            "type": "string"
+                        },
+                        "secret-name": {
+                            "type": "string"
+                        },
+                        "secret-namespace": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        
         "GrainSpecSourceObject": {
             "type": "object",
             "additionalProperties": false,
