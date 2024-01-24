@@ -264,6 +264,9 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "auto-approve": {
+                    "type": "boolean"
+                },
                 "sources": {
                     "$ref": "#/definitions/GrainSpecSources"
                 },
