@@ -264,6 +264,9 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "files": {
+                    "$ref": "#/definitions/ShellGrainFiles"                    
+                },
                 "auto-approve": {
                     "type": "boolean"
                 },
@@ -371,6 +374,21 @@
                 }
             ],
             "title": "Grain Spec Object"
+        },
+        "ShellGrainFiles": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "source": {
+                        "type": "string"
+                    },
+                    "path": {
+                        "type": "string"
+                    }
+                }
+            }
         },
         "ActivitiesObject": {
             "type": "object",
