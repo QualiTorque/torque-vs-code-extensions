@@ -531,6 +531,15 @@
                 },
                 "path": {
                     "type": "string"
+                },
+                "branch": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                },
+                "commit": {
+                    "type": "string"
                 }
             },
             "required": [
