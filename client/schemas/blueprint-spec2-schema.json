@@ -109,7 +109,8 @@
                         "cloudformation",
                         "kubernetes",
                         "shell",
-                        "cloudshell"
+                        "cloudshell",
+                        "argocd"
                     ]
                 },
                 "spec": {
@@ -354,6 +355,18 @@
                 },
                 "template-storage": {
                     "$ref": "#/definitions/TemplateStorage"
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "data"
+                    ]
+                },
+                "project": {
+                    "type": "string"
+                },
+                "application": {
+                    "type": "string"
                 }
             },
             "oneOf": [
