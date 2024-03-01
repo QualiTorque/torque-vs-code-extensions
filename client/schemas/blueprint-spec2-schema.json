@@ -40,6 +40,35 @@
                     ],
                     "title": "instructions"
                 },
+                "layout": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "exclude-from-layout": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "patternProperties": {
+                                "^[\\w\\-\\.]+$": {
+                                    "type": [
+                                        "string"                                       
+                                    ]
+                                }
+                            },
+                            "title": "Exclude From Layout"
+                        },
+                        "source": {
+                            "$ref": "#/definitions/LayoutSourceObject"
+                        }
+                    },
+                    "oneOf": [                       
+                        {
+                            "required": [
+                                "source"
+                            ]
+                        }
+                    ],
+                    "title": "Layout"
+                }
                 "inputs": {
                     "type": "object",
                     "patternProperties": {
@@ -661,6 +690,22 @@
                 "path", "store"
             ],
             "title": "InstructionsSource"
-        }       
+        },
+        "LayoutSourceObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "store": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "path", "store"
+            ],
+            "title": "LayoutSource"
+        }
     }
 }
