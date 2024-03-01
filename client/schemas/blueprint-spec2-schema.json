@@ -690,8 +690,7 @@
                 "path", "store"
             ],
             "title": "InstructionsSource"
-        }  ,
-        ,
+        },
         "LayoutSourceObject": {
             "type": "object",
             "additionalProperties": false,
