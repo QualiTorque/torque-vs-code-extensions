@@ -68,7 +68,7 @@
                         }
                     ],
                     "title": "Layout"
-                }
+                },
                 "inputs": {
                     "type": "object",
                     "patternProperties": {
