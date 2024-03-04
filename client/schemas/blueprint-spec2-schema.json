@@ -139,7 +139,8 @@
                         "kubernetes",
                         "shell",
                         "cloudshell",
-                        "argocd"
+                        "argocd",
+                        "opentofu"
                     ]
                 },
                 "spec": {
@@ -358,6 +359,12 @@
                     "$ref": "#/definitions/Backend"
                 },
                 "region": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "binary": {
                     "type": "string"
                 },
                 "auto-retry": {
