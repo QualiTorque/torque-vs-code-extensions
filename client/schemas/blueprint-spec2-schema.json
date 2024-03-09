@@ -408,17 +408,7 @@
             "oneOf": [
                 {
                     "required": [
-                        "agent"
-                    ]
-                },
-                {
-                    "required": [
-                        "host"
-                    ]
-                },
-                {
-                    "required": [
-                        "region"
+                        "source"
                     ]
                 }
             ],
