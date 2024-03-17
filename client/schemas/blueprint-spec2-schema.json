@@ -411,7 +411,6 @@
             "oneOf": [
                 {
                     "required": [
-                        "source"
                     ]
                 }
             ],
