@@ -403,6 +403,9 @@
                 },
                 "application": {
                     "type": "string"
+                },
+                "deployment_engine":{
+                    "type": "string"
                 }
             },
             "oneOf": [
