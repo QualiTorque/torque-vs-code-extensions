@@ -408,7 +408,6 @@
             "oneOf": [
                 {
                     "required": [
-                        "source"
                     ]
                 }
             ],
