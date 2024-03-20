@@ -404,7 +404,7 @@
                 "application": {
                     "type": "string"
                 },
-                "deployment_engine":{
+                "deployment-engine":{
                     "type": "string"
                 }
             },
