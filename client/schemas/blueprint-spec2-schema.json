@@ -628,7 +628,8 @@
                         "execution-host",
                         "agent",
                         "credentials",
-                        "parameter"
+                        "parameter",
+                        "radio"
                     ]
                 },
                 "display-style": {
