@@ -655,6 +655,12 @@
                 "sensitive": {
                     "type": "boolean"
                 },
+                "pattern": {
+                    "type": "string"
+                },
+                "validation-description": {
+                    "type": "string"
+                },
                 "allowed-values": {
                     "type": "array",
                     "items": {
