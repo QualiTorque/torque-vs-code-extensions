@@ -61,14 +61,9 @@
                     "additionalProperties": false,
                     "properties": {
                         "exclude-from-layout": {
-                            "type": "object",
-                            "additionalProperties": false,
-                            "patternProperties": {
-                                "^[\\w\\-\\.]+$": {
-                                    "type": [
-                                        "string"                                       
-                                    ]
-                                }
+                            "type": "array",
+                            "items": {
+                                "type": "string"
                             },
                             "title": "Exclude From Layout"
                         },
