@@ -409,7 +409,7 @@
                         "data"
                     ]
                 },
-                "project": {
+                "application-namespace": {
                     "type": "string"
                 },
                 "application": {
