@@ -484,6 +484,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "outputs": {
+                    "type": "array"
                 }
             }
         },
