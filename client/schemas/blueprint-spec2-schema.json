@@ -27,6 +27,12 @@
                         },
                         "label-selector": {
                             "type": "string"
+                        },
+                        "triggers":{
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/WorkflowTrigger"  
+                            }
                         }
                     },
                     "title": "workflow metadata"
@@ -301,6 +307,43 @@
                 }
             },
             "title": "Envrironment Variable"
+        },
+        "WorkflowTrigger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "type":{
+                    "type": "string",
+                    "enum": [
+                        "manual",
+                        "event",
+                        "cron"
+                    ]
+                },
+                "event":{
+                    "type": "string",
+                    "enum": [
+                        "Drift Detected",
+                        "Updates Detected",
+                        "Approval request triggered",
+                        "Environment Ended",
+                        "Environment Launched",
+                        "Environment Active With Error",
+                        "Environment Ending Failed",
+                        "Environment Force Ended",
+                        "Environment Extended",
+                        "Collaborator Added",
+                        "Environment Idle"
+                    ]
+                },
+                "cron":{
+                    "type": "string"
+                },
+                "overridable":{
+                    "type": "boolean"
+                }
+            },
+            "title": "Workflow Trigger"
         },
         "GrainSpecObject": {
             "type": "object",
