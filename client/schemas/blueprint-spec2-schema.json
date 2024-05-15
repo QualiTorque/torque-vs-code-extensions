@@ -325,7 +325,7 @@
                     "enum": [
                         "Drift Detected",
                         "Updates Detected",
-                        "Approval request triggered",
+                        "Approval Request Triggered",
                         "Environment Ended",
                         "Environment Launched",
                         "Environment Active With Error",
@@ -333,7 +333,18 @@
                         "Environment Force Ended",
                         "Environment Extended",
                         "Collaborator Added",
-                        "Environment Idle"
+                        "Environment Idle",
+                        "drift detected",
+                        "updates detected",
+                        "approval request triggered",
+                        "environment ended",
+                        "environment launched",
+                        "environment active with error",
+                        "environment ending failed",
+                        "environment force ended",
+                        "environment extended",
+                        "collaborator added",
+                        "environment idle"
                     ]
                 },
                 "cron":{
