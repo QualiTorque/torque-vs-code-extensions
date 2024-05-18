@@ -713,6 +713,9 @@
                 "validation-description": {
                     "type": "string"
                 },
+                "style": {
+                    "type": "string"
+                },
                 "allowed-values": {
                     "type": "array",
                     "items": {
