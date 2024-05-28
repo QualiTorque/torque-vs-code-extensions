@@ -387,8 +387,11 @@
                 "values-files": {
                     "type": "array",
                     "items": {
-                        "source": {
-                            "$ref": "#/definitions/ScriptSource"
+                        "type": "object",
+                        "properties": {
+                            "source": {
+                                "$ref": "#/definitions/ScriptSource"
+                            }
                         }
                     }
                 },
