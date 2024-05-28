@@ -387,7 +387,9 @@
                 "values-files": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/GrainSpecSourceObject"
+                        "source": {
+                            "$ref": "#/definitions/ScriptSource"
+                        }
                     }
                 },
                 "outputs": {
