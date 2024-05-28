@@ -384,6 +384,12 @@
                         "$ref": "#/definitions/GrainInput"
                     }
                 },
+                "values-files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GrainSpecSourceObject"
+                    }
+                },
                 "outputs": {
                     "type": "array",
                     "items": {
