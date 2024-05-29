@@ -363,6 +363,13 @@
                 "files": {
                     "$ref": "#/definitions/ShellGrainFiles"                    
                 },
+                "provider-overrides": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false
+                    }
+                },
                 "auto-approve": {
                     "type": "boolean"
                 },
