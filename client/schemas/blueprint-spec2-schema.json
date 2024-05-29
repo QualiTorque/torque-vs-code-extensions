@@ -367,7 +367,7 @@
                     "type": "array",
                     "items": {
                         "type": "object",
-                        "additionalProperties": false
+                        "additionalProperties": true
                     }
                 },
                 "auto-approve": {
