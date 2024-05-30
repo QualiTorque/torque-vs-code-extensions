@@ -414,6 +414,9 @@
                         "$ref": "#/definitions/GrainCommand"
                     }
                 },
+                "command-arguments": {
+                    "type": "string"
+                },
                 "scripts": {
                     "$ref": "#/definitions/GrainScripts"
                 },
