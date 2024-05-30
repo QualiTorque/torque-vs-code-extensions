@@ -625,6 +625,12 @@
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
+                        "pod-labels": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/GrainInput"
+                            }
+                        },
                         "destination-context-name": {
                             "type": "string"
                         },
