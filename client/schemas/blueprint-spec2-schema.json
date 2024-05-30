@@ -565,6 +565,10 @@
                 }
             }
         },
+        "PodLabels": {
+            "type": "object",
+            "additionalProperties": true
+        },
         "GrainInput": {
             "type": "object",
             "additionalProperties": false,
@@ -628,7 +632,7 @@
                         "pod-labels": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/GrainInput"
+                                "$ref": "#/definitions/PodLabels"
                             }
                         },
                         "destination-context-name": {
