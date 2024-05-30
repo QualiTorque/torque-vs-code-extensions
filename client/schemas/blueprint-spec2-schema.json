@@ -625,16 +625,16 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "pod-labels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PodLabels"
+                    }
+                },
                 "permissions": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
-                        "pod-labels": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/PodLabels"
-                            }
-                        },
                         "destination-context-name": {
                             "type": "string"
                         },
