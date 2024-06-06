@@ -472,7 +472,12 @@
                 "tfvars-files": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/TfVarsFileSourceObject"
+                        "type": "object",
+                        "properties": {
+                            "source": {
+                                "$ref": "#/definitions/TfVarsFileSourceObject"
+                            }
+                        }
                     }
                 },
                 "template-storage": {
