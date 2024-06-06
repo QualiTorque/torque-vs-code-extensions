@@ -689,6 +689,12 @@
                 },
                 "path": {
                     "type": "string"
+                },
+                "commit": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
                 }
             },
             "required": [
