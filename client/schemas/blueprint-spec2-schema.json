@@ -321,31 +321,39 @@
                     ]
                 },
                 "event":{
-                    "type": "string",
-                    "enum": [
-                        "Drift Detected",
-                        "Updates Detected",
-                        "Approval Request Triggered",
-                        "Environment Ended",
-                        "Environment Launched",
-                        "Environment Active With Error",
-                        "Environment Ending Failed",
-                        "Environment Force Ended",
-                        "Environment Extended",
-                        "Collaborator Added",
-                        "Environment Idle",
-                        "drift detected",
-                        "updates detected",
-                        "approval request triggered",
-                        "environment ended",
-                        "environment launched",
-                        "environment active with error",
-                        "environment ending failed",
-                        "environment force ended",
-                        "environment extended",
-                        "collaborator added",
-                        "environment idle"
-                    ]
+                    "type": "array",
+                    "uniqueItems": true,
+                    "additionalItems": false,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "Drift Detected",
+                            "Updates Detected",
+                            "Approval Request Triggered",
+                            "Environment Ended",
+                            "Environment Launched",
+                            "Environment Active With Error",
+                            "Environment Ending Failed",
+                            "Environment Force Ended",
+                            "Environment Extended",
+                            "Collaborator Added",
+                            "Environment Idle",
+                            "drift detected",
+                            "updates detected",
+                            "approval request triggered",
+                            "environment ended",
+                            "environment launched",
+                            "environment active with error",
+                            "environment ending failed",
+                            "environment force ended",
+                            "environment extended",
+                            "collaborator added",
+                            "environment idle"
+                        ]
+                    },
+                    "contains": {
+                        "type":"string"
+                    }
                 },
                 "cron":{
                     "type": "string"
