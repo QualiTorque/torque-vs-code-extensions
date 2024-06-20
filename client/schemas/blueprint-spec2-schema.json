@@ -416,7 +416,7 @@
                         "type": "object",
                         "properties": {
                             "source": {
-                                "$ref": "#/definitions/GrainSpecSourceObject"
+                                "$ref": "#/definitions/ScriptSource"
                             }
                         }
                     }
