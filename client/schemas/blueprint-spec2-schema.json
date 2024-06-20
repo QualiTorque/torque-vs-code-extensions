@@ -410,6 +410,17 @@
                         }
                     }
                 },
+                "workspace-directories": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "source": {
+                                "$ref": "#/definitions/GrainSpecSourceObject"
+                            }
+                        }
+                    }
+                },
                 "outputs": {
                     "type": "array",
                     "items": {
