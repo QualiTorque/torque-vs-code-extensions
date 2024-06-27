@@ -541,6 +541,12 @@
                     },
                     "path": {
                         "type": "string"
+                    },
+                    "branch": {
+                        "type": "string"
+                    },
+                    "commit": {
+                        "type": "string"
                     }
                 }
             }
