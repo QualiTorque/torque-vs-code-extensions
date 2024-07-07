@@ -16,32 +16,6 @@
                     "type": "string"
                 },
                 "workflow": {
-                    "anyOf": [
-                        {
-                            "type": "boolean"
-                        }, 
-                        {
-                            "type": "object",
-                            "additionalProperties": false,
-                            "properties": {
-                                "scope": {
-                                    "type": "string"
-                                },
-                                "label-selector": {
-                                    "type": "string"
-                                },
-                                "triggers":{
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/definitions/WorkflowTrigger"  
-                                    }
-                                }
-                            }
-                        }
-                    ],
-                    "title": "workflow metadata"
-                },
-                "workflow-metadata": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
