@@ -16,9 +16,6 @@
                     "type": "string"
                 },
                 "workflow": {
-                    "type": "boolean"
-                },
-                "workflow-metadata": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
