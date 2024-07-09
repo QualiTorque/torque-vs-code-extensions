@@ -356,6 +356,13 @@
                         "type":"string"
                     }
                 },
+                "groups": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "cron":{
                     "type": "string"
                 },
