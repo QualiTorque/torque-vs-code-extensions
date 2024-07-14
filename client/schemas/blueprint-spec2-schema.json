@@ -800,6 +800,10 @@
                             "boolean"
                         ]
                     }
+                },
+                "depends-on": {
+                    "type": "string",
+                    "pattern": "^((.+)(,\\s*)?)+[^,]$"
                 }
             }
         },
