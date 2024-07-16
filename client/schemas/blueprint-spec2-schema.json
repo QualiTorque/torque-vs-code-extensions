@@ -503,14 +503,13 @@
                         "credentials"
                     ]
                 },
-                "display-style": {
+                "style": {
                     "type": "string",
                     "enum": [
-                        "multiline",
-                        "normal",
-                        "masked"
+                        "radio",
+                        "text"
                     ],
-                    "default": "normal"
+                    "default": "text"
                 },
                 "description": {
                     "type": "string",
