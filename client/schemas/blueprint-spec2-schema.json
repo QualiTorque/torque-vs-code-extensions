@@ -154,7 +154,8 @@
                         "shell",
                         "cloudshell",
                         "argocd",
-                        "opentofu"
+                        "opentofu",
+                        "terragrunt"
                     ]
                 },
                 "spec": {
