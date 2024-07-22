@@ -448,6 +448,9 @@
                 "binary": {
                     "type": "string"
                 },
+                "built-in": {
+                    "type": "boolean"
+                },
                 "auto-retry": {
                     "type": "boolean"
                 },
