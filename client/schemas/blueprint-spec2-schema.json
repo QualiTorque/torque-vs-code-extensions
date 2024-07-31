@@ -15,6 +15,31 @@
                 "description": {
                     "type": "string"
                 },
+                "workflow": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "scope": {
+                            "type": "string"
+                        },
+                        "label-selector": {
+                            "type": "string"
+                        },
+                        "labels-selector": {
+                            "type": "string"
+                        },
+                        "resource-types": {
+                            "type": "string"
+                        },
+                        "triggers":{
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/WorkflowTrigger"  
+                            }
+                        }
+                    },
+                    "title": "workflow metadata"
+                },
                 "instructions": {
                     "type": "object",
                     "additionalProperties": false,
@@ -39,6 +64,30 @@
                     }
                     ],
                     "title": "instructions"
+                },
+                "layout": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "exclude-from-layout": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Exclude From Layout"
+                        },
+                        "source": {
+                            "$ref": "#/definitions/LayoutSourceObject"
+                        }
+                    },
+                    "oneOf": [                       
+                        {
+                            "required": [
+                                "source"
+                            ]
+                        }
+                    ],
+                    "title": "Layout"
                 },
                 "inputs": {
                     "type": "object",
@@ -109,7 +158,10 @@
                         "cloudformation",
                         "kubernetes",
                         "shell",
-                        "cloudshell"
+                        "cloudshell",
+                        "argocd",
+                        "opentofu",
+                        "terragrunt"
                     ]
                 },
                 "spec": {
@@ -137,6 +189,9 @@
                     "$ref": "#/definitions/ScriptObject"
                 },
                 "pre-tf-destroy": {
+                    "$ref": "#/definitions/ScriptObject"
+                },
+                "post-tf-plan": {
                     "$ref": "#/definitions/ScriptObject"
                 },
                 "post-helm-install": {
@@ -257,10 +312,90 @@
             },
             "title": "Envrironment Variable"
         },
+        "WorkflowTrigger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "type":{
+                    "type": "string",
+                    "enum": [
+                        "manual",
+                        "event",
+                        "cron"
+                    ]
+                },
+                "event":{
+                    "type": "array",
+                    "uniqueItems": true,
+                    "additionalItems": false,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "Drift Detected",
+                            "Updates Detected",
+                            "Approval Request Approved",
+                            "Approval Request Denied",
+                            "Approval Request Cancelled",
+                            "Environment Ended",
+                            "Environment Launched",
+                            "Environment Active With Error",
+                            "Environment Ending Failed",
+                            "Environment Force Ended",
+                            "Environment Extended",
+                            "Collaborator Added",
+                            "Environment Idle",
+                            "drift detected",
+                            "updates detected",
+                            "approval request approved",
+                            "approval request denied",
+                            "approval request cancelled",
+                            "environment ended",
+                            "environment launched",
+                            "environment active with error",
+                            "environment ending failed",
+                            "environment force ended",
+                            "environment extended",
+                            "collaborator added",
+                            "environment idle"
+                        ]
+                    },
+                    "contains": {
+                        "type":"string"
+                    }
+                },
+                "groups": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cron":{
+                    "type": "string"
+                },
+                "overridable":{
+                    "type": "boolean"
+                }
+            },
+            "title": "Workflow Trigger"
+        },
         "GrainSpecObject": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "files": {
+                    "$ref": "#/definitions/ShellGrainFiles"                    
+                },
+                "provider-overrides": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                },
+                "auto-approve": {
+                    "type": "boolean"
+                },
                 "sources": {
                     "$ref": "#/definitions/GrainSpecSources"
                 },
@@ -279,6 +414,28 @@
                         "$ref": "#/definitions/GrainInput"
                     }
                 },
+                "values-files": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "source": {
+                                "$ref": "#/definitions/ScriptSource"
+                            }
+                        }
+                    }
+                },
+                "workspace-directories": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "source": {
+                                "$ref": "#/definitions/ScriptSource"
+                            }
+                        }
+                    }
+                },
                 "outputs": {
                     "type": "array",
                     "items": {
@@ -290,6 +447,9 @@
                     "items": {
                         "$ref": "#/definitions/GrainCommand"
                     }
+                },
+                "command-arguments": {
+                    "type": "string"
                 },
                 "scripts": {
                     "$ref": "#/definitions/GrainScripts"
@@ -306,6 +466,9 @@
                 "namespace": {
                     "type": "string"
                 },
+                "target-namespace": {
+                    "type": "string"
+                },
                 "authentication": {
                     "type": "array",
                     "items": {
@@ -317,6 +480,18 @@
                 },
                 "region": {
                     "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "binary": {
+                    "type": "string"
+                },
+                "built-in": {
+                    "type": "boolean"
+                },
+                "auto-retry": {
+                    "type": "boolean"
                 },
                 "activities": {
                     "$ref": "#/definitions/ActivitiesObject"
@@ -334,31 +509,61 @@
                 "tfvars-files": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/TfVarsFileSourceObject"
+                        "type": "object",
+                        "properties": {
+                            "source": {
+                                "$ref": "#/definitions/TfVarsFileSourceObject"
+                            }
+                        }
                     }
                 },
                 "template-storage": {
                     "$ref": "#/definitions/TemplateStorage"
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "data"
+                    ]
+                },
+                "application-namespace": {
+                    "type": "string"
+                },
+                "application": {
+                    "type": "string"
+                },
+                "deployment-engine":{
+                    "type": "string"
                 }
             },
             "oneOf": [
                 {
                     "required": [
-                        "agent"
-                    ]
-                },
-                {
-                    "required": [
-                        "host"
-                    ]
-                },
-                {
-                    "required": [
-                        "region"
                     ]
                 }
             ],
             "title": "Grain Spec Object"
+        },
+        "ShellGrainFiles": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "source": {
+                        "type": "string"
+                    },
+                    "path": {
+                        "type": "string"
+                    },
+                    "branch": {
+                        "type": "string"
+                    },
+                    "commit": {
+                        "type": "string"
+                    }
+                }
+            }
         },
         "ActivitiesObject": {
             "type": "object",
@@ -402,8 +607,15 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "outputs": {
+                    "type": "array"
                 }
             }
+        },
+        "PodLabels": {
+            "type": "object",
+            "additionalProperties": true
         },
         "GrainInput": {
             "type": "object",
@@ -446,11 +658,45 @@
                     "type": "string"
                 },
                 "kubernetes": {
+                    "$ref": "#/definitions/KubernetesObject"
+                },
+                "runner-namespace": {
                     "type": "string"
+                },
+                "storage-size": {
+                    "type": "integer"
                 }
             },
             "title": "Spec Host Properties"
         },
+        "KubernetesObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "pod-labels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PodLabels"
+                    }
+                },
+                "permissions": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "destination-context-name": {
+                            "type": "string"
+                        },
+                        "secret-name": {
+                            "type": "string"
+                        },
+                        "secret-namespace": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        
         "GrainSpecSourceObject": {
             "type": "object",
             "additionalProperties": false,
@@ -459,6 +705,15 @@
                     "type": "string"
                 },
                 "path": {
+                    "type": "string"
+                },
+                "branch": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                },
+                "commit": {
                     "type": "string"
                 }
             },
@@ -482,6 +737,12 @@
                 },
                 "path": {
                     "type": "string"
+                },
+                "commit": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
                 }
             },
             "required": [
@@ -494,13 +755,18 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "parameter-name": {
+                    "type": "string"
+                },
                 "type": {
                     "type": "string",
                     "enum": [
                         "string",
                         "execution-host",
                         "agent",
-                        "credentials"
+                        "credentials",
+                        "parameter",
+                        "radio"
                     ]
                 },
                 "style": {
@@ -525,6 +791,15 @@
                 "sensitive": {
                     "type": "boolean"
                 },
+                "pattern": {
+                    "type": "string"
+                },
+                "validation-description": {
+                    "type": "string"
+                },
+                "style": {
+                    "type": "string"
+                },
                 "allowed-values": {
                     "type": "array",
                     "items": {
@@ -534,6 +809,10 @@
                             "boolean"
                         ]
                     }
+                },
+                "depends-on": {
+                    "type": "string",
+                    "pattern": "^((.+)(,\\s*)?)+[^,]$"
                 }
             }
         },
@@ -576,6 +855,22 @@
                 "path", "store"
             ],
             "title": "InstructionsSource"
-        }       
+        },
+        "LayoutSourceObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "store": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "path", "store"
+            ],
+            "title": "LayoutSource"
+        }
     }
 }
