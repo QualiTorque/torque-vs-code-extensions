@@ -25,6 +25,12 @@
                         "label-selector": {
                             "type": "string"
                         },
+                        "labels-selector": {
+                            "type": "string"
+                        },
+                        "resource-types": {
+                            "type": "string"
+                        },
                         "triggers":{
                             "type": "array",
                             "items": {
@@ -789,9 +795,6 @@
                     "type": "string"
                 },
                 "validation-description": {
-                    "type": "string"
-                },
-                "style": {
                     "type": "string"
                 },
                 "allowed-values": {
