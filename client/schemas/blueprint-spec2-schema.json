@@ -766,7 +766,8 @@
                         "agent",
                         "credentials",
                         "parameter",
-                        "radio"
+                        "radio",
+                        "input-source"
                     ]
                 },
                 "style": {
@@ -810,6 +811,33 @@
                 "depends-on": {
                     "type": "string",
                     "pattern": "^((.+)(,\\s*)?)+[^,]$"
+                },
+                "source-name": {
+                    "type": "string"
+                },
+                "overrides": {
+                     "type": "array",
+                     "items": {
+                        "type": "object",
+                        "properties": {
+                            "bucket_name": {
+                                "type": "string"
+                            },
+                            "path_prefix": {
+                                "type": "string"
+                            },
+                            "filter": {
+                                "type": "string"
+                            },
+                            "object_key": {
+                                "type": "string"
+                            },
+                            "json_path": {
+                                "type": "string"
+                            }
+                        },
+                        "additionalProperties": false
+                    }
                 }
             }
         },
