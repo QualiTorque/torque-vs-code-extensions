@@ -715,6 +715,9 @@
                 },
                 "commit": {
                     "type": "string"
+                },
+                "resource-type": {
+                    "type": "string"
                 }
             },
             "required": [
