@@ -840,6 +840,18 @@
                             },
                             "json_path": {
                                 "type": "string"
+                            },
+                            "display_json_path": {
+                                "type": "string"
+                            },
+                            "storage_account_name": {
+                                "type": "string"
+                            },
+                            "container_name": {
+                                "type": "string"
+                            },
+                            "blob_name": {
+                                "type": "string"
                             }
                         },
                         "additionalProperties": false
