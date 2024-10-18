@@ -772,7 +772,7 @@
                         "agent",
                         "credentials",
                         "parameter",
-                        "radio",
+                        "env",
                         "input-source"
                     ]
                 },
