@@ -121,6 +121,22 @@
                     },
                     "title": "Outputs"
                 },
+                "env_references": {
+                    "type": "object",
+                    "patternProperties": {
+                        "^[a-zA-Z0-9-_ ().]{3,45}$": {
+                            "oneOf": [
+                                {
+                                    "$ref": "#/definitions/BlueprintEnvReferenceObject"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
+                        }
+                    },
+                    "title": "Environment References"
+                },
                 "grains": {
                     "type": "object",
                     "patternProperties": {
@@ -442,6 +458,12 @@
                         "$ref": "#/definitions/GrainOutput"
                     }
                 },
+                "env_references": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GrainEnvReference"
+                    }
+                },
                 "commands": {
                     "type": "array",
                     "items": {
@@ -635,6 +657,16 @@
             "type": "string",
             "additionalProperties": true,
             "title": "Grain Output"
+        },
+        "GrainEnvReference": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                "^[\\w\\-\\.]+$": {
+                    "type": ["string"]
+                }
+            },
+            "title": "Grain Environment Reference"
         },
         "GrainCommand": {
             "type": "string",
@@ -882,6 +914,16 @@
                 "value"
             ],
             "title": "Blueptint Output Object"
+        },
+        "BlueprintEnvReferenceObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "labels-selector": {
+                    "type": "string"
+                }
+            },
+            "title": "Blueptint Environment Reference Object"
         },
         "InstructionsSourceObject": {
             "type": "object",
