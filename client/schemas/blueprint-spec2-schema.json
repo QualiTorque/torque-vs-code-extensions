@@ -639,6 +639,10 @@
             "type": "object",
             "additionalProperties": true
         },
+        "PodAnnotations": {
+            "type": "object",
+            "additionalProperties": true
+        },
         "GrainInput": {
             "type": "object",
             "additionalProperties": false,
@@ -712,6 +716,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/PodLabels"
+                    }
+                },
+                "pod-annotations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PodAnnotations"
                     }
                 },
                 "permissions": {
