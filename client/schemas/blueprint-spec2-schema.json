@@ -671,7 +671,7 @@
            "type": "object",
            "additionalProperties": false,
            "patternProperties": {
-                "^[\\w\\-\\.]+$": {
+                "^{?[a-zA-Z0-9-_.@#\\s]+}?$": {
                     "type": [
                         "string",
                         "number",
