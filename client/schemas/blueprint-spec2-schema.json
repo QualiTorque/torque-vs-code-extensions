@@ -650,7 +650,14 @@
                     "items": {
                         "allOf": [
                             {
-                                "$ref": "#/definitions/EnvironmentLabel"
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/definitions/EnvironmentLabel"
+                                    },
+                                    {
+                                        "type": "string"
+                                    }
+                                ]
                             }
                         ]
                     }
