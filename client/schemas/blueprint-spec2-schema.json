@@ -650,7 +650,15 @@
                     "items": {
                         "allOf": [
                             {
-                                "$ref": "#/definitions/EnvironmentLabel"
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/definitions/EnvironmentLabel"
+                                    },
+                                    {
+                                        "type": "string",
+                                        "pattern": "^{?[a-zA-Z0-9-_.@#\\s]+}?$"
+                                    }
+                                ]
                             }
                         ]
                     }
@@ -660,7 +668,15 @@
                     "items": {
                         "allOf": [
                             {
-                                "$ref": "#/definitions/EnvironmentLabel"
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/definitions/EnvironmentLabel"
+                                    },
+                                    {
+                                        "type": "string",
+                                        "pattern": "^{?[a-zA-Z0-9-_.@#\\s]+}?$"
+                                    }
+                                ]
                             }
                         ]
                     }
