@@ -180,6 +180,9 @@
                         "terragrunt"
                     ]
                 },
+                "env-labels": {
+                    "$ref": "#/definitions/GrainLabels"
+                },
                 "spec": {
                     "$ref": "#/definitions/GrainSpecObject"
                 },
@@ -209,6 +212,9 @@
                 },
                 "post-tf-plan": {
                     "$ref": "#/definitions/ScriptObject"
+                },
+                "pre-ansible-run": {
+                    "$ref": "#/definitions/ScriptOutputsObject"
                 },
                 "post-helm-install": {
                     "$ref": "#/definitions/ScriptOutputsObject"
@@ -634,6 +640,46 @@
                     "type": "array"
                 }
             }
+        },
+        "GrainLabels": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "on-success": {
+                    "type":"array",
+                    "items": {
+                        "allOf": [
+                            {
+                                "$ref": "#/definitions/EnvironmentLabel"
+                            }
+                        ]
+                    }
+                },
+                "on-failure": {
+                    "type":"array",
+                    "items": {
+                        "allOf": [
+                            {
+                                "$ref": "#/definitions/EnvironmentLabel"
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "EnvironmentLabel": {
+           "type": "object",
+           "additionalProperties": false,
+           "patternProperties": {
+                "^{?[a-zA-Z0-9-_.@#\\s]+}?$": {
+                    "type": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "null"
+                    ]
+                }
+            } 
         },
         "PodLabels": {
             "type": "object",
