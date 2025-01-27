@@ -105,6 +105,25 @@
                     },
                     "title": "Inputs"
                 },
+                "labels": {
+                    "type":"array",
+                    "items": {
+                        "allOf": [
+                            {
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/definitions/EnvironmentLabel"
+                                    },
+                                    {
+                                        "type": "string",
+                                        "pattern": "^{?[a-zA-Z0-9-_.@#\\s]+}?$"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "title": "Labels"
+                },
                 "outputs": {
                     "type": "object",
                     "patternProperties": {
