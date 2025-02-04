@@ -177,7 +177,8 @@
                         "cloudshell",
                         "argocd",
                         "opentofu",
-                        "terragrunt"
+                        "terragrunt",
+                        "aws-cdk"
                     ]
                 },
                 "spec": {
@@ -215,6 +216,12 @@
                 },
                 "post-kubernetes-install": {
                     "$ref": "#/definitions/ScriptOutputsObject"
+                },
+                "pre-aws-cdk-deploy": {
+                    "$ref": "#/definitions/ScriptObject"
+                },
+                "post-aws-cdk-deploy": {
+                    "$ref": "#/definitions/ScriptObject"
                 }
             }
         },
