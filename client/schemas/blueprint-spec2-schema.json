@@ -731,6 +731,10 @@
             "type": "object",
             "additionalProperties": true
         },
+        "NodeSelector": {
+            "type": "object",
+            "additionalProperties": true
+        },
         "GrainInput": {
             "type": "object",
             "additionalProperties": false,
@@ -810,6 +814,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/PodAnnotations"
+                    }
+                },
+                "nodeSelector": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/NodeSelector"
                     }
                 },
                 "permissions": {
