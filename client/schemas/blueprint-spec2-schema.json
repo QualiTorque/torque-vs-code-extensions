@@ -156,6 +156,15 @@
                     },
                     "title": "Environment References"
                 },
+                "resources": {
+                    "type": "object",
+                    "patternProperties": {
+                        "^[a-zA-Z0-9-_ ().]{3,45}$": {
+                            "$ref": "#/definitions/BlueprintResourceRequirementObject"
+                        }
+                    },
+                    "title": "Resources"
+                },
                 "grains": {
                     "type": "object",
                     "patternProperties": {
@@ -1032,6 +1041,38 @@
                 }
             },
             "title": "Blueptint Environment Reference Object"
+        },
+        "BlueprintResourceRequirementObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "selector": {
+                    "$ref": "#/definitions/ResourceSelectorObject"
+                }
+            },
+            "required": [
+                "selector"
+            ],
+            "title": "Blueptint Resource Requirement"
+        },
+        "ResourceSelectorObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ]
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "title": "Blueptint Resource Selector"
         },
         "InstructionsSourceObject": {
             "type": "object",
