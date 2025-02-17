@@ -816,7 +816,7 @@
                         "$ref": "#/definitions/PodAnnotations"
                     }
                 },
-                "nodeSelector": {
+                "node-selector": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/NodeSelector"
