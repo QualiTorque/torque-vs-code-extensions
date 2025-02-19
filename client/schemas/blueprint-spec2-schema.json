@@ -898,6 +898,9 @@
                 },
                 "tag": {
                     "type": "string"
+                },
+                "branch": {
+                    "type": "string"
                 }
             },
             "required": [
