@@ -22,9 +22,6 @@
                         "scope": {
                             "type": "string"
                         },
-                        "label-selector": {
-                            "type": "string"
-                        },
                         "labels-selector": {
                             "type": "string"
                         },
