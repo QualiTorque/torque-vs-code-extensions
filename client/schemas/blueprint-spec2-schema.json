@@ -802,6 +802,9 @@
                 },
                 "isolated": {
                     "type": "boolean"
+                },
+                "use-storage": {
+                    "type": "boolean"
                 }
             },
             "title": "Spec Host Properties"
