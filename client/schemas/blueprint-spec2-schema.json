@@ -401,6 +401,7 @@
                             "Environment Extended",
                             "Collaborator Added",
                             "Environment Idle",
+                            "Parameters Modified",
                             "drift detected",
                             "updates detected",
                             "approval request approved",
@@ -413,7 +414,8 @@
                             "environment force ended",
                             "environment extended",
                             "collaborator added",
-                            "environment idle"
+                            "environment idle",
+                            "parameters modified"
                         ]
                     },
                     "contains": {
