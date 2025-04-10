@@ -624,6 +624,9 @@
                     },
                     "commit": {
                         "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
                     }
                 }
             }
