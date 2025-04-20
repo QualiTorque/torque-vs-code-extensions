@@ -438,6 +438,34 @@
             },
             "title": "Workflow Trigger"
         },
+        "AnsibleOnDestroy": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "source": {
+                    "$ref": "#/definitions/GrainSpecSourceObject"
+                },
+                "inputs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GrainInput"
+                    }
+                },
+                "command-arguments": {
+                    "type": "string"
+                },
+                "scripts": {
+                    "$ref": "#/definitions/GrainScripts"
+                },
+                "inventory-file": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                }
+            }
+        },
         "GrainSpecObject": {
             "type": "object",
             "additionalProperties": false,
@@ -599,6 +627,9 @@
                 },
                 "deployment-engine":{
                     "type": "string"
+                },
+                "on-destroy": {
+                    "$ref": "#/definitions/AnsibleOnDestroy"
                 }
             },
             "oneOf": [
