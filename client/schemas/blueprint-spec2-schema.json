@@ -964,7 +964,8 @@
                         "credentials",
                         "parameter",
                         "env",
-                        "input-source"
+                        "input-source",
+                        "file"
                     ]
                 },
                 "style": {
@@ -1047,6 +1048,15 @@
                         },
                         "additionalProperties": false
                     }
+                },
+                "max-size-MB": {
+                    "type": "number"
+                },
+                "max-files": {
+                    "type": "integer"
+                },
+                "allowed-formats": {
+                    "type": "array"
                 }
             }
         },
