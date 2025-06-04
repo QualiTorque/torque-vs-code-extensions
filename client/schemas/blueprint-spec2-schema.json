@@ -1044,6 +1044,12 @@
                             },
                             "blob_name": {
                                 "type": "string"
+                            },
+                            "path": {
+                                "type": "string"
+                            },
+                            "query": {
+                                "type": "string"
                             }
                         },
                         "additionalProperties": false
