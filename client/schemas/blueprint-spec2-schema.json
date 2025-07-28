@@ -971,6 +971,7 @@
                 "style": {
                     "type": "string",
                     "enum": [
+                        "multi-select",
                         "radio",
                         "text"
                     ],
