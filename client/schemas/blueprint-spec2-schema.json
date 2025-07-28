@@ -15,6 +15,22 @@
                 "description": {
                     "type": "string"
                 },
+                "environment": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "environment_name": {
+                            "type": "string"
+                        },
+                        "state": {
+                            "type": "string"
+                        },
+                        "owner_email": {
+                            "type": "string"
+                        }                        
+                    },
+                    "title": "environment metadata"
+                },
                 "workflow": {
                     "type": "object",
                     "additionalProperties": false,
