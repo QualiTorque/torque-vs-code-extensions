@@ -15,6 +15,49 @@
                 "description": {
                     "type": "string"
                 },
+                "environment": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "environment_name": {
+                            "type": "string"
+                        },
+                        "state": {
+                            "type": "string"
+                        },
+                        "owner_email": {
+                            "type": "string"
+                        },
+                        "spaces":{
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "collaborators": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "collaborators_emails": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "collaborators_groups": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "all_space_members": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    },
+                    "title": "environment metadata"
+                },
                 "workflow": {
                     "type": "object",
                     "additionalProperties": false,
