@@ -931,6 +931,8 @@
                 "style": {
                     "type": "string",
                     "enum": [
+                        "multi-select",
+                        "duration",
                         "radio",
                         "text"
                     ],
