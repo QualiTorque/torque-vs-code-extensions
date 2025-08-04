@@ -15,6 +15,49 @@
                 "description": {
                     "type": "string"
                 },
+                "environment": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "environment_name": {
+                            "type": "string"
+                        },
+                        "state": {
+                            "type": "string"
+                        },
+                        "owner_email": {
+                            "type": "string"
+                        },
+                        "spaces":{
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "collaborators": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "collaborators_emails": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "collaborators_groups": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "all_space_members": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    },
+                    "title": "environment metadata"
+                },
                 "workflow": {
                     "type": "object",
                     "additionalProperties": false,
@@ -401,6 +444,7 @@
                             "Environment Extended",
                             "Collaborator Added",
                             "Environment Idle",
+                            "Parameter Updates Detected",
                             "drift detected",
                             "updates detected",
                             "approval request approved",
@@ -413,7 +457,8 @@
                             "environment force ended",
                             "environment extended",
                             "collaborator added",
-                            "environment idle"
+                            "environment idle",
+                            "parameter updates detected"
                         ]
                     },
                     "contains": {
@@ -435,6 +480,34 @@
                 }
             },
             "title": "Workflow Trigger"
+        },
+        "AnsibleOnDestroy": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "source": {
+                    "$ref": "#/definitions/GrainSpecSourceObject"
+                },
+                "inputs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GrainInput"
+                    }
+                },
+                "command-arguments": {
+                    "type": "string"
+                },
+                "scripts": {
+                    "$ref": "#/definitions/GrainScripts"
+                },
+                "inventory-file": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": true
+                    }
+                }
+            }
         },
         "GrainSpecObject": {
             "type": "object",
@@ -597,6 +670,9 @@
                 },
                 "deployment-engine":{
                     "type": "string"
+                },
+                "on-destroy": {
+                    "$ref": "#/definitions/AnsibleOnDestroy"
                 }
             },
             "oneOf": [
@@ -623,6 +699,9 @@
                         "type": "string"
                     },
                     "commit": {
+                        "type": "string"
+                    },
+                    "name": {
                         "type": "string"
                     }
                 }
@@ -805,6 +884,9 @@
                 },
                 "isolated": {
                     "type": "boolean"
+                },
+                "use-storage": {
+                    "type": "boolean"
                 }
             },
             "title": "Spec Host Properties"
@@ -925,7 +1007,8 @@
                         "credentials",
                         "parameter",
                         "env",
-                        "input-source"
+                        "input-source",
+                        "file"
                     ]
                 },
                 "style": {
@@ -1006,10 +1089,25 @@
                             },
                             "blob_name": {
                                 "type": "string"
+                            },
+                            "path": {
+                                "type": "string"
+                            },
+                            "query": {
+                                "type": "string"
                             }
                         },
                         "additionalProperties": false
                     }
+                },
+                "max-size-MB": {
+                    "type": "number"
+                },
+                "max-files": {
+                    "type": "integer"
+                },
+                "allowed-formats": {
+                    "type": "array"
                 }
             }
         },
