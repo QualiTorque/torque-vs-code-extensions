@@ -676,6 +676,13 @@
                 },
                 "on-destroy": {
                     "$ref": "#/definitions/AnsibleOnDestroy"
+                },
+                "target-resource": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "additionalProperties": true
+                    }
                 }
             },
             "oneOf": [
