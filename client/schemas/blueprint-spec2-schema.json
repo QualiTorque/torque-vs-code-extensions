@@ -58,6 +58,21 @@
                     },
                     "title": "environment metadata"
                 },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "display-name": {
+                            "type": "string"
+                        },
+                        "self-service": {
+                            "type": "boolean"
+                        },
+                        "icon": {
+                            "type": "string"
+                        }
+                    }
+                },
                 "workflow": {
                     "type": "object",
                     "additionalProperties": false,
