@@ -61,6 +61,7 @@
                 "metadata": {
                     "type": "object",
                     "additionalProperties": false,
+                    "title": "blueprint metadata",
                     "properties": {
                         "display-name": {
                             "type": "string"
