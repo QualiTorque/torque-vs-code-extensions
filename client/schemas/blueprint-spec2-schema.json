@@ -1192,6 +1192,22 @@
                 "type": {
                     "type": "string"
                 },
+                "attributes":{
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "patternProperties": {
+                            "^[\\w\\-\\.]+$": {
+                                "type": [
+                                    "string",
+                                    "number",
+                                    "boolean"
+                                ]
+                            }
+                        }
+                    }
+                },
                 "quantity": {
                     "type": [
                         "integer",
@@ -1199,8 +1215,17 @@
                     ]
                 }
             },
-            "required": [
-                "type"
+            "anyOf": [
+                {
+                    "required": [
+                        "type"
+                    ]
+                },
+                {
+                    "required": [
+                        "attributes"
+                    ]
+                }
             ],
             "title": "Blueptint Resource Selector"
         },
