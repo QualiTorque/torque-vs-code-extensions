@@ -242,6 +242,15 @@
                         }
                     },
                     "title": "Grains"
+                },
+                "customization": {
+                    "type": "object",
+                    "title": "Customization",
+                    "patternProperties": {
+                        "^[a-zA-Z0-9-_ ]{3,45}$": {
+                            "$ref": "#/definitions/CustomizationObject"
+                        }
+                    }
                 }
             },
             "required": [
@@ -1260,6 +1269,16 @@
                 "path", "store"
             ],
             "title": "LayoutSource"
+        },
+        "CustomizationObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "launch-form": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
         }
     }
 }
