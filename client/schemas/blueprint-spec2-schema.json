@@ -687,7 +687,9 @@
                 "mode": {
                     "type": "string",
                     "enum": [
-                        "data"
+                        "managed",
+                        "data",
+                        "no-termination"
                     ]
                 },
                 "application-namespace": {
