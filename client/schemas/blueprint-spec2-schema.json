@@ -1277,10 +1277,70 @@
             "additionalProperties": false,
             "properties": {
                 "launch-form": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "$ref": "#/definitions/LaunchFormObject"
                 }
             }
+        },
+        "LaunchFormObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "inputs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LaunchFormInputObject"
+                    }
+                },
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LaunchFormCategoryObject"
+                    }
+                }
+            },
+            "oneOf": [
+                {
+                    "required": ["inputs"]
+                },
+                {
+                    "required": ["categories"]
+                }
+            ],
+            "title": "Launch Form Object"
+        },
+        "LaunchFormInputObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the input field"
+                },
+                "visible": {
+                    "type": "string",
+                    "description": "Conditional visibility expression using Jinja2 template syntax"
+                }
+            },
+            "required": ["name"],
+            "title": "Launch Form Input Object"
+        },
+        "LaunchFormCategoryObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The display name of the category"
+                },
+                "inputs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LaunchFormInputObject"
+                    }
+                }
+            },
+            "required": ["name", "inputs"],
+            "title": "Launch Form Category Object"
         }
     }
 }
