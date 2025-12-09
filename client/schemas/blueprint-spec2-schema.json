@@ -244,13 +244,8 @@
                     "title": "Grains"
                 },
                 "customization": {
-                    "type": "object",
-                    "title": "Customization",
-                    "patternProperties": {
-                        "^[a-zA-Z0-9-_ ]{3,45}$": {
-                            "$ref": "#/definitions/CustomizationObject"
-                        }
-                    }
+                    "$ref": "#/definitions/CustomizationObject",
+                    "title": "Customization"
                 }
             },
             "required": [
