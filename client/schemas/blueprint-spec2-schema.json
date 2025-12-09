@@ -1271,6 +1271,15 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "launch-form": {
+                    "$ref": "#/definitions/LaunchFormObject"
+                }
+            }
+        },
+        "LaunchFormObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
                 "inputs": {
                     "type": "array",
                     "items": {
@@ -1292,7 +1301,7 @@
                     "required": ["categories"]
                 }
             ],
-            "title": "Customization Object"
+            "title": "LaunchForm Object"
         },
         "LaunchFormInputObject": {
             "type": "object",
