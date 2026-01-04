@@ -1128,6 +1128,18 @@
                             },
                             "query": {
                                 "type": "string"
+                            },
+                            "credential": {
+                                "type": "string"
+                            },
+                            "filter_query": {
+                                "type": "string"
+                            },
+                            "select_query": {
+                                "type": "string"
+                            },
+                            "expand_query": {
+                                "type": "string"
                             }
                         },
                         "additionalProperties": false
