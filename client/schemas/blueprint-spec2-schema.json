@@ -1153,6 +1153,24 @@
                 },
                 "allowed-formats": {
                     "type": "array"
+                },
+                "allowed-credential-providers": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "additionalItems": false,
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "aws",
+                            "azure",
+                            "vsphere",
+                            "artifactory",
+                            "intersight",
+                            "redhat",
+                            "nexus_dashboard",
+                            "nvaie"
+                        ]
+                    }
                 }
             }
         },
