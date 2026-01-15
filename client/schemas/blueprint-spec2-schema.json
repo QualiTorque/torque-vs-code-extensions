@@ -1372,7 +1372,7 @@
                     "type": "boolean"
                 }
             },
-            "required": ["key", "value"],
+            "required": ["key"],
             "title": "Blueprint Label Object"
         },
         "LaunchFormCategoryObject": {
