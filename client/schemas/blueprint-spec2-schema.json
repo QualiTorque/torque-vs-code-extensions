@@ -75,7 +75,14 @@
                         "blueprint-labels": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/BlueprintLabelObject"
+                                "anyOf": [
+                                    {
+                                        "$ref": "#/definitions/BlueprintLabelObject"
+                                    },
+                                    {
+                                        "type": "string"
+                                    }
+                                ]
                             }
                         }
                     }
