@@ -71,6 +71,12 @@
                         },
                         "icon": {
                             "type": "string"
+                        },
+                        "blueprint-labels": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/BlueprintLabelObject"
+                            }
                         }
                     }
                 },
@@ -1348,6 +1354,26 @@
             },
             "required": ["name"],
             "title": "Launch Form Input Object"
+        },
+        "BlueprintLabelObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                },
+                "initial-color": {
+                    "type": "string"
+                },
+                "initial-quick-filter": {
+                    "type": "boolean"
+                }
+            },
+            "required": ["key", "value"],
+            "title": "Blueprint Label Object"
         },
         "LaunchFormCategoryObject": {
             "type": "object",
