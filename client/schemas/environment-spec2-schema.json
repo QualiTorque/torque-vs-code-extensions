@@ -1,0 +1,1228 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$ref": "#/definitions/Torque-Blueprint-Spec2",
+  "definitions": {
+    "Torque-Blueprint-Spec2": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "spec_version": {
+          "type": "integer",
+          "enum": [
+            2
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "workflow": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "scope": {
+              "type": "string"
+            },
+            "label-selector": {
+              "type": "string"
+            },
+            "labels-selector": {
+              "type": "string"
+            },
+            "resource-types": {
+              "type": "string"
+            },
+            "triggers": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WorkflowTrigger"
+              }
+            }
+          },
+          "title": "workflow metadata"
+        },
+        "instructions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "source": {
+              "$ref": "#/definitions/InstructionsSourceObject"
+            }
+          },
+          "oneOf": [
+            {
+              "required": [
+                "text"
+              ]
+            },
+            {
+              "required": [
+                "source"
+              ]
+            }
+          ],
+          "title": "instructions"
+        },
+        "layout": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "exclude-from-layout": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "title": "Exclude From Layout"
+            },
+            "source": {
+              "$ref": "#/definitions/LayoutSourceObject"
+            }
+          },
+          "oneOf": [
+            {
+              "required": [
+                "source"
+              ]
+            }
+          ],
+          "title": "Layout"
+        },
+        "inputs": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9-_ ().]{3,45}$": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/BlueprintInputObject"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "title": "Inputs"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/EnvironmentLabel"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^{?[a-zA-Z0-9-_.@#\\s]+}?$"
+                  }
+                ]
+              }
+            ]
+          },
+          "title": "Labels"
+        },
+        "outputs": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9-_ ().]{3,45}$": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/BlueprintOutputObject"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "title": "Outputs"
+        },
+        "env_references": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9-_ ().]{3,45}$": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/BlueprintEnvReferenceObject"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "title": "Environment References"
+        },
+        "resources": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9-_ ().]{3,45}$": {
+              "$ref": "#/definitions/BlueprintResourceRequirementObject"
+            }
+          },
+          "title": "Resources"
+        },
+        "grains": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z0-9-_ ]{3,45}$": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/GrainObject"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "title": "Grains"
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "environment_name": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "owner_email": {
+              "type": "string",
+              "format": "email"
+            },
+            "state": {
+              "type": "string",
+              "enum": ["active", "inactive"]
+            },
+            "labels": {
+              "type": "object",
+              "additionalProperties": {
+                "type": ["string", "null"]
+              }
+            },
+            "tags": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "collaborators": {
+              "type": "object",
+              "properties": {
+                "collaborators_emails": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                },
+                "collaborators_groups": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "spaces": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": ["environment_name", "owner_email"]
+        }
+      },
+      "required": [
+        "spec_version"
+      ],
+      "title": "Torque Blueprint Spec 2"
+    },
+    "GrainObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "terraform",
+            "helm",
+            "ansible",
+            "blueprint",
+            "arm",
+            "cloudformation",
+            "kubernetes",
+            "shell",
+            "cloudshell",
+            "argocd",
+            "opentofu",
+            "terragrunt",
+            "aws-cdk"
+          ]
+        },
+        "env-labels": {
+          "$ref": "#/definitions/GrainLabels"
+        },
+        "spec": {
+          "$ref": "#/definitions/GrainSpecObject"
+        },
+        "depends-on": {
+          "type": "string",
+          "pattern": "^((.+)(,\\s*)?)+[^,]$"
+        },
+        "tf-version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "spec"
+      ],
+      "title": "Grain Object"
+    },
+    "GrainScripts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pre-tf-init": {
+          "$ref": "#/definitions/ScriptObject"
+        },
+        "pre-tf-destroy": {
+          "$ref": "#/definitions/ScriptObject"
+        },
+        "post-tf-plan": {
+          "$ref": "#/definitions/ScriptObject"
+        },
+        "pre-ansible-run": {
+          "$ref": "#/definitions/ScriptOutputsObject"
+        },
+        "post-helm-install": {
+          "$ref": "#/definitions/ScriptOutputsObject"
+        },
+        "post-kubernetes-install": {
+          "$ref": "#/definitions/ScriptOutputsObject"
+        },
+        "pre-aws-cdk-deploy": {
+          "$ref": "#/definitions/ScriptObject"
+        },
+        "post-aws-cdk-deploy": {
+          "$ref": "#/definitions/ScriptObject"
+        }
+      }
+    },
+    "ScriptSource": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "store": {
+          "type": "string"
+        }
+      }
+    },
+    "ScriptObject": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/ScriptSource"
+        },
+        "arguments": {
+          "type": "string"
+        }
+      }
+    },
+    "Backend": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "bucket": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "storage-account-name": {
+          "type": "string"
+        },
+        "container-name": {
+          "type": "string"
+        },
+        "base-address": {
+          "type": "string"
+        },
+        "key-prefix": {
+          "type": "string"
+        }
+      }
+    },
+    "TemplateStorage": {
+      "type": "object",
+      "properties": {
+        "bucket-name": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "key-prefix": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "bucket-name",
+        "region"
+      ]
+    },
+    "ScriptOutputsObject": {
+      "type": "object",
+      "properties": {
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source": {
+          "$ref": "#/definitions/ScriptSource"
+        },
+        "arguments": {
+          "type": "string"
+        }
+      }
+    },
+    "GrainTag": {
+      "type": "object",
+      "properties": {
+        "auto-tag": {
+          "type": "boolean"
+        },
+        "disable-tags-for": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "EnvironementVariable": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[A-Za-z0-9_]+": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        }
+      },
+      "title": "Envrironment Variable"
+    },
+    "WorkflowTrigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "manual",
+            "event",
+            "cron"
+          ]
+        },
+        "event": {
+          "type": "array",
+          "uniqueItems": true,
+          "additionalItems": false,
+          "items": {
+            "type": "string",
+            "enum": [
+              "Drift Detected",
+              "Updates Detected",
+              "Approval Request Approved",
+              "Approval Request Denied",
+              "Approval Request Cancelled",
+              "Environment Ended",
+              "Environment Launched",
+              "Environment Active With Error",
+              "Environment Ending Failed",
+              "Environment Force Ended",
+              "Environment Extended",
+              "Collaborator Added",
+              "Environment Idle",
+              "Parameter Updates Detected",
+              "drift detected",
+              "updates detected",
+              "approval request approved",
+              "approval request denied",
+              "approval request cancelled",
+              "environment ended",
+              "environment launched",
+              "environment active with error",
+              "environment ending failed",
+              "environment force ended",
+              "environment extended",
+              "collaborator added",
+              "environment idle",
+              "parameter updates detected"
+            ]
+          },
+          "contains": {
+            "type": "string"
+          }
+        },
+        "groups": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "cron": {
+          "type": "string"
+        },
+        "overridable": {
+          "type": "boolean"
+        }
+      },
+      "title": "Workflow Trigger"
+    },
+    "AnsibleOnDestroy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/GrainSpecSourceObject"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GrainInput"
+          }
+        },
+        "command-arguments": {
+          "type": "string"
+        },
+        "scripts": {
+          "$ref": "#/definitions/GrainScripts"
+        },
+        "inventory-file": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "GrainSpecObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "files": {
+          "$ref": "#/definitions/ShellGrainFiles"
+        },
+        "provider-overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "auto-approve": {
+          "type": "boolean"
+        },
+        "sources": {
+          "$ref": "#/definitions/GrainSpecSources"
+        },
+        "source": {
+          "$ref": "#/definitions/GrainSpecSourceObject"
+        },
+        "agent": {
+          "$ref": "#/definitions/GrainSpecHostObject"
+        },
+        "host": {
+          "$ref": "#/definitions/GrainSpecHostObject"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GrainInput"
+          }
+        },
+        "values-files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "$ref": "#/definitions/ScriptSource"
+              }
+            }
+          }
+        },
+        "workspace-directories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "$ref": "#/definitions/ScriptSource"
+              }
+            }
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GrainOutput"
+          }
+        },
+        "env_references": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GrainEnvReference"
+          }
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GrainCommand"
+          }
+        },
+        "command-arguments": {
+          "type": "string"
+        },
+        "scripts": {
+          "$ref": "#/definitions/GrainScripts"
+        },
+        "tags": {
+          "$ref": "#/definitions/GrainTag"
+        },
+        "env-vars": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EnvironementVariable"
+          }
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "target-namespace": {
+          "type": "string"
+        },
+        "authentication": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "backend": {
+          "$ref": "#/definitions/Backend"
+        },
+        "region": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "binary": {
+          "type": "string"
+        },
+        "built-in": {
+          "type": "boolean"
+        },
+        "auto-retry": {
+          "type": "boolean"
+        },
+        "activities": {
+          "$ref": "#/definitions/ActivitiesObject"
+        },
+        "release": {
+          "type": "string"
+        },
+        "inventory-file": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "tfvars-files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "$ref": "#/definitions/TfVarsFileSourceObject"
+              }
+            }
+          }
+        },
+        "template-storage": {
+          "$ref": "#/definitions/TemplateStorage"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "data"
+          ]
+        },
+        "application-namespace": {
+          "type": "string"
+        },
+        "application": {
+          "type": "string"
+        },
+        "deployment-engine": {
+          "type": "string"
+        },
+        "on-destroy": {
+          "$ref": "#/definitions/AnsibleOnDestroy"
+        }
+      },
+      "oneOf": [
+        {
+          "required": []
+        }
+      ],
+      "title": "Grain Spec Object"
+    },
+    "ShellGrainFiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "branch": {
+            "type": "string"
+          },
+          "commit": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ActivitiesObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "deploy": {
+          "type": "object",
+          "$ref": "#/definitions/ActivityObject"
+        },
+        "destroy": {
+          "type": "object",
+          "$ref": "#/definitions/ActivityObject"
+        }
+      }
+    },
+    "ActivityObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/CommandObject"
+              },
+              {
+                "type": "string"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "CommandObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "outputs": {
+          "type": "array"
+        }
+      }
+    },
+    "GrainLabels": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "on-success": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/EnvironmentLabel"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^{?[a-zA-Z0-9-_.@#\\s]+}?$"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "on-failure": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/EnvironmentLabel"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^{?[a-zA-Z0-9-_.@#\\s]+}?$"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "EnvironmentLabel": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^{?[a-zA-Z0-9-_.@#\\s]+}?$": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "PodLabels": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "PodAnnotations": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "NodeSelector": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "GrainInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[\\w\\-\\.]+$": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        }
+      },
+      "title": "Grain Input"
+    },
+    "GrainOutput": {
+      "type": "string",
+      "additionalProperties": true,
+      "title": "Grain Output"
+    },
+    "GrainEnvReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[\\w\\-\\.]+$": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "title": "Grain Environment Reference"
+    },
+    "GrainCommand": {
+      "type": "string",
+      "additionalProperties": true,
+      "title": "Grain Command"
+    },
+    "GrainSpecHostObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "service-account": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "kubernetes": {
+          "$ref": "#/definitions/KubernetesObject"
+        },
+        "runner-namespace": {
+          "type": "string"
+        },
+        "storage-size": {
+          "type": "integer"
+        },
+        "isolated": {
+          "type": "boolean"
+        },
+        "use-storage": {
+          "type": "boolean"
+        }
+      },
+      "title": "Spec Host Properties"
+    },
+    "KubernetesObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pod-labels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PodLabels"
+          }
+        },
+        "pod-annotations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PodAnnotations"
+          }
+        },
+        "node-selector": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NodeSelector"
+          }
+        },
+        "permissions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "destination-context-name": {
+              "type": "string"
+            },
+            "secret-name": {
+              "type": "string"
+            },
+            "secret-namespace": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "GrainSpecSourceObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "store": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "resource-type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "PurpleSource"
+    },
+    "GrainSpecSources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GrainSpecSourceObject"
+      }
+    },
+    "TfVarsFileSourceObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "store": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "title": "TfVarsFileSource"
+    },
+    "BlueprintInputObject": {
+      "title": "Blueprint Input Object",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "parameter-name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "execution-host",
+            "agent",
+            "credentials",
+            "parameter",
+            "env",
+            "input-source",
+            "file"
+          ]
+        },
+        "style": {
+          "type": "string",
+          "enum": [
+            "radio",
+            "text"
+          ],
+          "default": "text"
+        },
+        "description": {
+          "type": "string",
+          "description": "In the relevant UI field, enter a description to be displayed to the user."
+        },
+        "default": {
+          "type": [
+            "integer",
+            "string",
+            "boolean"
+          ]
+        },
+        "sensitive": {
+          "type": "boolean"
+        },
+        "pattern": {
+          "type": "string"
+        },
+        "validation-description": {
+          "type": "string"
+        },
+        "allowed-values": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "integer",
+              "boolean"
+            ]
+          }
+        },
+        "depends-on": {
+          "type": "string",
+          "pattern": "^((.+)(,\\s*)?)+[^,]$"
+        },
+        "source-name": {
+          "type": "string"
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "bucket_name": {
+                "type": "string"
+              },
+              "path_prefix": {
+                "type": "string"
+              },
+              "filter": {
+                "type": "string"
+              },
+              "object_key": {
+                "type": "string"
+              },
+              "json_path": {
+                "type": "string"
+              },
+              "display_json_path": {
+                "type": "string"
+              },
+              "storage_account_name": {
+                "type": "string"
+              },
+              "container_name": {
+                "type": "string"
+              },
+              "blob_name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "query": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "max-size-MB": {
+          "type": "number"
+        },
+        "max-files": {
+          "type": "integer"
+        },
+        "allowed-formats": {
+          "type": "array"
+        }
+      }
+    },
+    "BlueprintOutputObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "regular",
+            "link"
+          ]
+        },
+        "quick": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "Blueptint Output Object"
+    },
+    "BlueprintEnvReferenceObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "labels-selector": {
+          "type": "string"
+        }
+      },
+      "title": "Blueptint Environment Reference Object"
+    },
+    "BlueprintResourceRequirementObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "selector": {
+          "$ref": "#/definitions/ResourceSelectorObject"
+        }
+      },
+      "required": [
+        "selector"
+      ],
+      "title": "Blueptint Resource Requirement"
+    },
+    "ResourceSelectorObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Blueptint Resource Selector"
+    },
+    "InstructionsSourceObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "store": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "store"
+      ],
+      "title": "InstructionsSource"
+    },
+    "LayoutSourceObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "store": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "store"
+      ],
+      "title": "LayoutSource"
+    }
+  }
+}
