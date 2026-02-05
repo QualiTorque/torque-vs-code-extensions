@@ -79,13 +79,13 @@
                                             "type": "string"
                                         }
                                     },
-                                    "required": ["path"],
-                                    "title": "Blueprint Icon"
+                                    "required": ["path"]
                                 },
                                 {
                                     "type": "null"
                                 }
-                            ]
+                            ],
+                            "title": "Blueprint Icon"
                         },
                         "blueprint-labels": {
                             "type": "array",
