@@ -70,7 +70,22 @@
                             "type": "boolean"
                         },
                         "icon": {
-                            "type": "string"
+                            "oneOf": [
+                                {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "path": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": ["path"],
+                                    "title": "Blueprint Icon"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
                         },
                         "blueprint-labels": {
                             "type": "array",
