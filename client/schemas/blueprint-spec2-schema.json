@@ -849,16 +849,16 @@
                         "user",
                         "account_channels"
                     ]
+                },
+                "groups": {
+                    "$ref": "#/definitions/GrainConditionChannelApproversObject"
+                },
+                "users": {
+                    "$ref": "#/definitions/GrainConditionChannelApproversObject"
+                },
+                "names": {
+                    "$ref": "#/definitions/GrainConditionChannelApproversObject"
                 }
-            },
-            "groups": {
-                "$ref": "#/definitions/GrainConditionChannelApproversObject"
-            },
-            "users": {
-                "$ref": "#/definitions/GrainConditionChannelApproversObject"
-            },
-            "names": {
-                "$ref": "#/definitions/GrainConditionChannelApproversObject"
             },
             "required": [
                 "type"
