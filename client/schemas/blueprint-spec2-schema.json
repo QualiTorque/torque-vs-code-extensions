@@ -876,7 +876,12 @@
                 }
             },
             "then": {
-                "required": ["groups"]
+                "required": ["groups"],
+                "properties": {
+                    "groups": true,
+                    "users": false,
+                    "names": false
+                }
             },
             "else": {
                 "if": {
@@ -887,7 +892,12 @@
                     }
                 },
                 "then": {
-                    "required": ["users"]
+                    "required": ["users"],
+                    "properties": {
+                        "groups": false,
+                        "users": true,
+                        "names": false
+                    }
                 },
                 "else": {
                     "if": {
@@ -898,7 +908,12 @@
                         }
                     },
                     "then": {
-                        "required": ["names"]
+                        "required": ["names"],
+                        "properties": {
+                            "groups": false,
+                            "users": false,
+                            "names": true
+                        }
                     }
                 }
             }
