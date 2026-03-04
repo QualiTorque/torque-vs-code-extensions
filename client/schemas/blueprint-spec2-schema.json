@@ -252,6 +252,9 @@
                         "aws-cdk"
                     ]
                 },
+                "condition": {
+                    "$ref": "#/definitions/GrainConditions"
+                },
                 "env-labels": {
                     "$ref": "#/definitions/GrainLabels"
                 },
@@ -796,6 +799,95 @@
                     }
                 }
             }
+        },
+        "GrainConditions": {
+            "type":"array",
+            "additionalProperties": false,
+            "maxLength": 1,
+            "items": {
+                "$ref": "#/definitions/GrainConditionObject"
+            }
+        },
+        "GrainConditionObject": {
+            "type":"object",
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [ 
+                        "approval"
+                    ]
+                },
+                "message": {
+                    "type": "string"
+                },
+                "channels": {
+                    "type": "array",
+                    "additionalProperties": false,
+                    "items": {
+                        "$ref": "#/definitions/GrainConditionChannelObject"
+                    }
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "dependentRequired": {
+                "approval": [
+                    "channels"
+                ]
+            }
+        },
+        "GrainConditionChannelObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "group",
+                        "user",
+                        "account_channels"
+                    ]
+                }
+            },
+            "groups": {
+                "$ref": "#/definitions/GrainConditionChannelApproversObject"
+            },
+            "users": {
+                "$ref": "#/definitions/GrainConditionChannelApproversObject"
+            },
+            "names": {
+                "$ref": "#/definitions/GrainConditionChannelApproversObject"
+            },
+            "required": [
+                "type"
+            ],
+            "dependentRequired": {
+                "group": [
+                    "groups"
+                ],
+                "user": [
+                    "users"
+                ],
+                "account_channels": [
+                    "names"
+                ]
+            }
+        },
+        "GrainConditionChannelApproversObject": {
+            "oneOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "maxLength": 250
+                    }
+                },
+                {
+                    "type": "string"
+                }
+            ]
         },
         "EnvironmentLabel": {
            "type": "object",
