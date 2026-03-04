@@ -832,10 +832,15 @@
             "required": [
                 "type"
             ],
-            "dependencies": {
-                "approval": [
-                    "channels"
-                ]
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "approval"
+                    }
+                }
+            },
+            "then": {
+                "required": ["channels"]
             }
         },
         "GrainConditionChannelObject": {
@@ -863,16 +868,39 @@
             "required": [
                 "type"
             ],
-            "dependencies": {
-                "group": [
-                    "groups"
-                ],
-                "user": [
-                    "users"
-                ],
-                "account_channels": [
-                    "names"
-                ]
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "group"
+                    }
+                }
+            },
+            "then": {
+                "required": ["groups"]
+            },
+            "else": {
+                "if": {
+                    "properties": {
+                        "type": {
+                            "const": "user"
+                        }
+                    }
+                },
+                "then": {
+                    "required": ["users"]
+                },
+                "else": {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "account_channels"
+                            }
+                        }
+                    },
+                    "then": {
+                        "required": ["names"]
+                    }
+                }
             }
         },
         "GrainConditionChannelApproversObject": {
