@@ -1473,6 +1473,9 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "steps": {
+                    "$ref": "#/definitions/LaunchFormStepsObject"
+                },
                 "inputs": {
                     "type": "array",
                     "items": {
@@ -1505,12 +1508,43 @@
                     "description": "The name of the input field"
                 },
                 "visible": {
-                    "type": "string",
-                    "description": "Conditional visibility expression using Jinja2 template syntax"
+                    "type": ["string", "boolean"],
+                    "description": "Conditional visibility expression using Liquid template syntax"
                 }
             },
             "required": ["name"],
             "title": "Launch Form Input Object"
+        },
+        "LaunchFormStepObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "visible": {
+                    "type": ["string", "boolean"],
+                    "description": "Step visibility flag or Liquid expression"
+                }
+            },
+            "required": ["visible"],
+            "title": "Launch Form Step Object"
+        },
+        "LaunchFormStepsObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "title": {
+                    "$ref": "#/definitions/LaunchFormStepObject"
+                },
+                "ownersAndCollaborators": {
+                    "$ref": "#/definitions/LaunchFormStepObject"
+                },
+                "tags": {
+                    "$ref": "#/definitions/LaunchFormStepObject"
+                },
+                "workflows": {
+                    "$ref": "#/definitions/LaunchFormStepObject"
+                }
+            },
+            "title": "Launch Form Steps Object"
         },
         "BlueprintLabelObject": {
             "type": "object",
@@ -1549,12 +1583,30 @@
                 "sections": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/LaunchFormInputObject"
+                        "$ref": "#/definitions/LaunchFormSectionObject"
                     } 
                 }
             },
             "required": ["name", "inputs"],
             "title": "Launch Form Category Object"
+        },
+        "LaunchFormSectionObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The display name of the section"
+                },
+                "inputs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LaunchFormInputObject"
+                    }
+                }
+            },
+            "required": ["name", "inputs"],
+            "title": "Launch Form Section Object"
         }
     }
 }
