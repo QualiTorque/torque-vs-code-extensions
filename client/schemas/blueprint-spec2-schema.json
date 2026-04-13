@@ -1507,6 +1507,14 @@
                     "type": "string",
                     "description": "The name of the input field"
                 },
+                "type": {
+                    "type": "string",
+                    "description": "Special launch form input type"
+                },
+                "header": {
+                    "type": "string",
+                    "description": "Comma separated header for object input type"
+                },
                 "visible": {
                     "type": ["string", "boolean"],
                     "description": "Conditional visibility expression using Liquid template syntax"
@@ -1574,6 +1582,10 @@
                     "type": "string",
                     "description": "The display name of the category"
                 },
+                "icon": {
+                    "type": "string",
+                    "description": "Icon name for the category"
+                },
                 "inputs": {
                     "type": "array",
                     "items": {
@@ -1587,7 +1599,21 @@
                     } 
                 }
             },
-            "required": ["name", "inputs"],
+            "allOf": [
+                {
+                    "required": ["name"]
+                },
+                {
+                    "anyOf": [
+                        {
+                            "required": ["inputs"]
+                        },
+                        {
+                            "required": ["sections"]
+                        }
+                    ]
+                }
+            ],
             "title": "Launch Form Category Object"
         },
         "LaunchFormSectionObject": {
@@ -1598,6 +1624,18 @@
                     "type": "string",
                     "description": "The display name of the section"
                 },
+                "icon": {
+                    "type": "string",
+                    "description": "Icon name for the section"
+                },
+                "default_open": {
+                    "type": "boolean",
+                    "description": "Whether the section should be expanded by default"
+                },
+                "type": {
+                    "type": "string",
+                    "description": "Special section type, for example duration"
+                },
                 "inputs": {
                     "type": "array",
                     "items": {
@@ -1605,7 +1643,21 @@
                     }
                 }
             },
-            "required": ["name", "inputs"],
+            "allOf": [
+                {
+                    "required": ["name"]
+                },
+                {
+                    "anyOf": [
+                        {
+                            "required": ["inputs"]
+                        },
+                        {
+                            "required": ["type"]
+                        }
+                    ]
+                }
+            ],
             "title": "Launch Form Section Object"
         }
     }
