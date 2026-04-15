@@ -1247,6 +1247,10 @@
                         ]
                     }
                 },
+                "searchable": {
+                    "type": "boolean",
+                    "description": "When true, indicates that the input source supports search. The UI will collect a search pattern from the user before querying allowed values."
+                },
                 "depends-on": {
                     "type": "string",
                     "pattern": "^((.+)(,\\s*)?)+[^,]$"
