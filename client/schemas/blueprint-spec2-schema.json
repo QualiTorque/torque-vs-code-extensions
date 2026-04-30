@@ -318,6 +318,9 @@
                 },
                 "tf-version": {
                     "type": "string"
+                },
+                "when": {
+                    "type": "string"
                 }
             },
             "required": [
