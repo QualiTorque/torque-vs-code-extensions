@@ -70,7 +70,22 @@
                             "type": "boolean"
                         },
                         "icon": {
-                            "type": "string"
+                            "oneOf": [
+                                {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "path": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": ["path"]
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Blueprint Icon"
                         },
                         "blueprint-labels": {
                             "type": "array",
@@ -288,6 +303,9 @@
                         "aws-cdk"
                     ]
                 },
+                "condition": {
+                    "$ref": "#/definitions/GrainConditions"
+                },
                 "env-labels": {
                     "$ref": "#/definitions/GrainLabels"
                 },
@@ -299,6 +317,9 @@
                     "pattern": "^((.+)(,\\s*)?)+[^,]$"
                 },
                 "tf-version": {
+                    "type": "string"
+                },
+                "when": {
                     "type": "string"
                 }
             },
@@ -845,6 +866,138 @@
                 }
             }
         },
+        "GrainConditions": {
+            "type":"array",
+            "additionalProperties": false,
+            "maxLength": 1,
+            "items": {
+                "$ref": "#/definitions/GrainConditionObject"
+            }
+        },
+        "GrainConditionObject": {
+            "type":"object",
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [ 
+                        "approval"
+                    ]
+                },
+                "message": {
+                    "type": "string"
+                },
+                "channels": {
+                    "type": "array",
+                    "additionalProperties": false,
+                    "items": {
+                        "$ref": "#/definitions/GrainConditionChannelObject"
+                    }
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "approval"
+                    }
+                }
+            },
+            "then": {
+                "required": ["channels"]
+            }
+        },
+        "GrainConditionChannelObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "group",
+                        "user",
+                        "account_channels"
+                    ]
+                },
+                "groups": {
+                    "$ref": "#/definitions/GrainConditionChannelApproversObject"
+                },
+                "users": {
+                    "$ref": "#/definitions/GrainConditionChannelApproversObject"
+                },
+                "names": {
+                    "$ref": "#/definitions/GrainConditionChannelApproversObject"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "group"
+                    }
+                }
+            },
+            "then": {
+                "required": ["groups"],
+                "properties": {
+                    "groups": true,
+                    "users": false,
+                    "names": false
+                }
+            },
+            "else": {
+                "if": {
+                    "properties": {
+                        "type": {
+                            "const": "user"
+                        }
+                    }
+                },
+                "then": {
+                    "required": ["users"],
+                    "properties": {
+                        "groups": false,
+                        "users": true,
+                        "names": false
+                    }
+                },
+                "else": {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "account_channels"
+                            }
+                        }
+                    },
+                    "then": {
+                        "required": ["names"],
+                        "properties": {
+                            "groups": false,
+                            "users": false,
+                            "names": true
+                        }
+                    }
+                }
+            }
+        },
+        "GrainConditionChannelApproversObject": {
+            "oneOf": [
+                {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "maxLength": 250
+                    }
+                },
+                {
+                    "type": "string"
+                }
+            ]
+        },
         "EnvironmentLabel": {
            "type": "object",
            "additionalProperties": false,
@@ -1101,6 +1254,10 @@
                         ]
                     }
                 },
+                "searchable": {
+                    "type": "boolean",
+                    "description": "When true, indicates that the input source supports search. The UI will collect a search pattern from the user before querying allowed values."
+                },
                 "depends-on": {
                     "type": "string",
                     "pattern": "^((.+)(,\\s*)?)+[^,]$"
@@ -1330,6 +1487,9 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "steps": {
+                    "$ref": "#/definitions/LaunchFormStepsObject"
+                },
                 "inputs": {
                     "type": "array",
                     "items": {
@@ -1361,13 +1521,52 @@
                     "type": "string",
                     "description": "The name of the input field"
                 },
-                "visible": {
+                "type": {
                     "type": "string",
-                    "description": "Conditional visibility expression using Jinja2 template syntax"
+                    "description": "Special launch form input type"
+                },
+                "header": {
+                    "type": "string",
+                    "description": "Comma separated header for object input type"
+                },
+                "visible": {
+                    "type": ["string", "boolean"],
+                    "description": "Conditional visibility expression using Liquid template syntax"
                 }
             },
             "required": ["name"],
             "title": "Launch Form Input Object"
+        },
+        "LaunchFormStepObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "visible": {
+                    "type": ["string", "boolean"],
+                    "description": "Step visibility flag or Liquid expression"
+                }
+            },
+            "required": ["visible"],
+            "title": "Launch Form Step Object"
+        },
+        "LaunchFormStepsObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "title": {
+                    "$ref": "#/definitions/LaunchFormStepObject"
+                },
+                "ownersAndCollaborators": {
+                    "$ref": "#/definitions/LaunchFormStepObject"
+                },
+                "tags": {
+                    "$ref": "#/definitions/LaunchFormStepObject"
+                },
+                "workflows": {
+                    "$ref": "#/definitions/LaunchFormStepObject"
+                }
+            },
+            "title": "Launch Form Steps Object"
         },
         "BlueprintLabelObject": {
             "type": "object",
@@ -1397,6 +1596,10 @@
                     "type": "string",
                     "description": "The display name of the category"
                 },
+                "icon": {
+                    "type": "string",
+                    "description": "Icon name for the category"
+                },
                 "inputs": {
                     "type": "array",
                     "items": {
@@ -1406,12 +1609,70 @@
                 "sections": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/LaunchFormInputObject"
+                        "$ref": "#/definitions/LaunchFormSectionObject"
                     } 
                 }
             },
-            "required": ["name", "inputs"],
+            "allOf": [
+                {
+                    "required": ["name"]
+                },
+                {
+                    "anyOf": [
+                        {
+                            "required": ["inputs"]
+                        },
+                        {
+                            "required": ["sections"]
+                        }
+                    ]
+                }
+            ],
             "title": "Launch Form Category Object"
+        },
+        "LaunchFormSectionObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The display name of the section"
+                },
+                "icon": {
+                    "type": "string",
+                    "description": "Icon name for the section"
+                },
+                "default_open": {
+                    "type": "boolean",
+                    "description": "Whether the section should be expanded by default"
+                },
+                "type": {
+                    "type": "string",
+                    "description": "Special section type, for example duration"
+                },
+                "inputs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LaunchFormInputObject"
+                    }
+                }
+            },
+            "allOf": [
+                {
+                    "required": ["name"]
+                },
+                {
+                    "anyOf": [
+                        {
+                            "required": ["inputs"]
+                        },
+                        {
+                            "required": ["type"]
+                        }
+                    ]
+                }
+            ],
+            "title": "Launch Form Section Object"
         },
         "GrainSpecTargetObject": {
             "type": "object",
