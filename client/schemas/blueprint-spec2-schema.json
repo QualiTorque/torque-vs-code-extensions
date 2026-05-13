@@ -1719,14 +1719,14 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-                "cloud_providers": {
+                "cloud-providers": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     },
                     "description": "Filter targets by cloud provider type (e.g. aws, azure). OR logic"
                 },
-                "cloud_identifiers": {
+                "cloud-identifiers": {
                     "type": "array",
                     "items": {
                         "type": "string"
