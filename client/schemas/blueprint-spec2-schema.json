@@ -1405,6 +1405,26 @@
                 "type": {
                     "type": "string"
                 },
+                "provider-name": {
+                    "type": "string"
+                },
+                "provider-type": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "enum": [
+                                "aws",
+                                "azure",
+                                "vcenter",
+                                "intersight",
+                                "kubernetes"
+                            ]
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ]
+                },
                 "attributes":{
                     "type": "array",
                     "items": {
