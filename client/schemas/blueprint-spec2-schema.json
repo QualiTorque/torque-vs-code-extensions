@@ -1521,16 +1521,14 @@
                     "items": {
                         "$ref": "#/definitions/LaunchFormCategoryObject"
                     }
+                },
+                "sections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LaunchFormSectionObject"
+                    }
                 }
             },
-            "oneOf": [
-                {
-                    "required": ["inputs"]
-                },
-                {
-                    "required": ["categories"]
-                }
-            ],
             "title": "LaunchForm Object"
         },
         "LaunchFormInputObject": {
@@ -1616,6 +1614,10 @@
                     "type": "string",
                     "description": "The display name of the category"
                 },
+                "description": {
+                    "type": "string",
+                    "description": "Descriptive text shown under the category"
+                },
                 "icon": {
                     "type": "string",
                     "description": "Icon name for the category"
@@ -1657,6 +1659,10 @@
                 "name": {
                     "type": "string",
                     "description": "The display name of the section"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Descriptive text shown under the section"
                 },
                 "icon": {
                     "type": "string",
