@@ -1547,6 +1547,10 @@
                     "type": "string",
                     "description": "Comma separated header for object input type"
                 },
+                "allow-refresh": {
+                    "type": "boolean",
+                    "description": "Show or hide refresh button next to Input-Source type input"
+                },
                 "visible": {
                     "type": ["string", "boolean"],
                     "description": "Conditional visibility expression using Liquid template syntax"
