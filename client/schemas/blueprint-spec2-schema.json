@@ -1211,7 +1211,8 @@
                         "env",
                         "input-source",
                         "file",
-                        "target"
+                        "target",
+                        "resource"
                     ]
                 },
                 "style": {
@@ -1348,6 +1349,10 @@
                 },
                 "target-filters": {
                     "$ref": "#/definitions/TargetFiltersObject"
+                },
+                "resource-selector": {
+                    "$ref": "#/definitions/BlueprintInputResourceSelectorObject",
+                    "description": "Selection criteria constraining which inventory resources may be chosen for an input of type 'resource'. Mandatory for 'resource' inputs. Field values may use Liquid expressions."
                 }
             }
         },
@@ -1373,7 +1378,7 @@
             "required": [
                 "value"
             ],
-            "title": "Blueptint Output Object"
+            "title": "Blueprint Output Object"
         },
         "BlueprintEnvReferenceObject": {
             "type": "object",
@@ -1383,24 +1388,25 @@
                     "type": "string"
                 }
             },
-            "title": "Blueptint Environment Reference Object"
+            "title": "Blueprint Environment Reference Object"
         },
         "BlueprintResourceRequirementObject": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
                 "selector": {
-                    "$ref": "#/definitions/ResourceSelectorObject"
+                    "$ref": "#/definitions/ResourceSelectorObject",
+                    "description": "Selection criteria constraining which inventory resources may be chosen for the requirement"
                 }
             },
             "required": [
                 "selector"
             ],
-            "title": "Blueptint Resource Requirement"
+            "title": "Blueprint Resource Requirement"
         },
-        "ResourceSelectorObject": {
+        "ResourceSelectorBaseObject": {
+            "$comment": "Shared selection criteria for resource selectors, inherited via allOf by referencing objects. Deliberately does not set 'additionalProperties', so that it stays open for the inheritors to extend.",
             "type": "object",
-            "additionalProperties": false,
             "properties": {
                 "type": {
                     "type": "string"
@@ -1440,12 +1446,6 @@
                             }
                         }
                     }
-                },
-                "quantity": {
-                    "type": [
-                        "integer",
-                        "string"
-                    ]
                 }
             },
             "anyOf": [
@@ -1458,9 +1458,58 @@
                     "required": [
                         "attributes"
                     ]
+                },
+                {
+                    "required": [
+                        "provider-type"
+                    ]
+                },
+                {
+                    "required": [
+                        "provider-name"
+                    ]
+                }
+            ]
+        },
+        "ResourceSelectorObject": {
+            "$comment": "Extends ResourceSelectorBaseObject with 'quantity'. The inherited properties are re-listed here with empty schemas ({}) only so that 'additionalProperties': false does not reject them: 'additionalProperties' considers only the 'properties' declared in the same schema object and is blind to those coming from the $ref'd base. If this schema is ever moved to draft 2019-09 or later, delete these stubs and replace 'additionalProperties': false with 'unevaluatedProperties': false.",
+            "allOf": [
+                {
+                    "$ref": "#/definitions/ResourceSelectorBaseObject"
                 }
             ],
-            "title": "Blueptint Resource Selector"
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "type": {},
+                "provider-name": {},
+                "provider-type": {},
+                "attributes": {},
+                "quantity": {
+                    "type": [
+                        "integer",
+                        "string"
+                    ]
+                }
+            },
+            "title": "Blueprint Resource Selector"
+        },
+        "BlueprintInputResourceSelectorObject": {
+            "$comment": "Extends ResourceSelectorBaseObject, adding no fields of its own - notably no 'quantity', which is a resource-requirement concern. See the $comment on ResourceSelectorObject for why the inherited properties are re-listed with empty schemas ({}).",
+            "allOf": [
+                {
+                    "$ref": "#/definitions/ResourceSelectorBaseObject"
+                }
+            ],
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "type": {},
+                "provider-name": {},
+                "provider-type": {},
+                "attributes": {}
+            },
+            "title": "Blueprint Input Resource Selector"
         },
         "InstructionsSourceObject": {
             "type": "object",
