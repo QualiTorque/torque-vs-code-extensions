@@ -67,7 +67,22 @@
                             "type": "string"
                         },
                         "self-service": {
-                            "type": "boolean"
+                            "oneOf": [
+                                {
+                                    "type": "boolean"
+                                },
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Blueprint self-service",
+                            "description": "Whether the blueprint is published in the self-service catalog. Either a boolean, which applies to every space the repository is connected to, or a list of the space names to publish the blueprint in (space names are case insensitive, and spaces that are not listed are left unpublished). Once this field is set, it can no longer be changed through the API or the UI in any space."
                         },
                         "estimated-ccu": {
                             "type": "string"
