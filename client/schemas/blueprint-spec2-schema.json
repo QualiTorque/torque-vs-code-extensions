@@ -69,6 +69,9 @@
                         "self-service": {
                             "type": "boolean"
                         },
+                        "estimated-ccu": {
+                            "type": "string"
+                        },
                         "icon": {
                             "oneOf": [
                                 {
