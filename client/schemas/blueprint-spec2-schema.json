@@ -1415,10 +1415,23 @@
                 "selector": {
                     "$ref": "#/definitions/ResourceSelectorObject",
                     "description": "Selection criteria constraining which inventory resources may be chosen for the requirement"
+                },
+                "reference": {
+                    "type": "string",
+                    "description": "One or more inventory resource reference ids to reserve for the requirement, as a single reference id or a JSON-array string of reference ids. Liquid expressions are allowed."
                 }
             },
-            "required": [
-                "selector"
+            "oneOf": [
+                {
+                    "required": [
+                        "selector"
+                    ]
+                },
+                {
+                    "required": [
+                        "reference"
+                    ]
+                }
             ],
             "title": "Blueprint Resource Requirement"
         },
@@ -1525,7 +1538,10 @@
                 "type": {},
                 "provider-name": {},
                 "provider-type": {},
-                "attributes": {}
+                "attributes": {},
+                "reservable-only": {
+                    "type": "boolean"
+                }
             },
             "title": "Blueprint Input Resource Selector"
         },
