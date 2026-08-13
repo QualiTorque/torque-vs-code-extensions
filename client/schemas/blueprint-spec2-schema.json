@@ -1042,6 +1042,58 @@
             "type": "object",
             "additionalProperties": true
         },
+        "Toleration": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "description": "Taint key that the toleration applies to. Omit together with an 'Exists' operator to tolerate all taints."
+                },
+                "operator": {
+                    "type": "string",
+                    "enum": [
+                        "Equal",
+                        "Exists"
+                    ],
+                    "description": "'Equal' matches the taint key to the given value, 'Exists' matches the key regardless of its value."
+                },
+                "value": {
+                    "type": "string",
+                    "description": "Taint value to match. Required when the operator is 'Equal'."
+                },
+                "effect": {
+                    "type": "string",
+                    "enum": [
+                        "NoSchedule",
+                        "PreferNoSchedule",
+                        "NoExecute"
+                    ],
+                    "description": "Taint effect to tolerate. Leave empty to tolerate all effects."
+                },
+                "toleration-seconds": {
+                    "type": "integer",
+                    "description": "For a 'NoExecute' taint, how long the pod stays bound to the node after the taint is added."
+                }
+            },
+            "if": {
+                "properties": {
+                    "operator": {
+                        "const": "Equal"
+                    }
+                },
+                "required": [
+                    "operator"
+                ]
+            },
+            "then": {
+                "required": [
+                    "key",
+                    "value"
+                ]
+            },
+            "title": "Toleration"
+        },
         "GrainInput": {
             "type": "object",
             "additionalProperties": false,
@@ -1131,6 +1183,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/NodeSelector"
+                    }
+                },
+                "tolerations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Toleration"
                     }
                 },
                 "permissions": {
