@@ -154,7 +154,6 @@ class GrainSpecNode(ObjectNode):
         region: TextNode = None
         service_account: TextNode = None
         name: TextNode = None
-        image: TextNode = None
         kubernetes: TextNode = None
 
         def _get_field_mapping(self) -> Dict[str, str]:
@@ -179,7 +178,6 @@ class GrainSpecNode(ObjectNode):
 
     source: SpecSourceNode = None
     sources: SpecSourcesSequence = None
-    host: SpecHostNode = None
     inputs: TextMappingSequence = None
     outputs: ScalarNodesSequence = None
     commands: TextNodesSequence = None
