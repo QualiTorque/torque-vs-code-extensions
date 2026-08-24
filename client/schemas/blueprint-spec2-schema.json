@@ -54,6 +54,18 @@
                                     "type": "boolean"
                                 }
                             }
+                        },
+                        "description": {
+                            "type": "string"
+                        },
+                        "tags": {
+                            "$ref": "#/definitions/StringMap"
+                        },
+                        "env_references_values": {
+                            "$ref": "#/definitions/StringMap"
+                        },
+                        "labels": {
+                            "$ref": "#/definitions/StringMap"
                         }
                     },
                     "title": "environment metadata"
@@ -142,8 +154,11 @@
                         "triggers":{
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/WorkflowTrigger"  
+                                "$ref": "#/definitions/WorkflowTrigger"
                             }
+                        },
+                        "enabled": {
+                            "type": "boolean"
                         }
                     },
                     "title": "workflow metadata"
@@ -156,7 +171,7 @@
                             "type": "string"
                         },
                         "source": {
-                            "$ref": "#/definitions/InstructionsSourceObject"
+                            "$ref": "#/definitions/StoreFileSourceObject"
                         }
                     },
                     "oneOf": [
@@ -185,15 +200,11 @@
                             "title": "Exclude From Layout"
                         },
                         "source": {
-                            "$ref": "#/definitions/LayoutSourceObject"
+                            "$ref": "#/definitions/StoreFileSourceObject"
                         }
                     },
-                    "oneOf": [                       
-                        {
-                            "required": [
-                                "source"
-                            ]
-                        }
+                    "required": [
+                        "source"
                     ],
                     "title": "Layout"
                 },
@@ -214,22 +225,7 @@
                     "title": "Inputs"
                 },
                 "labels": {
-                    "type":"array",
-                    "items": {
-                        "allOf": [
-                            {
-                                "oneOf": [
-                                    {
-                                        "$ref": "#/definitions/EnvironmentLabel"
-                                    },
-                                    {
-                                        "type": "string",
-                                        "pattern": "^{?[a-zA-Z0-9-_.@#\\s]+}?$"
-                                    }
-                                ]
-                            }
-                        ]
-                    },
+                    "$ref": "#/definitions/EnvironmentLabelsArray",
                     "title": "Labels"
                 },
                 "outputs": {
@@ -292,6 +288,66 @@
                 "customization": {
                     "$ref": "#/definitions/CustomizationObject",
                     "title": "Customization"
+                },
+                "api_access": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "service_account": {
+                            "type": "string",
+                            "description": "Email of the service account whose identity the environment's auto-minted Torque API token assumes. The presence of this section with a non-empty service_account requests API access."
+                        }
+                    },
+                    "required": [
+                        "service_account"
+                    ],
+                    "title": "API Access"
+                },
+                "family": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "members": {
+                            "type": "object",
+                            "patternProperties": {
+                                "^.+$": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "properties": {
+                                        "source": {
+                                            "$ref": "#/definitions/GrainSpecSourceObject"
+                                        }
+                                    },
+                                    "required": [
+                                        "source"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "title": "Blueprint Family"
+                },
+                "template": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "placeholders": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "path": {
+                                        "type": "string"
+                                    },
+                                    "hint": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "title": "Blueprint Template"
                 }
             },
             "required": [
@@ -310,7 +366,6 @@
                         "helm",
                         "ansible",
                         "blueprint",
-                        "arm",
                         "cloudformation",
                         "kubernetes",
                         "shell",
@@ -360,6 +415,15 @@
                 "post-tf-plan": {
                     "$ref": "#/definitions/ScriptObject"
                 },
+                "pre-tofu-init": {
+                    "$ref": "#/definitions/ScriptObject"
+                },
+                "pre-tofu-destroy": {
+                    "$ref": "#/definitions/ScriptObject"
+                },
+                "post-tofu-plan": {
+                    "$ref": "#/definitions/ScriptObject"
+                },
                 "pre-ansible-run": {
                     "$ref": "#/definitions/ScriptOutputsObject"
                 },
@@ -377,22 +441,11 @@
                 }
             }
         },
-        "ScriptSource": {
-            "type": "object",
-            "properties": {
-                "path": {
-                    "type": "string"
-                },
-                "store": {
-                    "type": "string"
-                }
-            }
-        },
         "ScriptObject": {
             "type": "object",
             "properties": {
                 "source": {
-                    "$ref": "#/definitions/ScriptSource"
+                    "$ref": "#/definitions/GrainSpecSourceObject"
                 },
                 "arguments": {
                     "type": "string"
@@ -422,6 +475,41 @@
                 },
                 "key-prefix": {
                     "type": "string"
+                },
+                "skip-region-validation": {
+                    "type": "boolean"
+                },
+                "resource-group-name": {
+                    "type": "string"
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "organization": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "workspaces": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "prefix": {
+                                "type": "string"
+                            },
+                            "project": {
+                                "type": "string"
+                            },
+                            "tags": {
+                                "$ref": "#/definitions/StringMap"
+                            }
+                        }
+                    }
                 }
             }
         },
@@ -452,7 +540,7 @@
                     }
                 },
                 "source": {
-                    "$ref": "#/definitions/ScriptSource"
+                    "$ref": "#/definitions/GrainSpecSourceObject"
                 },
                 "arguments": {
                     "type": "string"
@@ -502,7 +590,6 @@
                 "event":{
                     "type": "array",
                     "uniqueItems": true,
-                    "additionalItems": false,
                     "items": {
                         "type": "string",
                         "enum": [
@@ -611,7 +698,14 @@
                     "$ref": "#/definitions/GrainSpecHostObject"
                 },
                 "target": {
-                    "$ref": "#/definitions/GrainSpecTargetObject"
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/definitions/GrainSpecTargetObject"
+                        }
+                    ]
                 },
                 "host": {
                     "$ref": "#/definitions/GrainSpecHostObject"
@@ -625,23 +719,13 @@
                 "values-files": {
                     "type": "array",
                     "items": {
-                        "type": "object",
-                        "properties": {
-                            "source": {
-                                "$ref": "#/definitions/ScriptSource"
-                            }
-                        }
+                        "$ref": "#/definitions/SourceFileObject"
                     }
                 },
                 "workspace-directories": {
                     "type": "array",
                     "items": {
-                        "type": "object",
-                        "properties": {
-                            "source": {
-                                "$ref": "#/definitions/ScriptSource"
-                            }
-                        }
+                        "$ref": "#/definitions/SourceFileObject"
                     }
                 },
                 "outputs": {
@@ -723,12 +807,13 @@
                 "tfvars-files": {
                     "type": "array",
                     "items": {
-                        "type": "object",
-                        "properties": {
-                            "source": {
-                                "$ref": "#/definitions/TfVarsFileSourceObject"
-                            }
-                        }
+                        "$ref": "#/definitions/SourceFileObject"
+                    }
+                },
+                "opentofuvars-files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SourceFileObject"
                     }
                 },
                 "template-storage": {
@@ -749,7 +834,23 @@
                     "type": "string"
                 },
                 "deployment-engine":{
-                    "type": "string"
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "name"
+                            ]
+                        }
+                    ]
                 },
                 "on-destroy": {
                     "$ref": "#/definitions/AnsibleOnDestroy"
@@ -757,17 +858,16 @@
                 "target-resource": {
                     "type": "array",
                     "items": {
-                        "type": "string",
-                        "additionalProperties": true
+                        "type": "string"
                     }
+                },
+                "stack-name-prefix": {
+                    "type": "string"
+                },
+                "env_configuration": {
+                    "type": "boolean"
                 }
             },
-            "oneOf": [
-                {
-                    "required": [
-                    ]
-                }
-            ],
             "title": "Grain Spec Object"
         },
         "ShellGrainFiles": {
@@ -788,6 +888,9 @@
                     "commit": {
                         "type": "string"
                     },
+                    "tag": {
+                        "type": "string"
+                    },
                     "name": {
                         "type": "string"
                     }
@@ -799,11 +902,9 @@
             "additionalProperties": false,
             "properties": {
                 "deploy": {
-                    "type": "object",
                     "$ref": "#/definitions/ActivityObject"
                 },
                 "destroy": {
-                    "type": "object",
                     "$ref": "#/definitions/ActivityObject"
                 }
             }
@@ -847,46 +948,15 @@
             "additionalProperties": false,
             "properties": {
                 "on-success": {
-                    "type":"array",
-                    "items": {
-                        "allOf": [
-                            {
-                                "oneOf": [
-                                    {
-                                        "$ref": "#/definitions/EnvironmentLabel"
-                                    },
-                                    {
-                                        "type": "string",
-                                        "pattern": "^{?[a-zA-Z0-9-_.@#\\s]+}?$"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
+                    "$ref": "#/definitions/EnvironmentLabelsArray"
                 },
                 "on-failure": {
-                    "type":"array",
-                    "items": {
-                        "allOf": [
-                            {
-                                "oneOf": [
-                                    {
-                                        "$ref": "#/definitions/EnvironmentLabel"
-                                    },
-                                    {
-                                        "type": "string",
-                                        "pattern": "^{?[a-zA-Z0-9-_.@#\\s]+}?$"
-                                    }
-                                ]
-                            }
-                        ]
-                    }
+                    "$ref": "#/definitions/EnvironmentLabelsArray"
                 }
             }
         },
         "GrainConditions": {
             "type":"array",
-            "additionalProperties": false,
             "maxLength": 1,
             "items": {
                 "$ref": "#/definitions/GrainConditionObject"
@@ -1030,17 +1100,44 @@
                 }
             } 
         },
-        "PodLabels": {
-            "type": "object",
-            "additionalProperties": true
+        "EnvironmentLabelsArray": {
+            "type": "array",
+            "items": {
+                "oneOf": [
+                    {
+                        "$ref": "#/definitions/EnvironmentLabel"
+                    },
+                    {
+                        "type": "string",
+                        "pattern": "^{?[a-zA-Z0-9-_.@#\\s]+}?$"
+                    }
+                ]
+            },
+            "title": "Environment Labels Array"
         },
-        "PodAnnotations": {
+        "KeyValuePairs": {
             "type": "object",
-            "additionalProperties": true
+            "additionalProperties": true,
+            "title": "Key/Value Pairs"
         },
-        "NodeSelector": {
+        "StringMap": {
             "type": "object",
-            "additionalProperties": true
+            "additionalProperties": {
+                "type": "string"
+            },
+            "title": "String Map"
+        },
+        "TemplateParamsObject": {
+            "type": "object",
+            "additionalProperties": {
+                "type": [
+                    "string",
+                    "number",
+                    "boolean"
+                ]
+            },
+            "description": "Static template params exposed as params.* in Liquid expressions.",
+            "title": "Template Params"
         },
         "Toleration": {
             "type": "object",
@@ -1111,7 +1208,6 @@
         },
         "GrainOutput": {
             "type": "string",
-            "additionalProperties": true,
             "title": "Grain Output"
         },
         "GrainEnvReference": {
@@ -1126,7 +1222,6 @@
         },
         "GrainCommand": {
             "type": "string",
-            "additionalProperties": true,
             "title": "Grain Command"
         },
         "GrainSpecHostObject": {
@@ -1159,6 +1254,21 @@
                 },
                 "use-storage": {
                     "type": "boolean"
+                },
+                "docker": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "permissions": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "secret-path": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
                 }
             },
             "title": "Spec Host Properties"
@@ -1170,19 +1280,19 @@
                 "pod-labels": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PodLabels"
+                        "$ref": "#/definitions/KeyValuePairs"
                     }
                 },
                 "pod-annotations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/PodAnnotations"
+                        "$ref": "#/definitions/KeyValuePairs"
                     }
                 },
                 "node-selector": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/NodeSelector"
+                        "$ref": "#/definitions/KeyValuePairs"
                     }
                 },
                 "tolerations": {
@@ -1230,12 +1340,21 @@
                 },
                 "resource-type": {
                     "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "chart-version": {
+                    "type": "string"
+                },
+                "path-in-archive": {
+                    "type": "string"
                 }
             },
             "required": [
                 "path"
             ],
-            "title": "PurpleSource"
+            "title": "Grain Source Object"
         },
         "GrainSpecSources": {
             "type": "array",
@@ -1243,30 +1362,14 @@
                 "$ref": "#/definitions/GrainSpecSourceObject"
             }
         },
-        "TfVarsFileSourceObject": {
+        "SourceFileObject": {
             "type": "object",
-            "additionalProperties": false,
             "properties": {
-                "store": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
-                },
-                "commit": {
-                    "type": "string"
-                },
-                "tag": {
-                    "type": "string"
-                },
-                "branch": {
-                    "type": "string"
+                "source": {
+                    "$ref": "#/definitions/GrainSpecSourceObject"
                 }
             },
-            "required": [
-                "path"
-            ],
-            "title": "TfVarsFileSource"
+            "title": "Source File Object"
         },
         "BlueprintInputObject": {
             "title": "Blueprint Input Object",
@@ -1280,13 +1383,12 @@
                     "type": "string",
                     "enum": [
                         "string",
-                        "execution-host",
                         "agent",
                         "credentials",
                         "parameter",
-                        "env",
                         "input-source",
                         "file",
+                        "dictionary",
                         "target",
                         "resource"
                     ]
@@ -1309,17 +1411,22 @@
                     "type": [
                         "integer",
                         "string",
-                        "boolean"
-                    ]
+                        "boolean",
+                        "object"
+                    ],
+                    "description": "Pre-fills the launch-form field; never affects required-ness (required = no 'pattern'). A non-empty default must itself satisfy the pattern. 'default: \"\"' is a real empty-string default on a still-required field, not 'optional' - use a '^$|' pattern for that."
                 },
                 "sensitive": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Masks the value in UI and API. The launch form pre-fills sensitive inputs empty regardless of any default, so a sensitive input is only optional with an empty-matching pattern."
                 },
                 "pattern": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Regex for the value, enforced client-side in the launch form. The form marks an input REQUIRED if and only if it has no pattern; to make an input optional (blank allowed), use a pattern that matches the empty string - convention: a leading '^$|' alternative. Note that 'default: \"\"' does NOT make an input optional."
                 },
                 "validation-description": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Message shown when the value fails 'pattern' (e.g. 'Empty or a URL')."
                 },
                 "allowed-values": {
                     "type": "array",
@@ -1391,6 +1498,58 @@
                             },
                             "expand_query": {
                                 "type": "string"
+                            },
+                            "credential_name": {
+                                "type": "string"
+                            },
+                            "agent_name": {
+                                "type": "string"
+                            },
+                            "resource_type": {
+                                "type": "string"
+                            },
+                            "filter_pattern": {
+                                "type": "string"
+                            },
+                            "filter_datacenter": {
+                                "type": "string"
+                            },
+                            "filter_cluster": {
+                                "type": "string"
+                            },
+                            "datastore_name": {
+                                "type": "string"
+                            },
+                            "datacenter_name": {
+                                "type": "string"
+                            },
+                            "browse_path": {
+                                "type": "string"
+                            },
+                            "show_full_path": {
+                                "type": "string"
+                            },
+                            "preliminary_wildcard_filter": {
+                                "type": "string"
+                            },
+                            "show_datastore_space": {
+                                "type": "string"
+                            },
+                            "show_default_option": {
+                                "type": "string"
+                            },
+                            "default_option_text": {
+                                "type": "string"
+                            },
+                            "sort_by": {
+                                "type": "string"
+                            },
+                            "sort_order": {
+                                "type": "string"
+                            },
+                            "target_name": {
+                                "type": "string",
+                                "description": "Reserved override: a Target name whose Discovery-capability credential/agent the evaluation uses instead of explicit credential/agent overrides."
                             }
                         },
                         "additionalProperties": false
@@ -1449,6 +1608,11 @@
                 "quick": {
                     "type": "boolean",
                     "default": true
+                },
+                "sensitive": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "True if the output value is sensitive (e.g. a password). Affects only how the value is displayed in the UI - the value itself is still sent as-is."
                 }
             },
             "required": [
@@ -1475,8 +1639,25 @@
                     "description": "Selection criteria constraining which inventory resources may be chosen for the requirement"
                 },
                 "reference": {
-                    "type": "string",
-                    "description": "One or more inventory resource reference ids to reserve for the requirement, as a single reference id or a JSON-array string of reference ids. Liquid expressions are allowed."
+                    "oneOf": [
+                        {
+                            "type": "string",
+                            "description": "One or more inventory resource reference ids to reserve for the requirement, as a single reference id or a JSON-array string of reference ids. Liquid expressions are allowed."
+                        },
+                        {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "ids": {
+                                    "type": "string",
+                                    "description": "A single resource reference id or a JSON-array string of reference ids. Liquid expressions are allowed."
+                                }
+                            },
+                            "required": [
+                                "ids"
+                            ]
+                        }
+                    ]
                 }
             },
             "oneOf": [
@@ -1603,7 +1784,7 @@
             },
             "title": "Blueprint Input Resource Selector"
         },
-        "InstructionsSourceObject": {
+        "StoreFileSourceObject": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
@@ -1617,30 +1798,78 @@
             "required": [
                 "path", "store"
             ],
-            "title": "InstructionsSource"
-        },
-        "LayoutSourceObject": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-                "store": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "path", "store"
-            ],
-            "title": "LayoutSource"
+            "title": "Store File Source"
         },
         "CustomizationObject": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
                 "launch-form": {
-                    "$ref": "#/definitions/LaunchFormObject"
+                    "oneOf": [
+                        {
+                            "$ref": "#/definitions/LaunchFormObject"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/LaunchFormObject"
+                            }
+                        }
+                    ]
+                },
+                "inputs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LaunchFormInputObject"
+                    },
+                    "description": "Legacy: input customizations directly under customization."
+                },
+                "params": {
+                    "$ref": "#/definitions/TemplateParamsObject"
+                },
+                "layout": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                        "exclude": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "grains": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "resource-types": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "cards": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        },
+                        "categories": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    },
+                    "description": "Dynamic environment dashboard layout (cards/categories). Loosely validated."
+                },
+                "grains-map": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "Designer canvas layout (node positions, groups, notes). Typically generated by the Torque designer, not hand-written."
                 }
             }
         },
@@ -1668,9 +1897,53 @@
                     "items": {
                         "$ref": "#/definitions/LaunchFormSectionObject"
                     }
+                },
+                "image": {
+                    "type": "string",
+                    "description": "Image URL (https:// or data:image/) shown on the launch form."
+                },
+                "actions": {
+                    "$ref": "#/definitions/LaunchFormActionsObject"
+                },
+                "params": {
+                    "$ref": "#/definitions/TemplateParamsObject"
                 }
             },
             "title": "LaunchForm Object"
+        },
+        "LaunchFormActionObject": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "button"
+                    ]
+                },
+                "url": {
+                    "type": "string"
+                },
+                "httpmethod": {
+                    "type": "string",
+                    "description": "HTTP method for the action: GET, POST, PUT, DELETE or PATCH (case-insensitive). Defaults to GET."
+                },
+                "label": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "url"
+            ],
+            "title": "Launch Form Action Object"
+        },
+        "LaunchFormActionsObject": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/LaunchFormActionObject"
+            },
+            "title": "Launch Form Actions"
         },
         "LaunchFormInputObject": {
             "type": "object",
@@ -1682,6 +1955,15 @@
                 },
                 "type": {
                     "type": "string",
+                    "enum": [
+                        "owner",
+                        "env-name",
+                        "object",
+                        "env-reference",
+                        "date",
+                        "datetime",
+                        "info"
+                    ],
                     "description": "Special launch form input type"
                 },
                 "header": {
@@ -1695,6 +1977,52 @@
                 "visible": {
                     "type": ["string", "boolean"],
                     "description": "Conditional visibility expression using Liquid template syntax"
+                },
+                "display_name": {
+                    "type": "string",
+                    "description": "Display name override for the input."
+                },
+                "allowed-values-details": {
+                    "oneOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    ],
+                    "description": "Per-allowed-value details map (value -> details object), or a list of such maps."
+                },
+                "display-as": {
+                    "type": "string",
+                    "enum": [
+                        "table"
+                    ]
+                },
+                "columns": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "display-name": {
+                                "type": "string"
+                            },
+                            "path": {
+                                "type": "string"
+                            },
+                            "editable": {
+                                "type": "boolean"
+                            }
+                        },
+                        "required": [
+                            "display-name",
+                            "path"
+                        ]
+                    }
                 }
             },
             "required": ["name"],
@@ -1726,6 +2054,12 @@
                     "$ref": "#/definitions/LaunchFormStepObject"
                 },
                 "workflows": {
+                    "$ref": "#/definitions/LaunchFormStepObject"
+                },
+                "general": {
+                    "$ref": "#/definitions/LaunchFormStepObject"
+                },
+                "inputs": {
                     "$ref": "#/definitions/LaunchFormStepObject"
                 }
             },
@@ -1777,7 +2111,13 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/LaunchFormSectionObject"
-                    } 
+                    }
+                },
+                "image": {
+                    "type": "string"
+                },
+                "actions": {
+                    "$ref": "#/definitions/LaunchFormActionsObject"
                 }
             },
             "allOf": [
@@ -1800,6 +2140,7 @@
         "LaunchFormSectionObject": {
             "type": "object",
             "additionalProperties": false,
+            "description": "A section whose inputs are all 'visible: false' still renders as an empty header - keep at least one visible input in it, or remove the section.",
             "properties": {
                 "name": {
                     "type": "string",
@@ -1826,6 +2167,12 @@
                     "items": {
                         "$ref": "#/definitions/LaunchFormInputObject"
                     }
+                },
+                "image": {
+                    "type": "string"
+                },
+                "actions": {
+                    "$ref": "#/definitions/LaunchFormActionsObject"
                 }
             },
             "allOf": [
