@@ -1103,7 +1103,8 @@
                         "string",
                         "number",
                         "boolean",
-                        "object"
+                        "object",
+                        "array"
                     ]
                 }
             },
