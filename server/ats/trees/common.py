@@ -232,24 +232,43 @@ class PropertyNode(MappingNode):
             return val
         else:
             value_class = self.parent.__dataclass_fields__[self.identifier].type
-            if name not in value_class.__dataclass_fields__:
-                raise AttributeError(
-                    f"Value of PropertyNode '{self.identifier}' does not not have attribute '{name}'"
-                )
 
-            return None
+            # the annotation may be a typing.Union (a property accepting either
+            # a scalar shorthand or a nested object): the attribute is known
+            # when any of its members declares it
+            for possible_class in getattr(value_class, "__args__", (value_class,)):
+                if name in getattr(possible_class, "__dataclass_fields__", {}):
+                    return None
+
+            raise AttributeError(
+                f"Value of PropertyNode '{self.identifier}' does not not have attribute '{name}'"
+            )
 
 
 @dataclass
 class ObjectNode(YamlNode, ABC):
+    # _get_field_mapping builds the same dict on every single attribute lookup,
+    # so the result is cached per node class (it only depends on the class)
+    _field_mapping_cache: ClassVar[dict] = {}
+
     def _get_field_mapping(self) -> {str: str}:
         return {}
+
+    def _cached_field_mapping(self) -> {str: str}:
+        node_class = type(self)
+        mapping = ObjectNode._field_mapping_cache.get(node_class)
+
+        if mapping is None:
+            mapping = self._get_field_mapping()
+            ObjectNode._field_mapping_cache[node_class] = mapping
+
+        return mapping
 
     def _check_attr(self, attr_name) -> str:
         attr = (
             attr_name
             if attr_name in self.__dict__
-            else self._get_field_mapping().get(attr_name, None)
+            else self._cached_field_mapping().get(attr_name, None)
         )
         if attr is None:
             raise AttributeError(f"There is no attribute with name {attr_name}")
@@ -278,8 +297,19 @@ class ObjectNode(YamlNode, ABC):
             # Get type of the child according to its annotation
             child_cls = self.__dataclass_fields__.get(attr).type
 
-            if issubclass(child_cls, TextNode):
-                child.allow_vars = child_cls.allow_vars
+            # The annotation could be a typing.Union (a property accepting
+            # either a scalar shorthand or a nested object), which issubclass
+            # cannot handle - in that case look for a TextNode among its members
+            if isinstance(child_cls, type):
+                if issubclass(child_cls, TextNode):
+                    child.allow_vars = child_cls.allow_vars
+            else:
+                for possible_cls in getattr(child_cls, "__args__", ()):
+                    if isinstance(possible_cls, type) and issubclass(
+                        possible_cls, TextNode
+                    ):
+                        child.allow_vars = possible_cls.allow_vars
+                        break
             try:
                 setattr(self, attr, child)
             except Exception:
@@ -301,7 +331,10 @@ class ObjectNode(YamlNode, ABC):
         if not hasattr(self, property_name):
             raise AttributeError
 
-        if not issubclass(self.__dataclass_fields__[property_name].type, SequenceNode):
+        annotation = self.__dataclass_fields__[property_name].type
+
+        # a typing.Union annotation is not a class and issubclass chokes on it
+        if isinstance(annotation, type) and not issubclass(annotation, SequenceNode):
             return ValueError(f"Property '{property_name}' is not sequence")
 
         prop: PropertyNode = getattr(self, property_name, None)

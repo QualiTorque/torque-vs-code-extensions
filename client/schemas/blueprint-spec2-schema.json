@@ -101,7 +101,10 @@
                             "description": "Whether the blueprint is published in the self-service catalog. Either a boolean, which applies to every space the repository is connected to, or a list of the space names to publish the blueprint in (space names are case insensitive, and spaces that are not listed are left unpublished). Once this field is set, it can no longer be changed through the API or the UI in any space."
                         },
                         "estimated-ccu": {
-                            "type": "string",
+                            "type": [
+                                "string",
+                                "number"
+                            ],
                             "description": "Estimated cost of the blueprint in CCU units - a literal number (e.g. '5') or a reference to a blueprint input."
                         },
                         "icon": {
@@ -417,8 +420,11 @@
                     "description": "Comma-separated grain names that must complete before this grain starts; their outputs then become available to this grain via Liquid."
                 },
                 "tf-version": {
-                    "type": "string",
-                    "description": "Terraform version used to deploy the module (terraform grains)."
+                    "type": [
+                        "string",
+                        "number"
+                    ],
+                    "description": "Terraform version used to deploy the module (terraform grains). Prefer quoting the value: unquoted YAML floats are lossy (1.50 becomes 1.5), which silently changes the version."
                 },
                 "when": {
                     "type": "string",
@@ -463,10 +469,10 @@
                     "$ref": "#/definitions/ScriptOutputsObject"
                 },
                 "pre-aws-cdk-deploy": {
-                    "$ref": "#/definitions/ScriptObject"
+                    "$ref": "#/definitions/ScriptOutputsObject"
                 },
                 "post-aws-cdk-deploy": {
-                    "$ref": "#/definitions/ScriptObject"
+                    "$ref": "#/definitions/ScriptOutputsObject"
                 }
             },
             "description": "Lifecycle hook scripts around the asset's deploy: Terraform (pre-tf-*), OpenTofu (pre-tofu-*), Helm, Kubernetes, Ansible and AWS CDK steps."
@@ -726,7 +732,26 @@
                     "type": "array",
                     "items": {
                         "type": "object",
-                        "additionalProperties": true
+                        "additionalProperties": false,
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "source": {
+                                "type": "string"
+                            },
+                            "version": {
+                                "type": [
+                                    "string",
+                                    "number"
+                                ]
+                            },
+                            "attributes": {
+                                "type": "object",
+                                "additionalProperties": true,
+                                "description": "Provider attribute overrides; values may be scalars, nested mappings or lists."
+                            }
+                        }
                     },
                     "description": "Terraform provider requirement/attribute overrides ({name, source, version, attributes})."
                 },
@@ -835,8 +860,11 @@
                     "description": "CloudFormation: AWS region to deploy the stack in."
                 },
                 "version": {
-                    "type": "string",
-                    "description": "Runtime version, e.g. the Terraform version to use."
+                    "type": [
+                        "string",
+                        "number"
+                    ],
+                    "description": "Runtime version, e.g. the Terraform version to use. Prefer quoting the value: unquoted YAML floats are lossy (1.50 becomes 1.5), which silently changes the version."
                 },
                 "binary": {
                     "type": "string"
@@ -1434,7 +1462,10 @@
                     "description": "Name for the fetched source (required for workspace-directories)."
                 },
                 "chart-version": {
-                    "type": "string",
+                    "type": [
+                        "string",
+                        "number"
+                    ],
                     "description": "Helm: chart version to install."
                 },
                 "path-in-archive": {

@@ -1,6 +1,6 @@
 import os
 import unittest
-from posixpath import dirname
+from os.path import dirname
 
 from server.ats.parser import Parser, ParserError
 from server.ats.trees.app import AppTree
