@@ -1722,10 +1722,12 @@
                             "intersight",
                             "redhat",
                             "nexus_dashboard",
-                            "nvaie"
+                            "nvaie",
+                            "kubernetes",
+                            "sourceControl"
                         ]
                     },
-                    "description": "Credentials inputs: restrict the selectable credentials to these provider types."
+                    "description": "Credentials inputs: restrict the selectable credentials to these provider types. Note: OpenShift targets use 'kubernetes' credentials - there is no 'openshift' credential type."
                 },
                 "target-filters": {
                     "$ref": "#/definitions/TargetFiltersObject"
@@ -1846,7 +1848,8 @@
                                 "azure",
                                 "vcenter",
                                 "intersight",
-                                "kubernetes"
+                                "kubernetes",
+                                "openshift"
                             ]
                         },
                         {
@@ -2408,7 +2411,22 @@
                 "cloud-providers": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "aws",
+                                    "azure",
+                                    "vcenter",
+                                    "intersight",
+                                    "kubernetes",
+                                    "openshift"
+                                ]
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ]
                     },
                     "description": "Filter targets by cloud provider type (e.g. aws, azure). OR logic"
                 },
