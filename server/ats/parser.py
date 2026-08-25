@@ -1,9 +1,10 @@
+import re
 from typing import List, Tuple
 
 import yaml
 from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintTree
-from server.ats.trees.blueprint_v2 import BlueprintV2Tree
+from server.ats.trees.blueprint_v2 import BlueprintV2Tree, FreeFormNode
 from server.ats.trees.common import (
     BaseTree,
     MapNode,
@@ -21,6 +22,11 @@ from yaml.tokens import (
     BlockEntryToken,
     BlockMappingStartToken,
     BlockSequenceStartToken,
+    FlowEntryToken,
+    FlowMappingEndToken,
+    FlowMappingStartToken,
+    FlowSequenceEndToken,
+    FlowSequenceStartToken,
     KeyToken,
     ScalarToken,
     StreamEndToken,
@@ -28,6 +34,37 @@ from yaml.tokens import (
     Token,
     ValueToken,
 )
+
+# Codepoint ranges pyyaml's Reader is willing to read. Anything outside them
+# makes it raise ReaderError before scanning even starts - typically mojibake,
+# a C1 control byte produced by a double encoded em-dash. The server's
+# YamlDotNet accepts such a document, so it must be parsed here as well instead
+# of losing every diagnostic in the file.
+# Same ranges as yaml.reader.Reader.NON_PRINTABLE; the pattern is built from
+# codepoints so that this source file stays plain ASCII.
+PRINTABLE_RANGES = [
+    (0x09, 0x09),
+    (0x0A, 0x0A),
+    (0x0D, 0x0D),
+    (0x20, 0x7E),
+    (0x85, 0x85),
+    (0xA0, 0xD7FF),
+    (0xE000, 0xFFFD),
+    (0x10000, 0x10FFFF),
+]
+NON_PRINTABLE_REGEX = re.compile(
+    "[^"
+    + "".join(chr(low) + "-" + chr(high) for low, high in PRINTABLE_RANGES)
+    + "]"
+)
+
+
+def replace_unprintable_characters(document: str) -> str:
+    """Makes a document readable by pyyaml without moving anything in it.
+
+    Every character is replaced by exactly one space, so all the positions
+    reported afterwards still match the document the client holds."""
+    return NON_PRINTABLE_REGEX.sub(" ", document)
 
 
 class ParserError(Exception):
@@ -56,6 +93,15 @@ class UnprocessedNode(YamlNode):
         return UnprocessedNode()
 
 
+# A block sequence written at the same indentation as its key produces no
+# BlockSequenceStartToken, so the token closing it belongs to the parent and
+# the parser has to unwind one level more than usual. These are the nodes that
+# may be found holding such a sequence: a real SequenceNode, the placeholder
+# used for content the tree does not model, and a free form section (which
+# represents both mappings and sequences with the very same node type).
+SEQUENCE_LIKE_NODES = (UnprocessedNode, SequenceNode, FreeFormNode)
+
+
 class Parser:
     def __init__(self, document: str):
         self.document = self._remove_invalid_characters(document)
@@ -71,7 +117,7 @@ class Parser:
         self.processing_map_element: bool = False
 
     def _remove_invalid_characters(self, document: str):
-        return document.replace("\t", "  ")
+        return replace_unprintable_characters(document.replace("\t", "  "))
 
     @staticmethod
     def get_token_start(token: Token) -> Tuple[int, int]:
@@ -277,7 +323,7 @@ class Parser:
                     self.tokens_stack.pop()
                     self.is_array_item = False
 
-                elif isinstance(self.nodes_stack[-1], (UnprocessedNode, SequenceNode)):
+                elif isinstance(self.nodes_stack[-1], SEQUENCE_LIKE_NODES):
                     # In means that we just finished processing a sequence without indentation
                     # which means document didn't have BlockSequenceStartToken at the beginning of the block
                     # So, this BlockEndToken is related to previous object => we need to remove not only the
@@ -307,6 +353,18 @@ class Parser:
                     # and node itself as well
                     prev_node = self.nodes_stack.pop()
                     prev_node.end_pos = self.get_token_end(token)
+
+                    # The object just closed may be the value of a map element
+                    # ('My Input:' under 'inputs:'), and then the element is
+                    # over as well - the same unwinding the indented form gets
+                    # from its own BlockEndToken. Without it the next key of
+                    # the map would be written over the current element.
+                    if len(self.nodes_stack) > 1 and isinstance(
+                        self.nodes_stack[-2], MapNode
+                    ):
+                        self.nodes_stack[-1].end_pos = self.get_token_end(token)
+                        self.nodes_stack.pop()
+                        self.processing_map_element = False
 
                     if isinstance(self.tokens_stack[-1], (ValueToken, BlockEntryToken)):
                         # remove value token opening it
@@ -457,8 +515,97 @@ class Parser:
 
                 self.tokens_stack.pop()
 
+    @staticmethod
+    def _rewrite_flow_tokens(tokens: List[Token]) -> List[Token]:
+        """Rewrites flow style collections into their block style equivalent.
+
+        Flow style ('allowed-values: [a, b]', 'labels: {x: y}') is ordinary
+        YAML and the server accepts it, but the token stream it produces is
+        different from the block one this parser is built around. The two
+        describe the very same structure though, so translating the tokens is
+        enough to support flow style everywhere without touching the parsing
+        logic itself:
+
+            [a, b]      ->  BlockSequenceStart Entry a Entry b BlockEnd
+            {k: v}      ->  BlockMappingStart Key k Value v BlockEnd
+
+        Block style streams contain none of these tokens and are returned
+        unchanged.
+        """
+        result = []
+        # one entry per open flow collection: True for a sequence
+        flow_stack: List[bool] = []
+        total = len(tokens)
+        index = 0
+
+        while index < total:
+            token = tokens[index]
+            following = tokens[index + 1] if index + 1 < total else None
+
+            if isinstance(token, (FlowSequenceStartToken, FlowMappingStartToken)):
+                is_sequence = isinstance(token, FlowSequenceStartToken)
+                closing = (
+                    FlowSequenceEndToken if is_sequence else FlowMappingEndToken
+                )
+
+                # An empty collection has no block equivalent at all: a block
+                # sequence or mapping is opened by its first element. Dropping
+                # both tokens leaves 'key:' with no value, exactly like the
+                # empty block form.
+                if isinstance(following, closing):
+                    index += 2
+                    continue
+
+                start_class = (
+                    BlockSequenceStartToken if is_sequence else BlockMappingStartToken
+                )
+                result.append(start_class(token.start_mark, token.end_mark))
+                flow_stack.append(is_sequence)
+
+                if is_sequence and following is not None:
+                    result.append(
+                        BlockEntryToken(following.start_mark, following.start_mark)
+                    )
+
+                index += 1
+                continue
+
+            if isinstance(token, FlowEntryToken):
+                # A separator between mapping pairs has no block counterpart,
+                # and a trailing comma ('[a, b,]') separates nothing at all.
+                if (
+                    flow_stack
+                    and flow_stack[-1]
+                    and following is not None
+                    and not isinstance(following, FlowSequenceEndToken)
+                ):
+                    result.append(
+                        BlockEntryToken(following.start_mark, following.start_mark)
+                    )
+
+                index += 1
+                continue
+
+            if isinstance(token, (FlowSequenceEndToken, FlowMappingEndToken)):
+                result.append(BlockEndToken(token.start_mark, token.end_mark))
+
+                if flow_stack:
+                    flow_stack.pop()
+
+                index += 1
+                continue
+
+            result.append(token)
+            index += 1
+
+        return result
+
     def parse(self) -> BaseTree:
-        data = yaml.scan(self.document, Loader=yaml.FullLoader)
+        # the stream is materialized because rewriting flow style tokens
+        # needs to look at the token following the current one
+        data = self._rewrite_flow_tokens(
+            list(yaml.scan(self.document, Loader=yaml.FullLoader))
+        )
 
         if self.tree:
             self.nodes_stack.append(self.tree)

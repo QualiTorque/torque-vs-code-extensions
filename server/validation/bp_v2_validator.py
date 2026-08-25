@@ -28,6 +28,54 @@ from pygls.lsp.types.basic_structures import DiagnosticSeverity
 # a '{{ ... }}' expression; compiled once instead of on every visited node
 EXPRESSION_REGEX = re.compile(r"\{\{[^\{\}]*\}\}")
 
+# A bracket access step of a path: '["Name With Spaces"]' or "['x']".
+# Torque's own blueprints use both the '.inputs["X"]' and the '.inputs.["X"]'
+# spellings, so the leading period is optional.
+BRACKET_SEGMENT_REGEX = re.compile(
+    r"""\[\s*(?:"([^"]*)"|'([^']*)'|([^\]]*?))\s*\]"""
+)
+
+
+def split_expression_path(expression: str) -> List[str]:
+    """Splits a Liquid path into its segments.
+
+    A bracket access is a single segment and its quotes are stripped, so all of
+    '.inputs.Name', '.inputs["Name"]' and '.inputs.["Name"]' yield
+    ['inputs', 'Name'] and every check downstream can work on plain names.
+    Returns None when a bracket is left unclosed.
+    """
+    segments = []
+    position = 0
+    length = len(expression)
+
+    while position < length:
+        char = expression[position]
+
+        if char == ".":
+            position += 1
+            continue
+
+        if char == "[":
+            match = BRACKET_SEGMENT_REGEX.match(expression, position)
+
+            if match is None:
+                return None
+
+            name = next(g for g in match.groups() if g is not None)
+            segments.append(name)
+            position = match.end()
+            continue
+
+        end = position
+
+        while end < length and expression[end] not in ".[":
+            end += 1
+
+        segments.append(expression[position:end])
+        position = end
+
+    return segments
+
 
 class ExpressionValidationVisitor:
     reserved_words = [
@@ -39,12 +87,88 @@ class ExpressionValidationVisitor:
         "accountname",
         "spacename",
     ]
-    prefixes = ["inputs", "grains", "params", "resources", "env_references"]
-    pipe_commands = ["downcase", "key_access", "strip"]
-    grains_props = ["outputs", "scripts"]
+    # Root keys of the context the server renders a blueprint against
+    # (LiquidResolverContext.PostCreationContext). 'bindings' is only filled in
+    # for a workflow blueprint, so it is accepted conditionally - see
+    # _get_prefixes.
+    prefixes = [
+        "inputs",
+        "grains",
+        "params",
+        "resources",
+        "env_references",
+        "management_server",
+    ]
+    workflow_prefixes = ["bindings"]
+    # The server registers the whole DotLiquid standard filter set (which is
+    # Shopify Liquid's) on top of Torque's own filters, and DotLiquid applies
+    # them in a chain, so any number of them may be piped together.
+    standard_filters = [
+        "abs",
+        "append",
+        "at_least",
+        "at_most",
+        "capitalize",
+        "ceil",
+        "compact",
+        "concat",
+        "date",
+        "default",
+        "divided_by",
+        "downcase",
+        "escape",
+        "escape_once",
+        "first",
+        "floor",
+        "join",
+        "last",
+        "lstrip",
+        "map",
+        "minus",
+        "modulo",
+        "newline_to_br",
+        "plus",
+        "prepend",
+        "remove",
+        "remove_first",
+        "replace",
+        "replace_first",
+        "reverse",
+        "round",
+        "rstrip",
+        "size",
+        "slice",
+        "sort",
+        "sort_natural",
+        "split",
+        "strip",
+        "strip_html",
+        "strip_newlines",
+        "sum",
+        "times",
+        "truncate",
+        "truncatewords",
+        "uniq",
+        "upcase",
+        "url_decode",
+        "url_encode",
+        "where",
+    ]
+    torque_filters = [
+        "json",
+        "json_escape",
+        "key_access",
+        "resource_object",
+        "resource_property",
+    ]
+    pipe_commands = standard_filters + torque_filters
+    # members of the per grain context object (GrainsValues)
+    grains_props = ["outputs", "scripts", "activities", "is_active"]
+    activities = ["deploy", "destroy"]
 
     def __init__(self, tree: BlueprintV2Tree) -> None:
         self.tree = tree
+        self._closures = {}
         self.processors_map = {
             GrainNode: self._do_process_grain,
             BlueprintV2OutputNode: self._do_process_blueprint_output,
@@ -88,34 +212,59 @@ class ExpressionValidationVisitor:
 
         if "|" in expression:
             parts = [p.strip() for p in expression.split("|")]
-            if len(parts) != 2:
-                return "Too many pipes in expression. Only one is allowed"
+            expression = parts[0]
 
-            # a filter may take arguments: 'key_access: "hostname"'
-            command = parts[1].split(":")[0].strip()
+            for stage in parts[1:]:
+                # a filter may take arguments: 'key_access: "hostname"'
+                command = stage.split(":")[0].strip()
 
-            if command not in self.pipe_commands:
-                return f"Unknown command {command}"
-            else:
-                expression = parts[0]
+                if command not in self.pipe_commands:
+                    return f"Unknown command {command}"
 
-        if not expression.startswith("."):
-            if expression.lower() not in self.reserved_words:
-                return f"The value '{expression}' is not a reserved variable"
+            if not expression:
+                return "Expression could not be empty"
 
-        else:
-            if expression.endswith("."):
-                return "Trailing period symbol is not allowed"
+        if expression.endswith("."):
+            return "Trailing period symbol is not allowed"
 
-            expr_parts = expression.split(".")[1:]
-            if expr_parts[0] not in self.prefixes:
+        expr_parts = split_expression_path(expression)
+
+        if not expr_parts:
+            return "Not a valid expression"
+
+        # The leading period is a Torque convention only: DotLiquid's own path
+        # scanner drops it and resolves the first segment against the context
+        # Hash either way, so '{{ inputs.X }}' and '{{ .inputs.X }}' mean
+        # exactly the same thing - and so do '{{ envId }}' and '{{ .envId }}'.
+        # Anything that is not a context section has to be one of the single
+        # variables the server puts in the context by itself.
+        if expr_parts[0] not in self._get_prefixes():
+            if len(expr_parts) == 1 and expr_parts[0].lower() in self.reserved_words:
+                return None
+
+            if expression.startswith("."):
                 return f"Prefix '.{expr_parts[0]}' is not allowed"
 
-            node_to_process = self._find_nearest_available_node(node)
-            if node_to_process:
-                helper_func = self.processors_map.get(type(node_to_process), None)
-                if helper_func:
-                    return helper_func(expr_parts, node_to_process)
+            return f"The value '{expression}' is not a reserved variable"
+
+        node_to_process = self._find_nearest_available_node(node)
+        if node_to_process:
+            helper_func = self.processors_map.get(type(node_to_process), None)
+            if helper_func:
+                return helper_func(expr_parts, node_to_process)
+
+    def _get_prefixes(self) -> List[str]:
+        """The context sections an expression may start with. 'bindings' holds
+        the environment a workflow is bound to, and the server fills it in only
+        when the blueprint declares a workflow scope - in any other blueprint
+        the section is there but empty, so nothing under it can resolve."""
+        workflow = getattr(self.tree, "workflow", None)
+        scope = getattr(getattr(workflow, "scope", None), "value", None)
+
+        if scope is None:
+            return self.prefixes
+
+        return self.prefixes + self.workflow_prefixes
 
     def _find_nearest_available_node(self, node: YamlNode):
         while (node):
@@ -126,6 +275,108 @@ class ExpressionValidationVisitor:
         
     def _do_process_grain(self, parts: List[str], node: GrainNode):
         return self._expression_parts_validate(parts, node, True)
+
+    def _get_grain_node(self, grain_name: str) -> GrainNode:
+        grains = self.tree.grains
+
+        if grains is None:
+            return None
+
+        return grains.get_mapping_by_key(grain_name)
+
+    def _get_dependencies_closure(self, grain_name: str) -> set:
+        """Names of every grain reachable through 'depends-on', and not just
+        the directly listed ones: the server's GetAllDependentGrains recurses,
+        so a grain may consume the outputs of anything its own dependencies
+        depend on. Cycles are broken by the visited set."""
+        # the tree does not change while it is being visited, and a blueprint
+        # may hold hundreds of expressions pointing at the same few grains
+        cached = self._closures.get(grain_name)
+
+        if cached is not None:
+            return cached
+
+        closure = set()
+        visited = {grain_name}
+        pending = [grain_name]
+
+        while pending:
+            grain_node = self._get_grain_node(pending.pop())
+
+            if grain_node is None or grain_node.value is None:
+                continue
+
+            for dep in grain_node.value.get_deps():
+                name = dep["name"]
+                closure.add(name)
+
+                if name not in visited:
+                    visited.add(name)
+                    pending.append(name)
+
+        self._closures[grain_name] = closure
+        return closure
+
+    def _find_activity_command(self, spec, activity_name: str, command_name: str):
+        """The named command of a shell grain's activity, or None when the path
+        cannot be resolved (the document is validated while it is typed, so
+        anything on the way may be missing or half written)."""
+        activities = getattr(getattr(spec, "activities", None), "value", None)
+
+        if activities is None:
+            return None
+
+        activity = getattr(getattr(activities, activity_name, None), "value", None)
+
+        if activity is None:
+            return None
+
+        commands = getattr(getattr(activity, "commands", None), "value", None)
+
+        if commands is None:
+            return None
+
+        for command in getattr(commands, "nodes", []):
+            name_node = getattr(getattr(command, "name", None), "value", None)
+
+            if name_node is not None and getattr(name_node, "text", None) == command_name:
+                return command
+
+        return None
+
+    def _validate_activity_output(self, parts: List[str], dep_grain: str, spec):
+        """'.grains.<g>.activities.<deploy|destroy>.commands.<cmd>.outputs.<o>'
+        - the context the server builds for the named commands of a shell
+        grain (CreateActivitiesContext)."""
+        activity_name = parts[3]
+
+        if activity_name not in self.activities:
+            return (
+                f"Wrong activity '{activity_name}'. Must be in {self.activities}."
+            )
+
+        if parts[4] != "commands":
+            return f"Wrong property '{parts[4]}'. Must be 'commands'."
+
+        command_name = parts[5]
+
+        if parts[6] != "outputs":
+            return f"Wrong property '{parts[6]}'. Must be 'outputs'."
+
+        output = parts[7]
+
+        command = self._find_activity_command(spec, activity_name, command_name)
+
+        if command is None:
+            return None
+
+        outputs_names = [node.text for node in command.get_outputs()]
+
+        if output not in outputs_names:
+            return (
+                f"Output '{output}' is not part of the outputs of command "
+                f"'{command_name}' of the '{dep_grain}' grain"
+            )
 
     def _do_process_blueprint_output(self, parts: List[str], node: GrainNode):
         return self._expression_parts_validate(parts, node)
@@ -143,11 +394,12 @@ class ExpressionValidationVisitor:
                 dep_grain = parts[1]
 
                 if is_grain_object:
-                    refered_deps_names = [d["name"] for d in node.value.get_deps()]
                     # check grain name
                     if dep_grain == node.identifier:
                         return "Grain cannot refer to itself"
-                    elif dep_grain not in refered_deps_names:
+                    elif dep_grain not in self._get_dependencies_closure(
+                        node.identifier
+                    ):
                         return f"You must list referred grain '{dep_grain}' in depends-on property"
 
                 elif dep_grain not in self.tree.get_grains_names():
@@ -164,6 +416,11 @@ class ExpressionValidationVisitor:
                 if grain_prop == "outputs" and len(parts) == 3:
                     return None
 
+                # '.grains.<grain>.is_active' is a leaf: whether the grain ran
+                # or was skipped by its 'when' condition
+                if grain_prop == "is_active":
+                    return None
+
                 output: str = ''
 
                 dep_grain_node = self.tree.grains.get_mapping_by_key(dep_grain)
@@ -175,6 +432,11 @@ class ExpressionValidationVisitor:
 
                 if spec_node is None or spec_node.value is None:
                     return f"Grain '{dep_grain}' does not have outputs"
+
+                if grain_prop == "activities":
+                    return self._validate_activity_output(
+                        parts, dep_grain, spec_node.value
+                    )
 
                 if grain_prop == "scripts":
                     script_type = parts[3]
@@ -251,25 +513,46 @@ class BlueprintSpec2Validator(ValidationHandler):
                         node=input_node.key,
                         message=f"Duplicated input name '{input_node.key.text}'")
 
+    @staticmethod
+    def _input_usage_regex(input_name: str):
+        """Matches every spelling an input may be referred to by.
+
+        An input is reachable as '.inputs.NAME' and as 'inputs.NAME' (the
+        leading period is a convention, DotLiquid resolves the plain name just
+        as well), and a name that is not a bare word has to be reached through
+        a bracket access - '.inputs["NAME"]', '.inputs.["NAME"]' or
+        'inputs["NAME"]', with either quote style."""
+        name = re.escape(input_name)
+        spellings = [
+            # 'inputs.NAME', not followed by more of a longer name
+            r"inputs\.{}(?![\w-])".format(name),
+            # 'inputs["NAME"]' and 'inputs.["NAME"]', either quote style
+            r"inputs\.?\[\s*\"{}\"\s*\]".format(name),
+            r"inputs\.?\[\s*'{}'\s*\]".format(name),
+        ]
+
+        return re.compile("|".join(spellings))
+
     def _check_unused_blueprint_inputs(self):
+        # matched against the whole document and not line by line: an
+        # expression may be written across lines in a folded scalar
+        text = "".join(self._document.lines)
+
         for input_node in self.tree.input_list:
+            # an input being typed has no key yet, and a key being typed has
+            # no text - neither must stop the rest from being checked
+            if input_node.key is None or not input_node.key.text:
+                continue
+
             input_name = input_node.key.text
-            doc_lines = self._document.lines
-            match = []
-            
-            regex = re.compile("^(?!.*#).*\{\{\s*.inputs\.(" + input_name + ")\s*\}\}")
 
-            for line in doc_lines:
-                match += regex.findall(line)
-    
-            if not match:
-
+            if self._input_usage_regex(input_name).search(text) is None:
                 self._add_diagnostic(
-                    node = input_node.key,
+                    node=input_node.key,
                     message=f"The defined input '{input_name}' is not accessed",
                     diag_severity=DiagnosticSeverity.Warning
                 )
-            
+
     def _validate_grain_dep_exists(self):
         for grain in self.tree.grain_nodes:
             grain_name = grain.key.text

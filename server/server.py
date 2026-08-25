@@ -47,7 +47,7 @@ from pygls.lsp.types import (CodeLens, CodeLensOptions, CodeLensParams,
 from pygls.lsp.types.basic_structures import TextEdit
 from pygls.server import LanguageServer
 
-from server.ats.parser import Parser, ParserError
+from server.ats.parser import Parser, ParserError, replace_unprintable_characters
 from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintInputNode
 from server.ats.trees.common import BaseTree, PropertyNode
@@ -157,7 +157,12 @@ def _validate_yaml(source):
     diagnostics = []
 
     try:
-        yaml.load(source, Loader=yaml.FullLoader)
+        # A character pyyaml's Reader rejects makes it raise a ReaderError,
+        # which is not a MarkedYAMLError and would escape this function and
+        # _validate along with it - publishing no diagnostics at all for a file
+        # the Torque server itself accepts. The parser tolerates those
+        # characters, so this check has to as well.
+        yaml.load(replace_unprintable_characters(source), Loader=yaml.FullLoader)
     except yaml.MarkedYAMLError as ex:
         mark = ex.problem_mark
         d = Diagnostic(

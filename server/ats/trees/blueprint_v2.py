@@ -106,10 +106,15 @@ class StoreFileSourceObject(ObjectNode):
 
 @dataclass
 class SpecSourceNode(ObjectNode):
-    """The asset a grain (or a script) is based on."""
+    """The asset a grain (or a script) is based on.
 
-    store: ScalarNode = None
-    path: ScalarNode = None
+    'store' and 'path' take Liquid: the server resolves the whole source
+    (EvaluateElementSource) before the runner clones the asset, which is how a
+    blueprint parameterizes the repository it pulls from. Note that only
+    inputs/params/env_references are in scope there - not grain outputs."""
+
+    store: TextNode = None
+    path: TextNode = None
     branch: TextNode = None
     tag: TextNode = None
     commit: TextNode = None
@@ -155,10 +160,11 @@ class SourceFilesSequence(SequenceNode):
 @dataclass
 class ShellGrainFile(ObjectNode):
     """An element of a shell grain's 'files' list. Note that here 'source'
-    is the name of the repository, not a nested object."""
+    is the name of the repository, not a nested object. It is mapped onto an
+    ElementSource and resolved like a grain source, so it takes Liquid too."""
 
-    source: ScalarNode = None
-    path: ScalarNode = None
+    source: TextNode = None
+    path: TextNode = None
     branch: TextNode = None
     commit: TextNode = None
     tag: TextNode = None
@@ -168,6 +174,24 @@ class ShellGrainFile(ObjectNode):
 @dataclass
 class ShellGrainFilesSequence(SequenceNode):
     node_type = ShellGrainFile
+
+
+@dataclass
+class GrainInputMapping(MappingNode):
+    """A single 'name: value' passed to the asset.
+
+    Unlike an environment variable, the value is not necessarily a scalar: a
+    terraform or ansible input just as well takes a list or an object, which
+    the server passes on as it is (the YAML model types it as object)."""
+
+    key: ScalarNode = None
+    value: Union[FreeFormNode, TextNode] = None
+    allow_vars = True
+
+
+@dataclass
+class GrainInputsSequence(SequenceNode):
+    node_type = GrainInputMapping
 
 
 # ---------------------------------------------------------------------------
@@ -450,7 +474,7 @@ class DeploymentEngineObject(ObjectNode):
 @dataclass
 class AnsibleOnDestroyObject(ObjectNode):
     source: SpecSourceNode = None
-    inputs: TextMappingSequence = None
+    inputs: GrainInputsSequence = None
     command_arguments: TextNode = None
     scripts: GrainSpecScripts = None
     inventory_file: Union[FreeFormNode, TextNode] = None
@@ -548,7 +572,7 @@ class GrainSpecNode(ObjectNode):
 
     source: SpecSourceNode = None
     sources: SpecSourcesSequence = None
-    inputs: TextMappingSequence = None
+    inputs: GrainInputsSequence = None
     outputs: ScalarNodesSequence = None
     commands: TextNodesSequence = None
     command_arguments: TextNode = None
@@ -557,7 +581,9 @@ class GrainSpecNode(ObjectNode):
     env_vars: TextMappingSequence = None
     env_references: TextMappingSequence = None
     region: TextNode = None
-    authentication: ScalarNodesSequence = None
+    # entries are resolved by the server before the grain runs, so they hold
+    # Liquid ('{{ .inputs["AWS Credentials"] }}') and must allow variables
+    authentication: TextNodesSequence = None
     activities: ActivitiesObject = None
     namespace: TextNode = None
     target_namespace: TextNode = None

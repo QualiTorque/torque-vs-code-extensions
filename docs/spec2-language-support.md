@@ -63,12 +63,65 @@ errors: `customization`, an inline ansible `inventory-file`, terraform provider
 `family.members`, backend workspace `tags`. They accept any nested mapping,
 sequence or scalar without validating names.
 
+A grain's `spec.inputs` values (`GrainInputMapping`) are `Union[FreeFormNode,
+TextNode]` for the same reason: a terraform or ansible input takes a list or an
+object just as well as a scalar (the schema types the value as
+`string|number|boolean|object|array`), and modelling it as a scalar killed the
+parse of the whole file. `spec.env-vars` stays scalar-only — the server's
+contract there really is a scalar.
+
+Two node types decide whether Liquid is allowed in a value: `ScalarNode`
+(`allow_vars = False`, "Variables are not allowed here") and `TextNode`. Grain
+`spec.authentication` entries are `TextNode`s: the server resolves them, and
+they normally *are* an expression (`{{ .inputs["AWS Credentials"] }}`).
+
 They are also deliberately **not expression-validated**
 (`ExpressionValidationVisitor.visit_node` returns early on them, skipping the
 whole subtree): the `{{ }}` inside them belongs to another dialect — the launch
 form uses the UI's own template syntax (`{{ inputs.x }}`, no leading dot) and an
 ansible inventory may hold Jinja. Validating them as grain Liquid would be
 wrong. See `test_free_form_sections_not_expression_validated`.
+
+### Flow style YAML
+
+`allowed-values: ["a", "b"]` and `agent: {name: x}` are ordinary YAML and the
+server accepts them, but pyyaml's token stream for a flow collection is not the
+one the parser is built around (it consumes tokens, not the composed document).
+Rather than teach every branch about flow tokens, `Parser._rewrite_flow_tokens`
+translates the stream into the block one it already handles, before parsing:
+
+```
+[a, b]   ->  BlockSequenceStart Entry a Entry b BlockEnd
+{k: v}   ->  BlockMappingStart Key k Value v BlockEnd
+```
+
+An empty `[]` / `{}` is dropped entirely — a block collection is *opened* by its
+first element, so an empty one looks exactly like a key with no value — and a
+trailing comma separates nothing and emits no entry. A block-only stream passes
+through untouched, which is what keeps `tests/test_ast.py` byte-identical.
+
+### Sequences written at the key's indentation
+
+```yaml
+overrides:
+- x: 1
+```
+produces no `BlockSequenceStartToken`, so the token that closes the sequence is
+really the parent's and the parser has to unwind one level more (the
+`SEQUENCE_LIKE_NODES` branch in `_process_token`). The node holding such a
+sequence may be a `SequenceNode`, the `UnprocessedNode` placeholder, or a
+`FreeFormNode` — which models mappings and sequences with the same type. That
+branch also closes the enclosing map element (`My Input:` under `inputs:`),
+without which the next key of the map is written over the current element and
+the entry disappears from the model.
+
+### Characters pyyaml refuses to read
+
+`yaml.reader` raises `ReaderError` on C1 control bytes (typically mojibake, a
+double encoded em-dash) *before* scanning, which would wipe every diagnostic in
+the file; the server's YamlDotNet accepts them. `_remove_invalid_characters`
+replaces them with a space, one for one, so every reported position still lines
+up with the document the client holds.
 
 ## 3. Dead fields policy
 
@@ -109,8 +162,12 @@ Conventions worth keeping:
   position. Half-typed documents have nodes without values and values without
   positions (see section 6).
 * `_check_unused_blueprint_inputs` is the only *warning*; everything else is an
-  error. It is a regex scan over the raw document lines, so a reference from a
-  free-form section still counts as usage.
+  error. It is a regex scan over the raw document text, so a reference from a
+  free-form section still counts as usage. It has to accept every spelling an
+  input can be reached by (`_input_usage_regex`): `.inputs.NAME`, `inputs.NAME`,
+  `.inputs["NAME"]`, `.inputs.["NAME"]`, `inputs["NAME"]`, either quote style.
+  Matching only the first of those produced a false warning on roughly every
+  input of every real-world blueprint that uses names with spaces.
 
 ## 5. Expression (Liquid) validation
 
@@ -118,22 +175,48 @@ Runs as a visitor over every `TextNode` with `allow_vars`, matching `{{ ... }}`.
 Errors are attached to the node (`tree.errors`), not to the validator's
 diagnostic list — `server.py` merges both before publishing.
 
-* Allowed prefixes (`ExpressionValidationVisitor.prefixes`): `.inputs`,
-  `.grains`, `.params`, `.resources`, `.env_references`. Only `.inputs` and
-  `.grains` are checked further (`_expression_parts_validate` branches on those
-  two only); `.params`, `.resources` and `.env_references` are accepted as-is.
-* An expression without a leading dot must be one of the reserved variables
+The path is split by `split_expression_path`, not by `str.split(".")`: a
+bracket access is one segment and its quotes are stripped, so `.inputs.Name`,
+`.inputs["Name"]` and `.inputs.["Name"]` all yield `['inputs', 'Name']` and
+every check below works on plain names. Torque's own test blueprints use the
+`.inputs.["X"]` spelling, so all three have to be accepted.
+
+* Allowed prefixes (`ExpressionValidationVisitor.prefixes`) — the root keys of
+  the server's `PostCreationContext`: `inputs`, `grains`, `params`, `resources`,
+  `env_references`, `management_server`, plus `bindings` **only when the
+  blueprint declares a `workflow` scope** (`_get_prefixes`; the server hands a
+  non-workflow blueprint an empty `BindingsContext`). Only `inputs` and `grains`
+  are checked further; the rest are accepted as-is.
+* **The leading dot is a convention, not syntax.** DotLiquid's own path scanner
+  (`\[[^\]]+\]|[\w\-]+\??`) simply drops it, so `{{ inputs.X }}` ==
+  `{{ .inputs.X }}` and `{{ envId }}` == `{{ .envId }}`. An expression whose
+  first segment is a prefix is validated identically either way; a single
+  segment that is not a prefix must be one of the reserved variables
   (case-insensitive): `envId`, `environmentName`, `blueprintName`, `ownerEmail`,
-  `accountName`, `spaceName`, `sandboxId`.
-* One pipe at most; filters: `downcase`, `strip`, `key_access`. A filter may
-  carry an argument (`| key_access: "hostname"`), so only the part before `:`
-  is matched against the filter list.
-* `.inputs.<name>` must be exactly two parts and the input must be declared.
-* `.grains.<g>.outputs.<name>` / `.grains.<g>.scripts.<hook>.outputs.<name>`:
-  the referenced grain must exist, must not be the referring grain itself, and
-  — when referenced from inside a grain — **must be listed in `depends-on`**.
+  `accountName`, `spaceName`, `sandboxId`. Anything else is flagged.
+* Filters: the full DotLiquid/Shopify standard set plus Torque's customs
+  (`key_access`, `json`, `json_escape`, `resource_property`, `resource_object`)
+  — `standard_filters` + `torque_filters`. DotLiquid applies filters in a chain,
+  so **any number of pipes** is allowed and each stage is checked separately. A
+  filter may carry an argument (`| key_access: "hostname"`), so only the part
+  before `:` is matched against the filter list.
+* `.inputs.<name>` must be exactly two segments and the input must be declared
+  (compared against the *unquoted* name, so bracket forms work).
+* `.grains.<g>.<prop>` where `<prop>` is one of `outputs`, `scripts`,
+  `activities`, `is_active` (the members of the server's `GrainsValues`). The
+  referenced grain must exist and must not be the referring grain itself.
+* When referenced from inside a grain, the target must be in that grain's
+  **transitive `depends-on` closure** (`_get_dependencies_closure`), not only in
+  its direct `depends-on`: cs2018's `GetAllDependentGrains` recurses. The
+  closure is cycle-safe and cached per visitor.
+* `.grains.<g>.activities.<deploy|destroy>.commands.<cmd>.outputs.<out>` is the
+  context built for a shell grain's named commands. The segments are checked,
+  and when the command is resolvable in the tree the output name is checked
+  against its `outputs:` list; an unresolvable intermediate node is tolerated
+  silently, because the document is validated while it is being typed.
 * Bare `.grains.<g>.outputs` (nothing after it) is valid: it is the JSON of all
-  the grain's outputs, normally piped into `key_access`.
+  the grain's outputs, normally piped into `key_access`. `.grains.<g>.is_active`
+  is likewise a leaf.
 
 ## 6. Testing
 
@@ -141,6 +224,7 @@ diagnostic list — `server.py` merges both before publishing.
 |---|---|
 | `tests/test_spec2.py` | tree key coverage per section (a modern blueprint must parse with zero unknown-key errors), dead fields, expression rules |
 | `tests/test_spec2_semantics.py` | the section 4 rules, plus validator/parser robustness |
+| `tests/test_spec2_real_world.py` | the findings of a scan of 453 real-world blueprints: flow style YAML, unprintable bytes, bracket/dotless expression forms, the activities output path, transitive `depends-on`, the filter set, Liquid in `authentication`, and the unused-input regex |
 
 The robustness tests exist because of one property that must never be broken:
 **a half-typed document must not crash `validate()`**. `_validate` in

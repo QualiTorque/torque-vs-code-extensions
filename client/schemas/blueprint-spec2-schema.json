@@ -7,11 +7,22 @@
             "additionalProperties": false,
             "properties": {
                 "spec_version": {
-                    "type": "integer",
-                    "enum": [
-                        2
+                    "oneOf": [
+                        {
+                            "type": "integer",
+                            "enum": [
+                                2
+                            ]
+                        },
+                        {
+                            "type": "string",
+                            "enum": [
+                                "2",
+                                "2-preview"
+                            ]
+                        }
                     ],
-                    "description": "Blueprint specification version - always 2."
+                    "description": "Blueprint specification version: 2 (integer or string), or '2-preview'."
                 },
                 "description": {
                     "type": "string",
@@ -1303,7 +1314,8 @@
                         "string",
                         "number",
                         "boolean",
-                        "object"
+                        "object",
+                        "array"
                     ]
                 }
             },
@@ -2221,7 +2233,11 @@
                     "type": "string"
                 },
                 "value": {
-                    "type": "string"
+                    "type": [
+                        "string",
+                        "number",
+                        "boolean"
+                    ]
                 },
                 "initial-color": {
                     "type": "string",
