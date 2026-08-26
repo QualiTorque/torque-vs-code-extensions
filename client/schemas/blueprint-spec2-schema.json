@@ -1642,6 +1642,10 @@
             "properties": {
                 "launch-form": {
                     "$ref": "#/definitions/LaunchFormObject"
+                },
+                "grains-map": {
+                    "type": "object",
+                    "additionalProperties": true
                 }
             }
         },
