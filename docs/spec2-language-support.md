@@ -218,13 +218,41 @@ every check below works on plain names. Torque's own test blueprints use the
   the grain's outputs, normally piped into `key_access`. `.grains.<g>.is_active`
   is likewise a leaf.
 
+### Where an expression error is reported
+
+A node's `text` is the scalar's *value*, not the document's characters: a block
+scalar (`command: |`, `command: >` — the usual shape of a shell grain) holds its
+whole dedented body, and a multi-line quoted scalar holds the folded value. An
+offset into either therefore says nothing about the line the expression is
+written on; reporting `start_pos[1] + offset` put the squiggle on the block
+header's line at a column far past its end (a real corpus file reported
+`236:154` for an expression on line 239).
+
+So the visitor takes the `Document` and, whenever the node spans more than one
+line (`end_pos[0] != start_pos[0]`, or the text holds a newline),
+`_resolve_positions_in_document` looks the matched `{{ ... }}` up in the
+document's own lines between `start_pos[0]` and `end_pos[0]`. Matches are
+consumed in document order, so two identical bad expressions in one block are
+reported on their two separate lines. The reported range always stays inside the
+line it starts on. A single-line scalar keeps the plain arithmetic (its value
+does start where the node starts, plus one for an opening quote — `node.style`),
+and that arithmetic is also the fallback whenever the document is unavailable
+(the visitor still works with `document=None`) or the match cannot be located in
+it — for example an expression a folded scalar broke across lines.
+
 ## 6. Testing
 
 | File | Covers |
 |---|---|
 | `tests/test_spec2.py` | tree key coverage per section (a modern blueprint must parse with zero unknown-key errors), dead fields, expression rules |
 | `tests/test_spec2_semantics.py` | the section 4 rules, plus validator/parser robustness |
-| `tests/test_spec2_real_world.py` | the findings of a scan of 453 real-world blueprints: flow style YAML, unprintable bytes, bracket/dotless expression forms, the activities output path, transitive `depends-on`, the filter set, Liquid in `authentication`, and the unused-input regex |
+| `tests/test_spec2_real_world.py` | the findings of a scan of 454 real-world blueprints: flow style YAML, unprintable bytes, bracket/dotless expression forms, the activities output path, transitive `depends-on`, the filter set, Liquid in `authentication`, and the unused-input regex |
+
+The reference corpus is the six internal ZeroTouch blueprint repositories, and
+454 is its size when walked with the canonical prune list (`.git`,
+`node_modules`, `__pycache__`, `.venv`, `.tmp`) — earlier notes saying 452 or 453
+came from scans that pruned differently. The corpus tooling that produces those
+findings lives in [`tools/blueprint-corpus/`](../tools/blueprint-corpus/README.md).
 
 The robustness tests exist because of one property that must never be broken:
 **a half-typed document must not crash `validate()`**. `_validate` in

@@ -166,14 +166,36 @@ class ExpressionValidationVisitor:
     grains_props = ["outputs", "scripts", "activities", "is_active"]
     activities = ["deploy", "destroy"]
 
-    def __init__(self, tree: BlueprintV2Tree) -> None:
+    def __init__(self, tree: BlueprintV2Tree, document: Document = None) -> None:
         self.tree = tree
+        self._lines = self._get_document_lines(document)
         self._closures = {}
         self.processors_map = {
             GrainNode: self._do_process_grain,
             BlueprintV2OutputNode: self._do_process_blueprint_output,
         }
-        
+
+    @staticmethod
+    def _get_document_lines(document: Document) -> List[str]:
+        """The document's lines, or None when there is no usable document.
+
+        The visitor is usable without one (positions are then computed from the
+        node alone), and the document a test or another caller hands over may be
+        a stand in whose 'lines' is not a list of strings at all.
+        """
+        if document is None:
+            return None
+
+        lines = getattr(document, "lines", None)
+
+        if not isinstance(lines, (list, tuple)):
+            return None
+
+        if not all(isinstance(line, str) for line in lines):
+            return None
+
+        return lines
+
     def visit_node(self, node: YamlNode):
         # Free form sections are opaque to the server (a customization launch
         # form uses the UI's own template dialect, an ansible inventory-file may
@@ -185,26 +207,144 @@ class ExpressionValidationVisitor:
         if isinstance(node, TextNode) and node.allow_vars:
             node_text = node.text
 
-            exprs = EXPRESSION_REGEX.finditer(node_text)
+            matches = list(EXPRESSION_REGEX.finditer(node_text))
+            positions = self._get_matches_positions(node, matches)
 
-            for match in exprs:
+            for match, position in zip(matches, positions):
                 expression = match.group()[2:-2].strip()
-                offset = match.span()
-                if node.style:
-                    offset = (offset[0] + 1, offset[1] + 1)
 
                 error = self.validate_expression(expression, node)
 
-                if error:
+                if error and position is not None:
+                    start_pos, end_pos = position
                     node.add_error(
                         NodeError(
-                            start_pos=(node.start_pos[0], node.start_pos[1] + offset[0]),
-                            end_pos=(node.end_pos[0], node.start_pos[1] + offset[1]),
+                            start_pos=start_pos,
+                            end_pos=end_pos,
                             message=error
-                    ))                
+                    ))
 
         for child in node.get_children():
             self.visit_node(child)
+
+    def _get_matches_positions(self, node: TextNode, matches: list) -> list:
+        """Where every '{{ ... }}' of the node has to be reported.
+
+        A node's text is the scalar's *value*: for a block scalar
+        ('command: |') it is the whole dedented body and for a multi-line
+        quoted scalar it is the folded value, so in both cases an offset into
+        it says nothing about the line the expression is written on. Those are
+        resolved against the document itself; a single-line scalar keeps the
+        plain arithmetic (its value does start where the node starts).
+        Returns one (start_pos, end_pos) tuple - or None, when the position
+        cannot be established at all - per match, in the order given.
+        """
+        if not matches:
+            return []
+
+        if self._spans_multiple_lines(node):
+            resolved = self._resolve_positions_in_document(node, matches)
+
+            if resolved is not None:
+                return resolved
+
+        return [self._get_match_position_by_offset(node, match) for match in matches]
+
+    @staticmethod
+    def _spans_multiple_lines(node: TextNode) -> bool:
+        if node.start_pos is None or node.end_pos is None:
+            return "\n" in (node.text or "")
+
+        # a folded scalar joins its lines with spaces, so its text may hold no
+        # newline at all while still being written across several lines
+        return node.end_pos[0] != node.start_pos[0] or "\n" in (node.text or "")
+
+    def _resolve_positions_in_document(self, node: TextNode, matches: list) -> list:
+        """Positions of the matches, looked up in the document's own lines.
+
+        The lines of the node are scanned in document order and every match
+        consumes the first occurrence following the previous one, so repeated
+        identical expressions are mapped to the successive lines holding them.
+        Returns None when the document is not available; a single match which
+        cannot be found (a folded expression broken across lines, for example)
+        is reported as None so that the caller can fall back for it alone.
+        """
+        lines = self._lines
+
+        if not lines or node.start_pos is None or node.end_pos is None:
+            return None
+
+        first_line = node.start_pos[0]
+        last_line = node.end_pos[0]
+
+        if first_line is None or last_line is None:
+            return None
+
+        # a block scalar ends at the beginning of the next token, which is
+        # already past its own body - and the body may end the document
+        last_line = min(last_line, len(lines) - 1)
+
+        if first_line < 0 or first_line > last_line:
+            return None
+
+        positions = []
+        # the value cannot start before the node does
+        line, column = first_line, max(node.start_pos[1], 0)
+
+        for match in matches:
+            found = self._find_in_lines(match.group(), line, column, last_line)
+
+            if found is None:
+                positions.append(None)
+                continue
+
+            line, column = found[0], found[1] + len(match.group())
+            positions.append(self._get_position_in_line(found, len(match.group())))
+
+        return positions
+
+    def _find_in_lines(self, text: str, line: int, column: int, last_line: int):
+        """(line, column) of the first occurrence of the text at or after the
+        given position and not below the last line, or None."""
+        while line <= last_line:
+            index = self._lines[line].find(text, column)
+
+            if index >= 0:
+                return (line, index)
+
+            line += 1
+            column = 0
+
+        return None
+
+    def _get_position_in_line(self, start, length: int):
+        """A (start_pos, end_pos) pair kept on a single line and inside it."""
+        line, column = start
+        line_length = len(self._lines[line].rstrip("\r\n"))
+
+        return (
+            (line, min(column, line_length)),
+            (line, min(column + length, line_length)),
+        )
+
+    @staticmethod
+    def _get_match_position_by_offset(node: TextNode, match):
+        """The position of a match of a single-line scalar: its value starts
+        where the node does, plus one for the opening quote of a quoted one."""
+        if node.start_pos is None:
+            return None
+
+        offset = match.span()
+
+        if node.style:
+            offset = (offset[0] + 1, offset[1] + 1)
+
+        end_line = node.end_pos[0] if node.end_pos is not None else node.start_pos[0]
+
+        return (
+            (node.start_pos[0], node.start_pos[1] + offset[0]),
+            (end_line, node.start_pos[1] + offset[1]),
+        )
 
     def validate_expression(self, expression: str, node: YamlNode) -> str:
         if not expression:
@@ -943,7 +1083,7 @@ class BlueprintSpec2Validator(ValidationHandler):
             )
 
     def validate(self):
-        visitor = ExpressionValidationVisitor(self.tree)
+        visitor = ExpressionValidationVisitor(self.tree, self._document)
         self.tree.accept(visitor)
 
         # warnings

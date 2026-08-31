@@ -1,4 +1,4 @@
-"""Findings from validating 453 real-world spec2 blueprints (2026-08).
+"""Findings from validating 454 real-world spec2 blueprints (2026-08).
 
 Each rule here was verified against the Torque server source (cs2018):
 - flow-style YAML sequences are plain YAML and must parse (162 real files
@@ -276,3 +276,40 @@ grains:
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestBlockScalarErrorPositions(unittest.TestCase):
+    """Real-corpus finding: an expression error inside a block scalar was
+    reported at the block header's line with a column offset into the joined
+    text (e.g. 236:154 where line 236 is `command: |`), so the editor
+    squiggle landed nowhere near the mistake."""
+
+    def test_expression_error_inside_block_scalar_points_at_the_real_line(self):
+        doc = """spec_version: 2
+grains:
+  runner:
+    kind: shell
+    spec:
+      agent:
+        name: agent1
+      activities:
+        deploy:
+          commands:
+            - name: step
+              command: |
+                echo one
+                echo "{{ .bogus.thing }}"
+                echo three
+"""
+        tree = Parser(doc).parse()
+        document = MagicMock()
+        document.lines = doc.splitlines(True)
+        BlueprintSpec2Validator(tree, document).validate()
+        errors = [e for e in tree.errors if "bogus" in e.message]
+        self.assertEqual(1, len(errors), "expected one prefix error")
+        err = errors[0]
+        # the offending expression is on line 14 (1-based)
+        self.assertEqual(14, err.start_pos[0] + 1)
+        # and its column must land inside that line, not past its end
+        line_len = len(doc.splitlines()[13])
+        self.assertLessEqual(err.start_pos[1], line_len)
