@@ -267,8 +267,9 @@ should come with a "does not crash / does not hide other diagnostics" test.
 grain that declares no `scripts:`, variable-like keys in free-form sections,
 `Union`-annotated properties); the suite is green, and it must stay that way.
 
-Running the suite (CI: `.github/workflows/ci.yml`, ubuntu-20.04, Python 3.6 and
-3.7):
+Running the suite (CI: `.github/workflows/ci.yml`, ubuntu-22.04, Python 3.7 --
+20.04 was retired by GitHub, and 22.04 is the newest image still offering a 3.7
+build, matching the pinned `pygls`):
 
 ```
 python -m unittest discover tests/

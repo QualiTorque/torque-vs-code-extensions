@@ -5,14 +5,17 @@ on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ubuntu-20.04
+    # ubuntu-20.04 was retired by GitHub; 22.04 is the newest image that still
+    # offers a Python 3.7 build (the server pins pygls==0.11.3, a 3.6/3.7-era release).
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.6', '3.7']
+        # No 3.6 build is available on 22.04, and 3.6 has been EOL since 2021.
+        python-version: ['3.7']
     name: run tests for python ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -29,8 +32,8 @@ jobs:
     name: lint and format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
 
       - name: Lint Code Base
         uses: docker://github/super-linter:v4
