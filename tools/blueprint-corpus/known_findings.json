@@ -1,0 +1,221 @@
+{
+  "version": 1,
+  "comment": "Catalog of findings already verified against the Torque server source (cs2018) on a 452-blueprint corpus, so the human can skip them. 'blueprint-defect' means the blueprint really is wrong and Torque silently ignores the key - report it to the blueprint owners, there is nothing to fix in the extension. 'tool-limitation' means a known false positive of our own validator. Each 'match' is tested as a substring first and then as a regex against the finding's signature/template/message/path/section. ANYTHING NOT MATCHED HERE IS REPORTED AS **NEW** AND DESERVES INVESTIGATION: a NEW cluster is either an undocumented blueprint defect or - more interestingly - a bug in this extension's schema or validator. Add a row here only after checking the key against the Torque server source, never just to quieten the report.",
+  "clusters": [
+    {
+      "match": "unexpected property: inputs.<key>.display-name",
+      "kind": "blueprint-defect",
+      "note": "An input has no display-name; the real key is the blueprint-level metadata.display-name, and the server drops this one."
+    },
+    {
+      "match": "unknown key: 'display-name'",
+      "kind": "blueprint-defect",
+      "note": "An input has no display-name; the real key is the blueprint-level metadata.display-name, and the server drops this one."
+    },
+    {
+      "match": "unexpected property: inputs.<key>.optional",
+      "kind": "blueprint-defect",
+      "note": "'optional' does not exist in Torque at any level; use a pattern such as '^$|...' to allow a blank value."
+    },
+    {
+      "match": "unknown key: 'optional'",
+      "kind": "blueprint-defect",
+      "note": "'optional' does not exist in Torque at any level; use a pattern such as '^$|...' to allow a blank value."
+    },
+    {
+      "match": "unexpected property: inputs.<key>.display-style",
+      "kind": "blueprint-defect",
+      "note": "'display-style' is not a Torque key; the real input key is 'style'."
+    },
+    {
+      "match": "unknown key: 'display-style'",
+      "kind": "blueprint-defect",
+      "note": "'display-style' is not a Torque key; the real input key is 'style'."
+    },
+    {
+      "match": "unexpected property: grains.<key>.timeout",
+      "kind": "blueprint-defect",
+      "note": "There is no grain-level 'timeout' in the grain model; the value is ignored."
+    },
+    {
+      "match": "unknown key: 'timeout'",
+      "kind": "blueprint-defect",
+      "note": "There is no grain-level 'timeout' in the grain model; the value is ignored."
+    },
+    {
+      "match": "unexpected property: grains.<key>.schedule",
+      "kind": "blueprint-defect",
+      "note": "There is no grain-level 'schedule' in the grain model; the value is ignored."
+    },
+    {
+      "match": "unknown key: 'schedule'",
+      "kind": "blueprint-defect",
+      "note": "There is no grain-level 'schedule' in the grain model; the value is ignored."
+    },
+    {
+      "match": "unknown key: 'files'",
+      "kind": "blueprint-defect",
+      "note": "'files' nested under a script hook is silently dropped - the script does NOT receive those files; 'files' belongs under the grain spec."
+    },
+    {
+      "match": "unexpected property: <root>.published",
+      "kind": "blueprint-defect",
+      "note": "Top-level 'published' is a repo convention consumed by nothing; publishing is a space-level action, not a blueprint key."
+    },
+    {
+      "match": "unknown key: 'published'",
+      "kind": "blueprint-defect",
+      "note": "Top-level 'published' is a repo convention consumed by nothing; publishing is a space-level action, not a blueprint key."
+    },
+    {
+      "match": "unexpected property: grains.<key>.spec.activities.teardown",
+      "kind": "blueprint-defect",
+      "note": "Only 'deploy' and 'destroy' activities exist, so an 'activities.teardown' command list never executes."
+    },
+    {
+      "match": "unknown key: 'teardown'",
+      "kind": "blueprint-defect",
+      "note": "Only 'deploy' and 'destroy' activities exist, so an 'activities.teardown' command list never executes."
+    },
+    {
+      "match": "unexpected property: grains.<key>.spec.activities.run",
+      "kind": "blueprint-defect",
+      "note": "Only 'deploy' and 'destroy' activities exist, so an 'activities.run' command list never executes."
+    },
+    {
+      "match": "unknown key: 'run'",
+      "kind": "blueprint-defect",
+      "note": "Only 'deploy' and 'destroy' activities exist, so an 'activities.run' command list never executes."
+    },
+    {
+      "match": "unexpected property: grains.<key>.env-vars",
+      "kind": "blueprint-defect",
+      "note": "'env-vars' is a grain *spec* key; placed directly on the grain it is ignored."
+    },
+    {
+      "match": "unexpected property: grains.<key>.spec.activities.destroy.env-vars",
+      "kind": "blueprint-defect",
+      "note": "ActivityYaml accepts only 'commands'; env-vars under an activity is dropped, so those variables never reach the commands - move them to grain spec.env-vars."
+    },
+    {
+      "match": "unexpected property: grains.<key>.spec.activities.deploy.env-vars",
+      "kind": "blueprint-defect",
+      "note": "ActivityYaml accepts only 'commands'; env-vars under an activity is dropped, so those variables never reach the commands - move them to grain spec.env-vars."
+    },
+    {
+      "match": "unknown key: 'env-vars'",
+      "kind": "blueprint-defect",
+      "note": "'env-vars' is a grain *spec* key; under the grain itself or under an activity it is ignored."
+    },
+    {
+      "match": "unexpected property: grains.<key>.spec.tf-tags-disabled",
+      "kind": "blueprint-defect",
+      "note": "'tf-tags-disabled' is not a spec key; use spec.tags.disable-tags-for."
+    },
+    {
+      "match": "unknown key: 'tf-tags-disabled'",
+      "kind": "blueprint-defect",
+      "note": "'tf-tags-disabled' is not a spec key; use spec.tags.disable-tags-for."
+    },
+    {
+      "match": "unexpected property: grains.<key>.spec.auto-tag",
+      "kind": "blueprint-defect",
+      "note": "'auto-tag' belongs under spec.tags, not directly on spec, where it is ignored."
+    },
+    {
+      "match": "unknown key: 'auto-tag'",
+      "kind": "blueprint-defect",
+      "note": "'auto-tag' belongs under spec.tags, not directly on spec, where it is ignored."
+    },
+    {
+      "match": "unexpected property: grains.<key>.spec.host",
+      "kind": "blueprint-defect",
+      "note": "spec.host is a dead field: the server stopped reading it, use spec.agent (or spec.target) instead."
+    },
+    {
+      "match": "unknown key: 'host'",
+      "kind": "blueprint-defect",
+      "note": "spec.host is a dead field: the server stopped reading it, use spec.agent (or spec.target) instead."
+    },
+    {
+      "match": "inputs.<key>.style :: 'X' is not one of [X]",
+      "kind": "blueprint-defect",
+      "note": "An input 'style' value outside the allowed enum (e.g. 'single-select', which does not exist - the multi/single distinction is 'multi-select' vs no style at all)."
+    },
+    {
+      "match": "outputs.<key>.kind :: 'X' is not one of [X]",
+      "kind": "blueprint-defect",
+      "note": "A blueprint output 'kind' value outside the allowed enum (e.g. 'string'); only 'regular' and 'link' exist."
+    },
+    {
+      "match": "unexpected property: customization.launch-form.sections[].inputs[].allowed-values",
+      "kind": "blueprint-defect",
+      "note": "The launch form ignores per-input 'allowed-values'; declare allowed-values on the blueprint input itself."
+    },
+    {
+      "match": "unexpected property: customization.launch-form.sections[].collapsed",
+      "kind": "blueprint-defect",
+      "note": "The launch-form UI ignores section 'collapsed'; the real key is 'default_open'."
+    },
+    {
+      "match": "customization.launch-form.sections[].inputs[] :: 'X' is not of type 'X'",
+      "kind": "blueprint-defect",
+      "note": "A launch-form section input must be an object with a 'name' key, not a bare string; the UI reads inputConfig.name."
+    },
+    {
+      "match": "unexpected property: customization.exclude",
+      "kind": "blueprint-defect",
+      "note": "'exclude' belongs under customization.layout (layout.exclude.grains / .resource-types), not directly under customization."
+    },
+    {
+      "match": "wrong property: 'status'",
+      "kind": "blueprint-defect",
+      "note": "'.grains.<g>.status' is not a member of the grains liquid context - the members are outputs, scripts, activities and is_active."
+    },
+    {
+      "match": "unknown prefix: '.envName'",
+      "kind": "blueprint-defect",
+      "note": "'.envName' does not exist in the liquid context; the member is 'environmentName'."
+    },
+    {
+      "match": "unknown prefix: '.outputs'",
+      "kind": "blueprint-defect",
+      "note": "There is no top-level .outputs context. In a workflow use '.bindings.outputs[\"Name\"]' (PostCreationContext.Bindings -> EnvironmentBoundedContext.Outputs); in a blueprint reference the producing grain via '.grains.<grain>.outputs.<name>'."
+    },
+    {
+      "match": "Trailing period symbol is not allowed",
+      "kind": "blueprint-defect",
+      "note": "A literal '{{ ... }}' written inside a shell comment or prose is still Liquid-processed by Torque and renders empty; reword or escape it."
+    },
+    {
+      "match": "The defined input 'X' is not accessed",
+      "kind": "blueprint-defect",
+      "note": "Declared input is never referenced anywhere in the blueprint - dead input. Warning only."
+    },
+    {
+      "match": "unknown variable: 'outputs[X]'",
+      "kind": "blueprint-defect",
+      "note": "'outputs[\"X\"]' as a bare expression prefix is spec-1 syntax; there is no top-level outputs context in spec 2."
+    },
+    {
+      "match": "Output 'X' is not part of the outputs of command 'X' of the 'X' grain",
+      "kind": "blueprint-defect",
+      "note": "An activities output is referenced but not declared in that command's 'outputs' list, so the expression resolves to nothing."
+    },
+    {
+      "match": "Output 'X' is not part of the 'X' grain's outputs",
+      "kind": "blueprint-defect",
+      "note": "A grain output is referenced but not declared in that grain's spec.outputs, so the expression resolves to nothing."
+    },
+    {
+      "match": "Variables are not allowed here",
+      "kind": "tool-limitation",
+      "note": "False positive: a literal value that merely starts with '$' (e.g. default: $LATEST) trips the legacy spec-1 '$'-variable check."
+    },
+    {
+      "match": "Unknown command X",
+      "kind": "tool-limitation",
+      "note": "False positive: an expression with a pipe inside a quoted filter argument (e.g. | default: \"a|b\") is mis-split on the '|'."
+    }
+  ]
+}
