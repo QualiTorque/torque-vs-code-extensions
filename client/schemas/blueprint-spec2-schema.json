@@ -1316,6 +1316,9 @@
                 "sensitive": {
                     "type": "boolean"
                 },
+                "optional": {
+                    "type": "boolean"
+                },
                 "pattern": {
                     "type": "string"
                 },
