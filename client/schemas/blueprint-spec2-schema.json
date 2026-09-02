@@ -82,7 +82,7 @@
                                 }
                             ],
                             "title": "Blueprint self-service",
-                            "description": "Whether the blueprint is published in the self-service catalog. Either a boolean, which applies to every space the repository is connected to, or a list of the space names to publish the blueprint in (space names are case insensitive, and spaces that are not listed are left unpublished). Once this field is set, it can no longer be changed through the API or the UI in any space."
+                            "description": "Whether the blueprint is published in the self-service catalog. Either a boolean, which applies to every space the repository is connected to, or a list of the space names to publish the blueprint in (space names are case-insensitive, and spaces that are not listed are left unpublished). Once this field is set, it can no longer be changed through the API or the UI in any space."
                         },
                         "estimated-ccu": {
                             "type": "string"
@@ -214,7 +214,7 @@
                     "title": "Inputs"
                 },
                 "labels": {
-                    "type":"array",
+                    "type": "array",
                     "items": {
                         "allOf": [
                             {
@@ -473,7 +473,7 @@
                 }
             }
         },
-        "EnvironementVariable": {
+        "EnvironmentVariable": {
             "type": "object",
             "additionalProperties": false,
             "patternProperties": {
@@ -485,7 +485,7 @@
                     ]
                 }
             },
-            "title": "Envrironment Variable"
+            "title": "Environment Variable"
         },
         "WorkflowTrigger": {
             "type": "object",
@@ -537,7 +537,7 @@
                         ]
                     },
                     "contains": {
-                        "type":"string"
+                        "type": "string"
                     }
                 },
                 "groups": {
@@ -674,7 +674,7 @@
                 "env-vars": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/EnvironementVariable"
+                        "$ref": "#/definitions/EnvironmentVariable"
                     }
                 },
                 "namespace": {
@@ -847,7 +847,7 @@
             "additionalProperties": false,
             "properties": {
                 "on-success": {
-                    "type":"array",
+                    "type": "array",
                     "items": {
                         "allOf": [
                             {
@@ -865,7 +865,7 @@
                     }
                 },
                 "on-failure": {
-                    "type":"array",
+                    "type": "array",
                     "items": {
                         "allOf": [
                             {
@@ -885,7 +885,7 @@
             }
         },
         "GrainConditions": {
-            "type":"array",
+            "type": "array",
             "additionalProperties": false,
             "maxLength": 1,
             "items": {
@@ -893,7 +893,7 @@
             }
         },
         "GrainConditionObject": {
-            "type":"object",
+            "type": "object",
             "additionalProperties": false,
             "properties": {
                 "type": {
@@ -1316,6 +1316,9 @@
                 "sensitive": {
                     "type": "boolean"
                 },
+                "optional": {
+                    "type": "boolean"
+                },
                 "pattern": {
                     "type": "string"
                 },
@@ -1691,7 +1694,7 @@
                 },
                 "header": {
                     "type": "string",
-                    "description": "Comma separated header for object input type"
+                    "description": "Comma-separated header for object input type"
                 },
                 "allow-refresh": {
                     "type": "boolean",
