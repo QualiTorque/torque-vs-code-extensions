@@ -109,7 +109,7 @@
                                 }
                             ],
                             "title": "Blueprint self-service",
-                            "description": "Whether the blueprint is published in the self-service catalog. Either a boolean, which applies to every space the repository is connected to, or a list of the space names to publish the blueprint in (space names are case insensitive, and spaces that are not listed are left unpublished). Once this field is set, it can no longer be changed through the API or the UI in any space."
+                            "description": "Whether the blueprint is published in the self-service catalog. Either a boolean, which applies to every space the repository is connected to, or a list of the space names to publish the blueprint in (space names are case-insensitive, and spaces that are not listed are left unpublished). Once this field is set, it can no longer be changed through the API or the UI in any space."
                         },
                         "estimated-ccu": {
                             "type": [
@@ -615,7 +615,7 @@
             },
             "description": "Controls Torque's automatic tagging of deployed cloud resources."
         },
-        "EnvironementVariable": {
+        "EnvironmentVariable": {
             "type": "object",
             "additionalProperties": false,
             "patternProperties": {
@@ -680,7 +680,7 @@
                         ]
                     },
                     "contains": {
-                        "type":"string"
+                        "type": "string"
                     },
                     "description": "Environment events that fire the workflow."
                 },
@@ -844,7 +844,7 @@
                 "env-vars": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/EnvironementVariable"
+                        "$ref": "#/definitions/EnvironmentVariable"
                     },
                     "description": "Environment variables accessible only during this grain's lifecycle (deploy and destroy)."
                 },
@@ -1067,14 +1067,14 @@
             "description": "Labels applied to the environment when this grain ends: 'on-success' and/or 'on-failure'."
         },
         "GrainConditions": {
-            "type":"array",
+            "type": "array",
             "maxLength": 1,
             "items": {
                 "$ref": "#/definitions/GrainConditionObject"
             }
         },
         "GrainConditionObject": {
-            "type":"object",
+            "type": "object",
             "additionalProperties": false,
             "properties": {
                 "type": {
@@ -1556,6 +1556,9 @@
                 "sensitive": {
                     "type": "boolean",
                     "description": "Masks the value behind asterisks in the UI and API (default false). The launch form pre-fills sensitive inputs empty regardless of any default, so a sensitive input is only optional with an empty-matching pattern. The value is write-only after launch: environment responses omit it, it cannot be copied from the UI, and Relaunch does not carry it over - the user must re-enter it."
+                },
+                "optional": {
+                    "type": "boolean"
                 },
                 "pattern": {
                     "type": "string",
@@ -2130,7 +2133,7 @@
                 },
                 "header": {
                     "type": "string",
-                    "description": "Comma separated header for object input type"
+                    "description": "Comma-separated header for object input type"
                 },
                 "allow-refresh": {
                     "type": "boolean",
