@@ -287,6 +287,7 @@ it — for example an expression a folded scalar broke across lines.
 | `tests/test_spec2_closed_objects.py` | the section 10 closed objects: every server class with a fixed key set is `additionalProperties: false` here too |
 | `tests/test_spec2_server_parity.py` | the rest of section 10: Terraform backend per-type fields, workflow `timeout` and `scope`, the full trigger-event list |
 | `tests/test_schema_fixtures.py` | the fixture corpus below: minimal blueprints that must validate, minimal defects that must still be reported, and the coverage link back to the real corpus |
+| `tests/test_schema_syntax.py` | the file itself: no duplicate keys in any object (`json.load` keeps the last duplicate silently, so nothing else would notice), UTF-8 without BOM, LF endings, draft-07 declared and meta-valid, every `$ref` resolvable |
 
 The reference corpus is the six internal ZeroTouch blueprint repositories, and
 454 is its size when walked with the canonical prune list (`.git`,

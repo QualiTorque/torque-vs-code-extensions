@@ -617,7 +617,6 @@
         "Backend": {
             "type": "object",
             "additionalProperties": false,
-            "$comment": "Torque reads a fixed set of 13 backend keys and silently drops anything else, so 'additionalProperties': false reports the extras here instead. Only the listed 'type' values are accepted.",
             "properties": {
                 "type": {
                     "type": "string",
@@ -814,7 +813,7 @@
                     }
                 }
             ],
-            "$comment": "Torque requires 'type' and then, per type, the fields listed in the allOf branches above. 's3' accepts 'skip-region-validation' but never requires it. For 'remote' only 'organization' and 'workspaces' are required - 'hostname' and 'token' stay optional. For 'cloud' nothing is required, which is why there is no 'cloud' branch.",
+            "$comment": "Torque reads a fixed set of 13 backend keys and silently drops anything else, so 'additionalProperties': false reports the extras here instead, and only the listed 'type' values are accepted. Torque requires 'type' and then, per type, the fields listed in the allOf branches above. 's3' accepts 'skip-region-validation' but never requires it. For 'remote' only 'organization' and 'workspaces' are required - 'hostname' and 'token' stay optional. For 'cloud' nothing is required, which is why there is no 'cloud' branch.",
             "description": "Terraform/OpenTofu state backend configuration (s3, gcs, azurerm, http, remote, cloud). Which fields are mandatory depends on 'type'."
         },
         "TemplateStorage": {
