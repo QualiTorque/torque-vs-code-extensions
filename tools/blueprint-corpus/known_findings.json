@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "comment": "Catalog of findings already verified against the Torque server source (cs2018) on a 454-blueprint calibration corpus, then checked out-of-sample against a further 73 files, so the human can skip them. 'blueprint-defect' means the blueprint really is wrong and Torque silently ignores the key - report it to the blueprint owners, there is nothing to fix in the extension. 'tool-limitation' means a known false positive of our own validator. Each 'match' is tested as a substring first and then as a regex against the finding's signature/template/message/path/section. ANYTHING NOT MATCHED HERE IS REPORTED AS **NEW** AND DESERVES INVESTIGATION: a NEW cluster is either an undocumented blueprint defect or - more interestingly - a bug in this extension's schema or validator. Add a row here only after checking the key against the Torque server source, never just to quieten the report.",
+  "comment": "Catalog of findings already verified against the Torque server source (cs2018) on a 454-blueprint calibration corpus, then checked out-of-sample against a further 73 files, so the human can skip them. 'blueprint-defect' means the blueprint really is wrong and Torque silently ignores the key - report it to the blueprint owners, there is nothing to fix in the extension. 'tool-limitation' means a known false positive of our own validator. Each 'match' is tested as a substring first and then as a regex against the finding's signature/template/message/path/section. ANYTHING NOT MATCHED HERE IS REPORTED AS **NEW** AND DESERVES INVESTIGATION: a NEW cluster is either an undocumented blueprint defect or - more interestingly - a bug in this extension's schema or validator. Add a row here only after checking the key against the Torque server source, never just to quieten the report. inputs.<name>.optional became a real field on 2026-08-30 (cs2018 7571846285); the two catalog entries that called it dead were removed on 2026-09-15.",
   "clusters": [
     {
       "match": "unexpected property: inputs.<key>.display-name",
@@ -11,16 +11,6 @@
       "match": "unknown key: 'display-name'",
       "kind": "blueprint-defect",
       "note": "An input has no display-name; the real key is the blueprint-level metadata.display-name, and the server drops this one."
-    },
-    {
-      "match": "unexpected property: inputs.<key>.optional",
-      "kind": "blueprint-defect",
-      "note": "'optional' does not exist in Torque at any level; use a pattern such as '^$|...' to allow a blank value."
-    },
-    {
-      "match": "unknown key: 'optional'",
-      "kind": "blueprint-defect",
-      "note": "'optional' does not exist in Torque at any level; use a pattern such as '^$|...' to allow a blank value."
     },
     {
       "match": "unexpected property: inputs.<key>.display-style",
@@ -56,6 +46,11 @@
       "match": "unknown key: 'files'",
       "kind": "blueprint-defect",
       "note": "'files' nested under a script hook is silently dropped - the script does NOT receive those files; 'files' belongs under the grain spec."
+    },
+    {
+      "match": "unexpected property: grains\\.<key>\\.spec\\.scripts\\.[a-z-]+\\.files",
+      "kind": "blueprint-defect",
+      "note": "Schema-layer twin of the entry above, reported since the script hook objects were closed (2026-09-15): 'files' under any scripts.<hook> is dropped by the server (ScriptYaml reads only source/arguments/outputs). Regex on purpose - it covers every hook name."
     },
     {
       "match": "unexpected property: <root>.published",

@@ -160,7 +160,7 @@
                     "properties": {
                         "scope": {
                             "type": "string",
-                            "description": "Where the workflow is available: 'space' (space level), 'env' (entire environments) or 'env_resource' (specific resource types)."
+                            "description": "Where the workflow is available: 'space' (space-level), 'env' (entire environments) or 'env_resource' (specific resource types)."
                         },
                         "label-selector": {
                             "type": "string",
@@ -241,17 +241,15 @@
                 },
                 "inputs": {
                     "type": "object",
-                    "patternProperties": {
-                        "^[a-zA-Z0-9-_ ().]{3,45}$": {
-                            "oneOf": [
-                                {
-                                    "$ref": "#/definitions/BlueprintInputObject"
-                                },
-                                {
-                                    "type": "null"
-                                }
-                            ]
-                        }
+                    "additionalProperties": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/definitions/BlueprintInputObject"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
                     },
                     "title": "Inputs",
                     "description": "Values provided by the user, API or CI when creating an environment. Reference them anywhere in the blueprint as {{ .inputs.name }}."
@@ -262,44 +260,38 @@
                 },
                 "outputs": {
                     "type": "object",
-                    "patternProperties": {
-                        "^[a-zA-Z0-9-_ ().]{3,45}$": {
-                            "oneOf": [
-                                {
-                                    "$ref": "#/definitions/BlueprintOutputObject"
-                                },
-                                {
-                                    "type": "null"
-                                }
-                            ]
-                        }
+                    "additionalProperties": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/definitions/BlueprintOutputObject"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
                     },
                     "title": "Outputs",
                     "description": "Values returned to the user/API when the environment is active, typically mapped from grain outputs: value: '{{ .grains.<grain>.outputs.<output> }}'."
                 },
                 "env_references": {
                     "type": "object",
-                    "patternProperties": {
-                        "^[a-zA-Z0-9-_ ().]{3,45}$": {
-                            "oneOf": [
-                                {
-                                    "$ref": "#/definitions/BlueprintEnvReferenceObject"
-                                },
-                                {
-                                    "type": "null"
-                                }
-                            ]
-                        }
+                    "additionalProperties": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/definitions/BlueprintEnvReferenceObject"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
                     },
                     "title": "Environment References",
                     "description": "References to other running (published) environments, selected by labels. Grains can consume the referenced environments' outputs."
                 },
                 "resources": {
                     "type": "object",
-                    "patternProperties": {
-                        "^[a-zA-Z0-9-_ ().]{3,45}$": {
-                            "$ref": "#/definitions/BlueprintResourceRequirementObject"
-                        }
+                    "additionalProperties": {
+                        "$ref": "#/definitions/BlueprintResourceRequirementObject"
                     },
                     "title": "Resources",
                     "description": "Inventory resource requirements reserved exclusively for the environment for its whole duration. Each requirement is either abstract ('selector' - Torque picks matching resources) or concrete ('reference' - specific resource reference ids). Grains access the assigned resources via {{ .resources.<name> }}."
@@ -307,7 +299,7 @@
                 "grains": {
                     "type": "object",
                     "patternProperties": {
-                        "^[a-zA-Z0-9-_ ]{3,45}$": {
+                        "^[a-zA-Z0-9 \\-_]+$": {
                             "oneOf": [
                                 {
                                     "$ref": "#/definitions/GrainObject"
@@ -318,6 +310,7 @@
                             ]
                         }
                     },
+                    "additionalProperties": false,
                     "title": "Grains",
                     "description": "Grains are the basic building blocks of a blueprint - each utilizes an infrastructure-as-code asset (Terraform module, Helm chart, shell script, nested blueprint...) or automation process to orchestrate part of the environment. Ordering is controlled with depends-on."
                 },
@@ -490,6 +483,7 @@
         },
         "ScriptObject": {
             "type": "object",
+            "additionalProperties": false,
             "properties": {
                 "source": {
                     "$ref": "#/definitions/GrainSpecSourceObject"
@@ -582,6 +576,7 @@
         },
         "ScriptOutputsObject": {
             "type": "object",
+            "additionalProperties": false,
             "properties": {
                 "outputs": {
                     "type": "array",
@@ -1551,22 +1546,23 @@
                         "boolean",
                         "object"
                     ],
-                    "description": "Value used when no other value is provided; pre-fills the launch-form field but never affects required-ness (required = no 'pattern'). A non-empty default must itself satisfy the pattern. 'default: \"\"' is a real empty-string default on a still-required field, not 'optional' - use a '^$|' pattern for that."
+                    "description": "Value used when no other value is provided; pre-fills the launch-form field. A non-empty default must itself satisfy the pattern. When 'optional' is not set, having a default (even \"\") makes the input optional unless its 'pattern' rejects the empty string."
                 },
                 "sensitive": {
                     "type": "boolean",
-                    "description": "Masks the value behind asterisks in the UI and API (default false). The launch form pre-fills sensitive inputs empty regardless of any default, so a sensitive input is only optional with an empty-matching pattern. The value is write-only after launch: environment responses omit it, it cannot be copied from the UI, and Relaunch does not carry it over - the user must re-enter it."
+                    "description": "Masks the value behind asterisks in the UI and API (default false). The launch form pre-fills sensitive inputs empty regardless of any default - set 'optional' explicitly to control whether it may stay empty. The value is write-only after launch: environment responses omit it, it cannot be copied from the UI, and Relaunch does not carry it over - the user must re-enter it."
                 },
                 "optional": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Whether the input may be left empty at launch. true: never required, and a 'pattern' that rejects the empty string is a blueprint validation error. false: always required. Not set: required only when there is neither a 'default' nor a 'pattern', or when the 'pattern' rejects the empty string. Only meaningful for 'string' and 'dictionary' inputs; ignored for types that reference another entity (agent, credentials, file, parameter, input-source, target, resource)."
                 },
                 "pattern": {
                     "type": "string",
-                    "description": "A regular expression the input value must match, enforced client-side in the launch form. The form marks an input REQUIRED if and only if it has no pattern; to make an input optional (blank allowed), use a pattern that matches the empty string - convention: a leading '^$|' alternative. Note that 'default: \"\"' does NOT make an input optional."
+                    "description": "A regular expression the value must match (JavaScript syntax, optionally written as a /.../flags literal), checked in the launch form as the user types and enforced by Torque at launch. When 'optional' is not set, a pattern that does not match the empty string makes the input required - the '^$|' prefix convention keeps it optional. May contain Liquid expressions over the inputs named in 'depends-on' and space parameters; they are resolved before matching."
                 },
                 "validation-description": {
                     "type": "string",
-                    "description": "A user-friendly message shown when the value doesn't match 'pattern' (e.g. 'Empty or a URL')."
+                    "description": "A user-friendly message shown when the value doesn't match 'pattern' (e.g. 'Empty or a URL'), in the launch form and in Torque's launch error. May contain Liquid expressions like 'pattern'."
                 },
                 "allowed-values": {
                     "type": "array",
@@ -2455,13 +2451,25 @@
             "additionalProperties": false,
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "The label key that must be present on the target; a target must carry every listed label."
                 },
                 "value": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "The value the label must carry on the target (case-insensitive)."
+                },
+                "values": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Alternative to 'value' - the label matches when the target carries any one of the listed values (case-insensitive); a label takes either 'value' or 'values', not both."
                 }
             },
             "required": ["key"],
+            "not": {
+                "required": ["value", "values"]
+            },
             "title": "Target Label Filter Object"
         }
     }

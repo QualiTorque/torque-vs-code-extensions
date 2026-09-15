@@ -3,6 +3,7 @@ from tracemalloc import start
 from typing import List
 
 from server.ats.trees.blueprint_v2 import (
+    BlueprintV2InputObject,
     BlueprintV2OutputNode,
     BlueprintV2Tree,
     FreeFormNode,
@@ -16,6 +17,8 @@ from server.ats.trees.blueprint_v2 import (
     ScriptObject,
     ScriptOutputsObject,
     SpecHostNode,
+    TargetFiltersObject,
+    TargetLabelFilterObject,
     WorkflowObject,
     WorkflowTriggerObject,
 )
@@ -34,6 +37,20 @@ EXPRESSION_REGEX = re.compile(r"\{\{[^\{\}]*\}\}")
 BRACKET_SEGMENT_REGEX = re.compile(
     r"""\[\s*(?:"([^"]*)"|'([^']*)'|([^\]]*?))\s*\]"""
 )
+
+# An input 'pattern' written as a JavaScript regex literal: '/expression/flags'.
+# Kept identical to cs2018's BlueprintInputPatternRegex.RegexLiteralFormat, so
+# that both agree on what counts as a regex literal.
+REGEX_LITERAL_REGEX = re.compile(r"^/(.*?)/([gimsuy]*)$", re.DOTALL)
+
+# The regex literal flags Python's 're' has an equivalent for. The others
+# ('g', 'u', 'y') say how a match is iterated, not how it is compiled, and so
+# make no difference to whether the expression matches an empty string.
+REGEX_LITERAL_FLAGS = {
+    "i": re.IGNORECASE,
+    "m": re.MULTILINE,
+    "s": re.DOTALL,
+}
 
 
 def split_expression_path(expression: str) -> List[str]:
@@ -1082,6 +1099,185 @@ class BlueprintSpec2Validator(ValidationHandler):
                 self.tree.workflow,
             )
 
+    # 'optional' only carries a meaning for the inputs whose value the user
+    # types in; it is ignored for the types referencing another entity. Mirrors
+    # cs2018's BlueprintInputsValidator.IsValueBearingInput.
+    value_bearing_input_types = ["string", "dictionary"]
+    # an input without a 'type' is a string one - BlueprintInputYaml.GetTypeOrDefault
+    default_input_type = "string"
+
+    def _input_objects(self):
+        """(input node, input object) of every declared input. Inputs that are
+        still being typed - no key, or a key with nothing under it - are
+        skipped, and so is anything that did not parse into an input object."""
+        result = []
+
+        try:
+            input_nodes = self.tree.input_list
+        except Exception:
+            return result
+
+        for input_node in input_nodes or []:
+            input_obj = getattr(input_node, "value", None)
+
+            if not isinstance(input_obj, BlueprintV2InputObject):
+                continue
+
+            result.append((input_node, input_obj))
+
+        return result
+
+    @classmethod
+    def _pattern_rejects_empty_value(cls, pattern: str) -> bool:
+        """Whether the pattern refuses an empty value, deciding it exactly like
+        the server's PatternEmptyValueEvaluator: the pattern is compiled as-is,
+        without anchors being added, and tested against an empty string the way
+        the launch form's 'regex.test("")' does.
+
+        A pattern that cannot be compiled is unevaluable, not a conflict, so it
+        answers False - the server never fails a blueprint over a pattern whose
+        meaning it does not know."""
+        if not pattern:
+            return False
+
+        literal = REGEX_LITERAL_REGEX.match(pattern)
+
+        if literal is not None:
+            expression = literal.group(1)
+            flag_letters = literal.group(2)
+        else:
+            expression = pattern
+            flag_letters = ""
+
+        flags = 0
+
+        for letter in flag_letters:
+            flags |= REGEX_LITERAL_FLAGS.get(letter, 0)
+
+        try:
+            return re.search(re.compile(expression, flags), "") is None
+        except Exception:
+            # an expression Python cannot compile (or a JavaScript-only
+            # construct) tells us nothing about an empty value
+            return False
+
+    def _validate_optional_vs_pattern(self):
+        """'optional: true' together with a pattern rejecting an empty value
+        makes the input impossible to leave empty and the blueprint impossible
+        to launch. Mirrors BLUEPRINT_INPUT_OPTIONAL_CONFLICTS_WITH_PATTERN."""
+        message = (
+            "Input '{}' is marked optional, but its pattern does not allow an "
+            "empty value - set optional to false or make the pattern match an "
+            "empty string"
+        )
+
+        for input_node, input_obj in self._input_objects():
+            optional = self._prop_text(getattr(input_obj, "optional", None))
+
+            if optional is None or optional.lower() != "true":
+                continue
+
+            input_type = (
+                self._prop_text(getattr(input_obj, "input_type", None))
+                or self.default_input_type
+            )
+
+            if self._is_expression(input_type):
+                continue
+
+            if input_type.lower() not in self.value_bearing_input_types:
+                continue
+
+            pattern_prop = getattr(input_obj, "pattern", None)
+            pattern = self._prop_text(pattern_prop)
+
+            # a pattern holding a Liquid expression is only final at launch
+            if pattern is None or self._is_expression(pattern):
+                continue
+
+            if not self._pattern_rejects_empty_value(pattern):
+                continue
+
+            # an input's key is the scalar of a mapping node, not a property,
+            # so its text is read directly
+            key_node = getattr(input_node, "key", None)
+            input_name = getattr(key_node, "text", None) or ""
+
+            self._report(
+                message.format(input_name),
+                self._prop_value(getattr(input_obj, "optional", None), TextNode),
+                getattr(input_obj, "optional", None),
+                self._prop_value(pattern_prop, TextNode),
+                pattern_prop,
+                key_node,
+            )
+
+    def _target_filter_labels(self, input_obj):
+        """The label filters declared under an input's 'target-filters'."""
+        target_filters = self._prop_value(
+            getattr(input_obj, "target_filters", None), TargetFiltersObject
+        )
+
+        if target_filters is None:
+            return []
+
+        labels = self._prop_value(
+            getattr(target_filters, "labels", None), SequenceNode
+        )
+
+        if labels is None:
+            return []
+
+        return [
+            label
+            for label in (labels.nodes or [])
+            if isinstance(label, TargetLabelFilterObject)
+        ]
+
+    def _validate_target_filter_label_values(self):
+        """A target filter label matches either one 'value' or any one of
+        'values', never both. Mirrors
+        BLUEPRINT_INPUT_TARGET_FILTER_LABEL_WITH_VALUE_AND_VALUES."""
+        message = (
+            "Target filter label '{}' specifies both 'value' and 'values' - "
+            "use one of them"
+        )
+
+        for input_node, input_obj in self._input_objects():
+            for label in self._target_filter_labels(input_obj):
+                if self._prop_text(getattr(label, "value", None)) is None:
+                    continue
+
+                values = self._prop_value(
+                    getattr(label, "values", None), SequenceNode
+                )
+
+                if values is None or not values.nodes:
+                    continue
+
+                label_key = self._prop_text(getattr(label, "key", None)) or ""
+
+                self._report(
+                    message.format(label_key),
+                    self._prop_value(getattr(label, "key", None), TextNode),
+                    getattr(label, "key", None),
+                    label,
+                    getattr(input_node, "key", None),
+                )
+
+    def _validate_inputs(self):
+        """Input validations that must never raise: an exception here would
+        discard every diagnostic already collected for the document."""
+        try:
+            self._validate_optional_vs_pattern()
+        except Exception:
+            pass
+
+        try:
+            self._validate_target_filter_label_values()
+        except Exception:
+            pass
+
     def validate(self):
         visitor = ExpressionValidationVisitor(self.tree, self._document)
         self.tree.accept(visitor)
@@ -1099,4 +1295,5 @@ class BlueprintSpec2Validator(ValidationHandler):
         self._validate_grain_mode()
         self._validate_auto_approve_requires_storage()
         self._validate_workflow()
+        self._validate_inputs()
         return self._diagnostics

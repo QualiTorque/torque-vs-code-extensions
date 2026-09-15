@@ -728,6 +728,7 @@ class GrainNode(MappingNode):
 class TargetLabelFilterObject(ObjectNode):
     key: ScalarNode = None
     value: TextNode = None
+    values: ScalarNodesSequence = None
 
 
 @dataclass
@@ -780,6 +781,7 @@ class BlueprintV2InputObject(ObjectNode):
     default: ScalarNode = None
     description: ScalarNode = None
     sensitive: ScalarNode = None
+    optional: ScalarNode = None
     pattern: ScalarNode = None
     validation_description: ScalarNode = None
     allowed_values: ScalarNodesSequence = None
