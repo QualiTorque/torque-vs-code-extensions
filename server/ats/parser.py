@@ -440,10 +440,26 @@ class Parser:
             try:
                 value_node = node.get_value(expected_type=TextNode)
             except ValueError:
-                raise ParserError(
-                    message="Scalar cannot be accepted here. Object expected",
-                    token=token,
+                # A property modelled as an object only ('agent', 'target')
+                # was given a scalar. The server does not deserialize it
+                # either, so it is an error - but a recorded one: raising here
+                # aborts the whole parse and the file loses every other
+                # diagnostic it has. The value is skipped, and the property
+                # node stays on the stack exactly as it does when a scalar is
+                # accepted, so parsing continues with the next key.
+                node.add_error(
+                    NodeError(
+                        start_pos=self.get_token_start(token),
+                        end_pos=self.get_token_end(token),
+                        message="Scalar cannot be accepted here. Object expected",
+                    )
                 )
+                self.tokens_stack.pop()
+
+                if self.is_array_item:
+                    self.is_array_item = False
+                return
+
             self.nodes_stack.append(value_node)
 
             self._process_scalar_token(token)

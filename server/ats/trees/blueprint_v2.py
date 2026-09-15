@@ -378,6 +378,11 @@ class RunnerConfigurationOverrideObject(ObjectNode):
 
 @dataclass
 class GrainSpecTargetObject(ObjectNode):
+    """spec.target: an object only. GrainSpecYaml.Target carries a plain
+    [YamlMember] - no [YamlShortSyntax] and no type converter - so a scalar
+    ('target: my-target') is not deserialized by the server, exactly like
+    spec.agent."""
+
     name: TextNode = None
     runner_configuration_override: RunnerConfigurationOverrideObject = None
 
@@ -589,7 +594,8 @@ class GrainSpecNode(ObjectNode):
     target_namespace: TextNode = None
     release: TextNode = None
     agent: SpecHostNode = None
-    target: Union[GrainSpecTargetObject, TextNode] = None
+    # object only, like 'agent' above: a scalar is reported, not accepted
+    target: GrainSpecTargetObject = None
     backend: BackendObject = None
     files: ShellGrainFilesSequence = None
     provider_overrides: ProviderOverridesSequence = None

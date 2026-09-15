@@ -136,5 +136,26 @@ class TestLanguageServerParity(unittest.TestCase):
         self.assertEqual([], self.unknown_keys(doc))
 
 
+class TestTargetHasNoScalarForm(unittest.TestCase):
+    """GrainSpecYaml.Target carries only [YamlMember] - no [YamlShortSyntax] and no type
+    converter - so `target: my-target` (a scalar) is not deserialized by the server. 607 of
+    607 real usages write the object form. The schema must not advertise a short form."""
+
+    def test_scalar_target_is_rejected(self):
+        self.assertTrue(schema_errors(terraform_grain("      target: my-target\n")))
+
+    def test_object_target_is_accepted(self):
+        self.assertEqual([], schema_errors(terraform_grain("      target:\n        name: my-target\n")))
+
+    def test_language_server_rejects_scalar_target_too(self):
+        # both layers must agree, or the editor shows a schema error next to a silent tree model
+        from server.ats.parser import Parser
+
+        tree = Parser(terraform_grain("      target: my-target\n")).parse()
+        self.assertTrue([e.message for e in tree.errors], "the tree model must report a scalar target")
+        ok_tree = Parser(terraform_grain("      target:\n        name: my-target\n")).parse()
+        self.assertEqual([], [e.message for e in ok_tree.errors])
+
+
 if __name__ == "__main__":
     unittest.main()

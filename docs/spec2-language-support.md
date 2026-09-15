@@ -63,10 +63,18 @@ top-level keys of the schema (`spec_version`, `description`, `instructions`,
   mapping is per-class and now cached in `ObjectNode._field_mapping_cache`; it
   used to be rebuilt on every attribute access.
 * Properties that accept either a scalar shorthand or a nested object are
-  annotated with `typing.Union` (e.g. `target`, `deployment-engine`,
-  `reference`). A `Union` is not a class, so `issubclass` raises on it —
-  `server/ats/trees/common.py` walks `__args__` instead, in `_get_seq_nodes`,
-  in the `allow_vars` propagation and in `PropertyNode.__getattr__`.
+  annotated with `typing.Union` (e.g. `resources.<name>.reference`,
+  `metadata.blueprint-labels` items, `deployment-engine`). A `Union` is not a
+  class, so `issubclass` raises on it — `server/ats/trees/common.py` walks
+  `__args__` instead, in `_get_seq_nodes`, in the `allow_vars` propagation and
+  in `PropertyNode.__getattr__`.
+* The shorthand exists only where the server declares `[YamlShortSyntax]` on
+  the property (or gives it a type converter). `spec.target` does **not**: it
+  is an object-only property like `spec.agent`, so the tree models it as
+  `GrainSpecTargetObject` alone and a scalar `target: my-target` is reported,
+  not accepted — both layers agree, which is what
+  `TestTargetHasNoScalarForm` (`tests/test_spec2_server_parity.py`) pins.
+  See section 11.
 
 ### Free-form sections
 
@@ -128,6 +136,18 @@ sequence may be a `SequenceNode`, the `UnprocessedNode` placeholder, or a
 branch also closes the enclosing map element (`My Input:` under `inputs:`),
 without which the next key of the map is written over the current element and
 the entry disappears from the model.
+
+### A scalar where an object belongs
+
+`agent: my-agent`, `target: my-target` — a scalar handed to a property the tree
+models as an object only. The value is wrong (the server's deserializer drops
+it too), but *how* it is reported matters more than that it is: `Parser` used to
+raise `ParserError` there, which aborts the parse and leaves `server.py` with
+one diagnostic and no tree — every other error in the file disappears, exactly
+the failure mode the previous subsection exists to avoid. It now records a
+`NodeError` ("Scalar cannot be accepted here. Object expected") on the property
+and skips the value, leaving the stacks as an accepted scalar would, so the
+rest of the document is still parsed and still diagnosed.
 
 ### Characters pyyaml refuses to read
 
@@ -677,3 +697,57 @@ not once at the end: **412** fully clean, **0** crashes, **727** findings — al
 of them already-KNOWN categories, **0** NEW. A single NEW finding would have
 meant a rule that rejects a blueprint Torque runs today, and would have been
 reverted rather than explained.
+
+## 11. Descriptions pass (2026-09-15)
+
+Section 10 made the schema's *shapes* match the server. This pass did the same
+for its *words*. A description is not decoration here: it is the hover text a
+blueprint author reads instead of the docs, and a wrong one is worse than a
+missing one — it is a rule the extension invents. So all **177** existing
+descriptions were re-read claim by claim against cs2018 `origin/main`
+**c0f49bd04d** and the cs2018-ui source, and every claim that could not be
+traced to a line of server code was either corrected or dropped.
+
+Thirteen were wrong. Grouped by what they got wrong:
+
+| Was | Is |
+|---|---|
+| The input object's summary still described the pre-2026-08-30 required-ness rule | It defers to `optional` / `default` / `pattern` (section 8.1–8.3) |
+| `depends-on` was documented for dropdown-ish inputs only | `InputTypesWithDependsOnSupport` includes plain **string** inputs |
+| A single-value `allowed-values` list left the user to pick it | That one value is **auto-selected**, unless the input's style is multi-select |
+| `resource-selector` read as required on a resource input | It is optional; the server never requires it |
+| Workflow `label-selector` described as an alias of `labels-selector` | It is a **legacy alias of `resource-types`** — the AutoMapper profile reads `ResourceTypes = LabelSelector ?? ResourceTypes` |
+| `target` documented with a scalar short form | It has none: the property carries only `[YamlMember]`, there is no type converter, and **607 of 607** real usages write the object. The schema's `string` branch is removed and the tree model now types it as the object alone (section 2) |
+| `spec.version` and `tf-version` read as two settings | They are the **same** setting (declaring both is an error), and `version` is exclusive with `binary` |
+| `when` described as skipping the grain | It skips the grain **and every grain that depends on it** |
+| `auto-tag`'s default unstated | It defaults to **true** |
+| `namespace` and `target-namespace` blurred together | Spelled apart: where the grain's own release lives vs. where it deploys |
+| Launch-form input types left implicit | Spelled out |
+
+The other half of the pass was coverage: **136** properties had no description
+at all — the Environment-as-Code section, every backend and template-storage
+field, the kubernetes and docker runner permissions, runner configuration
+overrides, approval conditions, shell `files` entries, all **32** input-source
+overrides, the resource-selector stubs and the customization UI contract. Every
+property in the file now carries one, which is also what makes the next audit
+cheap: a property with no description is now a visible hole, not the norm.
+
+One key was added rather than described: `customization.layout.exclude.resources`,
+which the UI reads (`resources_layout_section.tsx`) and the schema did not have.
+It hides one resource instance by exact name, without hiding its type or its
+grain — the sibling of the `grains` and `resource-types` exclusions. It comes
+with a fixture, like every other key (section 6).
+
+**The rule this pass leaves behind.** A description that states a default, makes
+an "ignored" / "required" / "only" claim, or quotes a number must cite the server
+type that decides it in a `$comment` next to it — otherwise it must be
+re-verified from scratch at the next schema sync, because nothing in the file
+records where it came from. `$comment` is the right place for that: validators
+ignore it and no hover shows it, so it costs the author nothing.
+
+A layering note that explains an oddity of the file: a `description` written
+next to a `$ref` is **ignored by a draft-07 validator** (the sibling keywords of
+a `$ref` are), but yaml-language-server does show it on hover, and it is the
+only way to say what a shared definition means *at this particular use site*.
+The file therefore uses them deliberately — they are hover text, never a
+constraint, and no test may rely on one being evaluated.
