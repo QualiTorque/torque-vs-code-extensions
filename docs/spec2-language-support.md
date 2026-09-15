@@ -164,7 +164,7 @@ allowed values and the server narrows it).
 | A grain defines `agent` **or** `target`, never both | `_validate_agent_and_target_exclusivity` | `GrainAgentValidator` / `GrainTargetValidator` |
 | `mode` per kind: terraform `managed`\|`no-termination`; argocd `data` and it is mandatory; any other kind `managed` only | `_validate_grain_mode` + the `grain_modes` / `default_grain_modes` / `kinds_requiring_mode` tables | `GrainModeValidator` options |
 | `auto-approve: false` cannot run with `use-storage: false` (the runner must keep the plan while it awaits approval); `use-storage` is read from `spec.agent` or from `spec.target.runner-configuration-override` | `_validate_auto_approve_requires_storage` + `_get_use_storage_property` | `GrainHostValidator` |
-| Workflow `scope` in `space`\|`env`\|`env_resource`; `space` scope allows manual triggers only; `manual` takes no `event`/`cron`; `event` requires `event` and forbids `cron`; `cron` requires `cron` and forbids `event`; `timeout` is an integer >= 5 (minutes) | `_validate_workflow*`, `workflow_scopes`, `workflow_min_timeout` | `WorkflowYamlValidator` |
+| Workflow `scope` in `space`\|`env`\|`env_resource`; `space` scope allows manual triggers only; `manual` takes no `event`/`cron`; `event` requires `event` and forbids `cron`; `cron` requires `cron` and forbids `event`; `timeout` is an integer >= 5 (minutes) — `scope` and `timeout` are now pinned in the schema as well (section 10), so those two are duplicated on purpose like the resource-requirement `oneOf`; the trigger combinations still need cross-node knowledge | `_validate_workflow*`, `workflow_scopes`, `workflow_min_timeout` | `WorkflowYamlValidator` |
 | Duplicate grain outputs / duplicate grain spec inputs / duplicate or unknown or self `depends-on` entries | `_validate_no_duplicates_in_grain_outputs`, `_validate_no_duplicates_in_grain_spec`, `_validate_no_duplicates_in_deps`, `_validate_grain_dep_exists` | pre-existing |
 
 Conventions worth keeping:
@@ -263,6 +263,9 @@ it — for example an expression a folded scalar broke across lines.
 | `tests/test_spec2_real_world.py` | the findings of a scan of 454 real-world blueprints: flow style YAML, unprintable bytes, bracket/dotless expression forms, the activities output path, transitive `depends-on`, the filter set, Liquid in `authentication`, and the unused-input regex |
 | `tests/test_spec2_optional_and_label_values.py` | the section 8 input changes at the *schema* layer (`inputs.<n>.optional`, `target-filters.labels[].values`) |
 | `tests/test_spec2_names.py` | the section 9 name rules: the grain-name regex is enforced, any input/output name is accepted, and no entry escapes validation by having an unusual name |
+| `tests/test_spec2_required_parity.py` | the section 10 mandatory-field rules and the `if`/`then` conditionals, plus the assertion that `$schema` is draft-07 (without which those conditionals are dead) |
+| `tests/test_spec2_closed_objects.py` | the section 10 closed objects: every server class with a fixed key set is `additionalProperties: false` here too |
+| `tests/test_spec2_server_parity.py` | the rest of section 10: Terraform backend per-type fields, workflow `timeout` and `scope`, the full trigger-event list |
 | `tests/test_schema_fixtures.py` | the fixture corpus below: minimal blueprints that must validate, minimal defects that must still be reported, and the coverage link back to the real corpus |
 
 The reference corpus is the six internal ZeroTouch blueprint repositories, and
@@ -299,7 +302,7 @@ these pins. Note that `ruamel.yaml` and `tabulate` are needed for the *whole*
 suite to import (`tests/test_validator.py` reaches `server/utils/yaml_utils.py`);
 the spec2 modules themselves only need pygls and pyyaml. The schema-layer test
 modules (sections 8 and 9) drive the JSON Schema directly through
-`jsonschema.Draft6Validator`, and `jsonschema` is *not* pulled in by
+`jsonschema.Draft7Validator`, and `jsonschema` is *not* pulled in by
 `server/requirements.txt` — CI installs it explicitly. Leave it unpinned: pip
 honours `Requires-Python`, so 3.7 resolves to 4.17.3, the last release before
 jsonschema dropped 3.7.
@@ -328,7 +331,7 @@ key starts being silently accepted. `tests/schema_fixtures/` closes that, with
 minimal, generic blueprints standing in for the real ones — representative of
 what they use, carrying none of their content.
 
-Three things are enforced, by `tests/test_schema_fixtures.py`:
+Four things are enforced, by `tests/test_schema_fixtures.py`:
 
 * `valid/<feature>.yaml` — one feature family per file, must validate with
   **zero** errors. This is also where the schema-only constructs live: the grain
@@ -350,12 +353,30 @@ Three things are enforced, by `tests/test_schema_fixtures.py`:
   `[]` for a list level). The union of the paths exercised by the valid fixtures
   must cover all of them. That check is what makes "based on the real
   blueprints" a property CI verifies rather than a claim in a commit message.
+* **The schema's own surface** — all 352 declared properties, all 115 enum
+  members and all 58 definitions reachable from the root have to be exercised by
+  some valid fixture. `required-paths.txt` is the floor the real blueprints set;
+  this is the ceiling. Nothing is listed by hand: `PathClassifier` reports what
+  the fixtures reached and `SchemaEnumerator` reports what the schema declares,
+  and the difference is the failure message, one `subTest` per uncovered
+  element. So the counts above are descriptions of today's schema, not constants
+  anywhere in the code: a property added to the schema without a fixture fails CI
+  the day it lands, named (`BlueprintInputObject.searchable`,
+  `WorkflowTrigger.event = 'Tag Updates Detected'`). Something **no valid
+  document can reach** is excused in the `EXCLUDED_*` sets in the test module
+  with a reason — unreachable is the bar, not inconvenient, and "writing that
+  fixture is work" is not a reason. All three sets are empty, and an exclusion
+  that no longer matches the schema is itself a failure.
 
 To add a fixture, drop a file in `valid/` (start it with `spec_version`, keep it
 minimal, open it with a comment saying what it pins) or in `invalid/` with its
 `# expect-error:` lines — match on the distinctive fragment of the message, not
 on a whole sentence. A failing run prints every message with its JSON path, so
-the expectation can be read straight off it.
+the expectation can be read straight off it. Expectations are matched
+case-insensitively against all messages; where jsonschema itself reworded a
+message between the two versions CI runs (`minItems` became "should be
+non-empty" in 4.18, having been "is too short"), pin the offending *value*
+rather than the wording.
 
 `required-paths.txt` is regenerated with the classifier in
 [`tools/blueprint-corpus/classify_corpus_paths.py`](../tools/blueprint-corpus/classify_corpus_paths.py),
@@ -372,7 +393,11 @@ The same run writes the `rejected-paths.txt` that the `invalid/` fixtures come
 from. The test imports that script by file path — `blueprint-corpus` has a
 hyphen, so it is not a package — and reuses its `PathClassifier` for the
 coverage check, so CI normalizes paths with the same code that produced the
-file.
+file. `SchemaEnumerator` lives in the same module for the same reason: it has
+to walk the schema by exactly the classifier's rules (`$ref` renaming,
+combinator spreading, `<name>` for user-chosen keys) or the two sides would
+disagree about what a property is called and the coverage check would compare
+nothing to nothing.
 
 The module imports only `yaml`, `jsonschema` and the standard library, so it
 runs on the pinned 3.7 stack and on a current Python alike. The 3.7 `test` job
@@ -395,14 +420,23 @@ Two things that surprise people and are easy to mistake for bugs:
   synced against rather than something the user's editor picks up on its own.
   To exercise a schema change, associate it by hand — a `yaml.schemas` entry or
   a `# yaml-language-server: $schema=` comment in the test document.
-* **A schema constraint may be missing on purpose.** Workflow `scope`, for
-  example, has no `enum` in the schema; the allowed values live only in its
-  `description` and are enforced by `_validate_workflow_scope`. That is the
-  layer split of section 1 in practice: when a value's legality depends on
-  context (here, which triggers the scope permits), pinning it in the schema
-  too would double-report the same mistake and force every future value change
-  to land in two places. Before "fixing" an apparently lax schema rule, check
-  whether the language server already covers it.
+* **A schema constraint may be missing on purpose.** Grain `mode` is the
+  standing example: the schema lists the union of the allowed values and only
+  the language server narrows it per kind (section 4). That is the layer split
+  of section 1 in practice — when a value's legality depends on *context*,
+  pinning it in the schema too would double-report the same mistake and force
+  every future value change to land in two places. Two more, from the parity
+  pass of section 10: `provider-type` and `cloud-providers` stay **soft** enums,
+  because the server does not check them against a closed set and a strict enum
+  here would reject a provider Torque accepts; and Terraform backend
+  `skip-region-validation` is deliberately not required for `s3`, because on the
+  server it is a non-nullable bool whose mandatory check can never fire. Workflow
+  `scope` used to be the example in this slot — it carried no `enum`, only prose
+  in its `description`. It now has a strict `enum` (`space` / `env` /
+  `env_resource`): those are a closed server-side `EntityType`, not a
+  context-dependent judgement, so the overlap with `_validate_workflow_scope` is
+  worth it. Before "fixing" an apparently lax schema rule, check whether the
+  language server already covers it — or whether the server itself is lax.
 
 ## 8. September 2026 backend changes to `inputs`
 
@@ -522,3 +556,124 @@ So the very entries most likely to be malformed were the ones that escaped
 every check. Closing the maps is what turns that silence into a diagnostic, and
 it is the same reasoning as the closed key set of section 2: a schema that
 quietly skips input it does not recognise is worse than one that rejects it.
+
+## 10. Server parity pass (2026-09-15)
+
+A full sweep of the schema against the Torque server — cs2018 `origin/main`
+**c0f49bd04d** — for the three things a JSON Schema can state and the server
+already decides on its own: which fields are **mandatory**, which objects have a
+**closed** key set, and which values are a **closed** set. Sections 8 and 9 are
+the parts of that sweep that touched `inputs` and names; this is the rest. Every
+rule below names the server type that decides it, and each one is pinned by
+`tests/test_spec2_required_parity.py`, `tests/test_spec2_closed_objects.py` or
+`tests/test_spec2_server_parity.py` (section 6).
+
+### 10.1 The draft upgrade that had to come first
+
+The schema declared **draft-06** while using `if`/`then`/`else` in five places
+(the approval-channel and toleration conditionals). Those keywords are
+**draft-07**: a compliant draft-06 validator does not know them, and an unknown
+keyword is not an error but a no-op — so all five rules were **dead**, silently,
+for every consumer.
+
+The proof is a pair of documents that should have failed and did not: an
+approval channel with `type: group` and no `groups`, and a toleration with
+`operator: Equal` and no `key`/`value`. Each produced **0 errors under
+`Draft6Validator` and 1 under `Draft7Validator`** — same schema, same document,
+the declared draft being the only difference.
+
+`$schema` now says draft-07, and every validator in `tests/` and `tools/` is a
+`Draft7Validator` so that CI evaluates the file the way the consumers do. Both
+consumers do support draft-07: yaml-language-server (behind
+`redhat.vscode-yaml`, the extension's declared dependency — section 1) and
+cs2018-ui's `monaco-yaml` 4.0.0-alpha.2, which wraps that same engine. The
+corollary is a ceiling as well as a floor: a draft-2019+ keyword would be just
+as dead, and must not be used here.
+
+### 10.2 Required-field parity
+
+| Rule | Server source |
+|---|---|
+| A source needs `store` **or** `path` | `GrainSourceValidator` — it reports only when *both* are missing, so the schema models an `anyOf`, not two required keys |
+| A **family member** source needs both `store` and `path` | `BlueprintFamilyValidator` |
+| `agent` needs `name` | `GrainAgentValidator` (`GRAIN_HOST_MISSING_NAME`) |
+| An `instructions` path must end in `.md`; a `layout` path must end in `.yaml` — **not** `.yml` — both case-insensitively | `InstructionsSourceValidator` / `LayoutSourceValidator`: `Path.GetExtension(...).Equals(".md"` / `".yaml", OrdinalIgnoreCase)` |
+| Every `template` placeholder needs a `path`, and it may not be blank | `BlueprintTemplateValidator` |
+| An approval channel's approver list (`groups` / `users` / `names`, per channel type) holds at least one entry | `GrainConditionsValidator` (`GRAIN_APPROVAL_CHANNEL_MUST_HAVE_AT_LEAST_ONE_APPROVER`) |
+| A `parameter` input needs `parameter-name` | `BlueprintInputsValidator` |
+| A cloudformation grain needs `region`, and a host: one of `authentication` / `agent` / `target` | `CloudFormationGrainValidator` (`isHostDefined = agent != null \|\| target != null`) + `GrainAwsRegionValidator` |
+| Workflow `timeout`: resolved as Liquid, then parsed as an integer >= 5 (minutes) | `WorkflowYamlValidator.ValidateTimeout` — modelled as `integer >= 5` \| a numeric string \| a `{{ }}` string, because the server resolves the value before parsing it and all three spellings are legal input |
+| Workflow `scope` is exactly `EntityType`: `space` / `env` / `env_resource`, compared case-insensitively (the schema pins the canonical lowercase spellings) | `WorkflowYamlValidator.ValidateScope` |
+| Workflow trigger events are the 15 members of `EnvironmentWorkflowEvent`, including `Tag Updates Detected`, which the schema lacked | `EnvironmentWorkflowEvent` |
+
+### 10.3 Terraform backend
+
+`TerraformBackendValidator` + `BackendType`. `type` is mandatory and is a closed
+set — `s3`, `gcs`, `azurerm`, `http`, `cloud`, `remote` — and each type then has
+its own mandatory fields, written as one `if`/`then` per type (which is what
+10.1 had to unblock):
+
+| `type` | Mandatory beyond `type` |
+|---|---|
+| `s3` | `bucket`, `region` |
+| `azurerm` | `storage-account-name`, `container-name` |
+| `gcs` | `bucket` |
+| `http` | `base-address` |
+| `remote` | `organization`, and a non-empty `workspaces` list whose every entry carries `name` or `prefix` (`hostname` and `token` are passed with `isMandatory: false` — optional) |
+| `cloud` | nothing |
+
+One field is deliberately *not* required: `skip-region-validation` is handed to
+the server's mandatory-field check for `s3`, but it is a **non-nullable bool**
+there, so its `ToString()` is never empty and the check can never fire.
+Requiring it in the schema would reject documents Torque accepts — the general
+rule of section 7's second bullet, in its most literal form.
+
+### 10.4 Closed objects
+
+An object the server deserializes into a fixed key set must be
+`additionalProperties: false` here, or a dead key is silently accepted by the
+extension and silently dropped by the server — the dead-fields reasoning of
+section 3, applied to the schema layer:
+
+| Schema definition | Server class |
+|---|---|
+| `Backend` (and its `workspaces` items: `name` / `prefix` / `project` / `tags`) | `GrainBackendYaml` / `RemoteWorkspace` |
+| `TemplateStorage` | `TemplateStorageYaml` |
+| `GrainTag` | `GrainTagsYaml` |
+| `SourceFileObject` — exactly one key, `source` | `TfVarsFileYaml`, `HelmValuesFileYaml`, `WorkspaceDirectoriesYaml`, `OpenTofuVarsFileYaml` |
+| `ScriptObject` / `ScriptOutputsObject` | `ScriptYaml` |
+
+`ResourceSelectorBaseObject` is the one definition left open, by design: it is
+an `allOf` base that other definitions extend, so closing it would reject the
+extending keys.
+
+### 10.5 Audits that found nothing to change
+
+Worth recording, because a later reader would otherwise redo them:
+
+* **Two-way key audit** — every `YamlMember` alias on the server's YAML types
+  against every property in the schema, in both directions. The only server-side
+  extras are dead constants with no `YamlMember` at all (`compute-service`,
+  `cloud-account`, `role-arn`, `external-id`): nothing deserializes them, so they
+  are not keys.
+* All **32** input-source override keys match the provider constants exactly.
+* **0** unreachable definitions in the schema.
+* Input types, input styles, output kinds, trigger types, condition and channel
+  types and credential providers are all already exact.
+* Deliberately **not** added: the `GrainKind` members `mock-terraform` and
+  `mock-helm`, which are internal test kinds — documenting them in hover text
+  would advertise them to blueprint authors.
+* `provider-type` and `cloud-providers` stay **soft** enums — an `anyOf` of the
+  known list and a plain `string`, so the known values still complete and an
+  unknown one still validates. The server never checks either against a closed
+  set, so a strict `enum` would invent a rule Torque does not have.
+
+### 10.6 Evidence that none of this rejects working blueprints
+
+Every change above tightens the schema, and a tightening is a potential false
+positive on somebody's working blueprint. So the **528** sanitized local
+blueprints (`tools/blueprint-corpus/`) were re-validated after *every* change,
+not once at the end: **412** fully clean, **0** crashes, **727** findings — all
+of them already-KNOWN categories, **0** NEW. A single NEW finding would have
+meant a rule that rejects a blueprint Torque runs today, and would have been
+reverted rather than explained.
