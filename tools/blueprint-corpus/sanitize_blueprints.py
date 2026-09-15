@@ -42,7 +42,7 @@ The whole point of the corpus is to exercise a *parser and validator* against
 real-world messiness: comments, flow style, tab/space mixtures, mojibake, CRLF,
 duplicate keys, and files that do not even parse.  Round-tripping through a
 YAML library would normalize all of that away -- and would simply fail on the
-unparseable files, which are the most interesting ones.  So this tool rewrites
+unparsable files, which are the most interesting ones.  So this tool rewrites
 only the sensitive substrings and preserves every other byte, the line count,
 and (where possible) the column layout.
 
@@ -1192,7 +1192,7 @@ def _process_single_line(
 
     m = _KEY_VALUE_RE.match(content)
     if not m:
-        # Sequence item, block body line, continuation, or unparseable junk.
+        # Sequence item, block body line, continuation, or unparsable junk.
         new_content = redact_span_text(content, 0, ctx, rel_path, line_no, None, findings)
         return result(new_content)
 
@@ -2678,9 +2678,9 @@ def cmd_self_test():
         )
         check("BOM round-tripped", crlf_bytes.startswith(b"\xef\xbb\xbf"))
         check("CRLF file secret redacted", "hunter2SuperSecretValue" not in crlf_out)
-        check("unparseable file still processed", "blueprints/nested/broken.yaml" in out_a)
+        check("unparsable file still processed", "blueprints/nested/broken.yaml" in out_a)
         check(
-            "unparseable file secret redacted",
+            "unparsable file secret redacted",
             "hunter2SuperSecretValue" not in out_a.get("blueprints/nested/broken.yaml", "x"),
         )
         for rel in sorted(files):

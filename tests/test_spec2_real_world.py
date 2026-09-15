@@ -195,7 +195,7 @@ class TestExpressionForms(unittest.TestCase):
 
     def test_unrelated_grain_output_reference_still_flagged(self):
         doc = EXPR_DOC.format(
-            consumer_inputs="        - a: '{{ .grains.loner.outputs.x }}'"
+            consumer_inputs="        - a: '{{ .grains.orphan.outputs.x }}'"
         ).replace("  consumer:\n    kind: shell\n    depends-on: middle", "  consumer:\n    kind: shell")
         tree, _ = validate(doc)
         self.assertTrue([e.message for e in tree.errors])

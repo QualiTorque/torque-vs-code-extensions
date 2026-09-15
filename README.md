@@ -41,7 +41,7 @@ Coming soon...
 
 - Install the extension from the Marketplace.
 - VS Code may require you to reload it. Make sure you do that.
-- If VS Code can't find the python you have installed, you will need to provide its path in the popup that appears. For different opeation systems python path could be the following:
+- If VS Code can't find the python you have installed, you will need to provide its path in the popup that appears. For different operation systems python path could be the following:
   - for windows: *C:\Users\MyUser\AppData\Local\Programs\Python\Python38\Scripts\python.exe*
   - for linux: */usr/local/bin/python3.8*
   - for macos: */Library/Frameworks/Python.framework/Versions/3.8/bin/python3.8*

@@ -381,7 +381,7 @@ class Parser:
                     self.nodes_stack.pop()
 
         if isinstance(token, KeyToken):
-            # if sequence doesnt have indentation => there is no BlockEndToken at the end
+            # if sequence does not have indentation => there is no BlockEndToken at the end
             # and in such case KeyToken will go just after the ValueToken opening the sequence
             # It also covers issues when object has empty property
             if isinstance(self.tokens_stack[-1], ValueToken):
