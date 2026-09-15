@@ -260,7 +260,7 @@ Runs the extension's two validation layers over a corpus. See
 for why there are two and why neither subsumes the other.
 
 * **Layer 1 — JSON schema:** `client/schemas/blueprint-spec2-schema.json` under
-  `jsonschema.Draft6Validator`; what VS Code's YAML engine shows as you type.
+  `jsonschema.Draft7Validator`; what VS Code's YAML engine shows as you type.
 * **Layer 2 — language server:** `server.ats.parser.Parser` builds the tree,
   `BlueprintSpec2Validator` (`server/validation/bp_v2_validator.py`) runs the
   semantic checks; what the extension publishes as diagnostics.

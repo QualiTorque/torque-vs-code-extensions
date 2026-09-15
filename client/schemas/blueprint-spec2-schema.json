@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "$ref": "#/definitions/Torque-Blueprint-Spec2",
     "definitions": {
         "Torque-Blueprint-Spec2": {
@@ -160,7 +160,13 @@
                     "properties": {
                         "scope": {
                             "type": "string",
-                            "description": "Where the workflow is available: 'space' (space-level), 'env' (entire environments) or 'env_resource' (specific resource types)."
+                            "enum": [
+                                "space",
+                                "env",
+                                "env_resource"
+                            ],
+                            "$comment": "WorkflowYamlValidator.ValidateScope accepts exactly EntityType (BoundedEntityTypeConsts: space, env, env_resource), matched with StringComparer.OrdinalIgnoreCase.",
+                            "description": "Where the workflow is available: 'space' (space-level), 'env' (entire environments) or 'env_resource' (specific resource types). Torque matches the value case-insensitively; these are the canonical spellings."
                         },
                         "label-selector": {
                             "type": "string",
@@ -175,8 +181,22 @@
                             "description": "For 'env_resource' scope: the resource types the workflow applies to, in CSV format (e.g. aws_instance)."
                         },
                         "timeout": {
-                            "type": "string",
-                            "description": "Maximum duration in minutes the workflow may run before it is automatically terminated (minimum 5). Supports Liquid."
+                            "anyOf": [
+                                {
+                                    "type": "integer",
+                                    "minimum": 5
+                                },
+                                {
+                                    "type": "string",
+                                    "pattern": "^([5-9]|[1-9][0-9]+)$"
+                                },
+                                {
+                                    "type": "string",
+                                    "pattern": "\\{\\{.*\\}\\}"
+                                }
+                            ],
+                            "$comment": "WorkflowYamlValidator.ValidateTimeout resolves the value as a Liquid pattern and then requires int.TryParse(...) >= 5, otherwise BlueprintErrors.TIMEOUT_INVALID_VALUE. The three branches are: a plain integer, the same written as a string, and a Liquid expression whose resolved value the server checks.",
+                            "description": "Maximum duration in minutes the workflow may run before it is automatically terminated - a whole number of minutes, minimum 5. Supports Liquid."
                         },
                         "triggers":{
                             "type": "array",
@@ -200,7 +220,20 @@
                             "type": "string"
                         },
                         "source": {
-                            "$ref": "#/definitions/StoreFileSourceObject"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/StoreFileSourceObject"
+                                },
+                                {
+                                    "properties": {
+                                        "path": {
+                                            "pattern": "\\.[mM][dD]$"
+                                        }
+                                    }
+                                }
+                            ],
+                            "$comment": "InstructionsSourceValidator.PathExtraValidations compares Path.GetExtension(path) to '.md' with OrdinalIgnoreCase (INSTRUCTIONS_FILE_MUST_BE_A_MARKDOWN). The pattern lives here and not on StoreFileSourceObject, which layout shares with a different extension rule.",
+                            "description": "A markdown file from a connected repository; the path must end in '.md' (any casing)."
                         }
                     },
                     "oneOf": [
@@ -230,7 +263,20 @@
                             "title": "Exclude From Layout"
                         },
                         "source": {
-                            "$ref": "#/definitions/StoreFileSourceObject"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/StoreFileSourceObject"
+                                },
+                                {
+                                    "properties": {
+                                        "path": {
+                                            "pattern": "\\.[yY][aA][mM][lL]$"
+                                        }
+                                    }
+                                }
+                            ],
+                            "$comment": "LayoutSourceValidator.PathExtraValidations compares Path.GetExtension(path) to '.yaml' with OrdinalIgnoreCase (LAYOUT_FILE_MUST_BE_A_YAML) - '.yml' is rejected.",
+                            "description": "A layout YAML from a connected repository; the path must end in '.yaml' (any casing) - '.yml' is not accepted."
                         }
                     },
                     "required": [
@@ -344,7 +390,19 @@
                                     "additionalProperties": false,
                                     "properties": {
                                         "source": {
-                                            "$ref": "#/definitions/GrainSpecSourceObject"
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/GrainSpecSourceObject"
+                                                },
+                                                {
+                                                    "required": [
+                                                        "store",
+                                                        "path"
+                                                    ]
+                                                }
+                                            ],
+                                            "$comment": "BlueprintFamilyValidator requires both (FAMILY_MEMBER_SOURCE_STORE_MISSING / FAMILY_MEMBER_SOURCE_PATH_MISSING) - stricter than a grain source, which needs only one of them.",
+                                            "description": "The repository ('store') and blueprint file ('path') this family member is taken from. Both are mandatory."
                                         }
                                     },
                                     "required": [
@@ -368,12 +426,17 @@
                                 "additionalProperties": false,
                                 "properties": {
                                     "path": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "minLength": 1
                                     },
                                     "hint": {
                                         "type": "string"
                                     }
-                                }
+                                },
+                                "required": [
+                                    "path"
+                                ],
+                                "$comment": "BlueprintTemplateValidator rejects a placeholder whose 'path' is null or whitespace (BLUEPRINT_TEMPLATE_PLACEHOLDER_PATH_REQUIRED)."
                             }
                         }
                     },
@@ -439,6 +502,43 @@
                 "kind",
                 "spec"
             ],
+            "if": {
+                "properties": {
+                    "kind": {
+                        "const": "cloudformation"
+                    }
+                },
+                "required": [
+                    "kind"
+                ]
+            },
+            "then": {
+                "properties": {
+                    "spec": {
+                        "required": [
+                            "region"
+                        ],
+                        "anyOf": [
+                            {
+                                "required": [
+                                    "authentication"
+                                ]
+                            },
+                            {
+                                "required": [
+                                    "agent"
+                                ]
+                            },
+                            {
+                                "required": [
+                                    "target"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+            "$comment": "CloudFormationGrainValidator: GrainAwsRegionValidator reports CLOUDFORMATION_REGION_MISSING when 'region' is absent, and CLOUDFORMATION_GRAIN_CREDENTIALS_AND_AGENT_ARE_MISSING when there is neither 'authentication' nor a host ('agent' or 'target').",
             "title": "Grain Object"
         },
         "GrainScripts": {
@@ -496,9 +596,20 @@
         },
         "Backend": {
             "type": "object",
+            "additionalProperties": false,
+            "$comment": "GrainBackendYaml (GrainYaml.cs) is a fixed set of 13 keys - the deserializer silently drops anything else, so extras are reported here. 'type' is BackendType (BackendType.cs); TerraformBackendValidator rejects any other value.",
             "properties": {
                 "type": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "s3",
+                        "gcs",
+                        "azurerm",
+                        "http",
+                        "cloud",
+                        "remote"
+                    ],
+                    "description": "The state backend type."
                 },
                 "bucket": {
                     "type": "string"
@@ -537,6 +648,8 @@
                     "type": "array",
                     "items": {
                         "type": "object",
+                        "additionalProperties": false,
+                        "$comment": "GrainBackendYaml.RemoteWorkspace: exactly name, prefix, project and tags (a string->string dictionary).",
                         "properties": {
                             "name": {
                                 "type": "string"
@@ -554,10 +667,125 @@
                     }
                 }
             },
-            "description": "Terraform/OpenTofu state backend configuration (s3, gcs, azurerm, http, remote, cloud)."
+            "required": [
+                "type"
+            ],
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "s3"
+                            }
+                        },
+                        "required": [
+                            "type"
+                        ]
+                    },
+                    "then": {
+                        "required": [
+                            "bucket",
+                            "region"
+                        ]
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "azurerm"
+                            }
+                        },
+                        "required": [
+                            "type"
+                        ]
+                    },
+                    "then": {
+                        "required": [
+                            "storage-account-name",
+                            "container-name"
+                        ]
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "gcs"
+                            }
+                        },
+                        "required": [
+                            "type"
+                        ]
+                    },
+                    "then": {
+                        "required": [
+                            "bucket"
+                        ]
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "http"
+                            }
+                        },
+                        "required": [
+                            "type"
+                        ]
+                    },
+                    "then": {
+                        "required": [
+                            "base-address"
+                        ]
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "remote"
+                            }
+                        },
+                        "required": [
+                            "type"
+                        ]
+                    },
+                    "then": {
+                        "required": [
+                            "organization",
+                            "workspaces"
+                        ],
+                        "properties": {
+                            "workspaces": {
+                                "minItems": 1,
+                                "items": {
+                                    "anyOf": [
+                                        {
+                                            "required": [
+                                                "name"
+                                            ]
+                                        },
+                                        {
+                                            "required": [
+                                                "prefix"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            ],
+            "$comment": "TerraformBackendValidator: 'type' is mandatory (TERRAFORM_BACKEND_TYPE_FIELD_MANDATORY), then one ValidateXxxFields per type reports TERRAFORM_BACKEND_FIELD_MANDATORY for the fields above. 'skip-region-validation' is passed to ValidateBackendField for s3 but as a non-nullable bool's ToString(), so it is never actually missing - it stays optional here. For 'remote' only organization and workspaces are mandatory: hostname and token are passed with isMandatory:false. For 'cloud' nothing is mandatory - hostname, token and organization are all isMandatory:false and workspaces are skipped when absent - so there is no 'cloud' branch.",
+            "description": "Terraform/OpenTofu state backend configuration (s3, gcs, azurerm, http, remote, cloud). Which fields are mandatory depends on 'type'."
         },
         "TemplateStorage": {
             "type": "object",
+            "additionalProperties": false,
+            "$comment": "TemplateStorageYaml (GrainYaml.cs): exactly bucket-name, key-prefix and region.",
             "properties": {
                 "bucket-name": {
                     "type": "string"
@@ -595,6 +823,8 @@
         },
         "GrainTag": {
             "type": "object",
+            "additionalProperties": false,
+            "$comment": "GrainTagsYaml (GrainYaml.cs): exactly auto-tag and disable-tags-for.",
             "properties": {
                 "auto-tag": {
                     "type": "boolean",
@@ -658,6 +888,7 @@
                             "Collaborator Added",
                             "Environment Idle",
                             "Parameter Updates Detected",
+                            "Tag Updates Detected",
                             "drift detected",
                             "updates detected",
                             "approval request approved",
@@ -671,7 +902,8 @@
                             "environment extended",
                             "collaborator added",
                             "environment idle",
-                            "parameter updates detected"
+                            "parameter updates detected",
+                            "tag updates detected"
                         ]
                     },
                     "contains": {
@@ -1184,15 +1416,18 @@
             "oneOf": [
                 {
                     "type": "array",
+                    "minItems": 1,
                     "items": {
                         "type": "string",
                         "maxLength": 250
                     }
                 },
                 {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                 }
-            ]
+            ],
+            "$comment": "GrainConditionsValidator.ValidateApprovers errors with GRAIN_APPROVAL_CHANNEL_MUST_HAVE_AT_LEAST_ONE_APPROVER when the list carries no approvers, so an empty list or empty string is rejected."
         },
         "EnvironmentLabel": {
            "type": "object",
@@ -1387,8 +1622,12 @@
                     }
                 }
             },
+            "required": [
+                "name"
+            ],
+            "$comment": "GrainAgentValidator errors with GRAIN_HOST_MISSING_NAME when the agent has no 'name'.",
             "title": "Spec Host Properties",
-            "description": "The Torque agent (execution host) that runs the grain, with optional runner customization. Mutually exclusive with 'target'."
+            "description": "The Torque agent (execution host) that runs the grain, with optional runner customization. 'name' is mandatory. Mutually exclusive with 'target'."
         },
         "KubernetesObject": {
             "type": "object",
@@ -1480,9 +1719,19 @@
                     "description": "Path inside the fetched archive."
                 }
             },
-            "required": [
-                "path"
+            "anyOf": [
+                {
+                    "required": [
+                        "store"
+                    ]
+                },
+                {
+                    "required": [
+                        "path"
+                    ]
+                }
             ],
+            "$comment": "GrainSourceValidator errors (GRAIN_SOURCE_STORE_AND_PATH_MISSING) only when both 'store' and 'path' are missing; with a 'store' and no 'path' the asset is taken from the repository root, and with a 'path' and no 'store' the path must be a public URL.",
             "title": "Grain Source Object"
         },
         "GrainSpecSources": {
@@ -1493,6 +1742,8 @@
         },
         "SourceFileObject": {
             "type": "object",
+            "additionalProperties": false,
+            "$comment": "TfVarsFileYaml / HelmValuesFileYaml / WorkspaceDirectoriesYaml / OpenTofuVarsFileYaml (GrainYaml.cs) each hold exactly one member, 'source'.",
             "properties": {
                 "source": {
                     "$ref": "#/definitions/GrainSpecSourceObject"
@@ -1736,6 +1987,22 @@
                     "description": "Selection criteria constraining which inventory resources may be chosen for an input of type 'resource'. Mandatory for 'resource' inputs. Field values may use Liquid expressions."
                 }
             },
+            "if": {
+                "properties": {
+                    "type": {
+                        "const": "parameter"
+                    }
+                },
+                "required": [
+                    "type"
+                ]
+            },
+            "then": {
+                "required": [
+                    "parameter-name"
+                ]
+            },
+            "$comment": "BlueprintInputsValidator reports FIELD_VALUE_MISSING_AT_PATH on 'parameter-name' for every input of type 'parameter' that does not set it.",
             "description": "A launch-form input. Required unless it has an empty-matching 'pattern' - see the 'pattern' and 'default' fields for the exact semantics."
         },
         "BlueprintOutputObject": {

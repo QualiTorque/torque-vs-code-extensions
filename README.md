@@ -36,7 +36,7 @@ Coming soon...
 > **_NOTE:_** This extension works with Torque's **spec_version=2**. The version 1 has been deprecated. If you are still interested in working with spec 1, the latest stable version of this extension available on the Marketplace is **0.0.12**
 
 **Prerequisite:** 
-* **python>=3.6** installed on your system.
+* **python>=3.7** installed on your system.
 * **git** installed on your system
 
 - Install the extension from the Marketplace.

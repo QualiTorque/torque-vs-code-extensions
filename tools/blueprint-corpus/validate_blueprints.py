@@ -10,7 +10,7 @@ customer repository, see the sibling ``sanitize_blueprints.py``) and it will run
 every blueprint through the two validation layers the extension ships:
 
   Layer 1 - JSON schema      ``client/schemas/blueprint-spec2-schema.json``
-                             evaluated with ``jsonschema.Draft6Validator``.
+                             evaluated with ``jsonschema.Draft7Validator``.
                              This is what VS Code's YAML/JSON-schema engine
                              shows the blueprint author as they type.
 
@@ -1378,8 +1378,8 @@ def git_short_sha(repo_root):
 
 def run_corpus(run):
     schema = load_json(run.schema_path)
-    jsonschema.Draft6Validator.check_schema(schema)
-    validator = jsonschema.Draft6Validator(schema)
+    jsonschema.Draft7Validator.check_schema(schema)
+    validator = jsonschema.Draft7Validator(schema)
 
     ls_layer = LanguageServerLayer(run.repo_root)
 
@@ -2309,7 +2309,7 @@ def main(argv=None):
             "Check --repo-root, and that server/ is intact." % (repo_root, exc)
         )
     except jsonschema.exceptions.SchemaError as exc:
-        return fail_setup("%s is not a valid draft-06 schema: %s" % (schema_path, exc))
+        return fail_setup("%s is not a valid draft-07 schema: %s" % (schema_path, exc))
     except json.JSONDecodeError as exc:
         return fail_setup("%s is not valid JSON: %s" % (schema_path, exc))
 

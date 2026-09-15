@@ -21,7 +21,7 @@ import unittest
 from unittest.mock import MagicMock
 
 import yaml
-from jsonschema import Draft6Validator
+from jsonschema import Draft7Validator
 
 from server.ats.parser import Parser
 from server.validation.bp_v2_validator import BlueprintSpec2Validator
@@ -30,7 +30,7 @@ SCHEMA_PATH = os.path.join(
     os.path.dirname(__file__), "..", "client", "schemas", "blueprint-spec2-schema.json"
 )
 with io.open(SCHEMA_PATH, encoding="utf-8") as _f:
-    SCHEMA = Draft6Validator(json.load(_f))
+    SCHEMA = Draft7Validator(json.load(_f))
 
 
 def schema_errors(doc):
