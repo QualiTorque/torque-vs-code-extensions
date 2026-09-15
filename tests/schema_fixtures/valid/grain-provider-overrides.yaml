@@ -1,0 +1,17 @@
+# provider-overrides entries are closed: name, source, version and a free-form
+# attributes bag, and nothing else. Unknown keys are the defect this shape
+# exists to catch - see invalid/provider-override-unknown-key.yaml.
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      provider-overrides:
+        - name: my-provider
+          source: example/my-provider
+          version: 1.2.3
+          attributes:
+            endpoint: https://example.invalid

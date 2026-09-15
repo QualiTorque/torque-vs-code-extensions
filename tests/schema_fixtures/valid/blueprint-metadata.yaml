@@ -1,0 +1,23 @@
+# Top-level metadata: display name, icon, self-service, blueprint labels and
+# environment labels.
+spec_version: 2
+description: A minimal blueprint used to pin the top-level metadata keys.
+metadata:
+  display-name: My Blueprint
+  icon:
+    path: icons/example.png
+  self-service: true
+  blueprint-labels:
+    - key: team
+      value: example
+      initial-color: blue
+labels:
+  - owner: example
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

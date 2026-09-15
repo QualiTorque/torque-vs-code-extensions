@@ -1,0 +1,20 @@
+# A blueprint family: each member points at a file in a store.
+spec_version: 2
+family:
+  members:
+    small:
+      source:
+        store: blueprints
+        path: family/small.yaml
+    large:
+      source:
+        store: blueprints
+        path: family/large.yaml
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

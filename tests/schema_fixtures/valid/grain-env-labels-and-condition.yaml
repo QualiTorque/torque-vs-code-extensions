@@ -1,0 +1,24 @@
+# Two grain-level constructs the local corpus does not use: labels stamped on
+# the environment when a grain succeeds or fails, and the approval condition
+# that gates a grain before it runs.
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    env-labels:
+      on-success:
+        - deployed
+        - stage: ready
+      on-failure:
+        - stage: failed
+    condition:
+      - type: approval
+        message: Approve before the environment is created.
+        channels:
+          - type: group
+            groups:
+              - my-group
+    spec:
+      source:
+        store: modules
+        path: modules/app

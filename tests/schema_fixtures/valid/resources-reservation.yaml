@@ -1,0 +1,30 @@
+# Top-level resource requirements. A requirement is either a selector (what to
+# reserve) or a reference to already-reserved resources, and a reference is
+# either a bare expression or an object with the ids to attach.
+spec_version: 2
+resources:
+  my-host:
+    selector:
+      type: my-resource-type
+      provider-type: intersight
+      provider-name: my-provider
+      quantity: 2
+      attributes:
+        - model: example-model
+        - memory-gb: 64
+  my-other-host:
+    reference: '{{ .inputs.reserved-ids }}'
+  my-third-host:
+    reference:
+      ids: '{{ .inputs.reserved-ids }}'
+inputs:
+  reserved-ids:
+    type: string
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

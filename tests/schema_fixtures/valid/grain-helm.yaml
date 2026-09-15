@@ -1,0 +1,25 @@
+# The helm grain: chart source, release name, the two namespace keys, the
+# cluster target, extra helm arguments and the post-install hook (the only hook
+# family that also declares outputs).
+spec_version: 2
+grains:
+  chart:
+    kind: helm
+    spec:
+      source:
+        store: charts
+        path: charts/app
+      release: my-release
+      namespace: example
+      target-namespace: example
+      target:
+        name: my-cluster
+      command-arguments: --wait --timeout 5m
+      scripts:
+        post-helm-install:
+          source:
+            store: scripts
+            path: scripts/after-install.sh
+          arguments: --report
+          outputs:
+            - endpoint

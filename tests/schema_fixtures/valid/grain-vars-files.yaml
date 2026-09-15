@@ -1,0 +1,34 @@
+# The three variable-file lists the schema knows. None of them appears in the
+# local corpus, so without this fixture nothing would notice them disappearing.
+spec_version: 2
+grains:
+  tf:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      tfvars-files:
+        - source:
+            store: modules
+            path: modules/app/example.tfvars
+  tofu:
+    kind: opentofu
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      opentofuvars-files:
+        - source:
+            store: modules
+            path: modules/app/example.tfvars
+  chart:
+    kind: helm
+    spec:
+      source:
+        store: charts
+        path: charts/app
+      values-files:
+        - source:
+            store: charts
+            path: charts/app/values.yaml

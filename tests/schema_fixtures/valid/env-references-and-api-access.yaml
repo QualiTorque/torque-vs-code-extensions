@@ -1,0 +1,16 @@
+# Environment references (with a labels selector) and the service account a
+# blueprint uses to call back into the API.
+spec_version: 2
+api_access:
+  service_account: my-service-account
+env_references:
+  shared-network:
+    labels-selector: tier=shared
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

@@ -1,0 +1,62 @@
+# The terraform grain, which carries more of the spec surface than any other:
+# module source, inputs (scalar and list), outputs, environment variables,
+# credentials, retry/built-in/tagging switches, the deployment target, the
+# pre-init and pre-destroy hooks, and extra workspace directories.
+spec_version: 2
+inputs:
+  region:
+    type: string
+    default: example-region
+grains:
+  network:
+    kind: terraform
+    tf-version: 1.5.7
+    when: '{{ .inputs.region }} != ""'
+    spec:
+      source:
+        store: modules
+        path: modules/network
+      version: 1.5.7
+      built-in: false
+      auto-retry: true
+      authentication:
+        - my-credential
+      target:
+        name: my-target
+      tags:
+        auto-tag: true
+      env-vars:
+        - TF_LOG: INFO
+        - HTTP_PROXY: ''
+      inputs:
+        - region: '{{ .inputs.region }}'
+        - subnet_names:
+            - example-a
+            - example-b
+      outputs:
+        - vpc_id
+      scripts:
+        pre-tf-init:
+          source:
+            store: scripts
+            path: scripts/pre-init.sh
+          arguments: --quiet
+        pre-tf-destroy:
+          source:
+            store: scripts
+            path: scripts/pre-destroy.sh
+          arguments: --force
+      workspace-directories:
+        - source:
+            name: shared
+            store: modules
+            path: modules/shared
+  app:
+    kind: terraform
+    depends-on: network
+    spec:
+      sources:
+        - store: modules
+          path: modules/app
+        - store: modules
+          path: modules/app-extras

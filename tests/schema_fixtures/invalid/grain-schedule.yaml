@@ -1,0 +1,13 @@
+# A dead key: scheduling is a workflow trigger (workflow.triggers[].cron), not a
+# grain property.
+# expect-error: 'schedule' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: shell
+    schedule: 0 3 * * *
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

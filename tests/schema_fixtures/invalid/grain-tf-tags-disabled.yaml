@@ -1,0 +1,11 @@
+# A dead key: tagging is switched off with tags.auto-tag / tags.disable-tags-for.
+# expect-error: 'tf-tags-disabled' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      tf-tags-disabled: true

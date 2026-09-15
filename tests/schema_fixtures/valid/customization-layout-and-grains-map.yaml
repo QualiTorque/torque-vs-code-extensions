@@ -1,0 +1,31 @@
+# The environment layout: free-form cards, the exclude lists, and the free-form
+# grains map. Only `exclude` is a closed object here - cards stay open on purpose,
+# so one tiny card is enough to pin the shape.
+spec_version: 2
+customization:
+  grains-map:
+    app: my-grain
+  layout:
+    cards:
+      - type: resource
+        title: My Card
+    exclude:
+      grains:
+        - helper
+      resource-types:
+        - my-resource-type
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello
+  helper:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo helper

@@ -1,0 +1,13 @@
+# A grain name is letters, digits, spaces, hyphens and underscores. A slash does
+# not match the pattern, and `grains` is closed, so a name that matches no
+# pattern is reported rather than silently skipped.
+# expect-error: 'bad/name' does not match any of the regexes
+spec_version: 2
+grains:
+  bad/name:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

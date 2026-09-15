@@ -1,0 +1,16 @@
+# A source without a path names no file. `path` is the one required key of a
+# grain source, in a hook as much as anywhere else.
+# expect-error: 'path' is a required property
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      scripts:
+        pre-tf-init:
+          source:
+            store: scripts
+          arguments: --quiet

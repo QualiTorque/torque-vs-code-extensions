@@ -1,0 +1,11 @@
+# spec_version accepts the integer 2, the string '2' and the string '2-preview'.
+# The preview string is the one no corpus blueprint uses.
+spec_version: '2-preview'
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

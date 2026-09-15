@@ -1,0 +1,8 @@
+# A dead key: the presentation of an input is chosen with `style`, whose enum is
+# text / radio / multi-select / duration.
+# expect-error: 'display-style' was unexpected
+spec_version: 2
+inputs:
+  region:
+    type: string
+    display-style: radio

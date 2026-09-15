@@ -1,0 +1,14 @@
+# A dead key: environment variables belong to the grain spec, not to one
+# activity. Set under destroy they are silently dropped.
+# expect-error: 'env-vars' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        destroy:
+          env-vars:
+            - MY_VAR: example
+          commands:
+            - echo bye
