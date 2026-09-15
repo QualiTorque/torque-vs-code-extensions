@@ -19,6 +19,8 @@ customization:
         - helper
       resource-types:
         - my-resource-type
+      resources:
+        - my-resource-name
 grains:
   app:
     kind: shell

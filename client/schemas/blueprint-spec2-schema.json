@@ -33,19 +33,23 @@
                     "additionalProperties": false,
                     "properties": {
                         "environment_name": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Name of the saved environment."
                         },
                         "state": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Desired state of the environment."
                         },
                         "owner_email": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Email of the environment owner."
                         },
                         "spaces":{
                             "type": "array",
                             "items": {
                                 "type": "string"
-                            }
+                            },
+                            "description": "Spaces the environment definition applies to."
                         },
                         "collaborators": {
                             "type": "object",
@@ -55,30 +59,38 @@
                                     "type": "array",
                                     "items": {
                                         "type": "string"
-                                    }
+                                    },
+                                    "description": "Collaborator user emails."
                                 },
                                 "collaborators_groups": {
                                     "type": "array",
                                     "items": {
                                         "type": "string"
-                                    }
+                                    },
+                                    "description": "Collaborator group names."
                                 },
                                 "all_space_members": {
-                                    "type": "boolean"
+                                    "type": "boolean",
+                                    "description": "Grant every member of the space collaborator access."
                                 }
-                            }
+                            },
+                            "description": "Who else may access the environment."
                         },
                         "description": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Description of the saved environment."
                         },
                         "tags": {
-                            "$ref": "#/definitions/StringMap"
+                            "$ref": "#/definitions/StringMap",
+                            "description": "Environment tags, as name: value pairs."
                         },
                         "env_references_values": {
-                            "$ref": "#/definitions/StringMap"
+                            "$ref": "#/definitions/StringMap",
+                            "description": "Values for the blueprint's env_references, as name: environment-id pairs."
                         },
                         "labels": {
-                            "$ref": "#/definitions/StringMap"
+                            "$ref": "#/definitions/StringMap",
+                            "description": "Environment labels, as name: value pairs."
                         }
                     },
                     "title": "environment metadata",
@@ -125,7 +137,8 @@
                                     "additionalProperties": false,
                                     "properties": {
                                         "path": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "description": "Path of the image file inside the repository."
                                         }
                                     },
                                     "required": ["path"]
@@ -170,7 +183,8 @@
                         },
                         "label-selector": {
                             "type": "string",
-                            "description": "Deprecated - use labels-selector."
+                            "$comment": "BlueprintsV2AutoMapperProfile maps ResourceTypes = LabelSelector ?? ResourceTypes.",
+                            "description": "Legacy alias of 'resource-types': the server reads it as the resource-types list, and if both are set this one wins. Use 'resource-types'."
                         },
                         "labels-selector": {
                             "type": "string",
@@ -202,7 +216,8 @@
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/WorkflowTrigger"
-                            }
+                            },
+                            "description": "How the workflow starts: manual, on environment events, or on a cron schedule."
                         },
                         "enabled": {
                             "type": "boolean",
@@ -217,7 +232,8 @@
                     "additionalProperties": false,
                     "properties": {
                         "text": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Inline markdown shown to the end user."
                         },
                         "source": {
                             "allOf": [
@@ -227,7 +243,8 @@
                                 {
                                     "properties": {
                                         "path": {
-                                            "pattern": "\\.[mM][dD]$"
+                                            "pattern": "\\.[mM][dD]$",
+                                            "description": "Path of the markdown file; must end in '.md'."
                                         }
                                     }
                                 }
@@ -260,7 +277,8 @@
                             "items": {
                                 "type": "string"
                             },
-                            "title": "Exclude From Layout"
+                            "title": "Exclude From Layout",
+                            "description": "Grain names the layout is NOT applied to."
                         },
                         "source": {
                             "allOf": [
@@ -270,7 +288,8 @@
                                 {
                                     "properties": {
                                         "path": {
-                                            "pattern": "\\.[yY][aA][mM][lL]$"
+                                            "pattern": "\\.[yY][aA][mM][lL]$",
+                                            "description": "Path of the layout YAML; must end in '.yaml'."
                                         }
                                     }
                                 }
@@ -376,7 +395,8 @@
                     "required": [
                         "service_account"
                     ],
-                    "title": "API Access"
+                    "title": "API Access",
+                    "description": "Requests a Torque API token for the environment, minted with the identity of 'service_account'."
                 },
                 "family": {
                     "type": "object",
@@ -409,7 +429,8 @@
                                         "source"
                                     ]
                                 }
-                            }
+                            },
+                            "description": "Family members by name, each pointing at its blueprint source."
                         }
                     },
                     "title": "Blueprint Family",
@@ -427,17 +448,20 @@
                                 "properties": {
                                     "path": {
                                         "type": "string",
-                                        "minLength": 1
+                                        "minLength": 1,
+                                        "description": "YAML path of the value to fill (mandatory, non-blank)."
                                     },
                                     "hint": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "description": "Guidance shown to the author for this placeholder."
                                     }
                                 },
                                 "required": [
                                     "path"
                                 ],
                                 "$comment": "BlueprintTemplateValidator rejects a placeholder whose 'path' is null or whitespace (BLUEPRINT_TEMPLATE_PLACEHOLDER_PATH_REQUIRED)."
-                            }
+                            },
+                            "description": "YAML paths the author must fill when creating a blueprint from this template."
                         }
                     },
                     "title": "Blueprint Template",
@@ -495,7 +519,8 @@
                 },
                 "when": {
                     "type": "string",
-                    "description": "Controls whether the grain runs or is skipped: if this Liquid expression evaluates to false, Torque skips the grain."
+                    "$comment": "GrainStateCommandHandler: when IsWhenConditionMet is false the grain goes to Skipped and MarkChildrenAsSkippedRecursively skips its dependents.",
+                    "description": "Controls whether the grain runs: a Liquid expression evaluated before deployment; when it is not met, Torque skips the grain and every grain that depends on it."
                 }
             },
             "required": [
@@ -612,37 +637,48 @@
                     "description": "The state backend type."
                 },
                 "bucket": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "s3 / gcs: the bucket that holds the state."
                 },
                 "region": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "s3: AWS region of the state bucket."
                 },
                 "storage-account-name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "azurerm: storage account that holds the state."
                 },
                 "container-name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "azurerm: blob container that holds the state."
                 },
                 "base-address": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "http: base URL of the HTTP state backend."
                 },
                 "key-prefix": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Prefix for the state object key (s3 / gcs / azurerm)."
                 },
                 "skip-region-validation": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "s3: skip validating that the bucket really is in 'region'."
                 },
                 "resource-group-name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "azurerm: resource group of the storage account (optional)."
                 },
                 "hostname": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "remote / cloud: Terraform Enterprise or Cloud hostname (optional; Terraform's default is app.terraform.io)."
                 },
                 "organization": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "remote / cloud: the Terraform organization (mandatory for 'remote')."
                 },
                 "token": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "remote / cloud: API token, typically a Liquid reference to a sensitive input (optional)."
                 },
                 "workspaces": {
                     "type": "array",
@@ -652,19 +688,24 @@
                         "$comment": "GrainBackendYaml.RemoteWorkspace: exactly name, prefix, project and tags (a string->string dictionary).",
                         "properties": {
                             "name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Exact workspace name."
                             },
                             "prefix": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Workspace name prefix (remote backends)."
                             },
                             "project": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "cloud: Terraform Cloud project the workspace belongs to."
                             },
                             "tags": {
-                                "$ref": "#/definitions/StringMap"
+                                "$ref": "#/definitions/StringMap",
+                                "description": "cloud: workspace tags, as name: value pairs."
                             }
                         }
-                    }
+                    },
+                    "description": "remote / cloud: the workspaces to use - each entry names one workspace ('name') or a prefix for several ('prefix'); mandatory and non-empty for 'remote'."
                 }
             },
             "required": [
@@ -788,13 +829,16 @@
             "$comment": "TemplateStorageYaml (GrainYaml.cs): exactly bucket-name, key-prefix and region.",
             "properties": {
                 "bucket-name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "S3 bucket the CloudFormation template is uploaded to (mandatory)."
                 },
                 "region": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "AWS region of that bucket (mandatory)."
                 },
                 "key-prefix": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Key prefix for the uploaded template (optional)."
                 }
             },
             "required": [
@@ -817,7 +861,8 @@
                     "$ref": "#/definitions/GrainSpecSourceObject"
                 },
                 "arguments": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "One line of space-separated arguments passed to the script."
                 }
             }
         },
@@ -828,7 +873,7 @@
             "properties": {
                 "auto-tag": {
                     "type": "boolean",
-                    "description": "Enable or disable automatic tagging."
+                    "description": "Enable or disable automatic tagging of the deployed resources (default true)."
                 },
                 "disable-tags-for": {
                     "type": "array",
@@ -941,10 +986,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/GrainInput"
-                    }
+                    },
+                    "description": "Inputs passed to the destroy playbook, as a list of name: value pairs."
                 },
                 "command-arguments": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Extra command-line arguments for the destroy playbook run."
                 },
                 "scripts": {
                     "$ref": "#/definitions/GrainScripts"
@@ -954,7 +1001,8 @@
                     "additionalProperties": {
                         "type": "object",
                         "additionalProperties": true
-                    }
+                    },
+                    "description": "Inventory for the destroy playbook, inline as YAML."
                 }
             },
             "description": "Ansible: a separate playbook to run at environment teardown."
@@ -973,16 +1021,19 @@
                         "additionalProperties": false,
                         "properties": {
                             "name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Terraform provider local name (as in required_providers)."
                             },
                             "source": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Provider source address, e.g. hashicorp/aws."
                             },
                             "version": {
                                 "type": [
                                     "string",
                                     "number"
-                                ]
+                                ],
+                                "description": "Provider version constraint."
                             },
                             "attributes": {
                                 "type": "object",
@@ -1007,15 +1058,9 @@
                     "$ref": "#/definitions/GrainSpecHostObject"
                 },
                 "target": {
-                    "oneOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "$ref": "#/definitions/GrainSpecTargetObject"
-                        }
-                    ],
-                    "description": "A Torque Target: a named deployment context bundling the credential AND the agent - replaces 'agent' + 'authentication' (defining both 'agent' and 'target' is a validation error). Short form: target: <name>."
+                    "$ref": "#/definitions/GrainSpecTargetObject",
+                    "$comment": "GrainSpecYaml.Target carries only [YamlMember] - no [YamlShortSyntax] and no type converter - so a scalar is not deserialized; 607 of 607 real usages write the object form.",
+                    "description": "A Torque Target: a named deployment context bundling the credential AND the agent - replaces 'agent' + 'authentication' (defining both 'agent' and 'target' is a validation error)."
                 },
                 "inputs": {
                     "type": "array",
@@ -1049,7 +1094,8 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/GrainEnvReference"
-                    }
+                    },
+                    "description": "Blueprint grains: values for the nested blueprint's env_references, as a list of name: value pairs."
                 },
                 "commands": {
                     "type": "array",
@@ -1077,11 +1123,11 @@
                 },
                 "namespace": {
                     "type": "string",
-                    "description": "Kubernetes namespace (kubernetes grains)."
+                    "description": "Kubernetes namespace to deploy into (Kubernetes grains; Helm grains use 'target-namespace'). Liquid allowed."
                 },
                 "target-namespace": {
                     "type": "string",
-                    "description": "Kubernetes namespace to install into (helm grains)."
+                    "description": "Kubernetes namespace to install the chart into (Helm grains). Liquid allowed."
                 },
                 "authentication": {
                     "type": "array",
@@ -1102,13 +1148,16 @@
                         "string",
                         "number"
                     ],
-                    "description": "Runtime version, e.g. the Terraform version to use. Prefer quoting the value: unquoted YAML floats are lossy (1.50 becomes 1.5), which silently changes the version."
+                    "$comment": "TERRAFORM_USAGE_OF_BOTH_VERSION_FIELDS_NOT_ALLOWED is reported when 'version' and the grain-level 'tf-version' are both set; TERRAFORM_INVALID_EXECUTABLE_PARAMETERS when either is combined with 'binary'.",
+                    "description": "Terraform/OpenTofu version to run - the same setting as the grain-level 'tf-version'; setting both is an error, and neither may be combined with 'binary'. Prefer quoting the value: unquoted YAML floats are lossy (1.50 becomes 1.5)."
                 },
                 "binary": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Path to a pre-installed Terraform/OpenTofu executable on the agent, used instead of downloading a version; mutually exclusive with 'version' and 'tf-version'."
                 },
                 "built-in": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Workflow blueprints: marks this grain as the workflow's built-in action grain. At most one grain per workflow may set it."
                 },
                 "auto-retry": {
                     "type": "boolean",
@@ -1173,7 +1222,8 @@
                             "additionalProperties": false,
                             "properties": {
                                 "name": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "Name of the deployment engine to execute this grain on."
                                 }
                             },
                             "required": [
@@ -1198,7 +1248,8 @@
                     "description": "CloudFormation: prefix for the stack name."
                 },
                 "env_configuration": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Environment-as-Code: marks this grain as the environment's configuration grain."
                 }
             },
             "title": "Grain Spec Object"
@@ -1210,22 +1261,28 @@
                 "additionalProperties": false,
                 "properties": {
                     "source": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Repository (asset store) in the space that holds the file."
                     },
                     "path": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Path of the file inside the repository."
                     },
                     "branch": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Git branch to take the file from."
                     },
                     "commit": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Commit SHA to pin the file to."
                     },
                     "tag": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Git tag to pin the file to."
                     },
                     "name": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Optional file name to save the file under in the working directory."
                     }
                 }
             },
@@ -1269,10 +1326,12 @@
             "additionalProperties": false,
             "properties": {
                 "command": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "The shell command line to run."
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Name of the command, used to address its outputs: {{ .grains.<grain>.activities.<activity>.commands.<name>.outputs.<output> }}."
                 },
                 "outputs": {
                     "type": "array",
@@ -1306,19 +1365,22 @@
             "properties": {
                 "type": {
                     "type": "string",
-                    "enum": [ 
+                    "enum": [
                         "approval"
-                    ]
+                    ],
+                    "description": "Condition type; 'approval' is the only type."
                 },
                 "message": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Text shown to the approvers with the approval request."
                 },
                 "channels": {
                     "type": "array",
                     "additionalProperties": false,
                     "items": {
                         "$ref": "#/definitions/GrainConditionChannelObject"
-                    }
+                    },
+                    "description": "Who may approve: user, group or account-channel entries."
                 }
             },
             "required": [
@@ -1581,7 +1643,8 @@
                     "description": "The agent name; often an input, e.g. '{{ .inputs.agent }}'."
                 },
                 "region": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Cloud region handed to the agent's compute service for this grain (Liquid allowed)."
                 },
                 "service-account": {
                     "type": "string",
@@ -1615,11 +1678,14 @@
                             "additionalProperties": false,
                             "properties": {
                                 "secret-path": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "description": "Path of the secret mounted into the runner container, as configured on the agent."
                                 }
-                            }
+                            },
+                            "description": "Permissions granted to the Docker runner."
                         }
-                    }
+                    },
+                    "description": "Docker runner customization."
                 }
             },
             "required": [
@@ -1637,40 +1703,48 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/KeyValuePairs"
-                    }
+                    },
+                    "description": "Labels added to the runner pod, as name: value entries."
                 },
                 "pod-annotations": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/KeyValuePairs"
-                    }
+                    },
+                    "description": "Annotations added to the runner pod, as name: value entries."
                 },
                 "node-selector": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/KeyValuePairs"
-                    }
+                    },
+                    "description": "Node selector for the runner pod, as name: value entries."
                 },
                 "tolerations": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/Toleration"
-                    }
+                    },
+                    "description": "Tolerations for the runner pod."
                 },
                 "permissions": {
                     "type": "object",
                     "additionalProperties": false,
                     "properties": {
                         "destination-context-name": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Context name to select inside the kubeconfig."
                         },
                         "secret-name": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Name of the secret holding the kubeconfig."
                         },
                         "secret-namespace": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Namespace of that secret."
                         }
-                    }
+                    },
+                    "description": "Kubernetes permissions granted to the runner via a kubeconfig secret."
                 }
             },
             "description": "Kubernetes runner job customization: pod labels/annotations, node selector, tolerations, permissions."
@@ -1701,7 +1775,8 @@
                     "description": "Commit SHA to pin the source to."
                 },
                 "resource-type": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Kind of asset store the source points at (e.g. repository, artifactory, helm-chart, file, env-storage); normally inferred from the store, set only when it cannot be."
                 },
                 "name": {
                     "type": "string",
@@ -1824,7 +1899,7 @@
                             "boolean"
                         ]
                     },
-                    "description": "Converts the input into a dropdown list the end user selects from (a single-value list is auto-selected). API launches must pass the exact string."
+                    "description": "Converts the input into a dropdown list the end user selects from; a single-value list is auto-selected unless the style is multi-select. API launches must pass the exact string."
                 },
                 "searchable": {
                     "type": "boolean",
@@ -1833,7 +1908,8 @@
                 "depends-on": {
                     "type": "string",
                     "pattern": "^((.+)(,\\s*)?)+[^,]$",
-                    "description": "Comma-separated input names this input depends on; it is re-evaluated when they change (cascading inputs; supported for parameter, input-source and resource types)."
+                    "$comment": "InputTypesWithDependsOnSupport = String, Parameter, InputSource, Resource.",
+                    "description": "Comma-separated input names this input depends on; it is re-evaluated when they change (cascading inputs). Supported for string, parameter, input-source and resource inputs."
                 },
                 "source-name": {
                     "type": "string",
@@ -1845,97 +1921,128 @@
                         "type": "object",
                         "properties": {
                             "bucket_name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "S3 sources: the bucket to list or read from."
                             },
                             "path_prefix": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "S3 / Azure blob sources: only list objects under this prefix."
                             },
                             "filter": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Regular expression that returned values must match."
                             },
                             "object_key": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "S3 object-content source: key of the object to read."
                             },
                             "json_path": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Content sources: JSON path selecting the values."
                             },
                             "display_json_path": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Content sources: JSON path selecting the display text for each value."
                             },
                             "storage_account_name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Azure blob sources: the storage account."
                             },
                             "container_name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Azure blob sources: the blob container."
                             },
                             "blob_name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Azure blob-content source: the blob to read."
                             },
                             "path": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "HTTP sources: request path; Intersight sources: API path."
                             },
                             "query": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "HTTP sources: query string."
                             },
                             "credential": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Intersight sources: credential name to authenticate with."
                             },
                             "filter_query": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Intersight sources: OData $filter expression."
                             },
                             "select_query": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Intersight sources: OData $select expression."
                             },
                             "expand_query": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Intersight sources: OData $expand expression."
                             },
                             "credential_name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: credential to authenticate with."
                             },
                             "agent_name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: agent that performs the query."
                             },
                             "resource_type": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: the vSphere object type to list."
                             },
                             "filter_pattern": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: regular expression on object names."
                             },
                             "filter_datacenter": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: restrict to this datacenter."
                             },
                             "filter_cluster": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: restrict to this cluster."
                             },
                             "datastore_name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: datastore to browse."
                             },
                             "datacenter_name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: datacenter of the datastore."
                             },
                             "browse_path": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: folder path to browse inside the datastore."
                             },
                             "show_full_path": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: show full paths instead of names."
                             },
                             "preliminary_wildcard_filter": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: wildcard filter applied server-side before listing."
                             },
                             "show_datastore_space": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: append free space to datastore entries."
                             },
                             "show_default_option": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: prepend a default option to the list."
                             },
                             "default_option_text": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: text of that default option."
                             },
                             "sort_by": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: attribute to sort by (e.g. name, free_space)."
                             },
                             "sort_order": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "vCenter sources: asc, desc or none."
                             },
                             "target_name": {
                                 "type": "string",
@@ -1984,7 +2091,8 @@
                 },
                 "resource-selector": {
                     "$ref": "#/definitions/BlueprintInputResourceSelectorObject",
-                    "description": "Selection criteria constraining which inventory resources may be chosen for an input of type 'resource'. Mandatory for 'resource' inputs. Field values may use Liquid expressions."
+                    "$comment": "The server never requires it - there is no error for its absence.",
+                    "description": "Optional selection criteria narrowing which inventory resources may be chosen for an input of type 'resource'; without it any resource may be chosen. Field values may use Liquid expressions."
                 }
             },
             "if": {
@@ -2003,7 +2111,7 @@
                 ]
             },
             "$comment": "BlueprintInputsValidator reports FIELD_VALUE_MISSING_AT_PATH on 'parameter-name' for every input of type 'parameter' that does not set it.",
-            "description": "A launch-form input. Required unless it has an empty-matching 'pattern' - see the 'pattern' and 'default' fields for the exact semantics."
+            "description": "A launch-form input. Whether it is required is decided by 'optional', otherwise by 'default' and 'pattern' - see those fields."
         },
         "BlueprintOutputObject": {
             "type": "object",
@@ -2175,10 +2283,18 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-                "type": {},
-                "provider-name": {},
-                "provider-type": {},
-                "attributes": {},
+                "type": {
+                    "description": "Inventory resource type name (case-insensitive)."
+                },
+                "provider-name": {
+                    "description": "A specific inventory provider instance."
+                },
+                "provider-type": {
+                    "description": "Inventory provider type (e.g. vcenter, aws)."
+                },
+                "attributes": {
+                    "description": "name: value attributes the resources must have."
+                },
                 "quantity": {
                     "type": [
                         "integer",
@@ -2199,12 +2315,21 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-                "type": {},
-                "provider-name": {},
-                "provider-type": {},
-                "attributes": {},
+                "type": {
+                    "description": "Inventory resource type name (case-insensitive)."
+                },
+                "provider-name": {
+                    "description": "A specific inventory provider instance."
+                },
+                "provider-type": {
+                    "description": "Inventory provider type (e.g. vcenter, aws)."
+                },
+                "attributes": {
+                    "description": "name: value attributes the resources must have."
+                },
                 "reservable-only": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "When true, only resources that can actually be reserved - not excluded from reserving and not already reserved - are offered as the input's allowed values (default false). Set it when the input feeds a concrete resource requirement; it is not validated."
                 }
             },
             "title": "Blueprint Input Resource Selector"
@@ -2214,10 +2339,12 @@
             "additionalProperties": false,
             "properties": {
                 "store": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Repository (asset store) name."
                 },
                 "path": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Path of the file inside the repository."
                 }
             },
             "required": [
@@ -2265,29 +2392,41 @@
                                     "type": "array",
                                     "items": {
                                         "type": "string"
-                                    }
+                                    },
+                                    "description": "Grain names to hide."
                                 },
                                 "resource-types": {
                                     "type": "array",
                                     "items": {
                                         "type": "string"
-                                    }
+                                    },
+                                    "description": "Resource type prefixes to hide (case-insensitive, '*' wildcards allowed)."
+                                },
+                                "resources": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": "Exact resource names to hide (case-insensitive) - hides one instance without hiding its type or grain."
                                 }
-                            }
+                            },
+                            "description": "Hide items from the default Resources cards section."
                         },
                         "cards": {
                             "type": "array",
                             "items": {
                                 "type": "object",
                                 "additionalProperties": true
-                            }
+                            },
+                            "description": "Dynamic dashboard cards (see the layout guide for card types)."
                         },
                         "categories": {
                             "type": "array",
                             "items": {
                                 "type": "object",
                                 "additionalProperties": true
-                            }
+                            },
+                            "description": "Card categories for grouping."
                         }
                     },
                     "description": "Dynamic environment dashboard layout (cards/categories). Loosely validated."
@@ -2311,19 +2450,22 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/LaunchFormInputObject"
-                    }
+                    },
+                    "description": "Ungrouped inputs not assigned to a section."
                 },
                 "categories": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/LaunchFormCategoryObject"
-                    }
+                    },
+                    "description": "Categories grouping inputs and sections."
                 },
                 "sections": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/LaunchFormSectionObject"
-                    }
+                    },
+                    "description": "Root-level collapsible sections."
                 },
                 "image": {
                     "type": "string",
@@ -2347,17 +2489,20 @@
                     "type": "string",
                     "enum": [
                         "button"
-                    ]
+                    ],
+                    "description": "Action type; 'button' is the only type."
                 },
                 "url": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "URL the button requests (can download a file)."
                 },
                 "httpmethod": {
                     "type": "string",
                     "description": "HTTP method for the action: GET, POST, PUT, DELETE or PATCH (case-insensitive). Defaults to GET."
                 },
                 "label": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Button label."
                 }
             },
             "required": [
@@ -2392,7 +2537,7 @@
                         "datetime",
                         "info"
                     ],
-                    "description": "Special launch form input type"
+                    "description": "Renders the input as a special launch-form control: 'owner' (environment owner picker), 'env-name' (environment name field), 'object' (key/value table - see 'header' and 'columns'), 'env-reference' (environment reference picker), 'date', 'datetime', or 'info' (read-only informational text, not submitted with the launch)."
                 },
                 "header": {
                     "type": "string",
@@ -2428,7 +2573,8 @@
                     "type": "string",
                     "enum": [
                         "table"
-                    ]
+                    ],
+                    "description": "'table' renders an object input as a table using 'columns'."
                 },
                 "columns": {
                     "type": "array",
@@ -2437,20 +2583,24 @@
                         "additionalProperties": false,
                         "properties": {
                             "display-name": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Column header."
                             },
                             "path": {
-                                "type": "string"
+                                "type": "string",
+                                "description": "Path of the value inside each row object."
                             },
                             "editable": {
-                                "type": "boolean"
+                                "type": "boolean",
+                                "description": "Whether the cell can be edited."
                             }
                         },
                         "required": [
                             "display-name",
                             "path"
                         ]
-                    }
+                    },
+                    "description": "Table columns for display-as: table."
                 }
             },
             "required": ["name"],
@@ -2499,14 +2649,16 @@
             "additionalProperties": false,
             "properties": {
                 "key": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Label key."
                 },
                 "value": {
                     "type": [
                         "string",
                         "number",
                         "boolean"
-                    ]
+                    ],
+                    "description": "Label value."
                 },
                 "initial-color": {
                     "type": "string",
@@ -2540,16 +2692,19 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/LaunchFormInputObject"
-                    }
+                    },
+                    "description": "Inputs shown directly in the category."
                 },
                 "sections": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/LaunchFormSectionObject"
-                    }
+                    },
+                    "description": "Sections inside the category."
                 },
                 "image": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Image URL shown in the category."
                 },
                 "actions": {
                     "$ref": "#/definitions/LaunchFormActionsObject"
@@ -2601,10 +2756,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/LaunchFormInputObject"
-                    }
+                    },
+                    "description": "Inputs shown in the section."
                 },
                 "image": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Image URL shown in the section."
                 },
                 "actions": {
                     "$ref": "#/definitions/LaunchFormActionsObject"
@@ -2649,19 +2806,24 @@
             "additionalProperties": false,
             "properties": {
                 "service-account": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Kubernetes service account for the runner (overrides the target agent's default)."
                 },
                 "runner-namespace": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Namespace where the runner pod is provisioned."
                 },
                 "isolated": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Run the grain in isolation."
                 },
                 "storage-size": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Required storage capacity in MB."
                 },
                 "use-storage": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Enable persistent storage for the runner."
                 },
                 "kubernetes": {
                     "$ref": "#/definitions/KubernetesObject"
