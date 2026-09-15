@@ -24,6 +24,20 @@ server source (cs2018); the field-constant index there is `BlueprintFields.cs`,
 and the sync recipe is kept in the maintainer's project memory
 (`memory/blueprint-spec2-schema-sync.md`), not in this repo.
 
+### Source freshness
+
+The schema was synced against cs2018 on **2026-08-24**. Three backend changes
+landed *after* that date — `inputs.<name>.optional`, server-side `pattern`
+enforcement, and `target-filters.labels[].values` — and were folded in on
+**2026-09-15** after re-verifying against cs2018 `origin/main` **c0f49bd04d**
+and cs2018-ui **9fe9e4b01b** (section 8). The rule that produced that miss, and
+which every future sync must follow: **before verifying anything against a
+local cs2018 / cs2018-ui clone, fetch and compare against `origin` first, and
+record the SHA you verified at** — a stale working copy answers questions about
+the past. And a negative grep counts as evidence only when the same run also
+contains a positive control: a pattern you *know* matches, proving the search
+actually reached the source it claims to have searched.
+
 Schema descriptions are load-bearing documentation: they are what a blueprint
 author sees on hover, and they carry the semantics verified against cs2018 (for
 example the `use-storage` description states the `auto-approve` coupling that
@@ -247,6 +261,9 @@ it — for example an expression a folded scalar broke across lines.
 | `tests/test_spec2.py` | tree key coverage per section (a modern blueprint must parse with zero unknown-key errors), dead fields, expression rules |
 | `tests/test_spec2_semantics.py` | the section 4 rules, plus validator/parser robustness |
 | `tests/test_spec2_real_world.py` | the findings of a scan of 454 real-world blueprints: flow style YAML, unprintable bytes, bracket/dotless expression forms, the activities output path, transitive `depends-on`, the filter set, Liquid in `authentication`, and the unused-input regex |
+| `tests/test_spec2_optional_and_label_values.py` | the section 8 input changes at the *schema* layer (`inputs.<n>.optional`, `target-filters.labels[].values`) |
+| `tests/test_spec2_names.py` | the section 9 name rules: the grain-name regex is enforced, any input/output name is accepted, and no entry escapes validation by having an unusual name |
+| `tests/test_schema_fixtures.py` | the fixture corpus below: minimal blueprints that must validate, minimal defects that must still be reported, and the coverage link back to the real corpus |
 
 The reference corpus is the six internal ZeroTouch blueprint repositories, and
 454 is its size when walked with the canonical prune list (`.git`,
@@ -280,7 +297,88 @@ The pinned stack is Python 3.6/3.7 era (`pygls==0.11.3`, `pyyaml==5.4.1`,
 `pip install -r server/requirements.txt` — a current Python will not install
 these pins. Note that `ruamel.yaml` and `tabulate` are needed for the *whole*
 suite to import (`tests/test_validator.py` reaches `server/utils/yaml_utils.py`);
-the spec2 modules themselves only need pygls and pyyaml.
+the spec2 modules themselves only need pygls and pyyaml. The schema-layer test
+modules (sections 8 and 9) drive the JSON Schema directly through
+`jsonschema.Draft6Validator`, and `jsonschema` is *not* pulled in by
+`server/requirements.txt` — CI installs it explicitly. Leave it unpinned: pip
+honours `Requires-Python`, so 3.7 resolves to 4.17.3, the last release before
+jsonschema dropped 3.7.
+
+### Spell-checking
+
+Nothing in this pipeline read prose until 2026-09: super-linter validates JSON
+*syntax*, and every test here is behavioural, so four spelling and hyphenation
+defects shipped in the schema's `description` strings — which is to say, in the
+hover text a blueprint author reads — before a human noticed. The `spellcheck`
+job in `.github/workflows/ci.yml` now runs `codespell` over the whole tree.
+
+Its configuration lives in the repo-root `.codespellrc` so that a bare
+`codespell` run locally is exactly the CI run. A genuine false positive gets an
+inline `codespell:ignore <word>` on its own line (in Markdown, inside an HTML
+comment at the end of that line) — see the 0.3.3 changelog quote in section 7.
+Do **not** reach for `ignore-words-list` to silence one: that suppresses the
+word repo-wide and forever, which is how the next typo gets through.
+
+### The schema fixture corpus
+
+Everything above tests the *server* layer. The schema itself was pinned only
+where someone had thought to write a test, which leaves the two defects that
+matter unguarded: a shape real blueprints depend on stops validating, and a dead
+key starts being silently accepted. `tests/schema_fixtures/` closes that, with
+minimal, generic blueprints standing in for the real ones — representative of
+what they use, carrying none of their content.
+
+Three things are enforced, by `tests/test_schema_fixtures.py`:
+
+* `valid/<feature>.yaml` — one feature family per file, must validate with
+  **zero** errors. This is also where the schema-only constructs live: the grain
+  kinds (`kubernetes`, `argocd`, `opentofu`, `terragrunt`, `aws-cdk`), input
+  types (`dictionary`, `file`, `parameter`, `resource`) and sections
+  (`resources`, `tfvars-files`, `provider-overrides`, grain `condition`) that no
+  local blueprint uses and that nothing else would notice disappearing.
+* `invalid/<defect>.yaml` — must produce **at least one** error, and every
+  `# expect-error: <substring>` line in its header must match some message.
+  These are the dead keys the corpus scan found in the wild (`display-name`,
+  grain `timeout`, `activities.teardown`, `tf-tags-disabled`, …) plus the
+  removed enum members and the tightenings. A fixture here that produces no
+  error at all is the failure the corpus exists to catch. Matching runs against
+  **all** messages, nested `oneOf`/`anyOf` sub-errors included — most of these
+  keys sit inside a combinator, where the outermost message is only ever "is not
+  valid under any of the given schemas".
+* `required-paths.txt` — the 232 schema-accepted key paths that the 528 local
+  spec2 blueprints actually use, normalized (`<name>` for a user-chosen key,
+  `[]` for a list level). The union of the paths exercised by the valid fixtures
+  must cover all of them. That check is what makes "based on the real
+  blueprints" a property CI verifies rather than a claim in a commit message.
+
+To add a fixture, drop a file in `valid/` (start it with `spec_version`, keep it
+minimal, open it with a comment saying what it pins) or in `invalid/` with its
+`# expect-error:` lines — match on the distinctive fragment of the message, not
+on a whole sentence. A failing run prints every message with its JSON path, so
+the expectation can be read straight off it.
+
+`required-paths.txt` is regenerated with the classifier in
+[`tools/blueprint-corpus/classify_corpus_paths.py`](../tools/blueprint-corpus/classify_corpus_paths.py),
+which walks documents alongside the schema and sorts each key path into
+accepted / rejected / free-form. It needs the local corpus, which is deliberately
+not in this repository:
+
+```
+python tools/blueprint-corpus/classify_corpus_paths.py \
+    client/schemas/blueprint-spec2-schema.json <out-dir> <corpus-root>...
+```
+
+The same run writes the `rejected-paths.txt` that the `invalid/` fixtures come
+from. The test imports that script by file path — `blueprint-corpus` has a
+hyphen, so it is not a package — and reuses its `PathClassifier` for the
+coverage check, so CI normalizes paths with the same code that produced the
+file.
+
+The module imports only `yaml`, `jsonschema` and the standard library, so it
+runs on the pinned 3.7 stack and on a current Python alike. The 3.7 `test` job
+picks it up through `discover`; the separate `schema-fixtures` job in
+`.github/workflows/ci.yml` runs it on 3.12 with nothing installed but those two
+libraries.
 
 ## 7. Known gaps
 
@@ -291,7 +389,8 @@ Two things that surprise people and are easy to mistake for bugs:
   and writes it straight back — it adds no mapping for
   `blueprint-spec2-schema.json`, and the helper that would
   (`addSchemaToConfigAtScope`) is unused. Automatic schema configuration was
-  dropped in 0.3.3 ("get rid of schemas configutation") and nothing replaced it,
+  dropped in 0.3.3 — the changelog entry reads
+  "get rid of schemas configutation" (sic) — and nothing replaced it, <!-- codespell:ignore configutation -->
   so the shipped schema file is currently the reference the server model is
   synced against rather than something the user's editor picks up on its own.
   To exercise a schema change, associate it by hand — a `yaml.schemas` entry or
@@ -304,3 +403,122 @@ Two things that surprise people and are easy to mistake for bugs:
   too would double-report the same mistake and force every future value change
   to land in two places. Before "fixing" an apparently lax schema rule, check
   whether the language server already covers it.
+
+## 8. September 2026 backend changes to `inputs`
+
+Three changes landed in cs2018 after the 2026-08-24 sync (see *Source
+freshness* in section 1). All of them are about blueprint **inputs**, and all
+of them were re-verified against cs2018 `origin/main` c0f49bd04d and cs2018-ui
+9fe9e4b01b on 2026-09-14/15.
+
+### 8.1 `inputs.<name>.optional` (cs2018 7571846285, 2026-08-30)
+
+A `bool?` — tri-state, and the unset state is *not* the same as `false`.
+
+| | |
+|---|---|
+| Type | `bool?` (unset / `true` / `false`) |
+| Meaningful for | `string` and `dictionary` inputs only |
+| Ignored for | `agent`, `credentials`, `file`, `parameter`, `input-source`, `target`, `resource` |
+
+Two blueprint-level consequences:
+
+* `optional: true` combined with a `pattern` that rejects the empty string is a
+  **blueprint validation error** — `BLUEPRINT_INPUT_OPTIONAL_CONFLICTS_WITH_PATTERN`.
+  The two statements contradict each other: the input may be left blank, and
+  blank is not an accepted value. Note the asymmetry — a pattern the server
+  cannot evaluate (an invalid or unresolvable regex) never fails the blueprint
+  on *this* rule; it simply cannot be shown to conflict.
+* `optional: false` rejects an empty value at launch —
+  `BLUEPRINT_INPUTS_EMPTY_VALUES_NOT_ALLOWED`.
+
+### 8.2 Required-ness on the launch form
+
+The launch form decides required-ness itself, in cs2018-ui
+`portal/src/forms/common_logic/helpers.tsx` (`isInputMandatory`, changed
+2026-08-30):
+
+```
+if (input.optional === true)  return false;
+if (input.optional === false) return true;
+if (!input.has_default_value && !input.pattern) return true;   // has_default_value = Default is not null, so default: "" counts
+return patternRejectsEmptyValue(input.pattern);
+```
+
+What that means in practice, and it is the part that surprises people: **when
+`optional` is unset, having a default makes the input optional — including an
+empty default.** `default: ""` sets `has_default_value`, because the check is
+"is Default non-null", not "is Default non-empty". So the older rule of thumb
+"an input is required iff it has no pattern" is wrong in both directions: a
+defaulted input with no pattern is *optional*, and an input with a pattern is
+required only when that pattern actually rejects the empty string. An explicit
+`optional` overrides all of it.
+
+### 8.3 Server-side `pattern` enforcement (cs2018 8d62b1be5d, 2026-09-09)
+
+`pattern` used to be a launch-form-only affordance. Torque now validates launch
+values against it server-side too:
+
+| Situation | Error |
+|---|---|
+| Value does not match `pattern` | `BLUEPRINT_INPUT_VALUE_DOES_NOT_MATCH_PATTERN`, using `validation-description` as the message when one is present |
+| `pattern` is not a valid regex | `BLUEPRINT_INPUT_PATTERN_IS_NOT_A_VALID_REGEX` |
+
+Two details worth knowing before tightening anything in the schema:
+
+* The dialect is **JavaScript**, and a `/.../flags` literal is accepted as well
+  as a bare pattern body. Validating `pattern` as a .NET or Python regex in this
+  extension would produce false errors.
+* `pattern` and `validation-description` are **Liquid-templated**. They are
+  resolved over the input's `depends-on` inputs (of type `string`, `parameter`,
+  `input-source` or `resource`) and over space parameters, through a new
+  endpoint `catalog/any_blueprint/inputs_patterns`. So a `pattern` containing
+  `{{ }}` is not statically checkable — the same reason `_is_expression` makes
+  the validator skip Liquid values everywhere else (section 4).
+
+### 8.4 `inputs.<name>.target-filters.labels[].values` (cs2018 eec4e2859a, 2026-09-10)
+
+A `string[]` alternative to the existing scalar `value` on a target-filter
+label. The matching semantics are AND across labels, OR within one label:
+
+* a target must carry **all** the listed labels, and
+* for each label, its value must match **any** entry of that label's `values`,
+* compared **case-insensitively**.
+
+A single label entry carrying both `value` and `values` is an error —
+`BLUEPRINT_INPUT_TARGET_FILTER_LABEL_WITH_VALUE_AND_VALUES`. That is a
+one-of-two-keys rule on a single node, so it is expressible in the schema (like
+the resource-requirement `oneOf` of section 4) and does not need cross-node
+knowledge.
+
+## 9. What a name may be
+
+The `inputs`, `grains` and `outputs` maps are keyed by author-chosen names, and
+the server's rules for them are asymmetric (cs2018 `origin/main` c0f49bd04d):
+
+| Name | Server rule | Source |
+|---|---|---|
+| Grain name | must match `^[a-zA-Z0-9 \-_]+$` — letters, digits, space, dash, underscore — with **no length limit** | `BaseGrainValidator.cs` |
+| Input name | none at all: any non-empty string | — |
+| Output name | none at all: any non-empty string | — |
+
+The schema mirrors exactly that: it constrains grain names to the regex above
+and accepts any input or output name.
+
+It did not always. The schema used to demand **3–45 characters** of every one of
+those names, which was wrong twice over. It was wrong on the facts — the server
+imposes no length bound on grains and no rule whatsoever on inputs and outputs,
+and real blueprints in the corpus are full of short and exotic names (`OS`,
+`db`, `id`, `Ethernet1/1 Port Group`). And it was wrong in its *failure mode*,
+which is the part worth remembering:
+
+> A `propertyNames` constraint only constrains the name. The schema applied to
+> the **value** is chosen by `properties` / `patternProperties`, and these maps
+> declared no `additionalProperties`, so an entry whose name missed the pattern
+> matched no value schema at all and was simply **not validated** — no error
+> about the name, and no checking of the body either.
+
+So the very entries most likely to be malformed were the ones that escaped
+every check. Closing the maps is what turns that silence into a diagnostic, and
+it is the same reasoning as the closed key set of section 2: a schema that
+quietly skips input it does not recognise is worse than one that rejects it.
