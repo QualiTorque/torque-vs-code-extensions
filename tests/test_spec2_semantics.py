@@ -194,7 +194,9 @@ class TestAutoApproveStorageCoupling(unittest.TestCase):
         name: agent1""",
             )
         )
-        self.assertFalse(any("use-storage" in m or "storage" in m.lower() for m in msgs))
+        self.assertFalse(
+            any("use-storage" in m or "storage" in m.lower() for m in msgs)
+        )
 
 
 WORKFLOW = """spec_version: 2
@@ -250,7 +252,9 @@ class TestWorkflowRules(unittest.TestCase):
       cron: '0 0 * * *'"""
             )
         )
-        self.assertTrue(any("trigger" in m.lower() or "cron" in m.lower() for m in msgs))
+        self.assertTrue(
+            any("trigger" in m.lower() or "cron" in m.lower() for m in msgs)
+        )
 
     def test_event_trigger_without_event_flagged(self):
         msgs = messages(
@@ -283,8 +287,6 @@ class TestWorkflowRules(unittest.TestCase):
             )
         )
         self.assertFalse(any("timeout" in m.lower() for m in msgs))
-
-
 
 
 class TestValidatorRobustness(unittest.TestCase):
@@ -350,6 +352,7 @@ grains:
         )
         self.assertTrue(any("Multiple mentioning of grain" in m for m in msgs))
 
+
 if __name__ == "__main__":
     unittest.main()
 
@@ -398,6 +401,7 @@ grains:
 
     def test_union_typed_property_attribute_access_returns_none(self):
         from server.ats.parser import Parser
+
         tree = Parser(
             """spec_version: 2
 grains:
@@ -417,6 +421,7 @@ grains:
     def test_short_form_blueprint_label_expression_errors_surface(self):
         from server.ats.parser import Parser
         from server.validation.bp_v2_validator import BlueprintSpec2Validator
+
         doc = """spec_version: 2
 metadata:
   blueprint-labels:

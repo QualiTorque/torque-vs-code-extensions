@@ -22,15 +22,15 @@ jobs:
       - name: get project info
         id: get_project_info
         run: |
-          echo ::set-output name=PROJECT::$(basename `pwd`)
-          echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+          echo "PROJECT=$(basename "$(pwd)")" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${GITHUB_REF/refs\/tags\//}" >> "$GITHUB_OUTPUT"
 
       - name: check project.json version
         run: |
           TO_FIND=$(echo ${{ steps.get_project_info.outputs.VERSION }} | sed 's/v//g')
           echo "Checking if tag version is present in package.json"
           
-          (grep $TO_FIND ./client/package.json | grep version > /dev/null) || (echo "Version in project.json != version in tag" && exit 1)
+          (grep "$TO_FIND" ./client/package.json | grep version > /dev/null) || (echo "Version in project.json != version in tag" && exit 1)
 
       - name: compile and create vsix
         run: |

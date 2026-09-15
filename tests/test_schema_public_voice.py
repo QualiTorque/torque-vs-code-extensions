@@ -25,7 +25,9 @@ BANNED_EVERYWHERE = {
         r"|Profile|Consts|Evaluator|Extractor|Deserializer|Mapping|Descriptor|Factory|Context)\b"
     ),
     "error code": re.compile(r"\b[A-Z][A-Z0-9]+(?:_[A-Z0-9]+){2,}\b"),
-    "source file or path": re.compile(r"\b\w+\.(cs|tsx?|py|json|md|yaml)\b|[A-Za-z]:\\|/server/|portal/src"),
+    "source file or path": re.compile(
+        r"\b\w+\.(cs|tsx?|py|json|md|yaml)\b|[A-Za-z]:\\|/server/|portal/src"
+    ),
     "internal tooling word": re.compile(
         r"\b(cs2018|AutoMapper|YamlMember|YamlShortSyntax|IgnoreUnmatchedProperties|SmartEnum"
         r"|isMandatory|deserializ\w*|IsNullOrEmpty|TryParse|OrdinalIgnoreCase|StringComparer"
@@ -35,7 +37,9 @@ BANNED_EVERYWHERE = {
         r"\b(corpus|ZeroTouch|zero-touch|vmaas|Compute3|zt-test|bmaas|\d+ of \d+ real)\b"
     ),
     "line reference": re.compile(r"\bline ~?\d+\b|\.cs:\d+"),
-    "R&D voice": re.compile(r"\b(we|our|R&D|RnD|the coordinator|the other agent|todo|TODO|FIXME)\b"),
+    "R&D voice": re.compile(
+        r"\b(we|our|R&D|RnD|the coordinator|the other agent|todo|TODO|FIXME)\b"
+    ),
 }
 
 # JSON Schema keywords are the language this file is written in, so a $comment may
@@ -45,7 +49,9 @@ BANNED_IN_DESCRIPTIONS = {
         r"\b(allOf|oneOf|anyOf|additionalProperties|patternProperties|unevaluatedProperties"
         r"|propertyNames|\$ref|\$comment|subschema)\b"
     ),
-    "implementation voice": re.compile(r"\bthe server\b|\bserver-side\b|\bthe deserializer\b|\bthe parser\b"),
+    "implementation voice": re.compile(
+        r"\bthe server\b|\bserver-side\b|\bthe deserializer\b|\bthe parser\b"
+    ),
 }
 
 
@@ -61,7 +67,12 @@ def texts():
                 if isinstance(value, str):
                     found.append((path.replace("/definitions/", ""), key, value))
             for key, value in node.items():
-                if key not in ("title", "description", "markdownDescription", "$comment"):
+                if key not in (
+                    "title",
+                    "description",
+                    "markdownDescription",
+                    "$comment",
+                ):
                     walk(value, path + "/" + key)
         elif isinstance(node, list):
             for i, value in enumerate(node):
@@ -72,25 +83,25 @@ def texts():
 
 
 class TestSchemaTextIsCustomerFacing(unittest.TestCase):
+    def _assert_no_match(self, path, key, value, rules):
+        """Fail if any rule in `rules` matches `value`, naming the rule that fired."""
+        for label, pattern in rules.items():
+            match = pattern.search(value)
+            with self.subTest(path=path, key=key, rule=label):
+                self.assertIsNone(
+                    match,
+                    "%s in %s [%s]: %r" % (label, path, key, match and match.group(0)),
+                )
+
     def test_no_internal_identifiers_anywhere(self):
         for path, key, value in texts():
-            for label, pattern in BANNED_EVERYWHERE.items():
-                match = pattern.search(value)
-                with self.subTest(path=path, key=key, rule=label):
-                    self.assertIsNone(
-                        match, "%s in %s [%s]: %r" % (label, path, key, match and match.group(0))
-                    )
+            self._assert_no_match(path, key, value, BANNED_EVERYWHERE)
 
     def test_descriptions_speak_to_blueprint_authors(self):
         for path, key, value in texts():
             if key == "$comment":
                 continue
-            for label, pattern in BANNED_IN_DESCRIPTIONS.items():
-                match = pattern.search(value)
-                with self.subTest(path=path, key=key, rule=label):
-                    self.assertIsNone(
-                        match, "%s in %s [%s]: %r" % (label, path, key, match and match.group(0))
-                    )
+            self._assert_no_match(path, key, value, BANNED_IN_DESCRIPTIONS)
 
     def test_every_description_is_a_sentence(self):
         # a description that is a bare fragment ("Helm release name") is acceptable; one that is

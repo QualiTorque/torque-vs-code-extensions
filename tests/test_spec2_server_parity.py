@@ -42,11 +42,24 @@ def terraform_grain(spec_extra):
 
 class TestClosedObjects(unittest.TestCase):
     def test_template_storage_is_closed(self):
-        # a cloudformation grain also needs region and agent (or authentication/target) - see test_spec2_required_parity
-        ok = ("      region: my-region\n      agent:\n        name: agent-1\n"
-              "      template-storage:\n        bucket-name: my-bucket\n        region: my-region\n        key-prefix: envs/\n")
-        self.assertEqual([], schema_errors(terraform_grain(ok).replace("terraform", "cloudformation")))
-        self.assertTrue(schema_errors(terraform_grain(ok + "        bogus: 1\n").replace("terraform", "cloudformation")))
+        # a cloudformation grain also needs region and agent (or
+        # authentication/target) - see test_spec2_required_parity
+        ok = (
+            "      region: my-region\n      agent:\n        name: agent-1\n"
+            "      template-storage:\n        bucket-name: my-bucket\n"
+            "        region: my-region\n        key-prefix: envs/\n"
+        )
+        self.assertEqual(
+            [],
+            schema_errors(terraform_grain(ok).replace("terraform", "cloudformation")),
+        )
+        self.assertTrue(
+            schema_errors(
+                terraform_grain(ok + "        bogus: 1\n").replace(
+                    "terraform", "cloudformation"
+                )
+            )
+        )
 
     def test_tags_object_is_closed(self):
         ok = "      tags:\n        auto-tag: false\n        disable-tags-for:\n          - aws_s3_bucket\n"
@@ -65,10 +78,20 @@ class TestClosedObjects(unittest.TestCase):
         ok = (
             "      backend:\n        type: remote\n        hostname: app.example\n        organization: my-org\n"
             "        token: '{{ .inputs.token }}'\n        workspaces:\n          - name: my-workspace\n"
-            "            prefix: app-\n            project: my-project\n            tags:\n              team: platform\n"
+            "            prefix: app-\n            project: my-project\n"
+            "            tags:\n              team: platform\n"
         )
         self.assertEqual([], schema_errors(terraform_grain(ok)))
-        self.assertTrue(schema_errors(terraform_grain(ok.replace("            prefix: app-\n", "            prefix: app-\n            bogus: 1\n"))))
+        self.assertTrue(
+            schema_errors(
+                terraform_grain(
+                    ok.replace(
+                        "            prefix: app-\n",
+                        "            prefix: app-\n            bogus: 1\n",
+                    )
+                )
+            )
+        )
 
     def test_vars_file_entries_are_closed(self):
         ok = "      tfvars-files:\n        - source:\n            store: config\n            path: prod.tfvars\n"
@@ -77,9 +100,13 @@ class TestClosedObjects(unittest.TestCase):
 
 
 def workflow(fields):
-    return "spec_version: 2\nworkflow:\n" + "".join("  %s\n" % f for f in fields) + (
-        "grains:\n  step:\n    kind: shell\n    spec:\n      agent:\n        name: agent-1\n"
-        "      activities:\n        deploy:\n          commands:\n            - echo hi\n"
+    return (
+        "spec_version: 2\nworkflow:\n"
+        + "".join("  %s\n" % f for f in fields)
+        + (
+            "grains:\n  step:\n    kind: shell\n    spec:\n      agent:\n        name: agent-1\n"
+            "      activities:\n        deploy:\n          commands:\n            - echo hi\n"
+        )
     )
 
 
@@ -93,7 +120,10 @@ class TestWorkflowTimeout(unittest.TestCase):
         self.assertTrue(schema_errors(workflow(["scope: env", "timeout: abc"])))
 
     def test_liquid_expression_is_allowed(self):
-        self.assertEqual([], schema_errors(workflow(["scope: env", "timeout: '{{ .inputs.minutes }}'"])))
+        self.assertEqual(
+            [],
+            schema_errors(workflow(["scope: env", "timeout: '{{ .inputs.minutes }}'"])),
+        )
 
 
 class TestWorkflowScope(unittest.TestCase):
@@ -107,7 +137,15 @@ class TestWorkflowScope(unittest.TestCase):
 
 class TestWorkflowTriggerEvents(unittest.TestCase):
     def test_tag_updates_detected_is_accepted(self):
-        doc = workflow(["scope: env", "triggers:", "  - type: event", "    event:", "      - Tag Updates Detected"])
+        doc = workflow(
+            [
+                "scope: env",
+                "triggers:",
+                "  - type: event",
+                "    event:",
+                "      - Tag Updates Detected",
+            ]
+        )
         self.assertEqual([], schema_errors(doc))
 
 
@@ -125,13 +163,15 @@ class TestLanguageServerParity(unittest.TestCase):
         doc = terraform_grain(
             "      backend:\n        type: remote\n        hostname: app.example\n        organization: my-org\n"
             "        token: '{{ .inputs.token }}'\n        workspaces:\n          - name: my-workspace\n"
-            "            prefix: app-\n            project: my-project\n            tags:\n              team: platform\n"
+            "            prefix: app-\n            project: my-project\n"
+            "            tags:\n              team: platform\n"
         )
         self.assertEqual([], self.unknown_keys(doc))
 
     def test_template_storage_fields(self):
         doc = terraform_grain(
-            "      template-storage:\n        bucket-name: my-bucket\n        region: my-region\n        key-prefix: envs/\n"
+            "      template-storage:\n        bucket-name: my-bucket\n"
+            "        region: my-region\n        key-prefix: envs/\n"
         ).replace("terraform", "cloudformation")
         self.assertEqual([], self.unknown_keys(doc))
 
@@ -145,15 +185,23 @@ class TestTargetHasNoScalarForm(unittest.TestCase):
         self.assertTrue(schema_errors(terraform_grain("      target: my-target\n")))
 
     def test_object_target_is_accepted(self):
-        self.assertEqual([], schema_errors(terraform_grain("      target:\n        name: my-target\n")))
+        self.assertEqual(
+            [],
+            schema_errors(terraform_grain("      target:\n        name: my-target\n")),
+        )
 
     def test_language_server_rejects_scalar_target_too(self):
         # both layers must agree, or the editor shows a schema error next to a silent tree model
         from server.ats.parser import Parser
 
         tree = Parser(terraform_grain("      target: my-target\n")).parse()
-        self.assertTrue([e.message for e in tree.errors], "the tree model must report a scalar target")
-        ok_tree = Parser(terraform_grain("      target:\n        name: my-target\n")).parse()
+        self.assertTrue(
+            [e.message for e in tree.errors],
+            "the tree model must report a scalar target",
+        )
+        ok_tree = Parser(
+            terraform_grain("      target:\n        name: my-target\n")
+        ).parse()
         self.assertEqual([], [e.message for e in ok_tree.errors])
 
 

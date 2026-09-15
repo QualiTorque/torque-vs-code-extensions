@@ -51,7 +51,10 @@ def errors(doc):
 
 def grain(kind, spec):
     body = "".join("      %s\n" % line for line in spec.splitlines())
-    return "spec_version: 2\ngrains:\n  app:\n    kind: %s\n    spec:\n%s" % (kind, body)
+    return "spec_version: 2\ngrains:\n  app:\n    kind: %s\n    spec:\n%s" % (
+        kind,
+        body,
+    )
 
 
 TF_SOURCE = "source:\n  path: modules/app\n"
@@ -65,14 +68,19 @@ class TestDraft(unittest.TestCase):
 
 class TestSources(unittest.TestCase):
     def test_store_or_path_is_enough(self):
-        self.assertEqual([], errors(grain("terraform", "source:\n  path: modules/app\n")))
+        self.assertEqual(
+            [], errors(grain("terraform", "source:\n  path: modules/app\n"))
+        )
         self.assertEqual([], errors(grain("terraform", "source:\n  store: modules\n")))
 
     def test_source_without_store_and_path_is_rejected(self):
         self.assertTrue(errors(grain("terraform", "source:\n  branch: main\n")))
 
     def test_family_member_source_needs_store_and_path(self):
-        ok = "spec_version: 2\nfamily:\n  members:\n    member-a:\n      source:\n        store: blueprints\n        path: a.yaml\n"
+        ok = (
+            "spec_version: 2\nfamily:\n  members:\n    member-a:\n      source:\n"
+            "        store: blueprints\n        path: a.yaml\n"
+        )
         self.assertEqual([], errors(ok))
         self.assertTrue(errors(ok.replace("        store: blueprints\n", "")))
         self.assertTrue(errors(ok.replace("        path: a.yaml\n", "")))
@@ -80,8 +88,12 @@ class TestSources(unittest.TestCase):
 
 class TestAgent(unittest.TestCase):
     def test_agent_needs_name(self):
-        self.assertEqual([], errors(grain("terraform", TF_SOURCE + "agent:\n  name: agent-1\n")))
-        self.assertTrue(errors(grain("terraform", TF_SOURCE + "agent:\n  use-storage: true\n")))
+        self.assertEqual(
+            [], errors(grain("terraform", TF_SOURCE + "agent:\n  name: agent-1\n"))
+        )
+        self.assertTrue(
+            errors(grain("terraform", TF_SOURCE + "agent:\n  use-storage: true\n"))
+        )
 
 
 class TestFileExtensions(unittest.TestCase):
@@ -102,15 +114,21 @@ class TestTemplatePlaceholders(unittest.TestCase):
     def test_placeholder_needs_path(self):
         ok = "spec_version: 2\ntemplate:\n  placeholders:\n    - path: inputs.region\n      hint: pick one\n"
         self.assertEqual([], errors(ok))
-        self.assertTrue(errors(ok.replace("    - path: inputs.region\n      hint", "    - hint")))
+        self.assertTrue(
+            errors(ok.replace("    - path: inputs.region\n      hint", "    - hint"))
+        )
 
 
 def approval_grain(channel_lines):
-    channel = "".join("          %s\n" % l for l in channel_lines)
+    channel = "".join("          %s\n" % line for line in channel_lines)
     return (
         "spec_version: 2\ngrains:\n  app:\n    kind: terraform\n    condition:\n      - type: approval\n"
-        "        message: approve?\n        channels:\n        - type: %s\n%s" % (channel_lines[0], channel)
-    ).replace("        - type: %s\n          %s\n" % (channel_lines[0], channel_lines[0]), "        - type: %s\n" % channel_lines[0]) + "    spec:\n      source:\n        path: modules/app\n"
+        "        message: approve?\n        channels:\n        - type: %s\n%s"
+        % (channel_lines[0], channel)
+    ).replace(
+        "        - type: %s\n          %s\n" % (channel_lines[0], channel_lines[0]),
+        "        - type: %s\n" % channel_lines[0],
+    ) + "    spec:\n      source:\n        path: modules/app\n"
 
 
 class TestApprovalChannels(unittest.TestCase):
@@ -118,14 +136,24 @@ class TestApprovalChannels(unittest.TestCase):
         return (
             "spec_version: 2\ngrains:\n  app:\n    kind: terraform\n    condition:\n      - type: approval\n"
             "        message: approve?\n        channels:\n          - type: %s\n%s"
-            "    spec:\n      source:\n        path: modules/app\n" % (ctype, "".join("            %s\n" % l for l in extra))
+            "    spec:\n      source:\n        path: modules/app\n"
+            % (ctype, "".join("            %s\n" % line for line in extra))
         )
 
     def test_each_channel_type_needs_its_approvers(self):
-        self.assertEqual([], errors(self.channel("group", ["groups:", "  - platform-team"])))
-        self.assertEqual([], errors(self.channel("user", ["users:", "  - someone@example.invalid"])))
-        self.assertEqual([], errors(self.channel("account_channels", ["names:", "  - ops"])))
-        self.assertTrue(errors(self.channel("group", [])), "group channel without groups must be rejected")
+        self.assertEqual(
+            [], errors(self.channel("group", ["groups:", "  - platform-team"]))
+        )
+        self.assertEqual(
+            [], errors(self.channel("user", ["users:", "  - someone@example.invalid"]))
+        )
+        self.assertEqual(
+            [], errors(self.channel("account_channels", ["names:", "  - ops"]))
+        )
+        self.assertTrue(
+            errors(self.channel("group", [])),
+            "group channel without groups must be rejected",
+        )
         self.assertTrue(errors(self.channel("group", ["groups: []"])))
         self.assertTrue(errors(self.channel("user", [])))
         self.assertTrue(errors(self.channel("account_channels", [])))
@@ -133,8 +161,19 @@ class TestApprovalChannels(unittest.TestCase):
 
 class TestTolerations(unittest.TestCase):
     def test_equal_operator_needs_key_and_value(self):
-        base = TF_SOURCE + "agent:\n  name: agent-1\n  kubernetes:\n    tolerations:\n      - operator: %s\n%s"
-        self.assertEqual([], errors(grain("terraform", base % ("Equal", "        key: dedicated\n        value: gpu\n"))))
+        base = (
+            TF_SOURCE
+            + "agent:\n  name: agent-1\n  kubernetes:\n    tolerations:\n      - operator: %s\n%s"
+        )
+        self.assertEqual(
+            [],
+            errors(
+                grain(
+                    "terraform",
+                    base % ("Equal", "        key: dedicated\n        value: gpu\n"),
+                )
+            ),
+        )
         self.assertEqual([], errors(grain("terraform", base % ("Exists", ""))))
         self.assertTrue(errors(grain("terraform", base % ("Equal", ""))))
 
@@ -150,10 +189,33 @@ class TestCloudFormation(unittest.TestCase):
     CFN = "source:\n  path: templates/stack.yaml\n"
 
     def test_region_and_credentials_or_agent(self):
-        self.assertEqual([], errors(grain("cloudformation", self.CFN + "region: my-region\nagent:\n  name: agent-1\n")))
-        self.assertEqual([], errors(grain("cloudformation", self.CFN + "region: my-region\nauthentication:\n  - '{{ .inputs.creds }}'\n")))
-        self.assertTrue(errors(grain("cloudformation", self.CFN + "agent:\n  name: agent-1\n")), "region is mandatory")
-        self.assertTrue(errors(grain("cloudformation", self.CFN + "region: my-region\n")), "authentication or agent is mandatory")
+        self.assertEqual(
+            [],
+            errors(
+                grain(
+                    "cloudformation",
+                    self.CFN + "region: my-region\nagent:\n  name: agent-1\n",
+                )
+            ),
+        )
+        self.assertEqual(
+            [],
+            errors(
+                grain(
+                    "cloudformation",
+                    self.CFN
+                    + "region: my-region\nauthentication:\n  - '{{ .inputs.creds }}'\n",
+                )
+            ),
+        )
+        self.assertTrue(
+            errors(grain("cloudformation", self.CFN + "agent:\n  name: agent-1\n")),
+            "region is mandatory",
+        )
+        self.assertTrue(
+            errors(grain("cloudformation", self.CFN + "region: my-region\n")),
+            "authentication or agent is mandatory",
+        )
 
     def test_other_kinds_do_not_need_region(self):
         self.assertEqual([], errors(grain("terraform", TF_SOURCE)))
@@ -161,47 +223,109 @@ class TestCloudFormation(unittest.TestCase):
 
 class TestBackend(unittest.TestCase):
     def backend(self, lines):
-        return grain("terraform", TF_SOURCE + "backend:\n" + "".join("  %s\n" % l for l in lines))
+        return grain(
+            "terraform",
+            TF_SOURCE + "backend:\n" + "".join("  %s\n" % line for line in lines),
+        )
 
     def test_type_is_mandatory(self):
         self.assertTrue(errors(self.backend(["bucket: my-state"])))
 
     def test_s3_needs_bucket_and_region(self):
-        self.assertEqual([], errors(self.backend(["type: s3", "bucket: my-state", "region: my-region"])))
+        self.assertEqual(
+            [],
+            errors(self.backend(["type: s3", "bucket: my-state", "region: my-region"])),
+        )
         self.assertTrue(errors(self.backend(["type: s3", "region: my-region"])))
         self.assertTrue(errors(self.backend(["type: s3", "bucket: my-state"])))
 
     def test_azurerm_needs_storage_account_and_container(self):
-        self.assertEqual([], errors(self.backend(["type: azurerm", "storage-account-name: acct", "container-name: tfstate"])))
-        self.assertTrue(errors(self.backend(["type: azurerm", "container-name: tfstate"])))
+        self.assertEqual(
+            [],
+            errors(
+                self.backend(
+                    [
+                        "type: azurerm",
+                        "storage-account-name: acct",
+                        "container-name: tfstate",
+                    ]
+                )
+            ),
+        )
+        self.assertTrue(
+            errors(self.backend(["type: azurerm", "container-name: tfstate"]))
+        )
 
     def test_gcs_needs_bucket(self):
         self.assertEqual([], errors(self.backend(["type: gcs", "bucket: my-state"])))
         self.assertTrue(errors(self.backend(["type: gcs"])))
 
     def test_http_needs_base_address(self):
-        self.assertEqual([], errors(self.backend(["type: http", "base-address: https://state.example.invalid"])))
+        self.assertEqual(
+            [],
+            errors(
+                self.backend(
+                    ["type: http", "base-address: https://state.example.invalid"]
+                )
+            ),
+        )
         self.assertTrue(errors(self.backend(["type: http"])))
 
     def test_remote_needs_organization_and_workspaces(self):
         # ValidateTerraformRemoteFields: hostname and token are passed with isMandatory: false
         # ("Optional fields"); organization and a non-empty workspaces list are mandatory, and the
         # server's own Validate_RemoteBackend_Mandatory_Fields_Pass has neither hostname nor token.
-        ok = ["type: remote", "hostname: app.example.invalid", "token: '{{ .inputs.token }}'", "organization: my-org",
-              "workspaces:", "  - name: my-workspace"]
+        ok = [
+            "type: remote",
+            "hostname: app.example.invalid",
+            "token: '{{ .inputs.token }}'",
+            "organization: my-org",
+            "workspaces:",
+            "  - name: my-workspace",
+        ]
         self.assertEqual([], errors(self.backend(ok)))
         self.assertEqual([], errors(self.backend(ok[:-1] + ["  - prefix: app-"])))
-        self.assertEqual([], errors(self.backend([l for l in ok if not l.startswith(("hostname", "token"))])))
-        self.assertTrue(errors(self.backend(ok[:-2])), "workspaces are mandatory for remote")
-        self.assertTrue(errors(self.backend(ok[:-1] + ["  - project: p"])), "a remote workspace needs name or prefix")
-        self.assertTrue(errors(self.backend([l for l in ok if not l.startswith("organization")])), "organization is mandatory")
+        self.assertEqual(
+            [],
+            errors(
+                self.backend(
+                    [line for line in ok if not line.startswith(("hostname", "token"))]
+                )
+            ),
+        )
+        self.assertTrue(
+            errors(self.backend(ok[:-2])), "workspaces are mandatory for remote"
+        )
+        self.assertTrue(
+            errors(self.backend(ok[:-1] + ["  - project: p"])),
+            "a remote workspace needs name or prefix",
+        )
+        self.assertTrue(
+            errors(
+                self.backend(
+                    [line for line in ok if not line.startswith("organization")]
+                )
+            ),
+            "organization is mandatory",
+        )
 
     def test_cloud_has_no_mandatory_fields_beyond_type(self):
         # ValidateTerraformCloudFields passes hostname, token and organization with isMandatory: false,
         # and ValidateCloudWorkspacesField returns when workspaces are absent.
         self.assertEqual([], errors(self.backend(["type: cloud"])))
-        self.assertEqual([], errors(self.backend(["type: cloud", "hostname: app.example.invalid",
-                                                   "token: '{{ .inputs.token }}'", "organization: my-org"])))
+        self.assertEqual(
+            [],
+            errors(
+                self.backend(
+                    [
+                        "type: cloud",
+                        "hostname: app.example.invalid",
+                        "token: '{{ .inputs.token }}'",
+                        "organization: my-org",
+                    ]
+                )
+            ),
+        )
 
 
 if __name__ == "__main__":

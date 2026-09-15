@@ -404,7 +404,9 @@ grains:
 class TestSpec2ExpressionValidation(unittest.TestCase):
     def expression_errors(self, doc):
         tree, _ = validate(doc)
-        return [e.message for e in tree.errors if "does not have child" not in e.message]
+        return [
+            e.message for e in tree.errors if "does not have child" not in e.message
+        ]
 
     def test_resources_prefix_allowed(self):
         errors = self.expression_errors(

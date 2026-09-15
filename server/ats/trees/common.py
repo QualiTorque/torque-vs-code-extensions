@@ -117,18 +117,20 @@ class ScalarNode(TextNode):
     allow_vars = False
 
     def _validate(self, v: str):
-        regex = re.compile("(\$\{.+?\}|^\$.+?$)|\{\{[^\{\}]*\}\}")
+        regex = re.compile(r"(\$\{.+?\}|^\$.+?$)|\{\{[^\{\}]*\}\}")
         # find first
         # m = regex.search(v)
         found = regex.finditer(v)
 
         for m in found:
             offset = m.span()
-            self.add_error(NodeError(
-                start_pos=(self.start_pos[0], self.start_pos[1] + offset[0]),
-                end_pos=(self.end_pos[0], self.start_pos[1] + offset[1]),
-                message="Variables are not allowed here",
-            ))
+            self.add_error(
+                NodeError(
+                    start_pos=(self.start_pos[0], self.start_pos[1] + offset[0]),
+                    end_pos=(self.end_pos[0], self.start_pos[1] + offset[1]),
+                    message="Variables are not allowed here",
+                )
+            )
 
 
 @dataclass
@@ -200,11 +202,11 @@ class MappingNode(YamlNode):  # TODO: actually all torque nodes must inherit thi
 class MapNode(SequenceNode):
     node_type: ClassVar[type] = MappingNode
 
-    def get_mapping_by_key(self, key: str ) -> MappingNode:
+    def get_mapping_by_key(self, key: str) -> MappingNode:
         for node in self.nodes:
             if node.key and node.key.text == key:
                 return node
-        return None 
+        return None
 
 
 class PropertyNode(MappingNode):
@@ -276,9 +278,8 @@ class ObjectNode(YamlNode, ABC):
         return attr
 
     def __getattr__(self, attr_name) -> Any:
-        attr = self._check_attr(attr_name)  
+        attr = self._check_attr(attr_name)
         return getattr(self, attr)
-
 
     def get_child(self, child_name: str):
         """Returns value of node attribute.
@@ -288,7 +289,7 @@ class ObjectNode(YamlNode, ABC):
         attr = self._check_attr(child_name)
 
         child = getattr(self, attr)
-        
+
         # obj has not been instantiated yet
         if child is None:
             child = PropertyNode(parent=self)

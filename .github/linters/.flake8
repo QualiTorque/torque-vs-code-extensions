@@ -1,0 +1,9 @@
+[flake8]
+# Based on super-linter v4's TEMPLATES/.flake8 (max-line-length 120,
+# extend-ignore E203).
+max-line-length = 120
+
+# E203 (whitespace before ':') and W503 (line break before a binary operator)
+# are the two pycodestyle rules black deliberately violates; PEP 8 itself now
+# recommends W503's layout.  Ignoring them is what makes flake8 and black agree.
+extend-ignore = E203, W503

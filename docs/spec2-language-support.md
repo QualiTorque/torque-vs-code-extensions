@@ -22,7 +22,7 @@ the language server reports the new key as unknown while the schema accepts it.
 The schema is the canonical key list. It is synced/audited against the Torque
 server source (cs2018); the field-constant index there is `BlueprintFields.cs`,
 and the sync recipe is kept in the maintainer's project memory
-(`memory/blueprint-spec2-schema-sync.md`), not in this repo.
+(`memory/blueprint-spec2-schema-sync.md`), not in this repository.
 
 ### Source freshness
 
@@ -79,7 +79,7 @@ top-level keys of the schema (`spec_version`, `description`, `instructions`,
 ### Free-form sections
 
 `FreeFormNode` / `FreeFormProperty` model sections that are free-form on the
-server side too, and would otherwise drown the user in false "unknown key"
+server-side too, and would otherwise drown the user in false "unknown key"
 errors: `customization`, an inline ansible `inventory-file`, terraform provider
 `attributes`, input-source `overrides`, `environment.tags` / `labels`,
 `family.members`, backend workspace `tags`. They accept any nested mapping,
@@ -112,7 +112,7 @@ one the parser is built around (it consumes tokens, not the composed document).
 Rather than teach every branch about flow tokens, `Parser._rewrite_flow_tokens`
 translates the stream into the block one it already handles, before parsing:
 
-```
+```text
 [a, b]   ->  BlockSequenceStart Entry a Entry b BlockEnd
 {k: v}   ->  BlockMappingStart Key k Value v BlockEnd
 ```
@@ -196,7 +196,7 @@ Conventions worth keeping:
   position. Half-typed documents have nodes without values and values without
   positions (see section 6).
 * `_check_unused_blueprint_inputs` is the only *warning*; everything else is an
-  error. It is a regex scan over the raw document text, so a reference from a
+  error. It is a regular expression scan over the raw document text, so a reference from a
   free-form section still counts as usage. It has to accept every spelling an
   input can be reached by (`_input_usage_regex`): `.inputs.NAME`, `inputs.NAME`,
   `.inputs["NAME"]`, `.inputs.["NAME"]`, `inputs["NAME"]`, either quote style.
@@ -280,9 +280,9 @@ it — for example an expression a folded scalar broke across lines.
 |---|---|
 | `tests/test_spec2.py` | tree key coverage per section (a modern blueprint must parse with zero unknown-key errors), dead fields, expression rules |
 | `tests/test_spec2_semantics.py` | the section 4 rules, plus validator/parser robustness |
-| `tests/test_spec2_real_world.py` | the findings of a scan of 454 real-world blueprints: flow style YAML, unprintable bytes, bracket/dotless expression forms, the activities output path, transitive `depends-on`, the filter set, Liquid in `authentication`, and the unused-input regex |
+| `tests/test_spec2_real_world.py` | the findings of a scan of 454 real-world blueprints: flow style YAML, unprintable bytes, bracket/dotless expression forms, the activities output path, transitive `depends-on`, the filter set, Liquid in `authentication`, and the unused-input regular expression |
 | `tests/test_spec2_optional_and_label_values.py` | the section 8 input changes at the *schema* layer (`inputs.<n>.optional`, `target-filters.labels[].values`) |
-| `tests/test_spec2_names.py` | the section 9 name rules: the grain-name regex is enforced, any input/output name is accepted, and no entry escapes validation by having an unusual name |
+| `tests/test_spec2_names.py` | the section 9 name rules: the grain-name regular expression is enforced, any input/output name is accepted, and no entry escapes validation by having an unusual name |
 | `tests/test_spec2_required_parity.py` | the section 10 mandatory-field rules and the `if`/`then` conditionals, plus the assertion that `$schema` is draft-07 (without which those conditionals are dead) |
 | `tests/test_spec2_closed_objects.py` | the section 10 closed objects: every server class with a fixed key set is `additionalProperties: false` here too |
 | `tests/test_spec2_server_parity.py` | the rest of section 10: Terraform backend per-type fields, workflow `timeout` and `scope`, the full trigger-event list |
@@ -312,7 +312,7 @@ Running the suite (CI: `.github/workflows/ci.yml`, ubuntu-22.04, Python 3.7 --
 20.04 was retired by GitHub, and 22.04 is the newest image still offering a 3.7
 build, matching the pinned `pygls`):
 
-```
+```bash
 python -m unittest discover tests/
 ```
 
@@ -405,7 +405,7 @@ which walks documents alongside the schema and sorts each key path into
 accepted / rejected / free-form. It needs the local corpus, which is deliberately
 not in this repository:
 
-```
+```bash
 python tools/blueprint-corpus/classify_corpus_paths.py \
     client/schemas/blueprint-spec2-schema.json <out-dir> <corpus-root>...
 ```
@@ -482,7 +482,7 @@ Two blueprint-level consequences:
   **blueprint validation error** — `BLUEPRINT_INPUT_OPTIONAL_CONFLICTS_WITH_PATTERN`.
   The two statements contradict each other: the input may be left blank, and
   blank is not an accepted value. Note the asymmetry — a pattern the server
-  cannot evaluate (an invalid or unresolvable regex) never fails the blueprint
+  cannot evaluate (an invalid or unresolvable regular expression) never fails the blueprint
   on *this* rule; it simply cannot be shown to conflict.
 * `optional: false` rejects an empty value at launch —
   `BLUEPRINT_INPUTS_EMPTY_VALUES_NOT_ALLOWED`.
@@ -493,7 +493,7 @@ The launch form decides required-ness itself, in cs2018-ui
 `portal/src/forms/common_logic/helpers.tsx` (`isInputMandatory`, changed
 2026-08-30):
 
-```
+```text
 if (input.optional === true)  return false;
 if (input.optional === false) return true;
 if (!input.has_default_value && !input.pattern) return true;   // has_default_value = Default is not null, so default: "" counts
@@ -517,12 +517,12 @@ values against it server-side too:
 | Situation | Error |
 |---|---|
 | Value does not match `pattern` | `BLUEPRINT_INPUT_VALUE_DOES_NOT_MATCH_PATTERN`, using `validation-description` as the message when one is present |
-| `pattern` is not a valid regex | `BLUEPRINT_INPUT_PATTERN_IS_NOT_A_VALID_REGEX` |
+| `pattern` is not a valid regular expression | `BLUEPRINT_INPUT_PATTERN_IS_NOT_A_VALID_REGEX` |
 
 Two details worth knowing before tightening anything in the schema:
 
 * The dialect is **JavaScript**, and a `/.../flags` literal is accepted as well
-  as a bare pattern body. Validating `pattern` as a .NET or Python regex in this
+  as a bare pattern body. Validating `pattern` as a .NET or Python regular expression in this
   extension would produce false errors.
 * `pattern` and `validation-description` are **Liquid-templated**. They are
   resolved over the input's `depends-on` inputs (of type `string`, `parameter`,
@@ -557,7 +557,7 @@ the server's rules for them are asymmetric (cs2018 `origin/main` c0f49bd04d):
 | Input name | none at all: any non-empty string | — |
 | Output name | none at all: any non-empty string | — |
 
-The schema mirrors exactly that: it constrains grain names to the regex above
+The schema mirrors exactly that: it constrains grain names to the regular expression above
 and accepts any input or output name.
 
 It did not always. The schema used to demand **3–45 characters** of every one of

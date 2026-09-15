@@ -53,9 +53,7 @@ PRINTABLE_RANGES = [
     (0x10000, 0x10FFFF),
 ]
 NON_PRINTABLE_REGEX = re.compile(
-    "[^"
-    + "".join(chr(low) + "-" + chr(high) for low, high in PRINTABLE_RANGES)
-    + "]"
+    "[^" + "".join(chr(low) + "-" + chr(high) for low, high in PRINTABLE_RANGES) + "]"
 )
 
 
@@ -108,7 +106,7 @@ class Parser:
         try:
             self.tree = self._get_tree()
         except ValueError as ve:
-            raise ParserError(str(ve), (0,0), (0,0))
+            raise ParserError(str(ve), (0, 0), (0, 0))
 
         self.nodes_stack: List[YamlNode] = []
         self.tokens_stack: List[Token] = []
@@ -152,7 +150,7 @@ class Parser:
         node.start_pos = self.get_token_start(token)
         node.end_pos = self.get_token_end(token)
 
-        if isinstance(node, TextNode):                
+        if isinstance(node, TextNode):
             node.text = token.value
             node.style = token.style
 
@@ -264,7 +262,7 @@ class Parser:
                     self.is_array_item = False
 
                 return
-            
+
             self.tokens_stack.append(token)
             last_node.start_pos = self.get_token_start(token)
 
@@ -289,8 +287,10 @@ class Parser:
                 node = self.nodes_stack.pop()
                 end_pos = self.get_token_end(token)
                 node.end_pos = end_pos
-                
-                if len(self.nodes_stack) > 1 and isinstance(self.nodes_stack[-2], MapNode):
+
+                if len(self.nodes_stack) > 1 and isinstance(
+                    self.nodes_stack[-2], MapNode
+                ):
                     self.nodes_stack[-1].end_pos = end_pos
                     self.nodes_stack.pop()
                     self.processing_map_element = False
@@ -483,7 +483,7 @@ class Parser:
                 else:
                     self._process_object_child(token)
                 return
-            
+
             else:
                 if isinstance(node, UnprocessedNode) and isinstance(
                     self.tokens_stack[-1], BlockEntryToken
@@ -494,7 +494,9 @@ class Parser:
                     return
 
                 # process object first
-                if not isinstance(node, (MappingNode, TextNode)) and isinstance(self.tokens_stack[-1], KeyToken):
+                if not isinstance(node, (MappingNode, TextNode)) and isinstance(
+                    self.tokens_stack[-1], KeyToken
+                ):
                     self.is_array_item = False
                     self._process_object_child(token)
                     return
@@ -508,12 +510,13 @@ class Parser:
                     # inputs:
                     #   - A
                     #   - B
-                    last_node: YamlNode = self.nodes_stack[-1]  # store TextNode before deleting
+                    last_node: YamlNode = self.nodes_stack[
+                        -1
+                    ]  # store TextNode before deleting
                     if last_node.get_shortened_form_property() is not None:
                         last_node.end_pos = self.get_token_end(token)
                         _ = self.nodes_stack.pop()
                         self.nodes_stack.append(last_node.get_shortened_form_property())
-
 
                     self._process_scalar_token(token)
 
@@ -560,9 +563,7 @@ class Parser:
 
             if isinstance(token, (FlowSequenceStartToken, FlowMappingStartToken)):
                 is_sequence = isinstance(token, FlowSequenceStartToken)
-                closing = (
-                    FlowSequenceEndToken if is_sequence else FlowMappingEndToken
-                )
+                closing = FlowSequenceEndToken if is_sequence else FlowMappingEndToken
 
                 # An empty collection has no block equivalent at all: a block
                 # sequence or mapping is opened by its first element. Dropping

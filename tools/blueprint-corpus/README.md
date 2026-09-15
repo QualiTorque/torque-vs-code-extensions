@@ -83,7 +83,7 @@ pip install pyyaml jsonschema
 ```
 
 **The two pygls modes.** `server/validation/*` and `server/ats/trees/common.py`
-import from `pygls`, and this repo pins `pygls==0.11.3`, which only installs on
+import from `pygls`, and this repository pins `pygls==0.11.3`, which only installs on
 Python 3.6/3.7. **Real pygls** matches CI — make a Python 3.7 virtualenv and
 `pip install -r server/requirements.txt` (a current Python will not install these
 pins). The **built-in stub** is used automatically when `import pygls` fails, i.e.
@@ -146,8 +146,8 @@ inputs:
 
 **Mechanism B — value patterns** redacts substrings, keeping the surrounding
 shape: PEM private keys, certificates, ssh public keys, URL userinfo (scheme and
-host survive), JWTs, AWS access key ids, GitHub/Slack tokens, Google API keys,
-bcrypt hashes, base64 blobs, long hex runs, plus (opt-in) e-mails, IPs, hostnames,
+host survive), JWTs, AWS access key IDs, GitHub/Slack tokens, Google API keys,
+bcrypt hashes, base64 blobs, long hex runs, plus (opt-in) emails, IPs, hostnames,
 MACs. Crucially it also fires **inside shell command bodies**, where no key name
 exists to go on: `Authorization: Bearer …` headers, `--password` / `--api-key` CLI
 flags, and `SOMETHING_TOKEN=…` environment assignments.
@@ -162,12 +162,12 @@ flags, and `SOMETHING_TOKEN=…` environment assignments.
 | `secret` | on | PEM private keys, ssh public keys, JWT, cloud/vendor tokens, bcrypt, base64 blobs, high-entropy hex, inline CLI/env/header secrets |
 | `certificate` | on | `-----BEGIN CERTIFICATE-----` blocks |
 | `url-credentials` | on | `user:pass@` userinfo in URLs |
-| `email` | opt-in | e-mail addresses |
+| `email` | opt-in | email addresses |
 | `ip` | opt-in | IPv4/IPv6 (loopback, `0.0.0.0`, `::` kept) |
 | `hostname` | opt-in | FQDNs against a TLD allow-list (`localhost` kept) |
 | `identifier` | opt-in | MAC addresses, serial-number-shaped tokens |
 
-Identity scrubbing is opt-in because hostnames, IPs and e-mails change the *shape*
+Identity scrubbing is opt-in because hostnames, IPs and emails change the *shape*
 of the scalars under test far more than a secret does. Turn it on when the corpus
 warrants the fidelity loss:
 
@@ -184,7 +184,7 @@ python sanitize_blueprints.py --in C:\corpus\raw --out C:\corpus\sanitized --cat
    preserved too. YAML aliases (`*name`) are never redacted and anchors keep `&name`.
 3. **Two exemptions protect load-bearing content:**
    * `pattern:` and `validation-description:` are exempt from **both** mechanisms
-     — those lines survive byte-identical. A `pattern` is a regex whose exact
+     — those lines survive byte-identical. A `pattern` is a regular expression whose exact
      content decides Torque's required-vs-optional semantics; a placeholder inside
      it could silently flip an input from optional to required and make the corpus
      lie to the validator under test.
@@ -279,8 +279,8 @@ Written to `--report-dir`, default `./blueprint-validation-report`.
 | `summary.txt` | per `--level` | The one to read: counts, crashes, clusters, UNEXPECTED PROPERTIES table, triage, what-to-do-next |
 | `findings.txt` | per `--level` | Per-file detail, one line per finding |
 | `findings.json` | per `--level` | Machine readable |
-| `safe-summary.txt` | **always safe** | Message templates, schema sections, rejected property *names*, counts, and anonymous `bp_0001` file ids. No blueprint values, no source lines, no raw messages, **no file names, no paths**, no directory structure |
-| `path-map.txt` | **confidential** | Always written; the id-to-path key that de-anonymizes every other report, `safe-summary.txt` included. Use it locally to resolve an id |
+| `safe-summary.txt` | **always safe** | Message templates, schema sections, rejected property *names*, counts, and anonymous `bp_0001` file identifiers. No blueprint values, no source lines, no raw messages, **no filenames, no paths**, no directory structure |
+| `path-map.txt` | **confidential** | Always written; the identifier-to-path key that de-anonymizes every other report, `safe-summary.txt` included. Use it locally to resolve an identifier |
 
 **`--level full` vs `safe-summary.txt`** is the whole confidentiality model:
 `--level full` (the default) lets `summary.txt` / `findings.txt` / `findings.json`
@@ -290,7 +290,7 @@ source lines and raw messages from those files, leaving normalized templates and
 counts. `safe-summary.txt` is written **regardless of `--level`** and is the only
 file designed for sharing.
 
-`safe-summary.txt` refers to files by anonymous id **unconditionally**, whatever
+`safe-summary.txt` refers to files by anonymous identifier **unconditionally**, whatever
 `--anonymize-paths` says: a basename like `acme-prod-deploy.yaml` can identify a
 customer on its own, and the one file whose purpose is to be pasted into a chat
 has to be safe outright rather than safe-if-the-right-flag-was-passed. So
@@ -323,7 +323,7 @@ more interestingly — a bug in this extension's schema or validator.
 | 0 | No findings, or only KNOWN ones under the default `--fail-on new` |
 | 1 | Findings, per `--fail-on` |
 | 2 | Crashes in the language server |
-| 3 | Setup error (missing repo, schema or dependency) |
+| 3 | Setup error (missing repository, schema or dependency) |
 | 4 | Unexpected error |
 
 `--fail-on` picks what makes the exit non-zero: `none`, `findings`, `new`
@@ -362,7 +362,7 @@ Add an object to `clusters`:
 ```
 
 `kind` is `blueprint-defect` or `tool-limitation`. `match` is tested as a substring
-first, then as a regex, against the finding's signature, template, message, path
+first, then as a regular expression, against the finding's signature, template, message, path
 and section — so a message with a variable part usually needs both a schema-worded
 and a server-worded entry (the catalog carries pairs like
 `unexpected property: inputs.<key>.optional` and `unknown key: 'optional'`).
@@ -420,11 +420,11 @@ protect — redaction must not change what the validators see.
 - [ ] `residual-scan.txt` shows zero residual findings.
 - [ ] Its REVIEW section was skimmed by hand.
 - [ ] Validation ran against the **sanitized** directory, not the raw one.
-- [ ] No `--emit-mapping` file remains, or it is stored as securely as the original repo.
+- [ ] No `--emit-mapping` file remains, or it is stored as securely as the original repository.
 - [ ] The file about to be shared is `safe-summary.txt` and nothing else — it is
-      free of file names by construction, no flag required.
+      free of filenames by construction, no flag required.
 - [ ] `path-map.txt` stays local. It is always written, and it is the key that
-      resolves the ids in `safe-summary.txt` — sharing both together undoes the
+      resolves the identifiers in `safe-summary.txt` — sharing both together undoes the
       anonymization.
 - [ ] `summary.txt`, `findings.txt`, `findings.json` and both sanitization
       reports stay local.

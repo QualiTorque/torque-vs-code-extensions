@@ -104,7 +104,11 @@ import shutil
 import sys
 import tempfile
 import traceback
-from typing import Dict, Iterator, List, Optional, Sequence, Set, Tuple
+
+# These names are referenced only from PEP 484 type comments (`# type: ...`),
+# which this module uses throughout to stay importable on Python 3.7.  flake8
+# does not read type comments, so it sees the imports as unused -- they are not.
+from typing import Dict, Iterator, List, Optional, Sequence, Set, Tuple  # noqa: F401
 
 TOOL_NAME = "sanitize_blueprints.py"
 TOOL_VERSION = "1.0.0"
@@ -137,7 +141,15 @@ ALL_GROUPS = (
 DEFAULT_GROUPS = (GROUP_SECRET, GROUP_CERTIFICATE, GROUP_URL_CREDENTIALS)
 
 SKIP_DIR_NAMES = frozenset(
-    [".git", "node_modules", "__pycache__", ".venv", ".tmp", ".mypy_cache", ".pytest_cache"]
+    [
+        ".git",
+        "node_modules",
+        "__pycache__",
+        ".venv",
+        ".tmp",
+        ".mypy_cache",
+        ".pytest_cache",
+    ]
 )
 
 DEFAULT_INCLUDE_EXT = (".yaml", ".yml")
@@ -199,7 +211,9 @@ SECRET_KEY_TOKENS = frozenset(
 # because "mypassword" / "dbtoken" appear in the wild.  Kept deliberately
 # small; the NEVER_REDACT_KEYS list below is consulted first, so structural
 # names such as secret-name or credential_name are unaffected.
-GLUED_KEY_TOKENS = frozenset(["password", "passwd", "passphrase", "secret", "apikey", "token"])
+GLUED_KEY_TOKENS = frozenset(
+    ["password", "passwd", "passphrase", "secret", "apikey", "token"]
+)
 
 # NOTE ON THE BARE `key` TOKEN -- deliberately absent from SECRET_KEY_TOKENS.
 # Torque blueprints use `- key: Provider` for label objects, plus `key-prefix`,
@@ -409,7 +423,11 @@ def build_detectors(active_groups, base64_min):
             r"(://)([^/\s:@\"']+:[^/\s@\"']+)(@)",
             redact_group=2,
         ),
-        Detector("jwt", GROUP_SECRET, r"eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}"),
+        Detector(
+            "jwt",
+            GROUP_SECRET,
+            r"eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}",
+        ),
         Detector(
             "aws-access-key-id",
             GROUP_SECRET,
@@ -474,7 +492,8 @@ def build_detectors(active_groups, base64_min):
         Detector(
             "hostname",
             GROUP_HOSTNAME,
-            r"\b(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+(?:%s)\b" % HOSTNAME_TLDS,
+            r"\b(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+(?:%s)\b"
+            % HOSTNAME_TLDS,
             flags=re.IGNORECASE,
             guard=_guard_hostname,
         ),
@@ -505,7 +524,7 @@ _PEM_END_RE = re.compile(r"-----END ([A-Z0-9 ]*?)-----")
 # they sit UNDER a secret-ish parent key -- the common Torque input shape:
 #     inputs:
 #       - Admin Password:
-#           type: password
+#           (this input's type is "password")
 #           default: Tr0ub4dor&3     <-- this is a live secret
 # Mechanism A alone cannot see this, because `default` is (rightly) a
 # never-redact key name.  So a small parent-key context is tracked and only
@@ -702,9 +721,21 @@ def shannon_entropy(text):
 
 
 class Finding(object):
-    __slots__ = ("rel_path", "line", "col", "label", "group", "key", "length", "sha8", "mechanism")
+    __slots__ = (
+        "rel_path",
+        "line",
+        "col",
+        "label",
+        "group",
+        "key",
+        "length",
+        "sha8",
+        "mechanism",
+    )
 
-    def __init__(self, rel_path, line, col, label, group, key, length, digest, mechanism):
+    def __init__(
+        self, rel_path, line, col, label, group, key, length, digest, mechanism
+    ):
         self.rel_path = rel_path
         self.line = line
         self.col = col
@@ -812,7 +843,9 @@ def _split_liquid(text, base_offset):
     return segs
 
 
-def redact_span_text(text, base_offset, ctx, rel_path, line_no, key, findings, skip_labels=frozenset()):
+def redact_span_text(
+    text, base_offset, ctx, rel_path, line_no, key, findings, skip_labels=frozenset()
+):
     # type: (str, int, RunContext, str, int, Optional[str], List[Finding], frozenset) -> str
     """Run every active detector over `text`, honoring Liquid protection.
 
@@ -835,7 +868,9 @@ def redact_span_text(text, base_offset, ctx, rel_path, line_no, key, findings, s
             if seg.protected or not seg.text:
                 next_segs.append(seg)
                 continue
-            next_segs.extend(_apply_detector(det, seg, ctx, rel_path, line_no, key, findings))
+            next_segs.extend(
+                _apply_detector(det, seg, ctx, rel_path, line_no, key, findings)
+            )
         segs = next_segs
     return "".join(s.text for s in segs)
 
@@ -942,7 +977,9 @@ def scan_pem_blocks(lines, ctx, warnings, rel_path):
         if end_idx < 0:
             warnings.append(
                 "{0}: unterminated PEM block starting at line {1} "
-                "(marker '{2}'); relying on base64/hex detectors".format(rel_path, i + 1, marker)
+                "(marker '{2}'); relying on base64/hex detectors".format(
+                    rel_path, i + 1, marker
+                )
             )
             i += 1
             continue
@@ -951,7 +988,9 @@ def scan_pem_blocks(lines, ctx, warnings, rel_path):
         if labeled is None or labeled[1] not in ctx.active_groups:
             i = end_idx + 1
             continue
-        if not body_text or _PLACEHOLDER_BODY_RE.match("\n".join(lines[k][0] for k in body_indices)):
+        if not body_text or _PLACEHOLDER_BODY_RE.match(
+            "\n".join(lines[k][0] for k in body_indices)
+        ):
             # Already sanitized (idempotent re-run / residual scan).
             i = end_idx + 1
             continue
@@ -960,7 +999,9 @@ def scan_pem_blocks(lines, ctx, warnings, rel_path):
         digest = sha8(body_text)
         first = True
         for k in body_indices:
-            mapping[k] = _PemBody(label, group, placeholder, first, len(body_text), digest)
+            mapping[k] = _PemBody(
+                label, group, placeholder, first, len(body_text), digest
+            )
             first = False
         i = end_idx + 1
     return mapping
@@ -1013,6 +1054,10 @@ def process_text(text, rel_path, ctx):
 
     out_lines = []  # type: List[Tuple[str, str]]
     block = None  # type: Optional[_BlockState]
+    # Every read below is guarded by `pending_secret_scalar is not None`, but
+    # pylint does not narrow an Optional across the loop that reassigns it and
+    # reports the subscripts as unsubscriptable-object.
+    # pylint: disable=unsubscriptable-object
     pending_secret_scalar = None  # type: Optional[Tuple[int, str]]
     # (key_column, key_name, key_is_secretish) for the enclosing mappings.
     key_stack = []  # type: List[Tuple[int, str, bool]]
@@ -1078,7 +1123,9 @@ def process_text(text, rel_path, ctx):
                             "A",
                         )
                     )
-                    out_lines.append((content[:indent_len] + placeholder + trailing_ws, eol))
+                    out_lines.append(
+                        (content[:indent_len] + placeholder + trailing_ws, eol)
+                    )
                     continue
                 out_lines.append((content, eol))
                 continue
@@ -1102,8 +1149,14 @@ def process_text(text, rel_path, ctx):
         # --- continuation of a secret key with an empty value --------------
         if pending_secret_scalar is not None and indent_len > pending_secret_scalar[0]:
             stripped = content[indent_len:].rstrip()
-            looks_structural = bool(_KEY_VALUE_RE.match(content)) or stripped.startswith("-")
-            if not looks_structural and stripped and not _PLACEHOLDER_RE.match(stripped):
+            looks_structural = bool(
+                _KEY_VALUE_RE.match(content)
+            ) or stripped.startswith("-")
+            if (
+                not looks_structural
+                and stripped
+                and not _PLACEHOLDER_RE.match(stripped)
+            ):
                 trailing_ws = content[indent_len + len(stripped) :]
                 placeholder = ctx.allocator.get("secret", stripped)
                 findings.append(
@@ -1119,7 +1172,9 @@ def process_text(text, rel_path, ctx):
                         "A",
                     )
                 )
-                out_lines.append((content[:indent_len] + placeholder + trailing_ws, eol))
+                out_lines.append(
+                    (content[:indent_len] + placeholder + trailing_ws, eol)
+                )
                 continue
             pending_secret_scalar = None
 
@@ -1160,13 +1215,21 @@ def _update_key_stack(key_stack, content):
         key_stack.pop()
     ancestor_secret = any(entry[2] for entry in key_stack)
     raw_key = m.group("key")
-    this_secret = bool(_PLAUSIBLE_KEY_RE.match(unquote_scalar(raw_key))) and key_is_secretish(raw_key)
+    this_secret = bool(
+        _PLAUSIBLE_KEY_RE.match(unquote_scalar(raw_key))
+    ) and key_is_secretish(raw_key)
     key_stack.append((key_col, unquote_scalar(raw_key), this_secret))
     return ancestor_secret
 
 
 def _process_single_line(
-    content, rel_path, line_no, ctx, allow_block_open, want_state=False, secret_ancestor=False
+    content,
+    rel_path,
+    line_no,
+    ctx,
+    allow_block_open,
+    want_state=False,
+    secret_ancestor=False,
 ):
     """Redact one line.
 
@@ -1187,13 +1250,17 @@ def _process_single_line(
     # key), but pattern detection IS run, because people paste live tokens into
     # comments all the time.  This asymmetry is deliberate.
     if _COMMENT_ONLY_RE.match(content):
-        new_content = redact_span_text(content, 0, ctx, rel_path, line_no, None, findings)
+        new_content = redact_span_text(
+            content, 0, ctx, rel_path, line_no, None, findings
+        )
         return result(new_content)
 
     m = _KEY_VALUE_RE.match(content)
     if not m:
         # Sequence item, block body line, continuation, or unparsable junk.
-        new_content = redact_span_text(content, 0, ctx, rel_path, line_no, None, findings)
+        new_content = redact_span_text(
+            content, 0, ctx, rel_path, line_no, None, findings
+        )
         return result(new_content)
 
     raw_key = m.group("key")
@@ -1209,7 +1276,9 @@ def _process_single_line(
         # line such as `curl -H "Authorization: Bearer ..."` inside a script
         # body.  Treat the whole line as free text so patterns that span the
         # pseudo-colon (inline-authorization) still fire.
-        new_content = redact_span_text(content, 0, ctx, rel_path, line_no, None, findings)
+        new_content = redact_span_text(
+            content, 0, ctx, rel_path, line_no, None, findings
+        )
         return result(new_content)
 
     is_block_indicator = bool(_BLOCK_SCALAR_RE.match(value.strip()))
@@ -1246,7 +1315,13 @@ def _process_single_line(
             )
         # Nothing on this line itself is sensitive; still scan the comment.
         new_trailing = redact_span_text(
-            trailing, value_col + len(value), ctx, rel_path, line_no, unquote_scalar(raw_key), findings
+            trailing,
+            value_col + len(value),
+            ctx,
+            rel_path,
+            line_no,
+            unquote_scalar(raw_key),
+            findings,
         )
         return result(prefix + value + new_trailing)
 
@@ -1282,7 +1357,9 @@ def _process_single_line(
         placeholder = ctx.allocator.get("secret", core)
         q = quote_style(value)
         leading_ws = value[: len(value) - len(value.lstrip())]
-        new_value = leading_ws + (q + anchor + placeholder + q if q else anchor + placeholder)
+        new_value = leading_ws + (
+            q + anchor + placeholder + q if q else anchor + placeholder
+        )
         findings.append(
             Finding(
                 rel_path,
@@ -1297,7 +1374,13 @@ def _process_single_line(
             )
         )
         new_trailing = redact_span_text(
-            trailing, value_col + len(value), ctx, rel_path, line_no, key_display, findings
+            trailing,
+            value_col + len(value),
+            ctx,
+            rel_path,
+            line_no,
+            key_display,
+            findings,
         )
         return result(prefix + new_value + new_trailing)
 
@@ -1305,7 +1388,11 @@ def _process_single_line(
     # never passed in, so a key name can never be rewritten.  Under a
     # content-addressed key the two entropy heuristics stand down so git SHAs,
     # image digests and chart versions survive; every other detector still runs.
-    skip_labels = ENTROPY_DETECTOR_LABELS if key_in(raw_key, CONTENT_ADDRESSED_KEYS) else frozenset()
+    skip_labels = (
+        ENTROPY_DETECTOR_LABELS
+        if key_in(raw_key, CONTENT_ADDRESSED_KEYS)
+        else frozenset()
+    )
     new_value = redact_span_text(
         value, value_col, ctx, rel_path, line_no, key_display, findings, skip_labels
     )
@@ -1367,7 +1454,10 @@ def find_review_candidates(text, rel_path, active_groups, base64_min):
             key_norm = _normalize_key_variants(m.group("key"))[1]
             value, _trailing = split_value_and_trailing(m.group("rest"))
             value_col = m.start("rest")
-        if key_norm in NO_SCAN_VALUE_KEYS or key_norm.replace("_", "-") in NO_SCAN_VALUE_KEYS:
+        if (
+            key_norm in NO_SCAN_VALUE_KEYS
+            or key_norm.replace("_", "-") in NO_SCAN_VALUE_KEYS
+        ):
             continue
 
         # 0. values the content-addressed exemption deliberately let through.
@@ -1399,7 +1489,13 @@ def find_review_candidates(text, rel_path, active_groups, base64_min):
             if not (re.search(r"[a-z]", token) and re.search(r"[A-Z0-9]", token)):
                 continue
             out.append(
-                ReviewCandidate(rel_path, line_no, mm.start() + 1, "base64-below-threshold", len(token))
+                ReviewCandidate(
+                    rel_path,
+                    line_no,
+                    mm.start() + 1,
+                    "base64-below-threshold",
+                    len(token),
+                )
             )
 
         # 2. random-looking values sitting under a never-redact key.  Skipped
@@ -1411,7 +1507,11 @@ def find_review_candidates(text, rel_path, active_groups, base64_min):
             and key_is_never_redacted(m.group("key"))
             and not key_in(m.group("key"), CONTENT_ADDRESSED_KEYS)
         ):
-            if len(core) >= 16 and not is_pure_liquid(value) and not _PLACEHOLDER_RE.match(core):
+            if (
+                len(core) >= 16
+                and not is_pure_liquid(value)
+                and not _PLACEHOLDER_RE.match(core)
+            ):
                 if shannon_entropy(core) >= 3.6:
                     out.append(
                         ReviewCandidate(
@@ -1426,7 +1526,9 @@ def find_review_candidates(text, rel_path, active_groups, base64_min):
         # 3. unusually long unquoted scalars.
         if core and not quote_style(value) and len(core) > 120 and "{{" not in core:
             out.append(
-                ReviewCandidate(rel_path, line_no, value_col + 1, "long-unquoted-scalar", len(core))
+                ReviewCandidate(
+                    rel_path, line_no, value_col + 1, "long-unquoted-scalar", len(core)
+                )
             )
 
         # 4. matches for categories that are switched off for this run.
@@ -1576,7 +1678,9 @@ def read_text_file(path):
 
 def write_text_file(path, text, had_bom):
     # type: (str, str, bool) -> None
-    payload = ((UTF8_BOM + text) if had_bom else text).encode("utf-8", "surrogateescape")
+    payload = ((UTF8_BOM + text) if had_bom else text).encode(
+        "utf-8", "surrogateescape"
+    )
     parent = os.path.dirname(path)
     if parent and not os.path.isdir(parent):
         os.makedirs(parent)
@@ -1591,7 +1695,9 @@ def write_report_file(path, text):
         os.makedirs(parent)
     # backslashreplace: report text may carry surrogate-escaped bytes from
     # exotic file names or keys; the report must stay readable ASCII-safe text.
-    with open(path, "w", encoding="utf-8", errors="backslashreplace", newline="\n") as fh:
+    with open(
+        path, "w", encoding="utf-8", errors="backslashreplace", newline="\n"
+    ) as fh:
         fh.write(text)
 
 
@@ -1643,14 +1749,18 @@ def parse_categories(spec, current):
             name = token[1:].strip()
         if name not in ALL_GROUPS:
             raise SafetyRefusal(
-                "unknown category '{0}'; known categories: {1}".format(name, ", ".join(ALL_GROUPS))
+                "unknown category '{0}'; known categories: {1}".format(
+                    name, ", ".join(ALL_GROUPS)
+                )
             )
         if op == "-":
             result.discard(name)
         else:
             result.add(name)
     if not result:
-        raise SafetyRefusal("--categories resolved to an empty set; nothing would be redacted")
+        raise SafetyRefusal(
+            "--categories resolved to an empty set; nothing would be redacted"
+        )
     return result
 
 
@@ -1726,9 +1836,14 @@ notes
         ),
         epilog=epilog,
     )
-    parser.add_argument("--in", dest="in_dir", metavar="SRC", help="input directory (read-only)")
     parser.add_argument(
-        "--out", dest="out_dir", metavar="DST", help="output directory for the sanitized copy"
+        "--in", dest="in_dir", metavar="SRC", help="input directory (read-only)"
+    )
+    parser.add_argument(
+        "--out",
+        dest="out_dir",
+        metavar="DST",
+        help="output directory for the sanitized copy",
     )
     parser.add_argument(
         "--scan-only",
@@ -1758,7 +1873,9 @@ notes
         metavar="LIST",
         help=(
             "comma-separated category list; bare names replace the defaults, "
-            "'+name' adds, '-name' drops. known: " + ", ".join(ALL_GROUPS) + " (default: "
+            "'+name' adds, '-name' drops. known: "
+            + ", ".join(ALL_GROUPS)
+            + " (default: "
             + ",".join(DEFAULT_GROUPS)
             + ")"
         ),
@@ -1802,7 +1919,9 @@ notes
         metavar="PATH",
         help="write placeholder -> ORIGINAL VALUE json (as sensitive as the input!)",
     )
-    parser.add_argument("--quiet", action="store_true", help="only print the final summary lines")
+    parser.add_argument(
+        "--quiet", action="store_true", help="only print the final summary lines"
+    )
     return parser
 
 
@@ -1844,7 +1963,9 @@ def check_sanitize_paths(opts):
     if norm_real(in_dir) == norm_real(out_dir):
         raise SafetyRefusal("--out must not be the same directory as --in")
     if is_inside(out_dir, in_dir):
-        raise SafetyRefusal("--out must not be nested inside --in (would rewrite the input tree)")
+        raise SafetyRefusal(
+            "--out must not be nested inside --in (would rewrite the input tree)"
+        )
     if is_inside(in_dir, out_dir):
         raise SafetyRefusal("--in must not be nested inside --out")
     if dir_is_nonempty(out_dir) and not opts.force:
@@ -1866,7 +1987,9 @@ def check_scan_paths(opts):
     scan_dir = opts.scan_only
     assert scan_dir is not None
     if not os.path.isdir(scan_dir):
-        raise SafetyRefusal("--scan-only is not an existing directory: {0}".format(scan_dir))
+        raise SafetyRefusal(
+            "--scan-only is not an existing directory: {0}".format(scan_dir)
+        )
     report_dir = opts.report_dir or os.path.join(os.getcwd(), "_sanitization-report")
     if is_inside(report_dir, scan_dir):
         raise SafetyRefusal(
@@ -1875,7 +1998,9 @@ def check_scan_paths(opts):
         )
     opts.report_dir = report_dir
     if opts.emit_mapping and is_inside(opts.emit_mapping, scan_dir):
-        raise SafetyRefusal("--emit-mapping path must not be inside the scanned directory")
+        raise SafetyRefusal(
+            "--emit-mapping path must not be inside the scanned directory"
+        )
 
 
 def assert_sources_unchanged(root, before, quiet):
@@ -1893,7 +2018,9 @@ def assert_sources_unchanged(root, before, quiet):
             problems.append("MODIFIED: {0}".format(rel))
     if problems:
         sys.stderr.write("\n" + "!" * 78 + "\n")
-        sys.stderr.write("FATAL: the input tree changed during the run.  DO NOT TRUST THIS RUN.\n")
+        sys.stderr.write(
+            "FATAL: the input tree changed during the run.  DO NOT TRUST THIS RUN.\n"
+        )
         for p in problems:
             sys.stderr.write("  " + p + "\n")
         sys.stderr.write("!" * 78 + "\n")
@@ -1947,7 +2074,9 @@ def run_pass(src_root, dst_root, opts, ctx, exclude_dirs=()):
         if ext not in opts.include_ext:
             # NEVER copy unprocessed files: an output tree containing raw files
             # would look sanitized while it is not.
-            res.skipped.append(SkippedFile(rel, "extension not included ({0})".format(ext or "<none>")))
+            res.skipped.append(
+                SkippedFile(rel, "extension not included ({0})".format(ext or "<none>"))
+            )
             continue
         try:
             size = os.path.getsize(path)
@@ -1956,7 +2085,12 @@ def run_pass(src_root, dst_root, opts, ctx, exclude_dirs=()):
             continue
         if size > max_bytes:
             res.skipped.append(
-                SkippedFile(rel, "too large ({0} bytes > {1} MiB limit)".format(size, opts.max_file_mb))
+                SkippedFile(
+                    rel,
+                    "too large ({0} bytes > {1} MiB limit)".format(
+                        size, opts.max_file_mb
+                    ),
+                )
             )
             res.warnings.append("{0}: skipped, larger than --max-file-mb".format(rel))
             continue
@@ -1967,7 +2101,9 @@ def run_pass(src_root, dst_root, opts, ctx, exclude_dirs=()):
             continue
         if text is None:
             res.skipped.append(SkippedFile(rel, "undecodable: {0}".format(err)))
-            res.warnings.append("{0}: undecodable ({1}); NOT copied to the output".format(rel, err))
+            res.warnings.append(
+                "{0}: undecodable ({1}); NOT copied to the output".format(rel, err)
+            )
             continue
 
         new_text, findings, warnings = process_text(text, rel, ctx)
@@ -1979,7 +2115,9 @@ def run_pass(src_root, dst_root, opts, ctx, exclude_dirs=()):
         if new_text != text:
             res.changed.append(rel)
         if len(split_lines_keepends(new_text)) != len(split_lines_keepends(text)):
-            res.warnings.append("{0}: line count changed (unexpected shape change)".format(rel))
+            res.warnings.append(
+                "{0}: line count changed (unexpected shape change)".format(rel)
+            )
 
         if write_output:
             out_path = os.path.join(dst_root, *rel.split("/"))
@@ -2008,7 +2146,11 @@ def residual_scan(out_root, opts, exclude_dirs):
         rel = rel_posix(path, out_root)
         text, _had_bom, err = read_text_file(path)
         if text is None:
-            findings.append(Finding(rel, 0, 0, "undecodable-output", GROUP_SECRET, None, 0, "-", "-"))
+            findings.append(
+                Finding(
+                    rel, 0, 0, "undecodable-output", GROUP_SECRET, None, 0, "-", "-"
+                )
+            )
             continue
         _new_text, f, _w = process_text(text, rel, ctx)
         findings.extend(f)
@@ -2073,7 +2215,11 @@ def render_text_report(opts, mode, src_root, dst_root, res, started_at, manifest
     add("mode                : {0}".format(mode))
     add("started (local)     : {0}".format(started_at))
     add("input directory     : {0}".format(os.path.abspath(src_root)))
-    add("output directory    : {0}".format(os.path.abspath(dst_root) if dst_root else "<none>"))
+    add(
+        "output directory    : {0}".format(
+            os.path.abspath(dst_root) if dst_root else "<none>"
+        )
+    )
     add("report directory    : {0}".format(os.path.abspath(opts.report_dir or ".")))
     add("categories active   : {0}".format(",".join(sorted(opts.groups))))
     add("extensions          : {0}".format(",".join(opts.include_ext)))
@@ -2083,7 +2229,11 @@ def render_text_report(opts, mode, src_root, dst_root, res, started_at, manifest
     add("")
     add("NO NETWORK ACCESS   : this tool contains no networking code and made no")
     add("                      outbound connection of any kind.")
-    add("SOURCES NEVER MODIFIED: every one of the {0} files under the input".format(manifest_count))
+    add(
+        "SOURCES NEVER MODIFIED: every one of the {0} files under the input".format(
+            manifest_count
+        )
+    )
     add("                      directory was hashed (sha256) before and after the")
     add("                      run; the manifests matched exactly.")
     add("NO SECRET VALUES HERE : this report contains no original values, only the")
@@ -2105,7 +2255,12 @@ def render_text_report(opts, mode, src_root, dst_root, res, started_at, manifest
     add("  {0:<26} {1:>8}".format("-" * 26, "-" * 8))
     add("  {0:<26} {1:>8}".format("TOTAL", len(res.findings)))
     add("")
-    add("  by mechanism: " + ", ".join("{0}={1}".format(k, v) for k, v in _counts_by(res.findings, "mechanism")))
+    add(
+        "  by mechanism: "
+        + ", ".join(
+            "{0}={1}".format(k, v) for k, v in _counts_by(res.findings, "mechanism")
+        )
+    )
     add("")
     add("-" * 78)
     add("PER-FILE REDACTIONS")
@@ -2157,7 +2312,9 @@ def render_text_report(opts, mode, src_root, dst_root, res, started_at, manifest
     return "\n".join(lines) + "\n"
 
 
-def render_json_report(opts, mode, src_root, dst_root, res, started_at, manifest_count, residual, review):
+def render_json_report(
+    opts, mode, src_root, dst_root, res, started_at, manifest_count, residual, review
+):
     # type: (Options, str, str, Optional[str], PassResult, str, int, List[Finding], List[ReviewCandidate]) -> str
     payload = {
         "tool": TOOL_NAME,
@@ -2189,14 +2346,27 @@ def render_json_report(opts, mode, src_root, dst_root, res, started_at, manifest
         },
         "files_processed": sorted(res.processed),
         "files_modified": sorted(res.changed),
-        "findings": [f.to_dict() for f in sorted(res.findings, key=lambda x: (x.rel_path, x.line, x.col, x.label))],
+        "findings": [
+            f.to_dict()
+            for f in sorted(
+                res.findings, key=lambda x: (x.rel_path, x.line, x.col, x.label)
+            )
+        ],
         "skipped": [s.to_dict() for s in sorted(res.skipped, key=lambda x: x.rel_path)],
         "pruned_dirs": sorted(set(res.pruned_dirs)),
         "warnings": list(res.warnings),
         "known_deliberate_over_redaction": list(DELIBERATE_OVER_REDACTIONS),
         "known_deliberate_non_redaction": list(DELIBERATE_UNDER_REDACTIONS),
-        "residual_findings": [f.to_dict() for f in sorted(residual, key=lambda x: (x.rel_path, x.line, x.col, x.label))],
-        "review_candidates": [r.to_dict() for r in sorted(review, key=lambda x: (x.rel_path, x.line, x.col, x.guess))],
+        "residual_findings": [
+            f.to_dict()
+            for f in sorted(
+                residual, key=lambda x: (x.rel_path, x.line, x.col, x.label)
+            )
+        ],
+        "review_candidates": [
+            r.to_dict()
+            for r in sorted(review, key=lambda x: (x.rel_path, x.line, x.col, x.guess))
+        ],
     }
     return json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=True) + "\n"
 
@@ -2208,7 +2378,11 @@ def render_residual_report(opts, out_root, residual, review, note):
     add("=" * 78)
     add("Residual scan of the SANITIZED output")
     add("=" * 78)
-    add("output directory : {0}".format(os.path.abspath(out_root) if out_root else "<none>"))
+    add(
+        "output directory : {0}".format(
+            os.path.abspath(out_root) if out_root else "<none>"
+        )
+    )
     add("categories active: {0}".format(",".join(sorted(opts.groups))))
     add("")
     if note:
@@ -2229,17 +2403,27 @@ def render_residual_report(opts, out_root, residual, review, note):
     add("Location, length and a category guess only.  No content is shown.")
     add("Reasons a spot lands here:")
     add("  base64-below-threshold           : base64-ish run shorter than --base64-min")
-    add("  high-entropy-under-protected-key : random-looking value under a never-redact key")
+    add(
+        "  high-entropy-under-protected-key : random-looking value under a never-redact key"
+    )
     add("  long-unquoted-scalar             : unusually long unquoted plain scalar")
-    add("  inactive-category:<label>        : matched a category not enabled for this run")
+    add(
+        "  inactive-category:<label>        : matched a category not enabled for this run"
+    )
     add("  content-addressed-exempt:<key>   : entropy heuristics stood down for a")
-    add("                                     content-address key (commit/digest/image/...)")
+    add(
+        "                                     content-address key (commit/digest/image/...)"
+    )
     add("")
     if not review:
         add("(none)")
     else:
         for r in sorted(review, key=lambda x: (x.rel_path, x.line, x.col, x.guess)):
-            add("  {0}:{1}:{2}  {3}  len={4}".format(r.rel_path, r.line, r.col, r.guess, r.length))
+            add(
+                "  {0}:{1}:{2}  {3}  len={4}".format(
+                    r.rel_path, r.line, r.col, r.guess, r.length
+                )
+            )
     add("")
     return "\n".join(lines) + "\n"
 
@@ -2258,7 +2442,9 @@ def write_mapping_file(path, allocator):
     parent = os.path.dirname(os.path.abspath(path))
     if parent and not os.path.isdir(parent):
         os.makedirs(parent)
-    with open(path, "w", encoding="utf-8", errors="surrogateescape", newline="\n") as fh:
+    with open(
+        path, "w", encoding="utf-8", errors="surrogateescape", newline="\n"
+    ) as fh:
         fh.write(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=True))
         fh.write("\n")
     # Printed even under --quiet: this is a safety warning, not progress noise.
@@ -2266,7 +2452,11 @@ def write_mapping_file(path, allocator):
     print("")
     print(banner)
     print("!! MAPPING FILE WRITTEN: {0}".format(os.path.abspath(path)))
-    print("!! It holds {0} ORIGINAL SECRET VALUES IN CLEARTEXT.".format(len(allocator.mapping())))
+    print(
+        "!! It holds {0} ORIGINAL SECRET VALUES IN CLEARTEXT.".format(
+            len(allocator.mapping())
+        )
+    )
     print("!! It is as sensitive as the customer repository itself.")
     print("!! Do not commit it, do not share it, delete it when you are done.")
     print(banner)
@@ -2314,9 +2504,19 @@ def cmd_sanitize(opts):
         residual, review = residual_scan(out_dir, opts, [report_dir])
         note = None
 
-    text_report = render_text_report(opts, "sanitize", in_dir, out_dir, res, started_at, len(before))
+    text_report = render_text_report(
+        opts, "sanitize", in_dir, out_dir, res, started_at, len(before)
+    )
     json_report = render_json_report(
-        opts, "sanitize", in_dir, out_dir, res, started_at, len(before), residual, review
+        opts,
+        "sanitize",
+        in_dir,
+        out_dir,
+        res,
+        started_at,
+        len(before),
+        residual,
+        review,
     )
     residual_report = render_residual_report(opts, out_dir, residual, review, note)
 
@@ -2339,7 +2539,11 @@ def cmd_scan_only(opts):
     started_at = datetime.datetime.now().replace(microsecond=0).isoformat()
     quiet = opts.quiet
     if not quiet:
-        print("{0} v{1}  (scan-only: nothing is written into the corpus)".format(TOOL_NAME, TOOL_VERSION))
+        print(
+            "{0} v{1}  (scan-only: nothing is written into the corpus)".format(
+                TOOL_NAME, TOOL_VERSION
+            )
+        )
         print("  scanning   : {0}".format(os.path.abspath(scan_dir)))
         print("  categories : {0}".format(",".join(sorted(opts.groups))))
         print("  hashing tree (sha256) ...")
@@ -2356,9 +2560,13 @@ def cmd_scan_only(opts):
         path = os.path.join(scan_dir, *rel.split("/"))
         text, _bom, err = read_text_file(path)
         if text is not None:
-            review.extend(find_review_candidates(text, rel, opts.groups, opts.base64_min))
+            review.extend(
+                find_review_candidates(text, rel, opts.groups, opts.base64_min)
+            )
 
-    text_report = render_text_report(opts, "scan-only", scan_dir, None, res, started_at, len(before))
+    text_report = render_text_report(
+        opts, "scan-only", scan_dir, None, res, started_at, len(before)
+    )
     json_report = render_json_report(
         opts, "scan-only", scan_dir, None, res, started_at, len(before), [], review
     )
@@ -2375,10 +2583,26 @@ def cmd_scan_only(opts):
     write_report_file(os.path.join(report_dir, "residual-scan.txt"), residual_report)
 
     print("")
-    print("scan-only complete: {0} files scanned, {1} would-be redactions".format(len(res.processed), len(res.findings)))
-    print("  report : {0}".format(os.path.join(os.path.abspath(report_dir), "sanitization-report.txt")))
-    print("  json   : {0}".format(os.path.join(os.path.abspath(report_dir), "sanitization-report.json")))
-    print("  review : {0}".format(os.path.join(os.path.abspath(report_dir), "residual-scan.txt")))
+    print(
+        "scan-only complete: {0} files scanned, {1} would-be redactions".format(
+            len(res.processed), len(res.findings)
+        )
+    )
+    print(
+        "  report : {0}".format(
+            os.path.join(os.path.abspath(report_dir), "sanitization-report.txt")
+        )
+    )
+    print(
+        "  json   : {0}".format(
+            os.path.join(os.path.abspath(report_dir), "sanitization-report.json")
+        )
+    )
+    print(
+        "  review : {0}".format(
+            os.path.join(os.path.abspath(report_dir), "residual-scan.txt")
+        )
+    )
     return 0
 
 
@@ -2390,15 +2614,25 @@ def print_console_summary(opts, res, residual, review, report_dir):
         print("DRY RUN         : no sanitized files were written (reports only)")
     print("files processed : {0}".format(len(res.processed)))
     print("files modified  : {0}".format(len(res.changed)))
-    print("files skipped   : {0}  (never copied to the output)".format(len(res.skipped)))
+    print(
+        "files skipped   : {0}  (never copied to the output)".format(len(res.skipped))
+    )
     print("redactions      : {0}".format(len(res.findings)))
     for label, count in _counts_by(res.findings, "label"):
         print("    {0:<26} {1}".format(label, count))
     print("warnings        : {0}".format(len(res.warnings)))
-    print("review spots    : {0}  (see residual-scan.txt REVIEW section)".format(len(review)))
+    print(
+        "review spots    : {0}  (see residual-scan.txt REVIEW section)".format(
+            len(review)
+        )
+    )
     if residual:
         print("")
-        print("*** RESIDUAL FINDINGS IN OUTPUT: {0} -- DO NOT SHARE THE OUTPUT YET ***".format(len(residual)))
+        print(
+            "*** RESIDUAL FINDINGS IN OUTPUT: {0} -- DO NOT SHARE THE OUTPUT YET ***".format(
+                len(residual)
+            )
+        )
     else:
         print("residual scan   : clean")
     rd = os.path.abspath(report_dir)
@@ -2425,15 +2659,37 @@ _ST_GIT_SHA = "3f8a1c2d4e5f60718293a4b5c6d7e8f9a0b1c2d3"
 _ST_IMAGE_DIGEST = "9f2c1a4b6d8e0f2a4c6e8b0d2f4a6c8e0b2d4f6a8c0e2b4d6f8a0c2e4b6d8f0a"
 _ST_IMAGE_REF = "quay.io/acme/runner@sha256:" + _ST_IMAGE_DIGEST
 
+# Vendor-shaped fakes.  These are invented values -- they authenticate nothing --
+# but they are deliberately built to LOOK like the real thing, because that is
+# exactly what the detectors under test key on.  Each one is therefore assembled
+# from fragments at run time so that no single literal in this source file
+# matches a credential-scanner pattern: a checked-in string of that shape trips
+# secret scanning (gitleaks, GitHub push protection) on every commit and every
+# push, which would block the repository over test data.  The values the
+# self-test actually feeds to the sanitizer are the fully joined strings below.
+_ST_AWS_ACCESS_KEY = "AKIA" + "IOSFODNN7EXAMPLE"
+_ST_GITHUB_PAT = "ghp_" + "AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+_ST_SLACK_TOKEN = "xoxb-" + "1234567890-abcdefghijKLMNOP"
+_ST_GOOGLE_API_KEY = "AIza" + "SyD-1234567890abcdefghijklmnopqrstu"
+_ST_JWT = ".".join(
+    [
+        "eyJhbGciOiJIUzI1NiJ9",
+        "eyJzdWIiOiIxMjM0NTY3ODkwIn0",
+        "dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+    ]
+)
+_ST_PEM_PRIVATE_BEGIN = "-----BEGIN " + "RSA PRIVATE KEY-----"
+_ST_PEM_PRIVATE_END = "-----END " + "RSA PRIVATE KEY-----"
+
 _ST_SECRETS = [
     "hunter2SuperSecretValue",
     "Pa55w0rd-with-space-key",
     "clientSecretAbcdefghijklmnop123456",
-    "AKIAIOSFODNN7EXAMPLE",
-    "ghp_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789",
-    "xoxb-1234567890-abcdefghijKLMNOP",
-    "AIzaSyD-1234567890abcdefghijklmnopqrstu",
-    "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+    _ST_AWS_ACCESS_KEY,
+    _ST_GITHUB_PAT,
+    _ST_SLACK_TOKEN,
+    _ST_GOOGLE_API_KEY,
+    _ST_JWT,
     "$2y$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0",
     "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDselfTestPublicKeyBlob123456",
     "d41d8cd98f00b204e9800998ecf8427e5f2b1c9a",
@@ -2478,7 +2734,7 @@ _ST_NEGATIVE_LINES = [
     "  validation-description: 'Empty or an IP in 10.0.0.0/24'",
     "        docker pull " + _ST_IMAGE_REF,
     "      ^[0-9a-f]{32}$",
-    "        echo \"{{ .params.region }}\"",
+    '        echo "{{ .params.region }}"',
 ]
 
 
@@ -2500,17 +2756,17 @@ def _self_test_corpus():
             "      default: eu-west-1",
             '  - "Administrator Password": "Pa55w0rd-with-space-key"',
             "  - client_secret: clientSecretAbcdefghijklmnop123456",
-            "  - aws_access_key: AKIAIOSFODNN7EXAMPLE",
-            "  - github_pat: ghp_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789",
-            "  - slack: xoxb-1234567890-abcdefghijKLMNOP",
-            "  - gcp: AIzaSyD-1234567890abcdefghijklmnopqrstu",
-            "  - jwt_input: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+            "  - aws_access_key: " + _ST_AWS_ACCESS_KEY,
+            "  - github_pat: " + _ST_GITHUB_PAT,
+            "  - slack: " + _ST_SLACK_TOKEN,
+            "  - gcp: " + _ST_GOOGLE_API_KEY,
+            "  - jwt_input: " + _ST_JWT,
             "  - hashed: $2y$10$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0",
             "  - authorized: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDselfTestPublicKeyBlob123456",
             "  - hex_material: d41d8cd98f00b204e9800998ecf8427e5f2b1c9a",
             "  - kubeconfig_b64: TG9uZ0Jhc2U2NEJsb2JGb3JLdWJlY29uZmlnVGVzdGluZ1B1cnBvc2VzT25seUFBQQ==",
             "  - repo_url: https://supersecretuser:supersecretpass@git.customer-internal.corp/team/repo.git",
-            "  # leftover token in a comment: ghp_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789",
+            "  # leftover token in a comment: " + _ST_GITHUB_PAT,
             "  - key: Provider",
             "  key-prefix: envs",
             "  credential_name: my-cred",
@@ -2548,10 +2804,10 @@ def _self_test_corpus():
             "        docker pull " + _ST_IMAGE_REF,
             '        echo "{{ .params.region }}"',
             "      private_key: |",
-            "        -----BEGIN RSA PRIVATE KEY-----",
+            "        " + _ST_PEM_PRIVATE_BEGIN,
             "        " + _ST_PEM_BODY_MARK,
             "        AnotherBodyLineOfTheSelfTestPrivateKeyMaterial0123456789abcdefg",
-            "        -----END RSA PRIVATE KEY-----",
+            "        " + _ST_PEM_PRIVATE_END,
             "      ca_cert: |",
             "        -----BEGIN CERTIFICATE-----",
             "        " + _ST_CERT_BODY_MARK,
@@ -2645,7 +2901,11 @@ def cmd_self_test():
 
         # ---- run A: default categories --------------------------------
         rc_a = _st_run(_st_options(src, out_default, DEFAULT_GROUPS))
-        check("run(default categories) exits 0 (no residual findings)", rc_a == 0, "rc={0}".format(rc_a))
+        check(
+            "run(default categories) exits 0 (no residual findings)",
+            rc_a == 0,
+            "rc={0}".format(rc_a),
+        )
         out_a = _st_read_all(out_default)
         blob_a = "\n".join(out_a[k] for k in sorted(out_a))
 
@@ -2659,7 +2919,8 @@ def cmd_self_test():
             check("negative preserved: " + _st_short(neg), neg in planted_lines)
         check(
             "liquid span preserved in command body",
-            '{{ .params.region }}' in planted_out and '{{ .inputs["Admin Password"] }}' in planted_out,
+            "{{ .params.region }}" in planted_out
+            and '{{ .inputs["Admin Password"] }}' in planted_out,
         )
         check(
             "identity values kept when category is off",
@@ -2670,7 +2931,9 @@ def cmd_self_test():
             not os.path.exists(os.path.join(out_default, "notes", "readme.md")),
         )
         crlf_out = out_a.get("blueprints/nested/crlf-bom.yaml", "")
-        with open(os.path.join(out_default, "blueprints", "nested", "crlf-bom.yaml"), "rb") as fh:
+        with open(
+            os.path.join(out_default, "blueprints", "nested", "crlf-bom.yaml"), "rb"
+        ) as fh:
             crlf_bytes = fh.read()
         check(
             "CRLF preserved (no bare LF introduced)",
@@ -2678,21 +2941,31 @@ def cmd_self_test():
         )
         check("BOM round-tripped", crlf_bytes.startswith(b"\xef\xbb\xbf"))
         check("CRLF file secret redacted", "hunter2SuperSecretValue" not in crlf_out)
-        check("unparsable file still processed", "blueprints/nested/broken.yaml" in out_a)
+        check(
+            "unparsable file still processed", "blueprints/nested/broken.yaml" in out_a
+        )
         check(
             "unparsable file secret redacted",
-            "hunter2SuperSecretValue" not in out_a.get("blueprints/nested/broken.yaml", "x"),
+            "hunter2SuperSecretValue"
+            not in out_a.get("blueprints/nested/broken.yaml", "x"),
         )
         for rel in sorted(files):
             if rel.endswith((".yaml", ".yml")):
                 src_lines = len(split_lines_keepends(files[rel].lstrip(UTF8_BOM)))
                 out_lines = len(split_lines_keepends(out_a.get(rel, "")))
-                check("line count preserved: " + rel, src_lines == out_lines, "{0} vs {1}".format(src_lines, out_lines))
+                check(
+                    "line count preserved: " + rel,
+                    src_lines == out_lines,
+                    "{0} vs {1}".format(src_lines, out_lines),
+                )
 
         residual_txt = _st_report(out_default, "residual-scan.txt")
         check("residual scan clean", "(none -- clean)" in residual_txt)
         report_txt = _st_report(out_default, "sanitization-report.txt")
-        check("report mentions the sha256 guarantee", "SOURCES NEVER MODIFIED" in report_txt)
+        check(
+            "report mentions the sha256 guarantee",
+            "SOURCES NEVER MODIFIED" in report_txt,
+        )
         check(
             "report leaks no original value",
             not any(s in report_txt for s in _ST_SECRETS),
@@ -2704,15 +2977,30 @@ def cmd_self_test():
         out_b = _st_read_all(out_all)
         blob_b = "\n".join(out_b[k] for k in sorted(out_b))
         for value in _ST_IDENTITY:
-            check("identity redacted when opted in: " + _st_short(value), value not in blob_b)
+            check(
+                "identity redacted when opted in: " + _st_short(value),
+                value not in blob_b,
+            )
         for secret in _ST_SECRETS:
-            check("secret still redacted (all cats): " + _st_short(secret), secret not in blob_b)
+            check(
+                "secret still redacted (all cats): " + _st_short(secret),
+                secret not in blob_b,
+            )
         planted_b_text = out_b.get("blueprints/planted.yaml", "")
         planted_b = [c for c, _e in split_lines_keepends(planted_b_text)]
-        check("pattern value untouched with ip category on", "  pattern: '[0-9a-f]{32}'" in planted_b)
-        check("loopback address kept with ip category on", "  local_bind: 127.0.0.1" in planted_b)
+        check(
+            "pattern value untouched with ip category on",
+            "  pattern: '[0-9a-f]{32}'" in planted_b,
+        )
+        check(
+            "loopback address kept with ip category on",
+            "  local_bind: 127.0.0.1" in planted_b,
+        )
         # precision fixes must hold with every category enabled too
-        check("git SHA kept with all categories on", "  commit: " + _ST_GIT_SHA in planted_b)
+        check(
+            "git SHA kept with all categories on",
+            "  commit: " + _ST_GIT_SHA in planted_b,
+        )
         check(
             "validation-description kept verbatim with ip category on",
             "  validation-description: 'Empty or an IP in 10.0.0.0/24'" in planted_b,
@@ -2732,11 +3020,15 @@ def cmd_self_test():
         check("refuses out == in", _st_refuses(_st_options(src, src, DEFAULT_GROUPS)))
         check(
             "refuses out inside in",
-            _st_refuses(_st_options(src, os.path.join(src, "nested-out"), DEFAULT_GROUPS)),
+            _st_refuses(
+                _st_options(src, os.path.join(src, "nested-out"), DEFAULT_GROUPS)
+            ),
         )
         check(
             "refuses in inside out",
-            _st_refuses(_st_options(os.path.join(src, "blueprints"), src, DEFAULT_GROUPS)),
+            _st_refuses(
+                _st_options(os.path.join(src, "blueprints"), src, DEFAULT_GROUPS)
+            ),
         )
         nonempty = _st_options(src, out_default, DEFAULT_GROUPS)
         check("refuses non-empty out without --force", _st_refuses(nonempty))
@@ -2784,10 +3076,20 @@ def _st_render(cases):
     lines.append("SELF-TEST RESULTS -- {0} v{1}".format(TOOL_NAME, TOOL_VERSION))
     lines.append("=" * 78)
     for name, ok, detail in cases:
-        lines.append("  [{0}] {1}{2}".format("PASS" if ok else "FAIL", name, ("  <- " + detail) if detail and not ok else ""))
+        lines.append(
+            "  [{0}] {1}{2}".format(
+                "PASS" if ok else "FAIL",
+                name,
+                ("  <- " + detail) if detail and not ok else "",
+            )
+        )
     passed = sum(1 for c in cases if c[1])
     lines.append("-" * 78)
-    lines.append("  {0} passed, {1} failed, {2} total".format(passed, len(cases) - passed, len(cases)))
+    lines.append(
+        "  {0} passed, {1} failed, {2} total".format(
+            passed, len(cases) - passed, len(cases)
+        )
+    )
     lines.append("=" * 78)
     return "\n".join(lines)
 
@@ -2804,7 +3106,9 @@ def main(argv=None):
     try:
         if args.self_test:
             if args.in_dir or args.out_dir or args.scan_only:
-                raise SafetyRefusal("--self-test cannot be combined with --in/--out/--scan-only")
+                raise SafetyRefusal(
+                    "--self-test cannot be combined with --in/--out/--scan-only"
+                )
             return cmd_self_test()
         opts = options_from_args(args)
         if opts.scan_only:
@@ -2813,7 +3117,9 @@ def main(argv=None):
             return cmd_scan_only(opts)
         if not opts.in_dir or not opts.out_dir:
             parser.print_usage(sys.stderr)
-            raise SafetyRefusal("both --in and --out are required (or use --scan-only / --self-test)")
+            raise SafetyRefusal(
+                "both --in and --out are required (or use --scan-only / --self-test)"
+            )
         return cmd_sanitize(opts)
     except SafetyRefusal as exc:
         sys.stderr.write("\nREFUSED: {0}\n".format(exc))

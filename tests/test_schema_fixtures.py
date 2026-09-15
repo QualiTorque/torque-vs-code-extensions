@@ -122,7 +122,7 @@ def expected_errors(text):
     for line in text.splitlines():
         stripped = line.strip()
         if stripped.startswith(EXPECT_PREFIX):
-            out.append(stripped[len(EXPECT_PREFIX):].strip())
+            out.append(stripped[len(EXPECT_PREFIX) :].strip())
     return out
 
 
@@ -217,15 +217,19 @@ class TestValidFixtures(unittest.TestCase):
                 text = read_fixture(VALID_DIR, name)
                 document = yaml.safe_load(text)
                 self.assertIsInstance(
-                    document, dict, "%s must parse as a YAML mapping" % name)
+                    document, dict, "%s must parse as a YAML mapping" % name
+                )
                 self.assertTrue(
                     first_key_line(text).startswith("spec_version"),
-                    "%s must start with spec_version" % name)
+                    "%s must start with spec_version" % name,
+                )
                 messages = all_messages(document)
                 self.assertEqual(
-                    [], messages,
+                    [],
+                    messages,
                     "%s is expected to validate, but the schema reports:\n%s"
-                    % (name, format_messages(messages)))
+                    % (name, format_messages(messages)),
+                )
 
 
 class TestInvalidFixtures(unittest.TestCase):
@@ -243,29 +247,35 @@ class TestInvalidFixtures(unittest.TestCase):
                 text = read_fixture(INVALID_DIR, name)
                 document = yaml.safe_load(text)
                 self.assertIsInstance(
-                    document, dict, "%s must parse as a YAML mapping" % name)
+                    document, dict, "%s must parse as a YAML mapping" % name
+                )
                 expectations = expected_errors(text)
                 self.assertTrue(
                     expectations,
                     "%s declares no '%s' line, so it pins nothing"
-                    % (name, EXPECT_PREFIX))
+                    % (name, EXPECT_PREFIX),
+                )
                 # Only the deliberate missing-spec_version fixture may omit it.
                 if not any("spec_version" in e for e in expectations):
                     self.assertTrue(
                         first_key_line(text).startswith("spec_version"),
-                        "%s must start with spec_version" % name)
+                        "%s must start with spec_version" % name,
+                    )
 
                 messages = all_messages(document)
                 self.assertTrue(
                     messages,
                     "%s is expected to be rejected, but the schema accepts it "
-                    "- a defect is being silently swallowed" % name)
+                    "- a defect is being silently swallowed" % name,
+                )
                 blob = "\n".join(m for _, m in messages).lower()
                 unmatched = [e for e in expectations if e.lower() not in blob]
                 self.assertEqual(
-                    [], unmatched,
+                    [],
+                    unmatched,
                     "%s: no error message matches %s. Reported:\n%s"
-                    % (name, unmatched, format_messages(messages)))
+                    % (name, unmatched, format_messages(messages)),
+                )
 
 
 class TestRequiredPathCoverage(unittest.TestCase):
@@ -283,10 +293,12 @@ class TestRequiredPathCoverage(unittest.TestCase):
         self.assertTrue(required, "%s lists no paths" % REQUIRED_PATHS)
         missing = [p for p in required if p not in covered]
         self.assertEqual(
-            [], missing,
+            [],
+            missing,
             "%d of %d required key paths are not exercised by any valid "
-            "fixture:\n%s" % (len(missing), len(required),
-                              "\n".join("    " + p for p in missing)))
+            "fixture:\n%s"
+            % (len(missing), len(required), "\n".join("    " + p for p in missing)),
+        )
 
 
 class SchemaCoverageCase(unittest.TestCase):
@@ -307,10 +319,12 @@ class SchemaCoverageCase(unittest.TestCase):
         self.assertTrue(declared, "the schema declares no %s at all" % label)
         stale = sorted(excluded - declared, key=repr)
         self.assertEqual(
-            [], stale,
+            [],
+            stale,
             "%s excluded from the %s contract no longer exist in the schema - "
             "drop them from the exclusion list:\n%s"
-            % (len(stale), label, format_missing(stale, render)))
+            % (len(stale), label, format_missing(stale, render)),
+        )
         # One subTest per missing element, so a run names each of them instead
         # of stopping at whichever happens to sort first.
         missing = declared - visited - excluded
@@ -320,8 +334,14 @@ class SchemaCoverageCase(unittest.TestCase):
                     "%s is declared by the schema but no valid fixture uses it "
                     "(%d of %d %s uncovered). Add a fixture, or excuse it in "
                     "EXCLUDED_%s with a reason."
-                    % (render(item), len(missing), len(declared), label,
-                       label.replace(" ", "_").upper()))
+                    % (
+                        render(item),
+                        len(missing),
+                        len(declared),
+                        label,
+                        label.replace(" ", "_").upper(),
+                    )
+                )
 
 
 class TestSchemaPropertyCoverage(SchemaCoverageCase):
@@ -333,7 +353,8 @@ class TestSchemaPropertyCoverage(SchemaCoverageCase):
             self.covered.visited_properties,
             EXCLUDED_PROPERTIES,
             "properties",
-            lambda item: "%s.%s" % item)
+            lambda item: "%s.%s" % item,
+        )
 
 
 class TestSchemaEnumCoverage(SchemaCoverageCase):
@@ -351,7 +372,8 @@ class TestSchemaEnumCoverage(SchemaCoverageCase):
             self.covered.visited_enum_values,
             EXCLUDED_ENUM_VALUES,
             "enum values",
-            lambda item: "%s.%s = %r" % item)
+            lambda item: "%s.%s = %r" % item,
+        )
 
 
 class TestSchemaDefinitionCoverage(SchemaCoverageCase):
@@ -363,7 +385,8 @@ class TestSchemaDefinitionCoverage(SchemaCoverageCase):
             self.covered.visited_definitions,
             EXCLUDED_DEFINITIONS,
             "definitions",
-            lambda item: item)
+            lambda item: item,
+        )
 
 
 class TestPathClassifier(unittest.TestCase):
@@ -398,8 +421,10 @@ class TestPathClassifier(unittest.TestCase):
         self.assertTrue(is_object({"type": ["integer", "string", "boolean", "object"]}))
         self.assertTrue(is_object({"type": "object"}))
         self.assertTrue(is_object({}), "an absent type allows an object")
-        self.assertTrue(is_object({"type": "array", "properties": {"a": {}}}),
-                        "declared properties make it an object schema")
+        self.assertTrue(
+            is_object({"type": "array", "properties": {"a": {}}}),
+            "declared properties make it an object schema",
+        )
         self.assertFalse(is_object({"type": ["integer", "string"]}))
         self.assertFalse(is_object({"type": "string"}))
 
@@ -410,8 +435,10 @@ class TestPathClassifier(unittest.TestCase):
         classifier = classifier_module.PathClassifier(SCHEMA)
         classifier.walk(self.DICTIONARY_INPUT, rel="synthetic")
         self.assertEqual(
-            {}, dict(classifier.rejected),
-            "no key of a dictionary input with an object default is dead")
+            {},
+            dict(classifier.rejected),
+            "no key of a dictionary input with an object default is dead",
+        )
         self.assertIn("/inputs/<name>/default", classifier.accepted)
         self.assertIn("/inputs/<name>/default/**", classifier.freeform)
 

@@ -68,9 +68,13 @@ class TestScriptHookObjectsAreClosed(unittest.TestCase):
 
     def test_files_under_a_hook_is_reported(self):
         errors = schema_errors(
-            TERRAFORM.format(extra="          files:\n            - source: scripts\n              path: helper.py\n")
+            TERRAFORM.format(
+                extra="          files:\n            - source: scripts\n              path: helper.py\n"
+            )
         )
-        self.assertTrue(errors, "a dead 'files' key under a script hook must be reported")
+        self.assertTrue(
+            errors, "a dead 'files' key under a script hook must be reported"
+        )
 
     def test_unknown_key_under_an_outputs_hook_is_reported(self):
         errors = schema_errors(HELM.format(extra="          bogus: true\n"))

@@ -8,7 +8,7 @@ The Quali Torque language extension aims to ease the life of the Torque content 
 
 - When designing a blueprint, you can get code suggestions based on a document schema. For example, it may help you to figure out
 what other properties could be added to the document.
-- When designing a grain, under the __depends-on__ field, intellisense can provide you with a list of the available grains names.
+- When designing a grain, under the **depends-on** field, intellisense can provide you with a list of the available grains names.
 
 ![completions](https://user-images.githubusercontent.com/8643801/169277560-b0b8889d-9258-4f0a-8dc8-02ae38512107.gif)
 
@@ -19,7 +19,7 @@ complex dynamic checks. Some of them include:
 
 - Validate that grains or inputs mentioned in expressions are defined
 - Validate that expressions are being used in the allowed places only
-- Grains depends-on validations 
+- Grains depends-on validations
 
 And more validations coming soon...
 
@@ -33,9 +33,9 @@ Coming soon...
 
 ## Getting Started
 
-> **_NOTE:_** This extension works with Torque's **spec_version=2**. The version 1 has been deprecated. If you are still interested in working with spec 1, the latest stable version of this extension available on the Marketplace is **0.0.12**
+> ***NOTE:*** This extension works with Torque's **spec_version=2**. The version 1 has been deprecated. If you are still interested in working with spec 1, the latest stable version of this extension available on the Marketplace is **0.0.12**
 
-**Prerequisite:** 
+**Prerequisite:**
 * **python>=3.7** installed on your system.
 * **git** installed on your system
 

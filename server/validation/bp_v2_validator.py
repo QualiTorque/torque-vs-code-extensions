@@ -1,7 +1,8 @@
 import re
-from tracemalloc import start
 from typing import List
 
+from pygls.lsp.types.basic_structures import DiagnosticSeverity
+from pygls.workspace import Document
 from server.ats.trees.blueprint_v2 import (
     BlueprintV2InputObject,
     BlueprintV2OutputNode,
@@ -14,7 +15,6 @@ from server.ats.trees.blueprint_v2 import (
     GrainSpecScripts,
     GrainSpecTargetObject,
     RunnerConfigurationOverrideObject,
-    ScriptObject,
     ScriptOutputsObject,
     SpecHostNode,
     TargetFiltersObject,
@@ -24,9 +24,6 @@ from server.ats.trees.blueprint_v2 import (
 )
 from server.ats.trees.common import NodeError, SequenceNode, TextNode, YamlNode
 from server.validation.common import ValidationHandler
-from pygls.workspace import Document
-from pygls.lsp.types.basic_structures import DiagnosticSeverity
-
 
 # a '{{ ... }}' expression; compiled once instead of on every visited node
 EXPRESSION_REGEX = re.compile(r"\{\{[^\{\}]*\}\}")
@@ -34,9 +31,7 @@ EXPRESSION_REGEX = re.compile(r"\{\{[^\{\}]*\}\}")
 # A bracket access step of a path: '["Name With Spaces"]' or "['x']".
 # Torque's own blueprints use both the '.inputs["X"]' and the '.inputs.["X"]'
 # spellings, so the leading period is optional.
-BRACKET_SEGMENT_REGEX = re.compile(
-    r"""\[\s*(?:"([^"]*)"|'([^']*)'|([^\]]*?))\s*\]"""
-)
+BRACKET_SEGMENT_REGEX = re.compile(r"""\[\s*(?:"([^"]*)"|'([^']*)'|([^\]]*?))\s*\]""")
 
 # An input 'pattern' written as a JavaScript regex literal: '/expression/flags'.
 # Kept identical to cs2018's BlueprintInputPatternRegex.RegexLiteralFormat, so
@@ -235,11 +230,8 @@ class ExpressionValidationVisitor:
                 if error and position is not None:
                     start_pos, end_pos = position
                     node.add_error(
-                        NodeError(
-                            start_pos=start_pos,
-                            end_pos=end_pos,
-                            message=error
-                    ))
+                        NodeError(start_pos=start_pos, end_pos=end_pos, message=error)
+                    )
 
         for child in node.get_children():
             self.visit_node(child)
@@ -424,12 +416,12 @@ class ExpressionValidationVisitor:
         return self.prefixes + self.workflow_prefixes
 
     def _find_nearest_available_node(self, node: YamlNode):
-        while (node):
+        while node:
             node_class = type(node)
             if node_class in self.processors_map:
                 return node
             node = node.parent
-        
+
     def _do_process_grain(self, parts: List[str], node: GrainNode):
         return self._expression_parts_validate(parts, node, True)
 
@@ -496,7 +488,10 @@ class ExpressionValidationVisitor:
         for command in getattr(commands, "nodes", []):
             name_node = getattr(getattr(command, "name", None), "value", None)
 
-            if name_node is not None and getattr(name_node, "text", None) == command_name:
+            if (
+                name_node is not None
+                and getattr(name_node, "text", None) == command_name
+            ):
                 return command
 
         return None
@@ -508,9 +503,7 @@ class ExpressionValidationVisitor:
         activity_name = parts[3]
 
         if activity_name not in self.activities:
-            return (
-                f"Wrong activity '{activity_name}'. Must be in {self.activities}."
-            )
+            return f"Wrong activity '{activity_name}'. Must be in {self.activities}."
 
         if parts[4] != "commands":
             return f"Wrong property '{parts[4]}'. Must be 'commands'."
@@ -539,9 +532,8 @@ class ExpressionValidationVisitor:
         return self._expression_parts_validate(parts, node)
 
     def _expression_parts_validate(
-        self, parts: List[str],
-        node: YamlNode,
-        is_grain_object: bool = False):
+        self, parts: List[str], node: YamlNode, is_grain_object: bool = False
+    ):
 
         if len(parts) == 0 or node.value is None:
             return None
@@ -564,7 +556,9 @@ class ExpressionValidationVisitor:
 
                 # check if 'outputs' is followed after grain name
                 if parts[2] not in self.grains_props:
-                    return f"Wrong property '{parts[2]}'. Must be in {self.grains_props}."
+                    return (
+                        f"Wrong property '{parts[2]}'. Must be in {self.grains_props}."
+                    )
 
                 grain_prop = parts[2]
 
@@ -578,7 +572,7 @@ class ExpressionValidationVisitor:
                 if grain_prop == "is_active":
                     return None
 
-                output: str = ''
+                output: str = ""
 
                 dep_grain_node = self.tree.grains.get_mapping_by_key(dep_grain)
 
@@ -606,7 +600,11 @@ class ExpressionValidationVisitor:
                         return f"Scripts are not a defined in the grain '{dep_grain}'"
                     script = getattr(scripts, script_type, None)
 
-                    if not script or not script.value or not isinstance(script.value, ScriptOutputsObject):
+                    if (
+                        not script
+                        or not script.value
+                        or not isinstance(script.value, ScriptOutputsObject)
+                    ):
                         return f"Wrong type of the script '{script_type}'"
 
                     else:
@@ -619,13 +617,15 @@ class ExpressionValidationVisitor:
                     outputs_names = [output.text for output in script.get_outputs()]
                 else:
                     output = parts[3]
-                    outputs_names = [spec.text for spec in spec_node.value.get_outputs()]
+                    outputs_names = [
+                        spec.text for spec in spec_node.value.get_outputs()
+                    ]
                 error_msg = f"Output '{output}' is not part of the '{dep_grain}' grain's outputs"
                 if output not in outputs_names:
                     return error_msg
 
-            except IndexError: 
-                return f"Incomplete expression"
+            except IndexError:
+                return "Incomplete expression"
 
         elif parts[0] == "inputs":
             if len(parts) != 2:
@@ -634,7 +634,10 @@ class ExpressionValidationVisitor:
             input_name = parts[1]
             inputs_node = self.tree.inputs
 
-            if inputs_node is None or inputs_node.get_mapping_by_key(input_name) is None:
+            if (
+                inputs_node is None
+                or inputs_node.get_mapping_by_key(input_name) is None
+            ):
                 return f"Input '{input_name}' is not defined in a blueprint"
 
 
@@ -653,12 +656,12 @@ class BlueprintSpec2Validator(ValidationHandler):
             outputs_list = spec.get_outputs()
             outputs_names = [output.text.lower() for output in outputs_list]
 
-            for output_node in outputs_list: 
+            for output_node in outputs_list:
                 if outputs_names.count(output_node.text.lower()) > 1:
                     self._add_diagnostic(
                         output_node, message=message.format(output_node.text)
                     )
-    
+
     def _validate_no_duplicates_in_grain_spec(self):
         for _, _, spec in self._grain_specs():
             grain_inputs = spec.get_inputs()
@@ -668,7 +671,8 @@ class BlueprintSpec2Validator(ValidationHandler):
                 if inputs_keys.count(input_node.key.text) > 1:
                     self._add_diagnostic(
                         node=input_node.key,
-                        message=f"Duplicated input name '{input_node.key.text}'")
+                        message=f"Duplicated input name '{input_node.key.text}'",
+                    )
 
     @staticmethod
     def _input_usage_regex(input_name: str):
@@ -707,7 +711,7 @@ class BlueprintSpec2Validator(ValidationHandler):
                 self._add_diagnostic(
                     node=input_node.key,
                     message=f"The defined input '{input_name}' is not accessed",
-                    diag_severity=DiagnosticSeverity.Warning
+                    diag_severity=DiagnosticSeverity.Warning,
                 )
 
     def _validate_grain_dep_exists(self):
@@ -727,7 +731,7 @@ class BlueprintSpec2Validator(ValidationHandler):
                     self._add_diagnostic(
                         start_pos=(start_pos.line, start_pos.col),
                         end_pos=(end_pos.line, end_pos.col),
-                        message=f"The grain '{grain_name}' depends on undefined grain {d['name']}"
+                        message=f"The grain '{grain_name}' depends on undefined grain {d['name']}",
                     )
                 if d["name"] == grain_name:
                     self._add_diagnostic(
@@ -757,7 +761,7 @@ class BlueprintSpec2Validator(ValidationHandler):
                         end_pos=(end_pos.line, end_pos.col),
                         message=f"Multiple mentioning of grain '{grain}'",
                     )
-            
+
     # -----------------------------------------------------------------
     # Helpers shared by the semantic validations below.
     # The document is validated while it is being typed, so any node may
@@ -1035,28 +1039,25 @@ class BlueprintSpec2Validator(ValidationHandler):
                 self._report(
                     "A space scoped workflow supports manual triggers only, "
                     "not a trigger of type '{}'".format(trigger_type),
-                    *fallbacks
+                    *fallbacks,
                 )
 
             if trigger_type == "manual":
                 if has_event or has_cron:
                     self._report(
-                        "A trigger of type 'manual' cannot define "
-                        "'event' or 'cron'",
-                        *fallbacks
+                        "A trigger of type 'manual' cannot define " "'event' or 'cron'",
+                        *fallbacks,
                     )
 
             elif trigger_type == "event":
                 if not has_event:
                     self._report(
-                        "A trigger of type 'event' must define at least "
-                        "one 'event'",
-                        *fallbacks
+                        "A trigger of type 'event' must define at least " "one 'event'",
+                        *fallbacks,
                     )
                 if has_cron:
                     self._report(
-                        "A trigger of type 'event' cannot define 'cron'",
-                        *fallbacks
+                        "A trigger of type 'event' cannot define 'cron'", *fallbacks
                     )
 
             elif trigger_type == "cron":
@@ -1221,9 +1222,7 @@ class BlueprintSpec2Validator(ValidationHandler):
         if target_filters is None:
             return []
 
-        labels = self._prop_value(
-            getattr(target_filters, "labels", None), SequenceNode
-        )
+        labels = self._prop_value(getattr(target_filters, "labels", None), SequenceNode)
 
         if labels is None:
             return []
@@ -1248,9 +1247,7 @@ class BlueprintSpec2Validator(ValidationHandler):
                 if self._prop_text(getattr(label, "value", None)) is None:
                     continue
 
-                values = self._prop_value(
-                    getattr(label, "values", None), SequenceNode
-                )
+                values = self._prop_value(getattr(label, "values", None), SequenceNode)
 
                 if values is None or not values.nodes:
                     continue

@@ -196,7 +196,10 @@ class TestExpressionForms(unittest.TestCase):
     def test_unrelated_grain_output_reference_still_flagged(self):
         doc = EXPR_DOC.format(
             consumer_inputs="        - a: '{{ .grains.orphan.outputs.x }}'"
-        ).replace("  consumer:\n    kind: shell\n    depends-on: middle", "  consumer:\n    kind: shell")
+        ).replace(
+            "  consumer:\n    kind: shell\n    depends-on: middle",
+            "  consumer:\n    kind: shell",
+        )
         tree, _ = validate(doc)
         self.assertTrue([e.message for e in tree.errors])
 
@@ -214,9 +217,7 @@ class TestExpressionForms(unittest.TestCase):
     def test_chained_pipes_allowed(self):
         self.assertEqual(
             [],
-            expr_errors(
-                "        - a: '{{ inputs.Plain | downcase | strip }}'"
-            ),
+            expr_errors("        - a: '{{ inputs.Plain | downcase | strip }}'"),
         )
 
     def test_unknown_filter_still_flagged(self):
@@ -246,7 +247,8 @@ grains:
 
 class TestUnusedInputWarning(unittest.TestCase):
     def used(self, usage_line):
-        doc = """spec_version: 2
+        doc = (
+            """spec_version: 2
 inputs:
   Name With Spaces:
     type: string
@@ -260,7 +262,9 @@ grains:
         deploy:
           commands:
             - %s
-""" % usage_line
+"""
+            % usage_line
+        )
         _, diags = validate(doc)
         return not any("is not accessed" in d.message for d in diags)
 

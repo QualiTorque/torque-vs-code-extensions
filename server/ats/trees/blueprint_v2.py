@@ -37,7 +37,10 @@ class FreeFormNode(ObjectNode):
     text_value: TextNode = None
 
     def get_child(self, child_name: str):
-        child = FreeFormProperty(parent=self)
+        # `parent` is a real dataclass field, declared on YamlNode and inherited
+        # here; pylint loses it because the chain passes through classes that
+        # are not themselves decorated @dataclass, and reports it as unexpected.
+        child = FreeFormProperty(parent=self)  # pylint: disable=unexpected-keyword-arg
         key = child.get_key()
 
         # The parser overwrites these with the real token positions right after
@@ -53,7 +56,8 @@ class FreeFormNode(ObjectNode):
 
     def add(self, node: YamlNode = None):
         if node is None:
-            node = FreeFormNode(parent=self)
+            # inherited dataclass field, as above
+            node = FreeFormNode(parent=self)  # pylint: disable=unexpected-keyword-arg
 
         self.children.append(node)
         return node

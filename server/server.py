@@ -30,30 +30,44 @@ from urllib.request import url2pathname
 
 import tabulate
 import yaml
-from pygls.lsp.methods import (CODE_LENS, COMPLETION, DOCUMENT_LINK,
-                               TEXT_DOCUMENT_DID_CHANGE,
-                               TEXT_DOCUMENT_DID_OPEN,
-                               WORKSPACE_DID_CHANGE_WATCHED_FILES)
-from pygls.lsp.types import (CodeLens, CodeLensOptions, CodeLensParams,
-                             Command, CompletionItem, CompletionItemKind,
-                             CompletionList, CompletionOptions,
-                             CompletionParams, ConfigurationItem,
-                             ConfigurationParams, Diagnostic,
-                             DidChangeTextDocumentParams,
-                             DidChangeWorkspaceFoldersParams,
-                             DidOpenTextDocumentParams, DocumentLink,
-                             DocumentLinkParams, MessageType, Position, Range,
-                             workspace)
+from pygls.lsp.methods import (
+    CODE_LENS,
+    COMPLETION,
+    DOCUMENT_LINK,
+    TEXT_DOCUMENT_DID_CHANGE,
+    TEXT_DOCUMENT_DID_OPEN,
+    WORKSPACE_DID_CHANGE_WATCHED_FILES,
+)
+from pygls.lsp.types import (
+    CodeLens,
+    CodeLensOptions,
+    CodeLensParams,
+    Command,
+    CompletionItem,
+    CompletionItemKind,
+    CompletionList,
+    CompletionOptions,
+    CompletionParams,
+    ConfigurationItem,
+    ConfigurationParams,
+    Diagnostic,
+    DidChangeTextDocumentParams,
+    DidChangeWorkspaceFoldersParams,
+    DidOpenTextDocumentParams,
+    DocumentLink,
+    DocumentLinkParams,
+    MessageType,
+    Position,
+    Range,
+    workspace,
+)
 from pygls.lsp.types.basic_structures import TextEdit
 from pygls.server import LanguageServer
-
 from server.ats.parser import Parser, ParserError, replace_unprintable_characters
-from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintInputNode
-from server.ats.trees.common import BaseTree, PropertyNode
+from server.ats.trees.common import BaseTree
 from server.completers.resolver import CompletionResolver
-from server.constants import (AWS_REGIONS, AZURE_REGIONS,
-                              BLUEPRINT_SOURCE_TYPE_MAP)
+from server.constants import AWS_REGIONS, AZURE_REGIONS
 from server.utils import common
 from server.utils.applications import ApplicationsManager as applications
 from server.utils.common import get_repo_root_path, is_var_allowed
@@ -274,6 +288,11 @@ def completions(
     server: TorqueLanguageServer, params: Optional[CompletionParams] = None
 ) -> CompletionList:
     """Returns completion items."""
+    # `common.preceding_words` is annotated `Optional[Tuple[str, str]]` but in
+    # fact returns a list of up to two words, or None.  Every `words[...]` read
+    # below is guarded by `if words`, which pylint does not narrow through the
+    # Optional, so it reports the subscripts as unsubscriptable-object.
+    # pylint: disable=unsubscriptable-object
     if not _is_torque_file(params.text_document.uri):
         return CompletionList(is_incomplete=True, items=[])
 
@@ -603,11 +622,13 @@ def code_lens(
 
         try:
             if yaml_obj:
-                bp_tree = Parser(doc.source).parse()
+                # parsed for its side effect: a malformed document raises
+                # ParserError here.  The tree itself is unused for spec2.
+                Parser(doc.source).parse()
                 # disable for spec2
                 # if bp_tree.kind is None:
                 #     return
-        except ParserError as ex:
+        except ParserError:
             return
 
         except Exception as ex:
@@ -702,14 +723,12 @@ async def lsp_document_link(
     doc = server.workspace.get_document(params.text_document.uri)
     try:
         yaml_obj = yaml.load(doc.source, Loader=yaml.FullLoader)
-        if yaml_obj and isinstance(yaml_obj, dict):
-            doc_type = yaml_obj.get("kind", "")
-        else:
+        if not (yaml_obj and isinstance(yaml_obj, dict)):
             return links
     except yaml.MarkedYAMLError:
         return links
 
-    root = get_repo_root_path(doc.path)
+    get_repo_root_path(doc.path)
 
     return links
 
@@ -1074,7 +1093,8 @@ async def get_blueprint(server: TorqueLanguageServer, *args):
     try:
         stdout, stderr = _run_torque_cli_command(
             server,
-            f"torque --disable-version-check --profile {active_profile} bp get '{bp_name}' --repo {repo_name} --output=json --detail",
+            f"torque --disable-version-check --profile {active_profile} bp get"
+            f" '{bp_name}' --repo {repo_name} --output=json --detail",
         )
         if stderr:
             server.show_message(

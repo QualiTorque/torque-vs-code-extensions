@@ -22,7 +22,6 @@ from unittest.mock import MagicMock
 
 import yaml
 from jsonschema import Draft7Validator
-
 from server.ats.parser import Parser
 from server.validation.bp_v2_validator import BlueprintSpec2Validator
 
@@ -62,7 +61,9 @@ def target_input_with_label(*label_fields):
 
 
 def optional_conflict_diagnostics(diagnostics):
-    return [d for d in diagnostics if "optional" in d.lower() and "pattern" in d.lower()]
+    return [
+        d for d in diagnostics if "optional" in d.lower() and "pattern" in d.lower()
+    ]
 
 
 def value_and_values_diagnostics(diagnostics):
@@ -123,7 +124,8 @@ class TestOptionalInputLanguageServer(unittest.TestCase):
 class TestTargetLabelValuesSchema(unittest.TestCase):
     def test_values_list_is_accepted(self):
         self.assertEqual(
-            [], schema_errors(target_input_with_label("values:", "  - dev", "  - staging"))
+            [],
+            schema_errors(target_input_with_label("values:", "  - dev", "  - staging")),
         )
 
     def test_values_must_be_a_list(self):
@@ -140,7 +142,9 @@ class TestTargetLabelValuesSchema(unittest.TestCase):
 
 class TestTargetLabelValuesLanguageServer(unittest.TestCase):
     def test_tree_model_knows_values(self):
-        unknown, _ = language_server(target_input_with_label("values:", "  - dev", "  - staging"))
+        unknown, _ = language_server(
+            target_input_with_label("values:", "  - dev", "  - staging")
+        )
         self.assertEqual([], unknown)
 
     def test_value_and_values_together_are_flagged(self):

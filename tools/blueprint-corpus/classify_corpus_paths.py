@@ -79,6 +79,49 @@ NAME_SEGMENT = "<name>"
 #: Schema keywords whose branches are spread into siblings rather than nested.
 COMBINATORS = ("allOf", "oneOf", "anyOf")
 
+#: Keywords that make a combinator's non-combinator siblings worth keeping: if
+#: the base carries any of these it declares children of its own, so it has to
+#: stay alongside the spread branches instead of being dropped.
+_CHILD_BEARING_KEYWORDS = (
+    "properties",
+    "patternProperties",
+    "additionalProperties",
+    "items",
+)
+
+
+def spread_node(node, name, defs, note_definition, recurse):
+    """Flatten one schema node into the `(definition, schema)` pairs it can be.
+
+    The single implementation behind `PathClassifier.deref` (which walks the
+    schema alongside a document) and `SchemaEnumerator.flatten` (which walks the
+    schema alone). Both must apply exactly the same naming rules or the coverage
+    numbers they produce stop lining up, so they share this function and differ
+    only in what they hand it:
+
+    * `defs` - the `#/definitions` map `$ref` targets are looked up in;
+    * `note_definition` - called with every `$ref` target name, so each caller
+      records the visit in its own set;
+    * `recurse` - the caller's own method, so recursion stays within the caller
+      (its `$ref` bookkeeping and, for `deref`, its document context).
+    """
+    out = []
+    if not isinstance(node, dict):
+        return out
+    if "$ref" in node:
+        target = node["$ref"].split("/")[-1]
+        note_definition(target)
+        return recurse(defs[target], target)
+    combos = [c for k in COMBINATORS for c in node.get(k, [])]
+    if combos:
+        base = {k: v for k, v in node.items() if k not in COMBINATORS}
+        if any(k in base for k in _CHILD_BEARING_KEYWORDS):
+            out.append((name, base))
+        for c in combos:
+            out.extend(recurse(c, name))
+        return out
+    return [(name, node)]
+
 
 def enum_member(value, members):
     """The member of `members` that `value` really is, or `None`.
@@ -128,22 +171,9 @@ class PathClassifier(object):
         the target's name (and records the visit), combinator branches inherit
         it.
         """
-        out = []
-        if not isinstance(node, dict):
-            return out
-        if "$ref" in node:
-            target = node["$ref"].split("/")[-1]
-            self.visited_definitions.add(target)
-            return self.deref(self.defs[target], target)
-        combos = [c for k in COMBINATORS for c in node.get(k, [])]
-        if combos:
-            base = {k: v for k, v in node.items() if k not in COMBINATORS}
-            if any(k in base for k in ("properties", "patternProperties", "additionalProperties", "items")):
-                out.append((name, base))
-            for c in combos:
-                out.extend(self.deref(c, name))
-            return out
-        return [(name, node)]
+        return spread_node(
+            node, name, self.defs, self.visited_definitions.add, self.deref
+        )
 
     @staticmethod
     def is_object(node):
@@ -313,22 +343,9 @@ class SchemaEnumerator(object):
 
     def flatten(self, node, name):
         """`PathClassifier.deref` without the document - same naming rules."""
-        out = []
-        if not isinstance(node, dict):
-            return out
-        if "$ref" in node:
-            target = node["$ref"].split("/")[-1]
-            self.all_definitions.add(target)
-            return self.flatten(self.defs[target], target)
-        combos = [c for k in COMBINATORS for c in node.get(k, [])]
-        if combos:
-            base = {k: v for k, v in node.items() if k not in COMBINATORS}
-            if any(k in base for k in ("properties", "patternProperties", "additionalProperties", "items")):
-                out.append((name, base))
-            for c in combos:
-                out.extend(self.flatten(c, name))
-            return out
-        return [(name, node)]
+        return spread_node(
+            node, name, self.defs, self.all_definitions.add, self.flatten
+        )
 
     def visit(self, nodes, owner, stack=()):
         """Collect declarations under `nodes`, attributing enums to `owner`.
@@ -357,12 +374,18 @@ class SchemaEnumerator(object):
                 self.all_properties.add((dname, key))
                 self.visit(self.flatten(sub, dname + "." + key), (dname, key), below)
             for sub in (n.get("patternProperties") or {}).values():
-                self.visit(self.flatten(sub, dname + "." + NAME_SEGMENT),
-                           (dname, NAME_SEGMENT), below)
+                self.visit(
+                    self.flatten(sub, dname + "." + NAME_SEGMENT),
+                    (dname, NAME_SEGMENT),
+                    below,
+                )
             ap = n.get("additionalProperties")
             if isinstance(ap, dict):
-                self.visit(self.flatten(ap, dname + "." + NAME_SEGMENT),
-                           (dname, NAME_SEGMENT), below)
+                self.visit(
+                    self.flatten(ap, dname + "." + NAME_SEGMENT),
+                    (dname, NAME_SEGMENT),
+                    below,
+                )
             item = n.get("items")
             items = item if isinstance(item, list) else [item]
             for one in items:
@@ -412,24 +435,32 @@ def scan_corpus(schema, roots):
 
 def _main(argv):
     if len(argv) < 3:
-        sys.stderr.write("usage: classify_corpus_paths.py <schema.json> <out-dir> <corpus-root>...\n")
+        sys.stderr.write(
+            "usage: classify_corpus_paths.py <schema.json> <out-dir> <corpus-root>...\n"
+        )
         return 2
     schema_path, out, roots = argv[0], argv[1], argv[2:]
     schema = load_schema(schema_path)
     c, total = scan_corpus(schema, roots)
 
     with io.open(os.path.join(out, "required-paths.txt"), "w", encoding="utf-8") as f:
-        f.write("# schema-accepted key paths observed in %d local spec2 blueprints "
-                "(<name> = user-chosen key)\n" % total)
+        f.write(
+            "# schema-accepted key paths observed in %d local spec2 blueprints "
+            "(<name> = user-chosen key)\n" % total
+        )
         for p in sorted(c.accepted):
             f.write(p + "\n")
     with io.open(os.path.join(out, "rejected-paths.txt"), "w", encoding="utf-8") as f:
-        f.write("# observed in real blueprints but rejected by the schema (dead keys in the wild)\n")
+        f.write(
+            "# observed in real blueprints but rejected by the schema (dead keys in the wild)\n"
+        )
         for p, n in sorted(c.rejected.items(), key=lambda kv: -kv[1]):
             f.write("%-70s %5d  e.g. %s\n" % (p, n, c.example[p]))
 
-    print("blueprints %d | accepted %d | rejected %d | free-form roots %d"
-          % (total, len(c.accepted), len(c.rejected), len(c.freeform)))
+    print(
+        "blueprints %d | accepted %d | rejected %d | free-form roots %d"
+        % (total, len(c.accepted), len(c.rejected), len(c.freeform))
+    )
     print("REJECTED:")
     for p, n in sorted(c.rejected.items(), key=lambda kv: -kv[1]):
         print("  %-60s %4d  %s" % (p, n, c.example[p][:50]))

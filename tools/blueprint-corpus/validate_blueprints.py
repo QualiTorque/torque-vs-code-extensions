@@ -138,8 +138,10 @@ except Exception as _exc:  # pragma: no cover - environment dependent
 # the same type name pydantic uses in real pygls - so even the pathological
 # "validator built a bad Diagnostic" case is classified and rendered the same
 # way in both modes.
-import enum
-import types as _pytypes
+# Deliberately below the sys.path setup above: the stub is only built once the
+# real pygls has been looked for, so these imports cannot move to the top.
+import enum  # noqa: E402
+import types as _pytypes  # noqa: E402
 
 
 class _StubValidationError(ValueError):
@@ -534,7 +536,10 @@ _WHITESPACE_RE = re.compile(r"\s+")
 _MESSAGE_SPECIALIZATIONS = [
     (re.compile(r"^Unknown command .*$", re.DOTALL), "Unknown command X"),
     # note the unbalanced quote: that is the server's own message, verbatim.
-    (re.compile(r"^Wrong script property '.*$", re.DOTALL), "Wrong script property 'X."),
+    (
+        re.compile(r"^Wrong script property '.*$", re.DOTALL),
+        "Wrong script property 'X.",
+    ),
 ]
 
 
@@ -842,7 +847,9 @@ def read_text(path):
     left exactly as they are: the language server reports positions against the
     text the editor holds, and rewriting them would shift columns.
     """
-    with open(path, "r", encoding="utf-8", errors="surrogateescape", newline="") as handle:
+    with open(
+        path, "r", encoding="utf-8", errors="surrogateescape", newline=""
+    ) as handle:
         text = handle.read()
     if text.startswith("\ufeff"):
         text = text[1:]
@@ -1098,7 +1105,11 @@ def schema_findings(instance, validator, lines):
     findings = []
     errors = sorted(
         validator.iter_errors(instance),
-        key=lambda err: (list(map(str, err.absolute_path)), err.validator or "", err.message),
+        key=lambda err: (
+            list(map(str, err.absolute_path)),
+            err.validator or "",
+            err.message,
+        ),
     )
     seen = set()
     for error in errors:
@@ -1156,7 +1167,11 @@ class LanguageServerLayer(object):
     def __init__(self, repo_root):
         if repo_root not in sys.path:
             sys.path.insert(0, repo_root)
-        from server.ats.parser import Parser, ParserError, replace_unprintable_characters
+        from server.ats.parser import (
+            Parser,
+            ParserError,
+            replace_unprintable_characters,
+        )
         from server.ats.trees.blueprint_v2 import BlueprintV2Tree
         from server.validation.bp_v2_validator import BlueprintSpec2Validator
 
@@ -1293,7 +1308,8 @@ def _make_crash(phase, exc):
     frames = []
     for match in _TOOL_FRAME_RE.finditer(text):
         frames.append(
-            "%s:%s in %s" % (os.path.basename(match.group(1)), match.group(2), match.group(3))
+            "%s:%s in %s"
+            % (os.path.basename(match.group(1)), match.group(2), match.group(3))
         )
     return Crash(phase, type(exc).__name__, str(exc), frames[-6:])
 
@@ -1442,9 +1458,7 @@ def run_corpus(run):
 
         run.results.append(result)
 
-    run.clusters = build_clusters(
-        run.results, run.anonymize, run.args.level == "safe"
-    )
+    run.clusters = build_clusters(run.results, run.anonymize, run.args.level == "safe")
     run.property_rows = aggregate_unexpected_properties(run.results)
 
 
@@ -1474,7 +1488,12 @@ def level_banner(level):
 
 
 def report_header(run, title):
-    lines = [RULE, "Torque blueprint corpus validation - %s" % title, level_banner(run.args.level), RULE]
+    lines = [
+        RULE,
+        "Torque blueprint corpus validation - %s" % title,
+        level_banner(run.args.level),
+        RULE,
+    ]
     return lines
 
 
@@ -1488,11 +1507,15 @@ def header_block(run):
     lines.append("schema sha256    : %s" % run.schema_sha256)
     lines.append("pygls            : %s" % run.pygls_mode)
     lines.append("level            : %s" % run.args.level)
-    lines.append("paths            : %s" % ("anonymized ids" if run.anonymize else "relative to corpus dir"))
+    lines.append(
+        "paths            : %s"
+        % ("anonymized ids" if run.anonymize else "relative to corpus dir")
+    )
     lines.append("triage catalog   : %s" % run.catalog.source)
-    lines.append("file selection   : %s" % (
-        "all *.yaml/*.yml" if run.args.include_non_spec2 else "spec_version 2 only"
-    ))
+    lines.append(
+        "file selection   : %s"
+        % ("all *.yaml/*.yml" if run.args.include_non_spec2 else "spec_version 2 only")
+    )
     return lines
 
 
@@ -1505,7 +1528,9 @@ def counts_block(run):
     lines.append("skipped (not spec2)     : %d" % run.skipped_non_spec2)
     lines.append("unreadable              : %d" % len(run.unreadable))
     lines.append("fully clean             : %d" % len(run.clean_results))
-    lines.append("with findings           : %d" % len([r for r in run.results if r.findings]))
+    lines.append(
+        "with findings           : %d" % len([r for r in run.results if r.findings])
+    )
     lines.append("files with crashes      : %d" % len(run.crash_results))
     lines.append("findings total          : %d" % run.finding_count)
     lines.append("  of which KNOWN        : %d" % known)
@@ -1536,8 +1561,12 @@ def crash_section(run, safe):
         return lines
     lines.append("")
     lines.append(RULE)
-    lines.append("!! CRASHES - %d in %d file(s)" % (run.crash_count, len(run.crash_results)))
-    lines.append("!! These are tool bugs. In the running language server the exception is")
+    lines.append(
+        "!! CRASHES - %d in %d file(s)" % (run.crash_count, len(run.crash_results))
+    )
+    lines.append(
+        "!! These are tool bugs. In the running language server the exception is"
+    )
     lines.append("!! swallowed, so the file silently loses ALL of its diagnostics.")
     lines.append(RULE)
     for result in run.crash_results:
@@ -1562,8 +1591,10 @@ def cluster_tables(run, max_examples, safe):
         lines.append("")
         lines.append(RULE)
         lines.append("%s" % LAYER_TITLES[layer])
-        lines.append("%d cluster(s), %d finding(s)" % (
-            len(layer_clusters), sum(c.count for c in layer_clusters)))
+        lines.append(
+            "%d cluster(s), %d finding(s)"
+            % (len(layer_clusters), sum(c.count for c in layer_clusters))
+        )
         lines.append(RULE)
         for cluster in layer_clusters:
             lines.append("")
@@ -1576,7 +1607,10 @@ def cluster_tables(run, max_examples, safe):
             shown = cluster.examples[:max_examples]
             lines.append("         examples: %s" % (", ".join(shown) if shown else "-"))
             if len(cluster.examples) > len(shown):
-                lines.append("                   (+%d more)" % (len(cluster.examples) - len(shown)))
+                lines.append(
+                    "                   (+%d more)"
+                    % (len(cluster.examples) - len(shown))
+                )
     return lines
 
 
@@ -1588,7 +1622,9 @@ def property_table(run):
     lines.append(RULE)
     lines.append("UNEXPECTED PROPERTIES by (section, property)")
     lines.append("The schema rejects these keys. Each one is either a blueprint defect")
-    lines.append("(Torque ignores the key) or a gap in the schema. Most actionable table.")
+    lines.append(
+        "(Torque ignores the key) or a gap in the schema. Most actionable table."
+    )
     lines.append(RULE)
     section_width = max([len(row[0]) for row in run.property_rows] + [len("section")])
     prop_width = max([len(row[1]) for row in run.property_rows] + [len("property")])
@@ -1600,7 +1636,9 @@ def property_table(run):
         if note:
             lines.append("%7s  %s" % ("", "^ " + note))
     lines.append("")
-    lines.append("(the language server reports its own unknown keys separately - see the")
+    lines.append(
+        "(the language server reports its own unknown keys separately - see the"
+    )
     lines.append(" \"unknown key: 'X'\" clusters in the tree-errors table above)")
     return lines
 
@@ -1616,16 +1654,23 @@ def triage_section(run):
     lines.append("")
     if new:
         lines.append("*" * 78)
-        lines.append("*** %d NEW CLUSTER(S) - NOT IN THE KNOWN-FINDINGS CATALOG" % len(new))
+        lines.append(
+            "*** %d NEW CLUSTER(S) - NOT IN THE KNOWN-FINDINGS CATALOG" % len(new)
+        )
         lines.append("*** These are the candidate TOOL BUGS. Start here.")
         lines.append("*" * 78)
         for cluster in new:
             lines.append("")
-            lines.append("  NEW  [%d]  %s  (%s)" % (cluster.count, cluster.signature, cluster.layer))
+            lines.append(
+                "  NEW  [%d]  %s  (%s)"
+                % (cluster.count, cluster.signature, cluster.layer)
+            )
             if cluster.signature != cluster.template:
                 lines.append("            template: %s" % cluster.template)
     else:
-        lines.append("  No NEW clusters: every finding matched the known-findings catalog.")
+        lines.append(
+            "  No NEW clusters: every finding matched the known-findings catalog."
+        )
 
     for verdict in (VERDICT_BLUEPRINT_DEFECT, VERDICT_TOOL_LIMITATION):
         known = [c for c in run.clusters if c.verdict == verdict]
@@ -1633,8 +1678,10 @@ def triage_section(run):
             continue
         lines.append("")
         lines.append(THIN)
-        lines.append("%s - %d cluster(s), %d finding(s)" % (
-            verdict, len(known), sum(c.count for c in known)))
+        lines.append(
+            "%s - %d cluster(s), %d finding(s)"
+            % (verdict, len(known), sum(c.count for c in known))
+        )
         lines.append(THIN)
         for cluster in known:
             lines.append("  [%5d]  %s" % (cluster.count, cluster.signature))
@@ -1647,30 +1694,38 @@ def next_steps(run, include_paths=True):
     lines = ["", RULE, "WHAT TO DO NEXT", RULE]
     steps = []
     if run.crash_results:
-        steps.append([
-            "CRASHES first. Each one is a tool bug that makes the language server",
-            "publish nothing at all for that file. Reproduce with the file named",
-            "above, fix, then add a regression test under tests/.",
-        ])
+        steps.append(
+            [
+                "CRASHES first. Each one is a tool bug that makes the language server",
+                "publish nothing at all for that file. Reproduce with the file named",
+                "above, fix, then add a regression test under tests/.",
+            ]
+        )
     if run.new_clusters:
-        steps.append([
-            "NEW clusters -> INVESTIGATE THE TOOL. Decide for each one whether the",
-            "blueprint is really wrong (then add it to known_findings.json as",
-            "blueprint-defect) or the schema/validator is wrong (then fix the tool",
-            "and add a test). Check the key against the Torque server source before",
-            "concluding either way.",
-        ])
+        steps.append(
+            [
+                "NEW clusters -> INVESTIGATE THE TOOL. Decide for each one whether the",
+                "blueprint is really wrong (then add it to known_findings.json as",
+                "blueprint-defect) or the schema/validator is wrong (then fix the tool",
+                "and add a test). Check the key against the Torque server source before",
+                "concluding either way.",
+            ]
+        )
     if any(c.verdict == VERDICT_BLUEPRINT_DEFECT for c in run.clusters):
-        steps.append([
-            "KNOWN-BLUEPRINT-DEFECT clusters -> REPORT TO THE BLUEPRINT OWNERS.",
-            "These keys are silently dropped by Torque, so the blueprint does not do",
-            "what its author thinks it does. Nothing to fix in the extension.",
-        ])
+        steps.append(
+            [
+                "KNOWN-BLUEPRINT-DEFECT clusters -> REPORT TO THE BLUEPRINT OWNERS.",
+                "These keys are silently dropped by Torque, so the blueprint does not do",
+                "what its author thinks it does. Nothing to fix in the extension.",
+            ]
+        )
     if any(c.verdict == VERDICT_TOOL_LIMITATION for c in run.clusters):
-        steps.append([
-            "KNOWN-TOOL-LIMITATION clusters -> false positives we already know about.",
-            "Worth fixing eventually; not a surprise.",
-        ])
+        steps.append(
+            [
+                "KNOWN-TOOL-LIMITATION clusters -> false positives we already know about.",
+                "Worth fixing eventually; not a surprise.",
+            ]
+        )
     if not steps:
         lines.append("Nothing to do: the corpus produced no findings at all.")
     for index, step in enumerate(steps):
@@ -1679,7 +1734,9 @@ def next_steps(run, include_paths=True):
             lines.append("   %s" % continuation)
     if not run.crash_results and not run.new_clusters and steps:
         lines.append("")
-        lines.append("Nothing new. The corpus produced only findings already in the catalog.")
+        lines.append(
+            "Nothing new. The corpus produced only findings already in the catalog."
+        )
     lines.append("")
     if include_paths:
         lines.append("Reports written to: %s" % os.path.abspath(run.args.report_dir))
@@ -1708,7 +1765,9 @@ def render_summary(run):
         lines.append("")
         lines.append("UNREADABLE FILES")
         for rel, error in run.unreadable:
-            lines.append("  %s: %s" % (rel if not run.anonymize else "(path hidden)", error))
+            lines.append(
+                "  %s: %s" % (rel if not run.anonymize else "(path hidden)", error)
+            )
     lines.extend(crash_section(run, safe))
     lines.extend(cluster_tables(run, run.args.max_examples, safe))
     lines.extend(property_table(run))
@@ -1723,7 +1782,9 @@ def render_findings_txt(run):
     lines = report_header(run, "FINDINGS (per file)")
     lines.append("format: LAYER SEVERITY line:col message")
     if safe:
-        lines.append("safe level: normalized templates only, no source and no raw messages.")
+        lines.append(
+            "safe level: normalized templates only, no source and no raw messages."
+        )
     else:
         lines.append("'~' before a line number means the location is approximate.")
     lines.append("")
@@ -1750,8 +1811,10 @@ def render_findings_txt(run):
         for finding in sorted(result.findings, key=Finding.sort_key):
             location = format_location(finding)
             text = finding.template if safe else finding.message
-            lines.append("  %-9s %-11s %-10s %s" % (
-                finding.layer, finding.severity, location, one_line(text)))
+            lines.append(
+                "  %-9s %-11s %-10s %s"
+                % (finding.layer, finding.severity, location, one_line(text))
+            )
             if finding.prop is not None:
                 # A single additionalProperties error can name several keys; the
                 # finding is per key, so say which one this row is about.
@@ -1888,24 +1951,45 @@ def render_findings_json(run):
 
 def render_safe_summary(run):
     """Always written. Must never contain blueprint content."""
-    lines = [RULE, "Torque blueprint corpus validation - SAFE SUMMARY", SAFE_SHARE_BANNER, RULE]
+    lines = [
+        RULE,
+        "Torque blueprint corpus validation - SAFE SUMMARY",
+        SAFE_SHARE_BANNER,
+        RULE,
+    ]
     lines.append("")
     lines.append("What is in here : normalized message templates; schema sections; the")
-    lines.append("                  *names* of rejected properties (schema keys such as")
-    lines.append("                  'display-name' or 'optional', never values); counts;")
+    lines.append(
+        "                  *names* of rejected properties (schema keys such as"
+    )
+    lines.append(
+        "                  'display-name' or 'optional', never values); counts;"
+    )
     lines.append("                  and anonymous file ids (bp_0001, ...).")
-    lines.append("What is not     : no blueprint values, no source lines, no raw messages,")
+    lines.append(
+        "What is not     : no blueprint values, no source lines, no raw messages,"
+    )
     lines.append("                  no file names, no paths, no directory structure.")
-    lines.append("Resolving ids   : path-map.txt, next to this file, maps each id back to")
-    lines.append("                  its path. That mapping is CONFIDENTIAL - keep it local.")
+    lines.append(
+        "Resolving ids   : path-map.txt, next to this file, maps each id back to"
+    )
+    lines.append(
+        "                  its path. That mapping is CONFIDENTIAL - keep it local."
+    )
     lines.append("")
     lines.append("timestamp      : %s" % run.started_at.strftime("%Y-%m-%d %H:%M:%S"))
     lines.append("repo HEAD      : %s" % (run.repo_sha or "(not a git checkout)"))
     lines.append("schema sha256  : %s" % run.schema_sha256)
     lines.append("pygls          : %s" % run.pygls_mode)
     lines.append("run level      : %s" % run.args.level)
-    lines.append("triage catalog : %s" % (
-        os.path.basename(run.catalog.source) if run.catalog.entries else run.catalog.source))
+    lines.append(
+        "triage catalog : %s"
+        % (
+            os.path.basename(run.catalog.source)
+            if run.catalog.entries
+            else run.catalog.source
+        )
+    )
     lines.append("")
     lines.append(THIN)
     lines.append("COUNTS")
@@ -1915,8 +1999,12 @@ def render_safe_summary(run):
     if run.crash_results:
         lines.append("")
         lines.append(RULE)
-        lines.append("!! CRASHES - %d in %d file(s)" % (run.crash_count, len(run.crash_results)))
-        lines.append("!! In the running language server these are swallowed and the file loses")
+        lines.append(
+            "!! CRASHES - %d in %d file(s)" % (run.crash_count, len(run.crash_results))
+        )
+        lines.append(
+            "!! In the running language server these are swallowed and the file loses"
+        )
         lines.append("!! ALL diagnostics. Highest priority.")
         lines.append(RULE)
         counter = {}
@@ -1996,7 +2084,9 @@ def render_path_map(run):
 def write_report(path, text):
     """Write a report. `backslashreplace` keeps surrogates from bad corpus bytes
     from blowing up the encoder."""
-    with open(path, "w", encoding="utf-8", errors="backslashreplace", newline="\n") as handle:
+    with open(
+        path, "w", encoding="utf-8", errors="backslashreplace", newline="\n"
+    ) as handle:
         handle.write(text)
 
 
@@ -2017,7 +2107,9 @@ def emit(text=""):
     try:
         stream.write(text + "\n")
     except UnicodeEncodeError:
-        stream.write(text.encode(encoding, "backslashreplace").decode(encoding, "replace") + "\n")
+        stream.write(
+            text.encode(encoding, "backslashreplace").decode(encoding, "replace") + "\n"
+        )
 
 
 def print_console_report(run):
@@ -2034,17 +2126,26 @@ def print_console_report(run):
 
     if run.crash_results:
         console(run, "")
-        console(run, "!! %d CRASH(ES) in %d file(s) - see summary.txt" % (
-            run.crash_count, len(run.crash_results)))
+        console(
+            run,
+            "!! %d CRASH(ES) in %d file(s) - see summary.txt"
+            % (run.crash_count, len(run.crash_results)),
+        )
         for result in run.crash_results:
             for crash in result.crashes:
-                console(run, "   %s: %s during %s" % (
-                    run.display_name(result), crash.exc_type, crash.phase))
+                console(
+                    run,
+                    "   %s: %s during %s"
+                    % (run.display_name(result), crash.exc_type, crash.phase),
+                )
 
     if show in ("clean", "all"):
         console(run, "")
-        console(run, "CLEAN FILES (%d) - no schema and no language-server findings" % len(
-            run.clean_results))
+        console(
+            run,
+            "CLEAN FILES (%d) - no schema and no language-server findings"
+            % len(run.clean_results),
+        )
         for result in run.clean_results:
             console(run, "   %s" % run.display_name(result))
 
@@ -2053,12 +2154,16 @@ def print_console_report(run):
         console(run, "FILES WITH FINDINGS (%d)" % len(run.dirty_results))
         for result in run.dirty_results:
             new_count = len([f for f in result.findings if f.verdict == VERDICT_NEW])
-            console(run, "   %-52s %3d finding(s), %d NEW%s" % (
-                run.display_name(result),
-                len(result.findings),
-                new_count,
-                ", CRASH" if result.crashes else "",
-            ))
+            console(
+                run,
+                "   %-52s %3d finding(s), %d NEW%s"
+                % (
+                    run.display_name(result),
+                    len(result.findings),
+                    new_count,
+                    ", CRASH" if result.crashes else "",
+                ),
+            )
             if show == "all":
                 for finding in sorted(result.findings, key=Finding.sort_key):
                     if safe:
@@ -2071,14 +2176,22 @@ def print_console_report(run):
                         detail = one_line(finding.message)
                         if finding.prop is not None:
                             detail += "   -> %s" % finding.prop
-                    console(run, "        %-9s %-9s %s" % (
-                        finding.layer, format_location(finding), detail))
+                    console(
+                        run,
+                        "        %-9s %-9s %s"
+                        % (finding.layer, format_location(finding), detail),
+                    )
 
     if run.new_clusters:
         console(run, "")
-        console(run, "*** %d NEW CLUSTER(S) - candidate tool bugs" % len(run.new_clusters))
+        console(
+            run, "*** %d NEW CLUSTER(S) - candidate tool bugs" % len(run.new_clusters)
+        )
         for cluster in run.new_clusters:
-            console(run, "    [%d] %-9s %s" % (cluster.count, cluster.layer, cluster.signature))
+            console(
+                run,
+                "    [%d] %-9s %s" % (cluster.count, cluster.layer, cluster.signature),
+            )
     else:
         console(run, "")
         console(run, "No NEW clusters - everything matched the known-findings catalog.")
@@ -2219,7 +2332,8 @@ def resolve_setup(args):
     """Validate the environment. Returns (repo_root, schema_path) or raises SetupError."""
     if yaml is None:
         raise SetupError(
-            "pyyaml is not installed (%s). Install it with: pip install pyyaml" % _YAML_ERROR
+            "pyyaml is not installed (%s). Install it with: pip install pyyaml"
+            % _YAML_ERROR
         )
     if jsonschema is None:
         raise SetupError(
@@ -2319,8 +2433,12 @@ def main(argv=None):
             os.makedirs(report_dir)
         write_report(os.path.join(report_dir, "summary.txt"), render_summary(run))
         write_report(os.path.join(report_dir, "findings.txt"), render_findings_txt(run))
-        write_report(os.path.join(report_dir, "findings.json"), render_findings_json(run))
-        write_report(os.path.join(report_dir, "safe-summary.txt"), render_safe_summary(run))
+        write_report(
+            os.path.join(report_dir, "findings.json"), render_findings_json(run)
+        )
+        write_report(
+            os.path.join(report_dir, "safe-summary.txt"), render_safe_summary(run)
+        )
         # Always written: safe-summary.txt always refers to files by anonymous id,
         # so the human always needs the mapping to resolve them locally.
         write_report(os.path.join(report_dir, "path-map.txt"), render_path_map(run))
@@ -2344,5 +2462,7 @@ if __name__ == "__main__":
         raise
     except Exception:
         traceback.print_exc()
-        sys.stderr.write("\nunexpected error - this is a bug in validate_blueprints.py\n")
+        sys.stderr.write(
+            "\nunexpected error - this is a bug in validate_blueprints.py\n"
+        )
         sys.exit(EXIT_UNEXPECTED)

@@ -32,16 +32,24 @@ def schema_errors(doc):
 
 class TestInputNames(unittest.TestCase):
     def test_two_character_input_name_is_valid(self):
-        self.assertEqual([], schema_errors("spec_version: 2\ninputs:\n  OS:\n    type: string\n"))
+        self.assertEqual(
+            [], schema_errors("spec_version: 2\ninputs:\n  OS:\n    type: string\n")
+        )
 
     def test_two_character_input_name_is_validated_not_skipped(self):
-        errors = schema_errors("spec_version: 2\ninputs:\n  OS:\n    type: string\n    bogus: 1\n")
-        self.assertTrue(errors, "an off-pattern name must still have its object validated")
+        errors = schema_errors(
+            "spec_version: 2\ninputs:\n  OS:\n    type: string\n    bogus: 1\n"
+        )
+        self.assertTrue(
+            errors, "an off-pattern name must still have its object validated"
+        )
 
     def test_input_name_with_slash_is_valid(self):
         self.assertEqual(
             [],
-            schema_errors("spec_version: 2\ninputs:\n  Ethernet1/1 Port Group:\n    type: string\n"),
+            schema_errors(
+                "spec_version: 2\ninputs:\n  Ethernet1/1 Port Group:\n    type: string\n"
+            ),
         )
 
     def test_input_name_with_slash_is_validated_not_skipped(self):
@@ -55,7 +63,9 @@ class TestGrainNames(unittest.TestCase):
     GRAIN = "    kind: terraform\n    spec:\n      source:\n        path: modules/app\n"
 
     def test_two_character_grain_name_is_valid(self):
-        self.assertEqual([], schema_errors("spec_version: 2\ngrains:\n  db:\n" + self.GRAIN))
+        self.assertEqual(
+            [], schema_errors("spec_version: 2\ngrains:\n  db:\n" + self.GRAIN)
+        )
 
     def test_two_character_grain_name_is_validated_not_skipped(self):
         errors = schema_errors(
@@ -70,15 +80,22 @@ class TestGrainNames(unittest.TestCase):
 
     def test_long_grain_name_is_valid(self):
         name = "a" * 60  # the server has no length limit
-        self.assertEqual([], schema_errors("spec_version: 2\ngrains:\n  %s:\n%s" % (name, self.GRAIN)))
+        self.assertEqual(
+            [],
+            schema_errors("spec_version: 2\ngrains:\n  %s:\n%s" % (name, self.GRAIN)),
+        )
 
 
 class TestOutputNames(unittest.TestCase):
     def test_two_character_output_name_is_valid(self):
-        self.assertEqual([], schema_errors("spec_version: 2\noutputs:\n  id:\n    value: '1'\n"))
+        self.assertEqual(
+            [], schema_errors("spec_version: 2\noutputs:\n  id:\n    value: '1'\n")
+        )
 
     def test_two_character_output_name_is_validated_not_skipped(self):
-        errors = schema_errors("spec_version: 2\noutputs:\n  id:\n    value: '1'\n    bogus: 1\n")
+        errors = schema_errors(
+            "spec_version: 2\noutputs:\n  id:\n    value: '1'\n    bogus: 1\n"
+        )
         self.assertTrue(errors)
 
 
@@ -89,7 +106,9 @@ class TestOtherNameMaps(unittest.TestCase):
     def test_two_character_env_reference_name_is_valid(self):
         self.assertEqual(
             [],
-            schema_errors("spec_version: 2\nenv_references:\n  db:\n    labels-selector: 'env=dev'\n"),
+            schema_errors(
+                "spec_version: 2\nenv_references:\n  db:\n    labels-selector: 'env=dev'\n"
+            ),
         )
 
     def test_two_character_env_reference_name_is_validated_not_skipped(self):

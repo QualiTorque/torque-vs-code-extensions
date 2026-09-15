@@ -30,7 +30,7 @@ reached, `SchemaEnumerator` reports what there is to reach, and the difference
 is the failure message. Add a property to the schema and this corpus asks for a
 fixture the same day, by name:
 
-```
+```text
 FAIL: test_every_declared_property_is_used (element='BlueprintInputObject.searchable')
 BlueprintInputObject.searchable is declared by the schema but no valid fixture
 uses it (1 of 352 properties uncovered).
@@ -98,7 +98,7 @@ on the real blueprints" a checkable claim rather than a promise.
 Regeneration needs the local corpus, which is deliberately not in this
 repository. From a machine that has it checked out:
 
-```
+```bash
 python tools/blueprint-corpus/classify_corpus_paths.py \
     client/schemas/blueprint-spec2-schema.json <out-dir> <corpus-root>...
 ```
@@ -114,7 +114,7 @@ check, so the normalization in CI is the same code that produced this file.
 
 ## Running it
 
-```
+```bash
 python -m unittest tests.test_schema_fixtures -v
 ```
 
