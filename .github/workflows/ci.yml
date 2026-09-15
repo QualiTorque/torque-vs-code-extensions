@@ -70,6 +70,7 @@ jobs:
   # every key path the local corpus uses. The 3.7 `test` job already picks the
   # module up via `discover`; this job proves it on a current Python too, with
   # nothing installed but the two libraries it actually imports.
+  # It also gates the schema's customer-facing wording, which the Torque UI shows on hover.
   schema-fixtures:
     name: validate schema against the fixture corpus
     runs-on: ubuntu-latest
@@ -79,4 +80,4 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pyyaml jsonschema
-      - run: python -m unittest tests.test_schema_fixtures -v
+      - run: python -m unittest tests.test_schema_fixtures tests.test_schema_public_voice -v

@@ -178,13 +178,11 @@
                                 "env",
                                 "env_resource"
                             ],
-                            "$comment": "WorkflowYamlValidator.ValidateScope accepts exactly EntityType (BoundedEntityTypeConsts: space, env, env_resource), matched with StringComparer.OrdinalIgnoreCase.",
                             "description": "Where the workflow is available: 'space' (space-level), 'env' (entire environments) or 'env_resource' (specific resource types). Torque matches the value case-insensitively; these are the canonical spellings."
                         },
                         "label-selector": {
                             "type": "string",
-                            "$comment": "BlueprintsV2AutoMapperProfile maps ResourceTypes = LabelSelector ?? ResourceTypes.",
-                            "description": "Legacy alias of 'resource-types': the server reads it as the resource-types list, and if both are set this one wins. Use 'resource-types'."
+                            "description": "Legacy alias of 'resource-types': Torque reads it as the resource-types list, and if both are set this one wins. Use 'resource-types'."
                         },
                         "labels-selector": {
                             "type": "string",
@@ -209,7 +207,7 @@
                                     "pattern": "\\{\\{.*\\}\\}"
                                 }
                             ],
-                            "$comment": "WorkflowYamlValidator.ValidateTimeout resolves the value as a Liquid pattern and then requires int.TryParse(...) >= 5, otherwise BlueprintErrors.TIMEOUT_INVALID_VALUE. The three branches are: a plain integer, the same written as a string, and a Liquid expression whose resolved value the server checks.",
+                            "$comment": "Torque validates 'timeout' as a whole number of minutes, minimum 5, after resolving any expression in it. The three branches are: a plain integer, the same written as a string, and a Liquid expression whose resolved value is checked.",
                             "description": "Maximum duration in minutes the workflow may run before it is automatically terminated - a whole number of minutes, minimum 5. Supports Liquid."
                         },
                         "triggers":{
@@ -249,7 +247,7 @@
                                     }
                                 }
                             ],
-                            "$comment": "InstructionsSourceValidator.PathExtraValidations compares Path.GetExtension(path) to '.md' with OrdinalIgnoreCase (INSTRUCTIONS_FILE_MUST_BE_A_MARKDOWN). The pattern lives here and not on StoreFileSourceObject, which layout shares with a different extension rule.",
+                            "$comment": "Torque requires the instructions file to be a Markdown file, matching the extension case-insensitively. The pattern sits on this use site rather than on the shared store-file source definition, which layout reuses with a different extension rule.",
                             "description": "A markdown file from a connected repository; the path must end in '.md' (any casing)."
                         }
                     },
@@ -294,7 +292,6 @@
                                     }
                                 }
                             ],
-                            "$comment": "LayoutSourceValidator.PathExtraValidations compares Path.GetExtension(path) to '.yaml' with OrdinalIgnoreCase (LAYOUT_FILE_MUST_BE_A_YAML) - '.yml' is rejected.",
                             "description": "A layout YAML from a connected repository; the path must end in '.yaml' (any casing) - '.yml' is not accepted."
                         }
                     },
@@ -421,7 +418,7 @@
                                                     ]
                                                 }
                                             ],
-                                            "$comment": "BlueprintFamilyValidator requires both (FAMILY_MEMBER_SOURCE_STORE_MISSING / FAMILY_MEMBER_SOURCE_PATH_MISSING) - stricter than a grain source, which needs only one of them.",
+                                            "$comment": "Torque requires both 'store' and 'path' on a family member; missing either is an error. Stricter than a grain source, which needs only one of the two.",
                                             "description": "The repository ('store') and blueprint file ('path') this family member is taken from. Both are mandatory."
                                         }
                                     },
@@ -458,8 +455,7 @@
                                 },
                                 "required": [
                                     "path"
-                                ],
-                                "$comment": "BlueprintTemplateValidator rejects a placeholder whose 'path' is null or whitespace (BLUEPRINT_TEMPLATE_PLACEHOLDER_PATH_REQUIRED)."
+                                ]
                             },
                             "description": "YAML paths the author must fill when creating a blueprint from this template."
                         }
@@ -519,7 +515,6 @@
                 },
                 "when": {
                     "type": "string",
-                    "$comment": "GrainStateCommandHandler: when IsWhenConditionMet is false the grain goes to Skipped and MarkChildrenAsSkippedRecursively skips its dependents.",
                     "description": "Controls whether the grain runs: a Liquid expression evaluated before deployment; when it is not met, Torque skips the grain and every grain that depends on it."
                 }
             },
@@ -563,7 +558,7 @@
                     }
                 }
             },
-            "$comment": "CloudFormationGrainValidator: GrainAwsRegionValidator reports CLOUDFORMATION_REGION_MISSING when 'region' is absent, and CLOUDFORMATION_GRAIN_CREDENTIALS_AND_AGENT_ARE_MISSING when there is neither 'authentication' nor a host ('agent' or 'target').",
+            "$comment": "A CloudFormation grain needs 'region', plus either 'authentication' or a host ('agent' or 'target'); Torque reports an error when either is missing.",
             "title": "Grain Object"
         },
         "GrainScripts": {
@@ -622,7 +617,7 @@
         "Backend": {
             "type": "object",
             "additionalProperties": false,
-            "$comment": "GrainBackendYaml (GrainYaml.cs) is a fixed set of 13 keys - the deserializer silently drops anything else, so extras are reported here. 'type' is BackendType (BackendType.cs); TerraformBackendValidator rejects any other value.",
+            "$comment": "Torque reads a fixed set of 13 backend keys and silently drops anything else, so 'additionalProperties': false reports the extras here instead. Only the listed 'type' values are accepted.",
             "properties": {
                 "type": {
                     "type": "string",
@@ -685,7 +680,6 @@
                     "items": {
                         "type": "object",
                         "additionalProperties": false,
-                        "$comment": "GrainBackendYaml.RemoteWorkspace: exactly name, prefix, project and tags (a string->string dictionary).",
                         "properties": {
                             "name": {
                                 "type": "string",
@@ -820,13 +814,12 @@
                     }
                 }
             ],
-            "$comment": "TerraformBackendValidator: 'type' is mandatory (TERRAFORM_BACKEND_TYPE_FIELD_MANDATORY), then one ValidateXxxFields per type reports TERRAFORM_BACKEND_FIELD_MANDATORY for the fields above. 'skip-region-validation' is passed to ValidateBackendField for s3 but as a non-nullable bool's ToString(), so it is never actually missing - it stays optional here. For 'remote' only organization and workspaces are mandatory: hostname and token are passed with isMandatory:false. For 'cloud' nothing is mandatory - hostname, token and organization are all isMandatory:false and workspaces are skipped when absent - so there is no 'cloud' branch.",
+            "$comment": "Torque requires 'type' and then, per type, the fields listed in the allOf branches above. 's3' accepts 'skip-region-validation' but never requires it. For 'remote' only 'organization' and 'workspaces' are required - 'hostname' and 'token' stay optional. For 'cloud' nothing is required, which is why there is no 'cloud' branch.",
             "description": "Terraform/OpenTofu state backend configuration (s3, gcs, azurerm, http, remote, cloud). Which fields are mandatory depends on 'type'."
         },
         "TemplateStorage": {
             "type": "object",
             "additionalProperties": false,
-            "$comment": "TemplateStorageYaml (GrainYaml.cs): exactly bucket-name, key-prefix and region.",
             "properties": {
                 "bucket-name": {
                     "type": "string",
@@ -869,7 +862,6 @@
         "GrainTag": {
             "type": "object",
             "additionalProperties": false,
-            "$comment": "GrainTagsYaml (GrainYaml.cs): exactly auto-tag and disable-tags-for.",
             "properties": {
                 "auto-tag": {
                     "type": "boolean",
@@ -1059,7 +1051,7 @@
                 },
                 "target": {
                     "$ref": "#/definitions/GrainSpecTargetObject",
-                    "$comment": "GrainSpecYaml.Target carries only [YamlMember] - no [YamlShortSyntax] and no type converter - so a scalar is not deserialized; 607 of 607 real usages write the object form.",
+                    "$comment": "'target' has no scalar short form - Torque accepts only the object form written here.",
                     "description": "A Torque Target: a named deployment context bundling the credential AND the agent - replaces 'agent' + 'authentication' (defining both 'agent' and 'target' is a validation error)."
                 },
                 "inputs": {
@@ -1148,7 +1140,6 @@
                         "string",
                         "number"
                     ],
-                    "$comment": "TERRAFORM_USAGE_OF_BOTH_VERSION_FIELDS_NOT_ALLOWED is reported when 'version' and the grain-level 'tf-version' are both set; TERRAFORM_INVALID_EXECUTABLE_PARAMETERS when either is combined with 'binary'.",
                     "description": "Terraform/OpenTofu version to run - the same setting as the grain-level 'tf-version'; setting both is an error, and neither may be combined with 'binary'. Prefer quoting the value: unquoted YAML floats are lossy (1.50 becomes 1.5)."
                 },
                 "binary": {
@@ -1489,7 +1480,7 @@
                     "minLength": 1
                 }
             ],
-            "$comment": "GrainConditionsValidator.ValidateApprovers errors with GRAIN_APPROVAL_CHANNEL_MUST_HAVE_AT_LEAST_ONE_APPROVER when the list carries no approvers, so an empty list or empty string is rejected."
+            "$comment": "Torque requires at least one approver, so an empty list and an empty string are both rejected."
         },
         "EnvironmentLabel": {
            "type": "object",
@@ -1691,7 +1682,6 @@
             "required": [
                 "name"
             ],
-            "$comment": "GrainAgentValidator errors with GRAIN_HOST_MISSING_NAME when the agent has no 'name'.",
             "title": "Spec Host Properties",
             "description": "The Torque agent (execution host) that runs the grain, with optional runner customization. 'name' is mandatory. Mutually exclusive with 'target'."
         },
@@ -1806,7 +1796,7 @@
                     ]
                 }
             ],
-            "$comment": "GrainSourceValidator errors (GRAIN_SOURCE_STORE_AND_PATH_MISSING) only when both 'store' and 'path' are missing; with a 'store' and no 'path' the asset is taken from the repository root, and with a 'path' and no 'store' the path must be a public URL.",
+            "$comment": "Torque requires either 'store' or 'path'; both missing is an error. With a 'store' and no 'path' the asset is taken from the repository root, and with a 'path' and no 'store' the path must be a public URL.",
             "title": "Grain Source Object"
         },
         "GrainSpecSources": {
@@ -1818,7 +1808,6 @@
         "SourceFileObject": {
             "type": "object",
             "additionalProperties": false,
-            "$comment": "TfVarsFileYaml / HelmValuesFileYaml / WorkspaceDirectoriesYaml / OpenTofuVarsFileYaml (GrainYaml.cs) each hold exactly one member, 'source'.",
             "properties": {
                 "source": {
                     "$ref": "#/definitions/GrainSpecSourceObject"
@@ -1863,7 +1852,7 @@
                 },
                 "description": {
                     "type": "string",
-                    "description": "In the relevant UI field, enter a description to be displayed to the user."
+                    "description": "Free-text description of the input, shown to the user next to the field on the launch form."
                 },
                 "default": {
                     "type": [
@@ -1903,12 +1892,11 @@
                 },
                 "searchable": {
                     "type": "boolean",
-                    "description": "When true, indicates that the input source supports search. The UI will collect a search pattern from the user before querying allowed values."
+                    "description": "Set it when the input source supports search: the launch form then asks the user for a search pattern before fetching the allowed values."
                 },
                 "depends-on": {
                     "type": "string",
                     "pattern": "^((.+)(,\\s*)?)+[^,]$",
-                    "$comment": "InputTypesWithDependsOnSupport = String, Parameter, InputSource, Resource.",
                     "description": "Comma-separated input names this input depends on; it is re-evaluated when they change (cascading inputs). Supported for string, parameter, input-source and resource inputs."
                 },
                 "source-name": {
@@ -2022,7 +2010,7 @@
                             },
                             "preliminary_wildcard_filter": {
                                 "type": "string",
-                                "description": "vCenter sources: wildcard filter applied server-side before listing."
+                                "description": "vCenter sources: wildcard filter applied by vCenter before listing."
                             },
                             "show_datastore_space": {
                                 "type": "string",
@@ -2091,7 +2079,6 @@
                 },
                 "resource-selector": {
                     "$ref": "#/definitions/BlueprintInputResourceSelectorObject",
-                    "$comment": "The server never requires it - there is no error for its absence.",
                     "description": "Optional selection criteria narrowing which inventory resources may be chosen for an input of type 'resource'; without it any resource may be chosen. Field values may use Liquid expressions."
                 }
             },
@@ -2110,7 +2097,7 @@
                     "parameter-name"
                 ]
             },
-            "$comment": "BlueprintInputsValidator reports FIELD_VALUE_MISSING_AT_PATH on 'parameter-name' for every input of type 'parameter' that does not set it.",
+            "$comment": "Torque requires 'parameter-name' on every input of type 'parameter'.",
             "description": "A launch-form input. Whether it is required is decided by 'optional', otherwise by 'default' and 'pattern' - see those fields."
         },
         "BlueprintOutputObject": {
@@ -2162,7 +2149,7 @@
             "properties": {
                 "selector": {
                     "$ref": "#/definitions/ResourceSelectorObject",
-                    "description": "Selection criteria constraining which inventory resources may be chosen for the requirement"
+                    "description": "Selection criteria constraining which inventory resources may be chosen for the requirement."
                 },
                 "reference": {
                     "oneOf": [
@@ -2437,7 +2424,7 @@
                     "description": "Designer canvas layout (node positions, sticky notes, rectangles, groups); typically generated by the Torque designer. Node types: 'grain' (id must match a grain name), 'note' (sticky note, fixed size), 'rectangle' (sized zone); use ASCII-only text in note/label content."
                 }
             },
-            "description": "Torque UI customization. May be embedded in the blueprint YAML or stored per space via the customization API; the server treats it as opaque content interpreted by the Torque UI."
+            "description": "Torque UI customization. May be embedded in the blueprint YAML or stored per space via the customization API; Torque stores it as-is and the Torque UI interprets it."
         },
         "LaunchFormObject": {
             "type": "object",
@@ -2541,11 +2528,11 @@
                 },
                 "header": {
                     "type": "string",
-                    "description": "Comma-separated header for object input type"
+                    "description": "Comma-separated column headers for an input of type 'object'."
                 },
                 "allow-refresh": {
                     "type": "boolean",
-                    "description": "Show or hide refresh button next to Input-Source type input"
+                    "description": "Show or hide the refresh button next to an input of type 'input-source'."
                 },
                 "visible": {
                     "type": ["string", "boolean"],

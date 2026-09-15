@@ -740,10 +740,11 @@ with a fixture, like every other key (section 6).
 
 **The rule this pass leaves behind.** A description that states a default, makes
 an "ignored" / "required" / "only" claim, or quotes a number must cite the server
-type that decides it in a `$comment` next to it — otherwise it must be
-re-verified from scratch at the next schema sync, because nothing in the file
-records where it came from. `$comment` is the right place for that: validators
-ignore it and no hover shows it, so it costs the author nothing.
+type that decides it — otherwise it must be re-verified from scratch at the next
+schema sync, because nothing would record where it came from. That citation goes
+in the provenance table in section 12, **not** in the schema: the schema file is
+customer-facing (section 12 explains why) and carries no server identifiers, so a
+`$comment` is no longer an acceptable home for one.
 
 A layering note that explains an oddity of the file: a `description` written
 next to a `$ref` is **ignored by a draft-07 validator** (the sibling keywords of
@@ -751,3 +752,78 @@ a `$ref` are), but yaml-language-server does show it on hover, and it is the
 only way to say what a shared definition means *at this particular use site*.
 The file therefore uses them deliberately — they are hover text, never a
 constraint, and no test may rely on one being evaluated.
+
+## 12. Provenance of schema rules
+
+`client/schemas/blueprint-spec2-schema.json` is **customer-facing**. The Torque
+web UI fetches it live from this repository's public master branch and renders
+its descriptions on hover, and anyone with the raw URL can read the whole file.
+Every `title`, `description` and `$comment` in it must therefore read as product
+documentation: no server class or method names, no error codes, no source-file
+names or line numbers, no internal tooling or repository names, and no counts
+taken from our private blueprint corpus. `tests/test_schema_public_voice.py`
+enforces this, and the `schema-fixtures` CI job runs it on every push.
+
+That leaves a real need unmet, though: a rule in the schema is only trustworthy
+if somebody can trace it back to the server code that decides it. Until this
+pass, that trace lived in the `$comment`s themselves. It lives here now. The
+table below is the verbatim content of every `$comment` the file carried before
+the wording pass, split into the rule (which stayed in the schema, reworded in
+plain product language) and the server source (which was removed from the schema
+and is recorded only here). When a rule is next re-verified, this is the column
+to start from.
+
+### 12.1 Blueprint top level
+
+| Schema location | Rule | Server source |
+|---|---|---|
+| `workflow.scope` | Accepts exactly `space`, `env` and `env_resource`, matched case-insensitively. | `WorkflowYamlValidator.ValidateScope`, `EntityType` / `BoundedEntityTypeConsts`, `StringComparer.OrdinalIgnoreCase` |
+| `workflow.label-selector` | Legacy alias of `resource-types`; when both are set, `label-selector` wins. | `BlueprintsV2AutoMapperProfile` maps `ResourceTypes = LabelSelector ?? ResourceTypes` |
+| `workflow.timeout` | The value is resolved as a Liquid pattern and then has to parse as an integer >= 5. The three branches are a plain integer, the same written as a string, and a Liquid expression whose resolved value is checked. | `WorkflowYamlValidator.ValidateTimeout`, `int.TryParse(...) >= 5`, `BlueprintErrors.TIMEOUT_INVALID_VALUE` |
+| `instructions.source` | The path's extension must be `.md`, compared case-insensitively. The pattern sits on this use site rather than on the shared store-file source definition, which `layout` reuses with a different extension rule. | `InstructionsSourceValidator.PathExtraValidations`, `Path.GetExtension` with `OrdinalIgnoreCase`, `INSTRUCTIONS_FILE_MUST_BE_A_MARKDOWN` |
+| `layout.source` | The path's extension must be `.yaml`, compared case-insensitively; `.yml` is rejected. | `LayoutSourceValidator.PathExtraValidations`, `LAYOUT_FILE_MUST_BE_A_YAML` |
+| `family.members.*.source` | Both `store` and `path` are mandatory — stricter than a grain source, which needs only one of the two. | `BlueprintFamilyValidator`, `FAMILY_MEMBER_SOURCE_STORE_MISSING`, `FAMILY_MEMBER_SOURCE_PATH_MISSING` |
+| `template.placeholders[]` | A placeholder whose `path` is null or whitespace is rejected. | `BlueprintTemplateValidator`, `BLUEPRINT_TEMPLATE_PLACEHOLDER_PATH_REQUIRED` |
+
+### 12.2 Grains
+
+| Schema location | Rule | Server source |
+|---|---|---|
+| `GrainObject` | A CloudFormation grain needs `region`, plus either `authentication` or a host (`agent` or `target`). | `CloudFormationGrainValidator`, `GrainAwsRegionValidator`, `CLOUDFORMATION_REGION_MISSING`, `CLOUDFORMATION_GRAIN_CREDENTIALS_AND_AGENT_ARE_MISSING` |
+| `GrainObject.when` | An unmet `when` moves the grain to Skipped and skips its dependents recursively. | `GrainStateCommandHandler`, `IsWhenConditionMet`, `MarkChildrenAsSkippedRecursively` |
+| `GrainSpecObject.target` | There is no scalar short form; a scalar is not read at all, so the object form is the only accepted shape. | `GrainSpecYaml.Target` carries only `[YamlMember]` — no `[YamlShortSyntax]` and no type converter; 607 of 607 usages in the local corpus write the object form |
+| `GrainSpecObject.version` | `version` and the grain-level `tf-version` are the same setting, so declaring both is an error, and neither may be combined with `binary`. | `TERRAFORM_USAGE_OF_BOTH_VERSION_FIELDS_NOT_ALLOWED`, `TERRAFORM_INVALID_EXECUTABLE_PARAMETERS` |
+| `GrainSpecHostObject` | An agent must carry a `name`. | `GrainAgentValidator`, `GRAIN_HOST_MISSING_NAME` |
+| `GrainSpecSourceObject` | An error is raised only when both `store` and `path` are missing. With a `store` and no `path` the asset comes from the repository root; with a `path` and no `store` the path must be a public URL. | `GrainSourceValidator`, `GRAIN_SOURCE_STORE_AND_PATH_MISSING` |
+| `SourceFileObject` | Holds exactly one member, `source`. | `TfVarsFileYaml`, `HelmValuesFileYaml`, `WorkspaceDirectoriesYaml` and `OpenTofuVarsFileYaml` in `GrainYaml.cs` |
+| `GrainTag` | Exactly `auto-tag` and `disable-tags-for`. | `GrainTagsYaml` (`GrainYaml.cs`) |
+| `GrainConditionChannelApproversObject` | At least one approver is required, so an empty list and an empty string are both rejected. | `GrainConditionsValidator.ValidateApprovers`, `GRAIN_APPROVAL_CHANNEL_MUST_HAVE_AT_LEAST_ONE_APPROVER` |
+
+### 12.3 Terraform backend and template storage
+
+| Schema location | Rule | Server source |
+|---|---|---|
+| `Backend` (key set) | A fixed set of 13 keys; anything else is dropped silently on read, which is why the schema reports the extras itself. `type` accepts only the listed values. | `GrainBackendYaml` (`GrainYaml.cs`), `BackendType` (`BackendType.cs`), `TerraformBackendValidator` |
+| `Backend` (per-type fields) | `type` is mandatory, then one check per type reports the missing mandatory fields. `skip-region-validation` is checked for s3 but as a non-nullable bool's `ToString()`, so it can never be missing and stays optional. For `remote` only `organization` and `workspaces` are mandatory. For `cloud` nothing is mandatory, which is why the schema has no `cloud` branch. | `TerraformBackendValidator`, `TERRAFORM_BACKEND_TYPE_FIELD_MANDATORY`, `ValidateXxxFields`, `TERRAFORM_BACKEND_FIELD_MANDATORY`, `ValidateBackendField(..., isMandatory: false)` for `hostname` / `token` / `organization` |
+| `Backend.workspaces[]` | Exactly `name`, `prefix`, `project` and `tags` (a string-to-string dictionary). | `GrainBackendYaml.RemoteWorkspace` |
+| `TemplateStorage` | Exactly `bucket-name`, `key-prefix` and `region`. | `TemplateStorageYaml` (`GrainYaml.cs`) |
+
+### 12.4 Inputs
+
+| Schema location | Rule | Server source |
+|---|---|---|
+| `BlueprintInputObject` | Every input of type `parameter` must set `parameter-name`. | `BlueprintInputsValidator`, `FIELD_VALUE_MISSING_AT_PATH` reported on `parameter-name` |
+| `BlueprintInputObject.depends-on` | Supported for string, parameter, input-source and resource inputs. | `InputTypesWithDependsOnSupport = String, Parameter, InputSource, Resource` |
+| `BlueprintInputObject.resource-selector` | Never required. | No server error exists for its absence |
+
+### 12.5 Resource selectors — schema mechanics, no server source
+
+These three `$comment`s cited no server code to begin with: they describe how
+this file is put together, which is exactly what a `$comment` is still allowed to
+say. They were left as they were.
+
+| Schema location | Rule | Server source |
+|---|---|---|
+| `ResourceSelectorBaseObject` | Shared selection criteria, inherited via `allOf`; deliberately leaves `additionalProperties` unset so the inheritors can close themselves. | — |
+| `ResourceSelectorObject` | Extends the base with `quantity`. The inherited properties are re-listed with empty schemas so `additionalProperties: false` does not reject them — draft-07 `additionalProperties` is blind to properties coming from a `$ref`. On a move to draft 2019-09 or later, drop the stubs and use `unevaluatedProperties: false`. | — |
+| `BlueprintInputResourceSelectorObject` | Extends the base adding nothing of its own — notably no `quantity`, which is a resource-requirement concern. Same stub trick as above. | — |
