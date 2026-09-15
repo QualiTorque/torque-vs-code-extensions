@@ -1,0 +1,8 @@
+# A dead key: 205 corpus blueprints set it, the server never reads it. The label
+# shown on the launch form comes from customization.launch-form, not from here.
+# expect-error: 'display-name' was unexpected
+spec_version: 2
+inputs:
+  region:
+    type: string
+    display-name: My Input

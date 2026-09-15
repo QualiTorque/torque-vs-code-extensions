@@ -1,0 +1,17 @@
+# The three workflow scopes are space, env and env_resource. `environment` is
+# the plausible-looking spelling that is not one of them, and a workflow
+# carrying it attaches to nothing.
+# expect-error: 'environment' is not one of
+spec_version: 2
+workflow:
+  scope: environment
+  triggers:
+    - type: manual
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

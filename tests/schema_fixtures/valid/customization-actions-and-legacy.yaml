@@ -1,0 +1,58 @@
+# Action buttons, which can hang off the form, a category or a section, and the
+# two customization spellings that predate `launch-form`: a bare `inputs` list
+# and `params` directly under `customization`. The list form of `launch-form`
+# is here too - it is a one-of, and only the object form is pinned elsewhere.
+spec_version: 2
+inputs:
+  region:
+    type: string
+  size:
+    type: string
+customization:
+  params:
+    my-param: example
+  inputs:
+    - name: region
+      visible: true
+  launch-form:
+    - image: images/example.png
+      actions:
+        docs:
+          type: button
+          url: https://docs.example.invalid/example
+          label: Read the docs
+          httpmethod: GET
+      categories:
+        - name: Placement
+          description: Where the environment is created.
+          icon: globe
+          image: images/example.png
+          actions:
+            estimate:
+              type: button
+              url: https://api.example.invalid/estimate
+              httpmethod: POST
+              label: Estimate cost
+          inputs:
+            - name: region
+          sections:
+            - name: Sizing
+              icon: gear
+              image: images/example.png
+              actions:
+                reset:
+                  type: button
+                  url: https://api.example.invalid/reset
+              inputs:
+                - name: size
+      sections:
+        - name: Lease
+          type: duration
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

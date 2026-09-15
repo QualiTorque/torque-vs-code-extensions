@@ -1,0 +1,22 @@
+# The ansible grain: the playbook source, the free-form inventory file (the
+# schema only pins that each group is an object) and the pre-run hook.
+spec_version: 2
+grains:
+  configure:
+    kind: ansible
+    spec:
+      source:
+        store: playbooks
+        path: playbooks/site.yaml
+      inventory-file:
+        my-group:
+          hosts:
+            host-1:
+              ansible_host: '{{ .grains.configure.outputs.address }}'
+          vars:
+            ansible_user: example
+      scripts:
+        pre-ansible-run:
+          source:
+            store: scripts
+            path: scripts/pre-run.sh

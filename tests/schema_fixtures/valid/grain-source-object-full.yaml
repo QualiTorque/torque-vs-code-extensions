@@ -1,0 +1,35 @@
+# Every key of the source object, which is the most reused shape in the
+# schema: it sits under spec.source, spec.sources, the vars-file lists, the
+# workspace directories, every script hook and the family members. The three
+# pinning keys are mutually exclusive in practice, so each gets its own grain.
+spec_version: 2
+grains:
+  chart:
+    kind: helm
+    spec:
+      source:
+        store: charts
+        path: charts/app
+        branch: main
+        chart-version: '1.2.3'
+        path-in-archive: charts/app
+        name: my-chart
+      release: my-release
+      target-namespace: example
+  pinned-to-a-tag:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+        tag: v1.0.0
+        resource-type: my-resource-type
+  pinned-to-a-commit:
+    kind: terraform
+    spec:
+      sources:
+        # Quoted: an all-digit commit sha is a YAML integer otherwise, and the
+        # schema wants a string.
+        - store: modules
+          path: modules/app
+          commit: '0123456789abcdef0123456789abcdef01234567'

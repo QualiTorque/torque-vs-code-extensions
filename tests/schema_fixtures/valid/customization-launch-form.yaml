@@ -1,0 +1,52 @@
+# The launch form: top-level inputs, sections, categories (which nest sections)
+# and the visibility switches of the built-in steps.
+spec_version: 2
+inputs:
+  region:
+    type: string
+  size:
+    type: string
+  owner-note:
+    type: string
+customization:
+  launch-form:
+    image: images/example.png
+    steps:
+      ownersAndCollaborators:
+        visible: false
+      tags:
+        visible: true
+      workflows:
+        visible: false
+    inputs:
+      - name: owner-note
+    sections:
+      - name: Sizing
+        description: How big the environment should be.
+        icon: gear
+        default_open: true
+        inputs:
+          - name: size
+            display_name: My Input
+            visible: true
+    categories:
+      - name: Placement
+        icon: globe
+        inputs:
+          - name: region
+            visible: true
+        sections:
+          - name: Advanced placement
+            icon: gear
+            default_open: false
+            inputs:
+              - name: region
+                visible: 'inputs.size == "large"'
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

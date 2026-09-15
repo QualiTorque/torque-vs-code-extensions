@@ -1,0 +1,12 @@
+# A dead key at spec level. The real one is one level down, under `tags` -
+# see valid/grain-terraform.yaml.
+# expect-error: 'auto-tag' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      auto-tag: false

@@ -1,0 +1,20 @@
+# The store-backed half of instructions, plus the layout source. Both are a
+# store/path pair and both are required in full - and each demands its own file
+# extension: instructions are markdown, a layout is a .yaml (not a .yml).
+spec_version: 2
+instructions:
+  source:
+    store: docs
+    path: instructions/readme.md
+layout:
+  source:
+    store: docs
+    path: layout/default.yaml
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

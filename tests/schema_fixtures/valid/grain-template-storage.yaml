@@ -1,0 +1,19 @@
+# CloudFormation uploads its template to S3 before creating the stack, and
+# `template-storage` is the only thing that says where. A cloudformation grain
+# also has to name its region and the credential it deploys with.
+spec_version: 2
+grains:
+  stack:
+    kind: cloudformation
+    spec:
+      source:
+        store: templates
+        path: templates/app.yaml
+      region: example-region
+      stack-name-prefix: example
+      authentication:
+        - my-credential
+      template-storage:
+        bucket-name: my-bucket
+        region: example-region
+        key-prefix: templates/example

@@ -1,0 +1,32 @@
+# The two approval channels that grain-env-labels-and-condition.yaml does not
+# use. A channel takes exactly the approver list its type calls for - `users`
+# for 'user', `names` for 'account_channels' - and the list is either a YAML
+# sequence or a single string.
+spec_version: 2
+grains:
+  approved-by-users:
+    kind: shell
+    condition:
+      - type: approval
+        message: Approve before the grain runs.
+        channels:
+          - type: user
+            users:
+              - approver@example.invalid
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello
+  approved-by-account-channel:
+    kind: shell
+    condition:
+      - type: approval
+        channels:
+          - type: account_channels
+            names: my-approval-channel
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

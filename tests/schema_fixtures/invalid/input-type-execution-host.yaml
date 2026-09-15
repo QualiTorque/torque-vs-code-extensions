@@ -1,0 +1,15 @@
+# `execution-host` was removed from the input `type` enum; the surviving name is
+# `agent`.
+# expect-error: 'execution-host' is not one of
+spec_version: 2
+inputs:
+  runner:
+    type: execution-host
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

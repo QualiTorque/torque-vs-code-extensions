@@ -1,0 +1,18 @@
+# A family member is resolved to one blueprint file in one repository, so
+# unlike a grain source it needs both halves - a path on its own is ambiguous
+# across the repositories the space is connected to.
+# expect-error: 'store' is a required property
+spec_version: 2
+family:
+  members:
+    small:
+      source:
+        path: family/small.yaml
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

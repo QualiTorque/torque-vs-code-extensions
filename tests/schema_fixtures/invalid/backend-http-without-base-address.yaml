@@ -1,0 +1,12 @@
+# An http backend is nothing but the address it posts the state to.
+# expect-error: 'base-address' is a required property
+spec_version: 2
+grains:
+  app:
+    kind: opentofu
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: http

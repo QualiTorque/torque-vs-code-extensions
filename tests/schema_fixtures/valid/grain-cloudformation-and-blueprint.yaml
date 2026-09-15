@@ -1,0 +1,20 @@
+# The cloudformation grain (a template source, the region it is deployed in and
+# the credential it deploys with - a stack cannot be created without either)
+# and the nested-blueprint grain, whose whole spec is the blueprint it pulls in.
+spec_version: 2
+grains:
+  stack:
+    kind: cloudformation
+    spec:
+      source:
+        store: templates
+        path: templates/stack.yaml
+      region: example-region
+      authentication:
+        - my-credential
+  nested:
+    kind: blueprint
+    spec:
+      source:
+        store: blueprints
+        path: blueprints/nested.yaml

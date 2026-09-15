@@ -1,0 +1,13 @@
+# instructions is a one-of: either inline text or a file in a store. This is the
+# inline half; instructions-and-layout-sources.yaml is the file half.
+spec_version: 2
+instructions:
+  text: Open the environment and follow the printed endpoint.
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

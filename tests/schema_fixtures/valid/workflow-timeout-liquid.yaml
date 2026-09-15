@@ -1,0 +1,22 @@
+# The third form of `timeout`: a Liquid expression, resolved and only then
+# checked against the five-minute minimum. The other two forms - the integer
+# and the numeric string - are in workflow-triggers-all-events.yaml and
+# workflow-environment-scope.yaml.
+spec_version: 2
+inputs:
+  minutes:
+    type: string
+    default: '30'
+workflow:
+  scope: space
+  timeout: '{{ .inputs.minutes }}'
+  triggers:
+    - type: manual
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

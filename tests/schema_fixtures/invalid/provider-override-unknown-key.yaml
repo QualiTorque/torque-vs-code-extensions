@@ -1,0 +1,15 @@
+# A provider-overrides entry is closed: name, source, version, attributes. Any
+# other key is dropped, so the override silently does not take effect.
+# expect-error: 'alias' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      provider-overrides:
+        - name: my-provider
+          source: example/my-provider
+          alias: secondary

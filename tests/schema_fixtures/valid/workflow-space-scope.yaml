@@ -1,0 +1,15 @@
+# A space-scoped workflow: it runs against the space, not against one environment.
+spec_version: 2
+workflow:
+  scope: space
+  enabled: false
+  triggers:
+    - type: manual
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

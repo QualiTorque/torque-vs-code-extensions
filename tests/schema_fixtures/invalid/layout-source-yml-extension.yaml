@@ -1,0 +1,16 @@
+# A layout file has to be a .yaml. The .yml spelling is the one that looks
+# right everywhere else in YAML tooling and is not accepted here.
+# expect-error: layout/default.yml
+spec_version: 2
+layout:
+  source:
+    store: docs
+    path: layout/default.yml
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

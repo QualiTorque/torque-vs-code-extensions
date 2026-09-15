@@ -1,0 +1,42 @@
+# Grain kinds the schema accepts that the local corpus never uses. Pinned so the
+# `kind` enum cannot lose a member unnoticed; cloudshell is covered by
+# grain-shell.yaml.
+spec_version: 2
+grains:
+  manifests:
+    kind: kubernetes
+    spec:
+      source:
+        store: manifests
+        path: manifests/app
+      target:
+        name: my-cluster
+      namespace: example
+  gitops:
+    kind: argocd
+    spec:
+      source:
+        store: manifests
+        path: manifests/app
+      application: my-application
+      application-namespace: example
+  tofu:
+    kind: opentofu
+    spec:
+      source:
+        store: modules
+        path: modules/app
+  stacks:
+    kind: terragrunt
+    spec:
+      source:
+        store: modules
+        path: modules/app
+  cdk:
+    kind: aws-cdk
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      region: example-region
+      stack-name-prefix: example

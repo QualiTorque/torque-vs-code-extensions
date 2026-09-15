@@ -1,0 +1,22 @@
+# A label filter matches either one value or a list of values. Writing both is
+# ambiguous, and the schema refuses it outright.
+# expect-error: should not be valid under
+spec_version: 2
+inputs:
+  deployment-target:
+    type: target
+    target-filters:
+      labels:
+        - key: tier
+          value: example
+          values:
+            - example
+            - other
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

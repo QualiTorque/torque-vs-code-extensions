@@ -1,0 +1,17 @@
+# The backend object is closed. A key Torque does not know is not passed
+# through to Terraform - it is dropped, and the state quietly lands somewhere
+# other than where the author asked for.
+# expect-error: 'endpoint' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: s3
+        bucket: my-bucket
+        region: example-region
+        endpoint: https://state.example.invalid

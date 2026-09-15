@@ -1,0 +1,43 @@
+# Plain string inputs and everything that decorates them: defaults, regex
+# validation, allowed values, the presentation styles, sensitivity, optionality
+# and the dependency between two inputs.
+#
+# The schema's `style` enum is text / radio / multi-select / duration - there is
+# no single-select member, so a single-choice list is a plain untyped input.
+spec_version: 2
+inputs:
+  region:
+    type: string
+    description: Where to place the environment.
+    default: example-region
+    allowed-values:
+      - example-region
+      - other-region
+    style: radio
+  size:
+    type: string
+    default: small
+    pattern: ^(small|large)$
+    validation-description: Use small or large.
+    style: text
+  tags:
+    type: string
+    style: multi-select
+    allowed-values:
+      - example
+      - other
+  token:
+    type: string
+    sensitive: true
+    optional: true
+  zone:
+    type: string
+    depends-on: region
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

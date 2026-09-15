@@ -1,0 +1,16 @@
+# A template blueprint: the placeholders a generator is expected to fill in.
+spec_version: 2
+template:
+  placeholders:
+    - path: grains.app.spec.source.path
+      hint: Path to the module directory.
+    - path: inputs.region.default
+      hint: Default region.
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

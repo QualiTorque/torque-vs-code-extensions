@@ -1,0 +1,15 @@
+# `env` was removed from the input `type` enum. An environment is referenced
+# through `env_references`, not through an input type.
+# expect-error: 'env' is not one of
+spec_version: 2
+inputs:
+  upstream:
+    type: env
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

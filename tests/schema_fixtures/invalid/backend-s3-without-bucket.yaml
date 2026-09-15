@@ -1,0 +1,15 @@
+# An s3 backend needs both a bucket and a region. Without the bucket there is
+# nowhere for the state file to go.
+# expect-error: 'bucket' is a required property
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: s3
+        region: example-region
+        key-prefix: environments/example

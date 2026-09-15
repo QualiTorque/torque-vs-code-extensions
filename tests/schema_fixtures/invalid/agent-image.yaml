@@ -1,0 +1,15 @@
+# `image` was removed from the agent object: the container image a grain runs in
+# is not chosen from the blueprint.
+# expect-error: 'image' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: shell
+    spec:
+      agent:
+        name: agent-1
+        image: example/image:latest
+      activities:
+        deploy:
+          commands:
+            - echo hello

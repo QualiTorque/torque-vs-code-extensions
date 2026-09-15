@@ -1,0 +1,16 @@
+# A workflow scoped to a resource inside an environment: `resource-types` is the
+# key that only this scope uses.
+spec_version: 2
+workflow:
+  scope: env_resource
+  resource-types: my-resource-type
+  triggers:
+    - type: manual
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello
