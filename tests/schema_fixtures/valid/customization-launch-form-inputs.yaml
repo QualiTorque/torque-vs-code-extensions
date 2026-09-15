@@ -1,0 +1,75 @@
+# The input-level half of the launch form: every special field type, the table
+# presentation with its columns, the per-value details map in both of its
+# shapes, the refresh button, and the remaining built-in steps.
+#
+# The special types do not name a blueprint input - they configure a field the
+# launch form has on its own (the owner picker, the environment name, a date, a
+# read-only note) - while the last two do.
+spec_version: 2
+inputs:
+  cluster:
+    type: input-source
+    source-name: my-input-source
+  datastore:
+    type: input-source
+    source-name: my-input-source
+customization:
+  launch-form:
+    steps:
+      title:
+        visible: true
+      general:
+        visible: true
+      inputs:
+        visible: true
+      ownersAndCollaborators:
+        visible: false
+      tags:
+        visible: false
+      workflows:
+        visible: 'inputs.cluster != ""'
+    params:
+      my-param: example
+      my-flag: true
+      my-count: 3
+    inputs:
+      - name: owner
+        type: owner
+      - name: environment-name
+        type: env-name
+      - name: my-object
+        type: object
+        header: name,value
+        display-as: table
+        columns:
+          - display-name: Name
+            path: $.name
+            editable: false
+          - display-name: Value
+            path: $.value
+            editable: true
+      - name: my-env-reference
+        type: env-reference
+      - name: start-date
+        type: date
+      - name: start-time
+        type: datetime
+      - name: my-note
+        type: info
+      - name: cluster
+        allow-refresh: true
+        allowed-values-details:
+          example-value:
+            description: An example value.
+      - name: datastore
+        allowed-values-details:
+          - example-value:
+              description: An example value.
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

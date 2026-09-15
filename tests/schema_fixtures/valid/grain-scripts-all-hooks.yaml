@@ -1,0 +1,107 @@
+# Every lifecycle hook the schema declares, grouped by the engine it belongs
+# to. The Terraform and OpenTofu hooks take a source and arguments; the Helm,
+# Kubernetes, Ansible and CDK ones additionally capture outputs.
+#
+# `post-tf-plan` names only a store, with no path: either half of a source is
+# enough on its own, and only a source carrying neither is an error.
+spec_version: 2
+grains:
+  module:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      scripts:
+        pre-tf-init:
+          source:
+            store: scripts
+            path: scripts/pre-init.sh
+          arguments: --quiet
+        post-tf-plan:
+          source:
+            store: scripts
+        pre-tf-destroy:
+          source:
+            store: scripts
+            path: scripts/pre-destroy.sh
+          arguments: --force
+  tofu-module:
+    kind: opentofu
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      scripts:
+        pre-tofu-init:
+          source:
+            store: scripts
+            path: scripts/pre-init.sh
+          arguments: --quiet
+        post-tofu-plan:
+          source:
+            store: scripts
+            path: scripts/post-plan.sh
+        pre-tofu-destroy:
+          source:
+            store: scripts
+            path: scripts/pre-destroy.sh
+  chart:
+    kind: helm
+    spec:
+      source:
+        store: charts
+        path: charts/app
+      scripts:
+        post-helm-install:
+          source:
+            store: scripts
+            path: scripts/post-install.sh
+          arguments: --wait
+          outputs:
+            - endpoint
+  manifests:
+    kind: kubernetes
+    spec:
+      source:
+        store: manifests
+        path: manifests/app
+      scripts:
+        post-kubernetes-install:
+          source:
+            store: scripts
+            path: scripts/post-install.sh
+          outputs:
+            - endpoint
+  playbook:
+    kind: ansible
+    spec:
+      source:
+        store: playbooks
+        path: playbooks/app.yaml
+      scripts:
+        pre-ansible-run:
+          source:
+            store: scripts
+            path: scripts/pre-run.sh
+          arguments: --check
+          outputs:
+            - ready
+  cdk-app:
+    kind: aws-cdk
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      scripts:
+        pre-aws-cdk-deploy:
+          source:
+            store: scripts
+            path: scripts/pre-deploy.sh
+          arguments: --quiet
+        post-aws-cdk-deploy:
+          source:
+            store: scripts
+            path: scripts/post-deploy.sh
+          outputs:
+            - endpoint

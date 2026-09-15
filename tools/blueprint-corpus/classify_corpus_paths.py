@@ -18,6 +18,23 @@ blueprints, and it is why `tests/test_schema_fixtures.py` imports this module
 instead of re-implementing it - the fixture corpus' coverage check has to
 normalize exactly the way the corpus scan did.
 
+Schema-element coverage
+-----------------------
+A walk also records, alongside the paths, *which schema elements* the document
+touched: `visited_properties` (definition, property), `visited_enum_values`
+(definition, property, value) and `visited_definitions`. `enumerate_schema`
+computes the same three sets from the schema alone, so
+`tests/test_schema_fixtures.py` can assert that the fixture corpus reaches every
+property, every enum member and every definition the schema declares. A schema
+property added without a fixture then fails CI instead of going untested.
+
+Definition names are carried through `$ref` - a node reached through
+`#/definitions/X` is named `X`, and its `allOf`/`oneOf`/`anyOf` branches inherit
+that name. An inline sub-schema has no name of its own, so it takes a
+dotted one derived from where it sits (`Torque-Blueprint-Spec2.environment`,
+`Backend.workspaces`), which keeps two unrelated inline objects that happen to
+share a property name from covering for each other.
+
 Regenerating `tests/schema_fixtures/required-paths.txt`
 ------------------------------------------------------
 This needs the local blueprint corpus (the internal ZeroTouch repositories),
@@ -51,6 +68,32 @@ PRUNE = {".git", "node_modules", "__pycache__", ".venv", "venv", ".tmp"}
 #: A document is a spec2 blueprint when its `spec_version` starts with a 2.
 SPEC2 = re.compile(r"^spec_version:\s*['\"]?2", re.M)
 
+#: Name given to a schema node that was not reached through a `$ref` and has no
+#: enclosing definition either - in practice only the document root.
+ROOT_NAME = "<root>"
+
+#: The normalized segment for a user-chosen key (`patternProperties` /
+#: `additionalProperties`), used both in paths and in inline definition names.
+NAME_SEGMENT = "<name>"
+
+#: Schema keywords whose branches are spread into siblings rather than nested.
+COMBINATORS = ("allOf", "oneOf", "anyOf")
+
+
+def enum_member(value, members):
+    """The member of `members` that `value` really is, or `None`.
+
+    Plain `in` is wrong here: Python says `True == 1` and `1 == 1.0`, so a
+    boolean document value would silently "cover" a numeric enum member it has
+    nothing to do with. Booleans only ever match booleans.
+    """
+    for member in members:
+        if isinstance(value, bool) != isinstance(member, bool):
+            continue
+        if value == member:
+            return member
+    return None
+
 
 class PathClassifier(object):
     """Walks documents against one schema, accumulating normalized key paths.
@@ -67,29 +110,40 @@ class PathClassifier(object):
         self.rejected = Counter()
         self.freeform = Counter()
         self.example = {}
+        #: (definition, property) pairs the walk resolved a document key against.
+        self.visited_properties = set()
+        #: (definition, property, value) triples for enum members actually used.
+        self.visited_enum_values = set()
+        #: names of the `#/definitions/X` the walk passed through.
+        self.visited_definitions = set()
 
     # -- schema navigation -------------------------------------------------
 
-    def deref(self, node):
-        """Flatten a schema node into the list of concrete object schemas it can be.
+    def deref(self, node, name=ROOT_NAME):
+        """Flatten a schema node into the `(definition, schema)` pairs it can be.
 
         Follows `$ref`, and spreads `allOf` / `oneOf` / `anyOf` branches into
         siblings so that a key is looked up in every branch that could carry it.
+        `name` is the definition the node belongs to: a `$ref` replaces it with
+        the target's name (and records the visit), combinator branches inherit
+        it.
         """
         out = []
         if not isinstance(node, dict):
             return out
         if "$ref" in node:
-            return self.deref(self.defs[node["$ref"].split("/")[-1]])
-        combos = [c for k in ("allOf", "oneOf", "anyOf") for c in node.get(k, [])]
+            target = node["$ref"].split("/")[-1]
+            self.visited_definitions.add(target)
+            return self.deref(self.defs[target], target)
+        combos = [c for k in COMBINATORS for c in node.get(k, [])]
         if combos:
-            base = {k: v for k, v in node.items() if k not in ("allOf", "oneOf", "anyOf")}
+            base = {k: v for k, v in node.items() if k not in COMBINATORS}
             if any(k in base for k in ("properties", "patternProperties", "additionalProperties", "items")):
-                out.append(base)
+                out.append((name, base))
             for c in combos:
-                out.extend(self.deref(c))
+                out.extend(self.deref(c, name))
             return out
-        return [node]
+        return [(name, node)]
 
     @staticmethod
     def is_object(node):
@@ -116,61 +170,81 @@ class PathClassifier(object):
         return "properties" in node or "patternProperties" in node
 
     def children_for_key(self, nodes, key):
-        """Resolve one key against a list of candidate schemas.
+        """Resolve one key against a list of candidate `(definition, schema)` pairs.
 
-        Returns `(segment, child_nodes)` where `segment` is the normalized path
-        segment - the key itself, `<name>` for a user-chosen key, or the
-        sentinels `FREE` (anything goes here) and `REJECT` (dead key).
+        Returns `(segment, child_nodes, owners)` where `segment` is the
+        normalized path segment - the key itself, `<name>` for a user-chosen
+        key, or the sentinels `FREE` (anything goes here) and `REJECT` (dead
+        key) - and `owners` lists every `(definition, property)` the key
+        resolved to, which is what an enum value further down is attributed to.
+
+        Every candidate that declares the key is recorded, not just the first.
+        One document position can resolve against several definitions at once -
+        `ResourceSelectorObject` redeclares the properties it inherits from
+        `ResourceSelectorBaseObject` as stubs, and only the base carries their
+        enums - so attributing to the first declarer alone would leave those
+        enums permanently uncovered.
         """
         literal, named, free = [], [], False
-        for n in nodes:
+        literal_owners, named_owners = [], []
+        for dname, n in nodes:
             if not self.is_object(n):
                 continue
             props = n.get("properties") or {}
             if key in props:
-                literal.extend(self.deref(props[key]))
+                self.visited_properties.add((dname, key))
+                literal_owners.append((dname, key))
+                literal.extend(self.deref(props[key], dname + "." + key))
                 continue
             hit = False
             for pat, sub in (n.get("patternProperties") or {}).items():
                 if re.search(pat, key):
-                    named.extend(self.deref(sub))
+                    named_owners.append((dname, NAME_SEGMENT))
+                    named.extend(self.deref(sub, dname + "." + NAME_SEGMENT))
                     hit = True
             if hit:
                 continue
             ap = n.get("additionalProperties", True)
             if isinstance(ap, dict):
-                named.extend(self.deref(ap))
+                named_owners.append((dname, NAME_SEGMENT))
+                named.extend(self.deref(ap, dname + "." + NAME_SEGMENT))
             elif ap is True:
                 free = True
         if literal:
-            return key, literal
+            return key, literal, tuple(literal_owners)
         if named:
-            return "<name>", named
+            return NAME_SEGMENT, named, tuple(named_owners)
         if free:
-            return "FREE", []
-        return "REJECT", []
+            return "FREE", [], ()
+        return "REJECT", [], ()
 
     def items_for(self, nodes):
         """The schemas a list element may take, across all candidate schemas."""
         res = []
-        for n in nodes:
+        for dname, n in nodes:
             it = n.get("items")
             if isinstance(it, dict):
-                res.extend(self.deref(it))
+                res.extend(self.deref(it, dname))
             elif isinstance(it, list):
                 for i in it:
-                    res.extend(self.deref(i))
+                    res.extend(self.deref(i, dname))
         return res
 
     # -- document walking --------------------------------------------------
 
-    def walk(self, doc, nodes=None, path="", rel=""):
-        """Record every normalized key path of `doc`, descending as far as the schema knows."""
+    def walk(self, doc, nodes=None, path="", rel="", owners=()):
+        """Record every normalized key path of `doc`, descending as far as the schema knows.
+
+        `owners` are the `(definition, property)` pairs whose schema produced
+        `nodes`; they travel unchanged through list levels, so that an enum
+        member written as a list element is still attributed to the property
+        holding the list.
+        """
         if nodes is None:
             nodes = self.deref(self.schema)
         if isinstance(doc, dict):
             for k, v in doc.items():
-                seg, kids = self.children_for_key(nodes, str(k))
+                seg, kids, key_owners = self.children_for_key(nodes, str(k))
                 if seg == "REJECT":
                     p = path + "/" + str(k)
                     self.rejected[p] += 1
@@ -184,14 +258,117 @@ class PathClassifier(object):
                 p = path + "/" + seg
                 self.accepted[p] += 1
                 self.example.setdefault(p, rel)
-                self.walk(v, kids, p, rel)
+                self.walk(v, kids, p, rel, key_owners)
         elif isinstance(doc, list):
             p = path + "[]"
             self.accepted[p] += 1
             self.example.setdefault(p, rel)
             kids = self.items_for(nodes)
             for v in doc:
-                self.walk(v, kids, p, rel)
+                self.walk(v, kids, p, rel, owners)
+        else:
+            self.record_enum_value(nodes, doc, owners)
+
+    def record_enum_value(self, nodes, value, owners):
+        """Note a scalar that is a declared member of some candidate's `enum`.
+
+        The declaration may sit on the property schema itself or on any
+        `anyOf`/`oneOf` branch of it - `deref` has already spread those into
+        siblings, so one pass over the candidates sees them all.
+        """
+        for _dname, n in nodes:
+            members = n.get("enum")
+            if not isinstance(members, list):
+                continue
+            member = enum_member(value, members)
+            if member is None:
+                continue
+            for owner in owners:
+                self.visited_enum_values.add((owner[0], owner[1], member))
+
+
+class SchemaEnumerator(object):
+    """Everything the schema declares, named the way `PathClassifier` names it.
+
+    The classifier reports what a document *reached*; this reports what there is
+    to reach, so the difference is the untested surface. The two walk the schema
+    with the same rules (`$ref` renaming, combinator spreading, `<name>` for
+    user-chosen keys) - that symmetry is the whole point, and it is why both
+    live in this one module.
+
+    Only `properties`, `patternProperties`, `additionalProperties`, `items` and
+    the combinators are descended. `if` / `then` / `else` / `not` / `contains`
+    are deliberately skipped: the property names inside them restate a
+    constraint on properties declared elsewhere, and counting them would demand
+    fixtures for keys that do not exist.
+    """
+
+    def __init__(self, schema):
+        self.schema = schema
+        self.defs = schema.get("definitions", {})
+        self.all_properties = set()
+        self.all_enum_values = set()
+        self.all_definitions = set()
+        self.visit(self.flatten(schema, ROOT_NAME), ())
+
+    def flatten(self, node, name):
+        """`PathClassifier.deref` without the document - same naming rules."""
+        out = []
+        if not isinstance(node, dict):
+            return out
+        if "$ref" in node:
+            target = node["$ref"].split("/")[-1]
+            self.all_definitions.add(target)
+            return self.flatten(self.defs[target], target)
+        combos = [c for k in COMBINATORS for c in node.get(k, [])]
+        if combos:
+            base = {k: v for k, v in node.items() if k not in COMBINATORS}
+            if any(k in base for k in ("properties", "patternProperties", "additionalProperties", "items")):
+                out.append((name, base))
+            for c in combos:
+                out.extend(self.flatten(c, name))
+            return out
+        return [(name, node)]
+
+    def visit(self, nodes, owner, stack=()):
+        """Collect declarations under `nodes`, attributing enums to `owner`.
+
+        `stack` carries the definitions currently being expanded, so that a
+        definition that (transitively) references itself cannot loop forever.
+        Only `$ref` targets can close a loop - an inline name only ever grows -
+        and the guard is a stack, not a "seen" set, so the same definition
+        reached twice by different routes is still enumerated both times.
+        Sibling branches of a `oneOf` share a name and an owner (`spec_version`
+        is an integer enum in one branch and a string enum in the other), which
+        is the other reason a global "seen" set would lose declarations.
+        """
+        for dname, n in nodes:
+            if dname in self.defs:
+                if dname in stack:
+                    continue
+                below = stack + (dname,)
+            else:
+                below = stack
+            members = n.get("enum")
+            if owner and isinstance(members, list):
+                for member in members:
+                    self.all_enum_values.add((owner[0], owner[1], member))
+            for key, sub in (n.get("properties") or {}).items():
+                self.all_properties.add((dname, key))
+                self.visit(self.flatten(sub, dname + "." + key), (dname, key), below)
+            for sub in (n.get("patternProperties") or {}).values():
+                self.visit(self.flatten(sub, dname + "." + NAME_SEGMENT),
+                           (dname, NAME_SEGMENT), below)
+            ap = n.get("additionalProperties")
+            if isinstance(ap, dict):
+                self.visit(self.flatten(ap, dname + "." + NAME_SEGMENT),
+                           (dname, NAME_SEGMENT), below)
+            item = n.get("items")
+            items = item if isinstance(item, list) else [item]
+            for one in items:
+                # A list level is not a property of its own: its elements stay
+                # attributed to the property that holds the list.
+                self.visit(self.flatten(one, dname), owner, below)
 
 
 def load_schema(schema_path):

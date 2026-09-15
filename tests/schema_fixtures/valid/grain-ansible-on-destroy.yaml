@@ -1,0 +1,35 @@
+# `on-destroy`: the separate playbook an ansible grain runs at teardown. It is
+# a small grain spec of its own - source, inputs, command arguments, hook
+# scripts and an inline inventory - and nothing else in the schema reaches it.
+spec_version: 2
+grains:
+  playbook:
+    kind: ansible
+    spec:
+      source:
+        store: playbooks
+        path: playbooks/app.yaml
+      inventory-file:
+        my-group:
+          hosts:
+            my-host:
+              ansible_host: host.example.invalid
+      on-destroy:
+        source:
+          store: playbooks
+          path: playbooks/teardown.yaml
+        command-arguments: --check
+        inputs:
+          - host_group: my-group
+        inventory-file:
+          my-group:
+            hosts:
+              my-host:
+                ansible_host: host.example.invalid
+        scripts:
+          pre-ansible-run:
+            source:
+              store: scripts
+              path: scripts/pre-teardown.sh
+            outputs:
+              - ready

@@ -1,0 +1,18 @@
+# Template storage is closed: bucket-name, region, key-prefix. An extra key is
+# dropped, so the template is uploaded somewhere other than intended.
+# expect-error: 'acl' was unexpected
+spec_version: 2
+grains:
+  stack:
+    kind: cloudformation
+    spec:
+      source:
+        store: templates
+        path: templates/app.yaml
+      region: example-region
+      authentication:
+        - my-credential
+      template-storage:
+        bucket-name: my-bucket
+        region: example-region
+        acl: private

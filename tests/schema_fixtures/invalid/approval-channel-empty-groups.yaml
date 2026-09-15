@@ -1,0 +1,24 @@
+# An approval channel with an empty approver list is an environment that can
+# never be approved: the grain waits for a decision nobody is asked to make.
+#
+# The expectation is the offending value rather than the wording: jsonschema
+# words the same `minItems` failure as "[] is too short" up to 4.17 and "[]
+# should be non-empty" from 4.18 on, and both Python versions in CI have to
+# agree. If the rule ever disappears the document validates cleanly, and the
+# "expected to be rejected" check fires before any wording matters.
+# expect-error: []
+spec_version: 2
+grains:
+  app:
+    kind: shell
+    condition:
+      - type: approval
+        message: Approve before the grain runs.
+        channels:
+          - type: group
+            groups: []
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

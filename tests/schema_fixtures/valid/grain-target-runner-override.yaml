@@ -1,0 +1,23 @@
+# The long form of `target`: a named target plus a per-grain override of the
+# runner configuration its agent would otherwise supply.
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      target:
+        name: my-target
+        runner-configuration-override:
+          service-account: my-service-account
+          runner-namespace: my-namespace
+          isolated: false
+          storage-size: 512
+          use-storage: true
+          kubernetes:
+            node-selector:
+              - my-node-label: example
+            tolerations:
+              - operator: Exists

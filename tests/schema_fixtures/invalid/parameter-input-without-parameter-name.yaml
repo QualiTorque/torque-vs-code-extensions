@@ -1,0 +1,16 @@
+# A `parameter` input takes its value from the parameter store, and
+# `parameter-name` is what says which parameter. Without it the input resolves
+# to nothing at launch.
+# expect-error: 'parameter-name' is a required property
+spec_version: 2
+inputs:
+  shared-parameter:
+    type: parameter
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

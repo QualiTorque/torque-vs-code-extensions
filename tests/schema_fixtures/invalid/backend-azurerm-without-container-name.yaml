@@ -1,0 +1,15 @@
+# An azurerm backend is a container inside a storage account. Naming the
+# account without the container leaves the state with no home.
+# expect-error: 'container-name' is a required property
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: azurerm
+        resource-group-name: my-resource-group
+        storage-account-name: my-storage-account

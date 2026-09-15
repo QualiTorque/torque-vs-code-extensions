@@ -1,0 +1,16 @@
+# The tags object is closed: auto-tag and disable-tags-for. Custom tags are set
+# on the environment or on the asset itself, not here - a `custom` key here
+# tags nothing.
+# expect-error: 'custom' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      tags:
+        auto-tag: true
+        custom:
+          my-tag: example

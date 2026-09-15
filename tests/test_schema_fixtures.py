@@ -12,10 +12,17 @@ real ones:
                      by the valid fixtures has to cover all of them, which is
                      what ties this hand-written corpus to the real one.
 
-Three defect classes are covered that nothing else here catches: a shape real
+On top of the real-world floor, the corpus owes the schema *complete* coverage:
+every property of every definition, every enum member and every definition has
+to be exercised by some valid fixture. That half is computed, not listed - the
+classifier reports what the fixtures reached and `SchemaEnumerator` reports what
+there is to reach - so a property added to the schema without a fixture fails
+here the day it lands, with nothing to keep up to date by hand.
+
+Four defect classes are covered that nothing else here catches: a shape real
 blueprints rely on stops validating, a dead key starts being silently accepted,
-and a schema-only construct (a grain kind or input type no local blueprint uses)
-quietly disappears.
+a schema-only construct (a grain kind or input type no local blueprint uses)
+quietly disappears, and a newly declared one is never tried at all.
 
 Matching is done against **all** error messages, nested `oneOf`/`anyOf`
 sub-errors included, because most interesting keys sit inside a combinator and
@@ -36,7 +43,7 @@ import os
 import unittest
 
 import yaml
-from jsonschema import Draft6Validator
+from jsonschema import Draft7Validator
 from jsonschema.exceptions import best_match
 
 try:  # Python 3.5+; spelled out so the failure mode is obvious on an older one.
@@ -54,6 +61,28 @@ REQUIRED_PATHS = os.path.join(FIXTURES, "required-paths.txt")
 
 #: Header marker of an invalid fixture, one line per expected error substring.
 EXPECT_PREFIX = "# expect-error:"
+
+# -- coverage exclusions ----------------------------------------------------
+#
+# Schema elements that no *valid* document can reach, and which therefore have
+# to be excused from the coverage contract rather than covered. Every entry
+# needs a comment saying why the element is unreachable; "I could not think of a
+# fixture" is not a reason, and neither is "the server rejects it" - the server
+# rejecting something the schema accepts is exactly the kind of drift the
+# `invalid/` fixtures exist to pin.
+#
+# All three lists are currently empty: every property, enum member and
+# definition the schema declares is reachable, and is reached.
+
+#: (definition, property) pairs excused from `TestSchemaPropertyCoverage`.
+EXCLUDED_PROPERTIES = set()
+
+#: (definition, property, value) triples excused from `TestSchemaEnumCoverage`.
+EXCLUDED_ENUM_VALUES = set()
+
+#: Definition names excused from `TestSchemaDefinitionCoverage`, e.g. one kept
+#: only as an `allOf` stub that nothing instantiates on its own.
+EXCLUDED_DEFINITIONS = set()
 
 
 def _load_classifier_module():
@@ -75,7 +104,7 @@ classifier_module = _load_classifier_module()
 
 with io.open(SCHEMA_PATH, encoding="utf-8") as _f:
     SCHEMA = json.load(_f)
-VALIDATOR = Draft6Validator(SCHEMA)
+VALIDATOR = Draft7Validator(SCHEMA)
 
 
 def fixture_files(directory):
@@ -160,6 +189,23 @@ def required_paths():
     return out
 
 
+def walk_valid_fixtures():
+    """One classifier that has seen every valid fixture.
+
+    The coverage tests all ask the same question of the same walk, so it is done
+    once and the four checks read different counters off the result. Building it
+    per test would re-parse the whole corpus four times for no gain.
+    """
+    classifier = classifier_module.PathClassifier(SCHEMA)
+    for name in fixture_files(VALID_DIR):
+        classifier.walk(yaml.safe_load(read_fixture(VALID_DIR, name)), rel=name)
+    return classifier
+
+
+def format_missing(items, render):
+    return "\n".join("    " + render(item) for item in sorted(items, key=repr))
+
+
 class TestValidFixtures(unittest.TestCase):
     """Every shape the real blueprints rely on still validates."""
 
@@ -231,11 +277,7 @@ class TestRequiredPathCoverage(unittest.TestCase):
     """
 
     def test_valid_fixtures_cover_every_required_path(self):
-        classifier = classifier_module.PathClassifier(SCHEMA)
-        for name in fixture_files(VALID_DIR):
-            document = yaml.safe_load(read_fixture(VALID_DIR, name))
-            classifier.walk(document, rel=name)
-        covered = set(classifier.accepted)
+        covered = set(walk_valid_fixtures().accepted)
 
         required = required_paths()
         self.assertTrue(required, "%s lists no paths" % REQUIRED_PATHS)
@@ -245,6 +287,83 @@ class TestRequiredPathCoverage(unittest.TestCase):
             "%d of %d required key paths are not exercised by any valid "
             "fixture:\n%s" % (len(missing), len(required),
                               "\n".join("    " + p for p in missing)))
+
+
+class SchemaCoverageCase(unittest.TestCase):
+    """Shared set-up for the three "nothing in the schema is untested" checks.
+
+    `PathClassifier` says what the fixtures reached; `SchemaEnumerator` says
+    what the schema declares. Both walk the schema by the same rules, so the
+    difference between them is the untested surface and nothing else.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.covered = walk_valid_fixtures()
+        cls.declared = classifier_module.SchemaEnumerator(SCHEMA)
+
+    def assert_covered(self, declared, visited, excluded, label, render):
+        """Fail naming every declared element no valid fixture reached."""
+        self.assertTrue(declared, "the schema declares no %s at all" % label)
+        stale = sorted(excluded - declared, key=repr)
+        self.assertEqual(
+            [], stale,
+            "%s excluded from the %s contract no longer exist in the schema - "
+            "drop them from the exclusion list:\n%s"
+            % (len(stale), label, format_missing(stale, render)))
+        # One subTest per missing element, so a run names each of them instead
+        # of stopping at whichever happens to sort first.
+        missing = declared - visited - excluded
+        for item in sorted(missing, key=repr):
+            with self.subTest(element=render(item)):
+                self.fail(
+                    "%s is declared by the schema but no valid fixture uses it "
+                    "(%d of %d %s uncovered). Add a fixture, or excuse it in "
+                    "EXCLUDED_%s with a reason."
+                    % (render(item), len(missing), len(declared), label,
+                       label.replace(" ", "_").upper()))
+
+
+class TestSchemaPropertyCoverage(SchemaCoverageCase):
+    """Every property of every definition is written down in some fixture."""
+
+    def test_every_declared_property_is_used(self):
+        self.assert_covered(
+            self.declared.all_properties,
+            self.covered.visited_properties,
+            EXCLUDED_PROPERTIES,
+            "properties",
+            lambda item: "%s.%s" % item)
+
+
+class TestSchemaEnumCoverage(SchemaCoverageCase):
+    """Every member of every enum is written down in some fixture.
+
+    This is the check that catches the quiet removals: a member dropped from
+    `kind`, from the workflow trigger events or from the credential providers
+    reads as a tightening nobody notices until a customer blueprint stops
+    launching.
+    """
+
+    def test_every_declared_enum_value_is_used(self):
+        self.assert_covered(
+            self.declared.all_enum_values,
+            self.covered.visited_enum_values,
+            EXCLUDED_ENUM_VALUES,
+            "enum values",
+            lambda item: "%s.%s = %r" % item)
+
+
+class TestSchemaDefinitionCoverage(SchemaCoverageCase):
+    """Every definition reachable from the root is reached by some fixture."""
+
+    def test_every_reachable_definition_is_used(self):
+        self.assert_covered(
+            self.declared.all_definitions,
+            self.covered.visited_definitions,
+            EXCLUDED_DEFINITIONS,
+            "definitions",
+            lambda item: item)
 
 
 class TestPathClassifier(unittest.TestCase):

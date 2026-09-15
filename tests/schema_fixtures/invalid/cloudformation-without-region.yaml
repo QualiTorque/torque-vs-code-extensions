@@ -1,0 +1,14 @@
+# A CloudFormation stack is created in one region, and nothing else in the
+# grain implies which. Unlike a Terraform provider block, the template does not
+# carry it.
+# expect-error: 'region' is a required property
+spec_version: 2
+grains:
+  stack:
+    kind: cloudformation
+    spec:
+      source:
+        store: templates
+        path: templates/app.yaml
+      authentication:
+        - my-credential

@@ -1,0 +1,44 @@
+# The agent object in full: where the grain runs and how its runner pod is
+# built. Both toleration operators and all three taint effects appear, because
+# 'Equal' is the one that also demands a key and a value.
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      agent:
+        name: agent-1
+        region: example-region
+        service-account: my-service-account
+        runner-namespace: my-namespace
+        storage-size: 1024
+        isolated: true
+        use-storage: true
+        docker:
+          permissions:
+            secret-path: /var/run/secrets/example
+        kubernetes:
+          pod-labels:
+            - my-label: example
+          pod-annotations:
+            - my-annotation: example
+          node-selector:
+            - my-node-label: example
+          tolerations:
+            - key: my-taint
+              operator: Equal
+              value: example
+              effect: NoSchedule
+            - operator: Exists
+              effect: PreferNoSchedule
+            - key: my-other-taint
+              operator: Exists
+              effect: NoExecute
+              toleration-seconds: 300
+          permissions:
+            destination-context-name: my-context
+            secret-name: my-secret
+            secret-namespace: my-namespace

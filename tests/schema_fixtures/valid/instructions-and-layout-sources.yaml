@@ -1,5 +1,6 @@
 # The store-backed half of instructions, plus the layout source. Both are a
-# store/path pair and both are required in full.
+# store/path pair and both are required in full - and each demands its own file
+# extension: instructions are markdown, a layout is a .yaml (not a .yml).
 spec_version: 2
 instructions:
   source:
@@ -8,7 +9,7 @@ instructions:
 layout:
   source:
     store: docs
-    path: layout/default.json
+    path: layout/default.yaml
 grains:
   app:
     kind: shell

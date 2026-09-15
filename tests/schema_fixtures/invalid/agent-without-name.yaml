@@ -1,0 +1,15 @@
+# An agent block that customizes the runner without naming the agent leaves
+# the grain with nowhere to run: the customization has no host to apply to.
+# expect-error: 'name' is a required property
+spec_version: 2
+grains:
+  app:
+    kind: shell
+    spec:
+      agent:
+        use-storage: true
+        runner-namespace: my-namespace
+      activities:
+        deploy:
+          commands:
+            - echo hello

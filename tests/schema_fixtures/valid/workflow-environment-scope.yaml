@@ -1,8 +1,10 @@
 # An environment-scoped workflow with both trigger kinds: a manual trigger and
-# an overridable cron one.
+# an overridable cron one. The scope is spelled `env` - `environment` is not one
+# of the three the server knows, which invalid/workflow-scope-environment.yaml
+# pins from the other side.
 spec_version: 2
 workflow:
-  scope: environment
+  scope: env
   enabled: true
   labels-selector: tier=example
   timeout: '30'

@@ -1,0 +1,18 @@
+# A workflow may not be given less than five minutes to run. Four is accepted
+# as a number by any loose "integer" rule, which is exactly why the minimum has
+# to be pinned.
+# expect-error: is less than the minimum of 5
+spec_version: 2
+workflow:
+  scope: env
+  timeout: 4
+  triggers:
+    - type: manual
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

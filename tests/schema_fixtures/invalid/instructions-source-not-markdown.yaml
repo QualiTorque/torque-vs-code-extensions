@@ -1,0 +1,16 @@
+# Instructions are rendered as markdown, so the file has to be one. A .txt
+# points at a file Torque will not render.
+# expect-error: instructions/readme.txt
+spec_version: 2
+instructions:
+  source:
+    store: docs
+    path: instructions/readme.txt
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

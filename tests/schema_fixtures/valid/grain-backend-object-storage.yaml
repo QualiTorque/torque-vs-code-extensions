@@ -1,0 +1,46 @@
+# The four object-storage state backends. Each backend type demands its own
+# set of keys, so each gets its own grain - a key that belongs to another type
+# is not just useless there, it is rejected.
+spec_version: 2
+grains:
+  s3-state:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: s3
+        bucket: my-bucket
+        region: example-region
+        key-prefix: environments/example
+        skip-region-validation: true
+  gcs-state:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: gcs
+        bucket: my-bucket
+  azure-state:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: azurerm
+        resource-group-name: my-resource-group
+        storage-account-name: my-storage-account
+        container-name: my-container
+  http-state:
+    kind: opentofu
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: http
+        base-address: https://state.example.invalid/example
