@@ -1539,6 +1539,18 @@
                             }
                         }
                     }
+                },
+                "any-provider-type": {
+                    "type": "boolean",
+                    "description": "Accept a 'type' name that exists under more than one provider type"
+                },
+                "any-of": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/ResourceSelectorAnyOfItemObject"
+                    },
+                    "description": "Selection alternatives, OR-ed with each other. A resource matches if it matches the other criteria of the selector and at least one of the alternatives."
                 }
             },
             "anyOf": [
@@ -1561,8 +1573,31 @@
                     "required": [
                         "provider-name"
                     ]
+                },
+                {
+                    "required": [
+                        "any-of"
+                    ]
                 }
             ]
+        },
+        "ResourceSelectorAnyOfItemObject": {
+            "$comment": "A single 'any-of' alternative - extends ResourceSelectorBaseObject with nothing. 'any-of' is deliberately not re-listed in 'properties', so 'additionalProperties': false rejects nesting it (and consequently, one of the other criteria is required by the base's 'anyOf'). See the $comment on ResourceSelectorObject for why the inherited properties are re-listed with empty schemas ({}).",
+            "allOf": [
+                {
+                    "$ref": "#/definitions/ResourceSelectorBaseObject"
+                }
+            ],
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "type": {},
+                "provider-name": {},
+                "provider-type": {},
+                "attributes": {},
+                "any-provider-type": {}
+            },
+            "title": "Blueprint Resource Selector Alternative"
         },
         "ResourceSelectorObject": {
             "$comment": "Extends ResourceSelectorBaseObject with 'quantity'. The inherited properties are re-listed here with empty schemas ({}) only so that 'additionalProperties': false does not reject them: 'additionalProperties' considers only the 'properties' declared in the same schema object and is blind to those coming from the $ref'd base. If this schema is ever moved to draft 2019-09 or later, delete these stubs and replace 'additionalProperties': false with 'unevaluatedProperties': false.",
@@ -1578,6 +1613,8 @@
                 "provider-name": {},
                 "provider-type": {},
                 "attributes": {},
+                "any-provider-type": {},
+                "any-of": {},
                 "quantity": {
                     "type": [
                         "integer",
@@ -1601,6 +1638,8 @@
                 "provider-name": {},
                 "provider-type": {},
                 "attributes": {},
+                "any-provider-type": {},
+                "any-of": {},
                 "reservable-only": {
                     "type": "boolean"
                 }
