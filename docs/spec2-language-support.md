@@ -75,6 +75,17 @@ top-level keys of the schema (`spec_version`, `description`, `instructions`,
   not accepted — both layers agree, which is what
   `TestTargetHasNoScalarForm` (`tests/test_spec2_server_parity.py`) pins.
   See section 11.
+* Resource selectors: `ResourceSelectorObject` (`resources.<n>.selector`) and
+  `InputResourceSelectorObject` (`inputs.<n>.resource-selector`) both carry
+  `any_provider_type` and `any_of`, the latter a
+  `ResourceSelectorCriteriaSequence` of `ResourceSelectorCriteriaObject`s — one
+  per alternative, holding `type` / `provider-type` / `provider-name` /
+  `attributes` / `any-provider-type` and nothing else, so a nested `any-of` or a
+  selector-only key (`quantity`, `reservable-only`) inside an alternative is an
+  unknown key in the tree exactly as it is in the schema (section 13.1). The
+  alternative's string fields are `TextNode`s, because the server resolves them
+  as Liquid. The selector-level `type` / `provider-type` / `provider-name` are
+  still `ScalarNode`s, which is a known false positive (section 13.7).
 
 ### Free-form sections
 
@@ -283,9 +294,10 @@ it — for example an expression a folded scalar broke across lines.
 | `tests/test_spec2_real_world.py` | the findings of a scan of 454 real-world blueprints: flow style YAML, unprintable bytes, bracket/dotless expression forms, the activities output path, transitive `depends-on`, the filter set, Liquid in `authentication`, and the unused-input regular expression |
 | `tests/test_spec2_optional_and_label_values.py` | the section 8 input changes at the *schema* layer (`inputs.<n>.optional`, `target-filters.labels[].values`) |
 | `tests/test_spec2_names.py` | the section 9 name rules: the grain-name regular expression is enforced, any input/output name is accepted, and no entry escapes validation by having an unusual name |
-| `tests/test_spec2_required_parity.py` | the section 10 mandatory-field rules and the `if`/`then` conditionals, plus the assertion that `$schema` is draft-07 (without which those conditionals are dead) |
+| `tests/test_spec2_required_parity.py` | the section 10 mandatory-field rules and the `if`/`then` conditionals, plus the assertion that `$schema` is draft-07 (without which those conditionals are dead); since section 13 also the `resource` input's mandatory `resource-selector` and the server's toleration rules |
 | `tests/test_spec2_closed_objects.py` | the section 10 closed objects: every server class with a fixed key set is `additionalProperties: false` here too |
-| `tests/test_spec2_server_parity.py` | the rest of section 10: Terraform backend per-type fields, workflow `timeout` and `scope`, the full trigger-event list |
+| `tests/test_spec2_server_parity.py` | the rest of section 10: Terraform backend per-type fields, workflow `timeout` and `scope`, the full trigger-event list; since section 13 also the workflow scope rules (`built-in` grains, manual-only `space` triggers, `env_resource` resource types) and the 600-grain limit |
+| `tests/test_spec2_any_of.py` | section 13.1: resource selector `any-of` / `any-provider-type` at the schema layer for both selector sites, the four root/alternative conflicts, and tree-model parity (no false unknown keys, the same keys rejected, Liquid accepted inside alternatives, no crash on a half-typed `any-of`) |
 | `tests/test_schema_fixtures.py` | the fixture corpus below: minimal blueprints that must validate, minimal defects that must still be reported, and the coverage link back to the real corpus |
 | `tests/test_schema_syntax.py` | the file itself: no duplicate keys in any object (`json.load` keeps the last duplicate silently, so nothing else would notice), UTF-8 without BOM, LF endings, draft-07 declared and meta-valid, every `$ref` resolvable |
 
@@ -374,8 +386,8 @@ Four things are enforced, by `tests/test_schema_fixtures.py`:
   `[]` for a list level). The union of the paths exercised by the valid fixtures
   must cover all of them. That check is what makes "based on the real
   blueprints" a property CI verifies rather than a claim in a commit message.
-* **The schema's own surface** — all 352 declared properties, all 115 enum
-  members and all 58 definitions reachable from the root have to be exercised by
+* **The schema's own surface** — all 364 declared properties, all 117 enum
+  members and all 59 definitions reachable from the root have to be exercised by
   some valid fixture. `required-paths.txt` is the floor the real blueprints set;
   this is the ceiling. Nothing is listed by hand: `PathClassifier` reports what
   the fixtures reached and `SchemaEnumerator` reports what the schema declares,
@@ -597,11 +609,14 @@ The schema declared **draft-06** while using `if`/`then`/`else` in five places
 keyword is not an error but a no-op — so all five rules were **dead**, silently,
 for every consumer.
 
-The proof is a pair of documents that should have failed and did not: an
-approval channel with `type: group` and no `groups`, and a toleration with
-`operator: Equal` and no `key`/`value`. Each produced **0 errors under
+The proof is a document that should have failed and did not: an approval
+channel with `type: group` and no `groups`. It produced **0 errors under
 `Draft6Validator` and 1 under `Draft7Validator`** — same schema, same document,
-the declared draft being the only difference.
+the declared draft being the only difference. A second proof given here at the
+time, a toleration with `operator: Equal` and no `key`/`value`, no longer
+applies: that conditional turned out to have no server counterpart and was
+replaced by the server's actual toleration rules in October 2026 (section 13.3).
+The approval-channel case on its own is the proof.
 
 `$schema` now says draft-07, and every validator in `tests/` and `tools/` is a
 `Draft7Validator` so that CI evaluates the file the way the consumers do. Both
@@ -716,7 +731,7 @@ Thirteen were wrong. Grouped by what they got wrong:
 | The input object's summary still described the pre-2026-08-30 required-ness rule | It defers to `optional` / `default` / `pattern` (section 8.1–8.3) |
 | `depends-on` was documented for dropdown-ish inputs only | `InputTypesWithDependsOnSupport` includes plain **string** inputs |
 | A single-value `allowed-values` list left the user to pick it | That one value is **auto-selected**, unless the input's style is multi-select |
-| `resource-selector` read as required on a resource input | It is optional; the server never requires it |
+| `resource-selector` read as required on a resource input | It is optional; the server never requires it. **This correction was itself wrong** — the server does require it on a `resource` input, and did at c0f49bd04d already; see section 13.2 |
 | Workflow `label-selector` described as an alias of `labels-selector` | It is a **legacy alias of `resource-types`** — the AutoMapper profile reads `ResourceTypes = LabelSelector ?? ResourceTypes` |
 | `target` documented with a scalar short form | It has none: the property carries only `[YamlMember]`, there is no type converter, and **607 of 607** real usages write the object. The schema's `string` branch is removed and the tree model now types it as the object alone (section 2) |
 | `spec.version` and `tf-version` read as two settings | They are the **same** setting (declaring both is an error), and `version` is exclusive with `binary` |
@@ -785,6 +800,10 @@ to start from.
 | `layout.source` | The path's extension must be `.yaml`, compared case-insensitively; `.yml` is rejected. | `LayoutSourceValidator.PathExtraValidations`, `LAYOUT_FILE_MUST_BE_A_YAML` |
 | `family.members.*.source` | Both `store` and `path` are mandatory — stricter than a grain source, which needs only one of the two. | `BlueprintFamilyValidator`, `FAMILY_MEMBER_SOURCE_STORE_MISSING`, `FAMILY_MEMBER_SOURCE_PATH_MISSING` |
 | `template.placeholders[]` | A placeholder whose `path` is null or whitespace is rejected. | `BlueprintTemplateValidator`, `BLUEPRINT_TEMPLATE_PLACEHOLDER_PATH_REQUIRED` |
+| `workflow` (`env_resource` conditional) | Scope `env_resource` needs a non-empty `resource-types` or `label-selector`; `labels-selector` does not count. Added 2026-10-14; the server rule predates c0f49bd04d. | `WorkflowYamlValidator.ValidateWorkflowBlueprint`: `Scope == EntityType.EnvironmentResource.ToString() && string.IsNullOrEmpty(LabelSelector) && string.IsNullOrEmpty(ResourceTypes)`, `RESOURCE_SELECTOR_IS_EMPTY` |
+| `workflow` (`space` conditional) | Scope `space` takes manual triggers only. Added 2026-10-14; the server rule predates c0f49bd04d, and the language server already reported it (`_validate_workflow_triggers`). | `WorkflowYamlValidator.ValidateTriggers`: `scope == EntityType.Space.ToString()` and a `cron` / `event` trigger, `AUTOMATIC_WORKFLOW_TRIGGERS_NOT_SUPPORTED` |
+| Top level (`space` / `built-in` conditional) | In a workflow with scope `space` no grain may set `spec.built-in: true`; outside `space` any number of grains may. | `WorkflowYamlValidator.ValidateWorkflowBlueprint`, `BUILTIN_ACTION_NOT_SUPPORTED_FOR_WORKFLOW_SCOPE` (cs2018 e07340e3ba, 2026-10-13, which also removed `WORKFLOW_HAS_MORE_THAN_ONE_BUILTIN_GRAIN`) |
+| `grains` (`maxProperties: 600`) | At most 600 grains per environment, nested blueprints' grains included; the schema can count the top-level entries only, as can the server's static validation. | `BlueprintLimits.MaxGrainsPerEnvironment = 600`, `BlueprintGrainsValidator.ValidateGrainsCount` (`grains.Value.Count + nestedGrainsCount`), `TOO_MANY_GRAINS` (cs2018 892f5cfd90, 2026-10-06) |
 
 ### 12.2 Grains
 
@@ -799,6 +818,10 @@ to start from.
 | `SourceFileObject` | Holds exactly one member, `source`. | `TfVarsFileYaml`, `HelmValuesFileYaml`, `WorkspaceDirectoriesYaml` and `OpenTofuVarsFileYaml` in `GrainYaml.cs` |
 | `GrainTag` | Exactly `auto-tag` and `disable-tags-for`. | `GrainTagsYaml` (`GrainYaml.cs`) |
 | `GrainConditionChannelApproversObject` | At least one approver is required, so an empty list and an empty string are both rejected. | `GrainConditionsValidator.ValidateApprovers`, `GRAIN_APPROVAL_CHANNEL_MUST_HAVE_AT_LEAST_ONE_APPROVER` |
+| `Toleration.operator` / `.effect` | `operator` is one of `Equal`, `Exists`, `Gt`, `Lt` (`Gt` and `Lt` were missing until 2026-10-14); `effect` is one of `NoSchedule`, `PreferNoSchedule`, `NoExecute`. Both compared case-sensitively. | `TolerationStructureValidator` (`server/core/Quali.Colony.Contracts/Blueprints/TolerationValidation.cs`, moved there in d988f2eeff 2026-10-13 from `GrainHostValidatorBase`), `TolerationOperatorsConsts.All`, `TolerationEffectsConsts.All`, `INVALID_FIELD_VALUE` |
+| `Toleration` (`Exists` conditional) | With operator `Exists` the value must be null or empty. | `TolerationStructureValidator`, `string.IsNullOrEmpty(value)`, `TOLERATION_VALUE_NOT_ALLOWED_WITH_EXISTS_OPERATOR` |
+| `Toleration` (`toleration-seconds` conditional) | `toleration-seconds` requires effect `NoExecute`; a missing effect is rejected as well. | `TolerationStructureValidator`, `tolerationSeconds.HasValue && effect != NoExecute`, `TOLERATION_SECONDS_NOT_ALLOWED_WITHOUT_NO_EXECUTE_EFFECT` |
+| `Toleration` (removed `Equal` conditional) | **Removed 2026-10-14.** The schema required `key` and `value` for operator `Equal`, citing Kubernetes semantics. The server has no such rule — it validates `key` and `value` only against Kubernetes label syntax, and only once they resolve, which a schema cannot express. | No server counterpart; `GrainHostValidatorBase` validates `key` and `value` via `IsValidLabelKey` / `IsValidLabelValue` after `TryResolveFinalValue` |
 
 ### 12.3 Terraform backend and template storage
 
@@ -815,16 +838,180 @@ to start from.
 |---|---|---|
 | `BlueprintInputObject` | Every input of type `parameter` must set `parameter-name`. | `BlueprintInputsValidator`, `FIELD_VALUE_MISSING_AT_PATH` reported on `parameter-name` |
 | `BlueprintInputObject.depends-on` | Supported for string, parameter, input-source and resource inputs. | `InputTypesWithDependsOnSupport = String, Parameter, InputSource, Resource` |
-| `BlueprintInputObject.resource-selector` | Never required. | No server error exists for its absence |
+| `BlueprintInputObject.resource-selector` | **Required on an input of type `resource`** (an `if`/`then` next to the `parameter` one, since 2026-10-14). This row used to read "Never required. — No server error exists for its absence", and the schema's description called the selector optional. **Both were wrong**: the server reports a missing selector, and already did at c0f49bd04d, the commit the earlier audit was made against. | `BlueprintInputsValidator.ValidateInputTypeResource`: `if (resourceSelector == null)` → `FIELD_VALUE_MISSING_AT_PATH(resourceSelectorPath)` |
 
-### 12.5 Resource selectors — schema mechanics, no server source
+### 12.5 Resource selectors
 
-These three `$comment`s cited no server code to begin with: they describe how
-this file is put together, which is exactly what a `$comment` is still allowed to
-say. They were left as they were.
+The first three rows were schema mechanics only when written — they cited no
+server code. Since the `any-of` alignment (section 13.1) the shapes are traced to
+server classes as well; the column now says which.
 
 | Schema location | Rule | Server source |
 |---|---|---|
-| `ResourceSelectorBaseObject` | Shared selection criteria, inherited via `allOf`; deliberately leaves `additionalProperties` unset so the inheritors can close themselves. | — |
-| `ResourceSelectorObject` | Extends the base with `quantity`. The inherited properties are re-listed with empty schemas so `additionalProperties: false` does not reject them — draft-07 `additionalProperties` is blind to properties coming from a `$ref`. On a move to draft 2019-09 or later, drop the stubs and use `unevaluatedProperties: false`. | — |
-| `BlueprintInputResourceSelectorObject` | Extends the base adding nothing of its own — notably no `quantity`, which is a resource-requirement concern. Same stub trick as above. | — |
+| `ResourceSelectorBaseObject` | Shared selection criteria, inherited via `allOf`; deliberately leaves `additionalProperties` unset so the inheritors can close themselves. Holds `type`, `provider-name`, `provider-type`, `attributes`, `any-provider-type` and `any-of`. | `BlueprintResourceSelectorBaseYaml : BlueprintResourceSelectorCriteriaYaml` (`BlueprintResourceRequirementYaml.cs`) |
+| `ResourceSelectorBaseObject` (`anyOf`) | At least one of `type` / `attributes` / `provider-type` / `provider-name` / `any-of`; `any-provider-type` does not count. | `SelectorValidationState.AnySelectionCriteriaSpecified` in `BlueprintResourceRequirementsValidator.cs`, `FIELD_VALUES_MISSING_AT_LEAST_ONE_REQUIRED` |
+| `ResourceSelectorBaseObject` (`allOf` conditionals) | `type`, `provider-type`, `provider-name` and `any-provider-type` each at the selector level or inside the `any-of` alternatives, never both, whatever the values. | `ValidateSelectorStructure`, `BLUEPRINT_RESOURCE_SELECTOR_FIELD_CONFLICT_WITH_ANY_OF_CRITERIA` |
+| `ResourceSelectorBaseObject.any-of` | `minItems: 1`. **Stricter than the server**, which ignores an empty list (`AnyOfSpecified = AnyOf != null && AnyOf.Any()`) — see section 13.1. | `SelectorValidationState` |
+| `ResourceSelectorAnyOfItemObject` | One alternative: the base's criteria minus `any-of` (no nesting); needs one of `type` / `attributes` / `provider-type` / `provider-name` through the inherited `anyOf`. A null alternative is rejected. | `BlueprintResourceSelectorCriteriaYaml`; `CriteriaValidationState.AnySelectionCriteriaSpecified`; `FIELD_VALUE_EMPTY_ITEMS_IN_COLLECTION_AT_PATH` for a null item |
+| `ResourceSelectorObject` | Extends the base with `quantity`. The inherited properties are re-listed with empty schemas so `additionalProperties: false` does not reject them — draft-07 `additionalProperties` is blind to properties coming from a `$ref`. On a move to draft 2019-09 or later, drop the stubs and use `unevaluatedProperties: false`. | `BlueprintResourceSelectorYaml : BlueprintResourceSelectorBaseYaml` |
+| `BlueprintInputResourceSelectorObject` | Extends the base with `reservable-only` — notably not with `quantity`, which is a resource-requirement concern. Same stub trick as above. (Its `$comment` said "adding no fields of its own" until 2026-10-14, which `reservable-only` had already made untrue.) | `BlueprintInputResourceSelectorYaml : BlueprintResourceSelectorBaseYaml` (`BlueprintInputResourceSelectorYaml.cs`) |
+| `ResourceSelectorBaseObject.attributes` | May appear at both levels, but the same attribute name must not. **Not enforced** by the schema (section 13.1). | `ValidateSelectorStructure`, `BLUEPRINT_RESOURCE_SELECTOR_ATTRIBUTES_CONFLICT_WITH_ANY_OF_CRITERIA` |
+
+## 13. October 2026 server sync
+
+A re-sync against cs2018 `origin/main` **c3635fcfd7** (verified equal to
+`origin/main` on 2026-10-14), covering every server commit since the section 10
+baseline c0f49bd04d. One feature arrived through the schema itself (13.1); the
+rest is server rules that are new or newly modelled (13.4–13.5) and pre-existing defects the re-read turned
+up (13.2–13.3); 13.6 is the corpus evidence. Provenance per rule is in section 12.
+
+### 13.1 Resource selector `any-of` (cs2018 b1a12abc3f, 2026-10-04; schema PR #185, merged 2026-10-05)
+
+A selector — `resources.<n>.selector` and `inputs.<n>.resource-selector` alike,
+both inherit `BlueprintResourceSelectorBaseYaml` — may list alternative criteria
+sets under `any-of`. A resource matches when it matches the criteria at the
+selector's own level **and** at least one alternative, so criteria shared by all
+alternatives are written once at the selector level. `any-provider-type` (a
+nullable bool) declares that a `type` name existing under more than one provider
+type is acceptable; it is a validation-time opt-in only and not a selection
+criterion.
+
+| Rule | Schema |
+|---|---|
+| A selector needs one of `type` / `attributes` / `provider-type` / `provider-name` / `any-of` | the base's `anyOf` (fifth branch added by PR #185) |
+| Each alternative needs one of `type` / `attributes` / `provider-type` / `provider-name` | the inherited `anyOf`, plus `additionalProperties: false` on `ResourceSelectorAnyOfItemObject` rejecting `any-of` — so an alternative holding only `any-provider-type` fails |
+| No nested `any-of` | `ResourceSelectorAnyOfItemObject` does not list it |
+| A null alternative (a bare `-` list item) is an error | the item `$ref` is an object type |
+| `type` / `provider-type` / `provider-name` / `any-provider-type` at one level only | four `if`/`then` conditionals on the base (added here): `if` the selector has the key, `then` no `any-of` item may. They reach all three inheritors through their `allOf`; on the alternatives themselves they are vacuous, since an alternative has no `any-of` |
+| `attributes` at both levels, no name at both | **not enforced** — see the gaps below |
+
+The conditionals fire only when both levels give the field (a key present, even
+with a null value, counts as given; a null value is rejected by the field's own
+type anyway). The tree model gained the matching nodes (section 2), so a
+schema-clean `any-of` document produces no unknown-key error in the editor, and
+a nested `any-of`, a `quantity` or a `reservable-only` inside an alternative is
+reported by both layers.
+
+Known deviations, both deliberate:
+
+* **Attribute-name overlap is not checked.** The server reports an attribute
+  name used both at the selector level and inside an alternative
+  (`BLUEPRINT_RESOURCE_SELECTOR_ATTRIBUTES_CONFLICT_WITH_ANY_OF_CRITERIA`, names
+  aggregated across all alternatives). The names are user data inside list
+  items, and JSON Schema has no way to compare keys across two arrays; faking it
+  with a heuristic would reject valid selectors, so the schema says it in the
+  description and leaves it to the server.
+* **An empty `any-of` is rejected**, by the `minItems: 1` PR #185 introduced. The
+  server ignores an empty list (`AnyOfSpecified = AnyOf != null && AnyOf.Any()`),
+  so `type: x` + `any-of: []` passes there; with no other criterion it fails
+  there too. Kept as a harmless tightening — an empty list is always a
+  leftover. The same holds for `any-of:` with a null value next to other
+  criteria, which the server ignores and the schema rejects by type, as it does
+  for null values throughout.
+
+The server's own examples (`BlueprintResourceRequirementsTests`, "Selector AnyOf"
+region; there are no `any-of` cases among the input tests) are mirrored in
+`tests/test_spec2_any_of.py` and in the `valid/resources-any-of.yaml` and
+`invalid/resource-selector-any-of-*.yaml` fixtures.
+
+### 13.2 A `resource` input requires `resource-selector` (pre-existing defect)
+
+`BlueprintInputsValidator.ValidateInputTypeResource` reports a `resource` input
+without a selector (`FIELD_VALUE_MISSING_AT_PATH`) — at c3635fcfd7 and already at
+c0f49bd04d. The section 11 descriptions pass got this **backwards**: it
+"corrected" the description to say the selector is optional, and section 12.4
+recorded "no server error exists for its absence". Both are fixed: the
+description says it is required, and `BlueprintInputObject` now has a second
+`if`/`then` (type `resource` → `resource-selector` required) next to the
+`parameter` → `parameter-name` one, both moved into an `allOf` since an object
+can carry only one `if`. A null selector is rejected too, matching the server's
+`== null` check.
+
+### 13.3 Tolerations (pre-existing defect)
+
+The server's `TolerationStructureValidator` (moved to
+`server/core/Quali.Colony.Contracts/Blueprints/TolerationValidation.cs` in
+d988f2eeff, 2026-10-13, so that blueprint validation and the API that adds grains
+share it; the same four rules lived in `GrainHostValidatorBase` at c0f49bd04d):
+
+1. `operator` ∈ `Equal`, `Exists`, `Gt`, `Lt` — the schema lacked `Gt` and `Lt`,
+   so it rejected tolerations Torque accepts. Added, described neutrally as
+   accepted values.
+2. `effect` ∈ `NoSchedule`, `PreferNoSchedule`, `NoExecute` — already right.
+3. `operator: Exists` → `value` null or empty — added as an `if`/`then` with
+   `maxLength: 0` (so `value: ''` stays valid).
+4. `toleration-seconds` → `effect: NoExecute` — added as an `if`/`then` that also
+   requires `effect`, because the server rejects a missing effect too.
+
+The schema's old conditional — `operator: Equal` requires `key` and `value` — had
+**no server counterpart** and is removed (section 12.2 records it). The server
+does check `key` and `value`, but against Kubernetes label syntax and only after
+Liquid resolution, which is not expressible here: a known gap, not a missing
+rule. The `value` description no longer claims it is required for `Equal`.
+
+### 13.4 Workflow scope rules
+
+* **`built-in` grains** (e07340e3ba, 2026-10-13). The one-built-in-grain-per-workflow
+  limit (`WORKFLOW_HAS_MORE_THAN_ONE_BUILTIN_GRAIN`) is gone; instead a workflow
+  with scope `space` may not have any grain with `built-in: true`
+  (`BUILTIN_ACTION_NOT_SUPPORTED_FOR_WORKFLOW_SCOPE`). The description is fixed,
+  and a top-level `if`/`then` (scope `space` → every grain's `spec.built-in` is
+  not `true`) enforces it. The `then` uses `additionalProperties` to reach every
+  grain name; its `properties` are a no-op on a null grain entry, so
+  `grains: {step: }` stays valid.
+* **`space` takes manual triggers only** (`ValidateTriggers`, pre-existing).
+  Now a conditional on the workflow object. The language server already reports
+  it (`_validate_workflow_triggers`, section 4), so an editor shows it twice; the
+  overlap is accepted for the same reason as the `scope` enum (section 7) — it is
+  a fixed server rule, not a context-dependent judgement.
+* **`env_resource` needs resource types** (`ValidateWorkflowBlueprint`,
+  pre-existing). A non-empty `resource-types` or its legacy alias
+  `label-selector`; `labels-selector` (which picks blueprints) does not count.
+
+The server compares the scope against the exact lowercase strings here, and the
+schema's `scope` enum already pins those spellings, so `const` matches it.
+
+### 13.5 Grain count limit (892f5cfd90, 2026-10-06)
+
+`BlueprintLimits.MaxGrainsPerEnvironment = 600`, nested blueprints' grains
+included. Static validation counts only the top-level entries (nested
+blueprints are loaded at launch), and so does `maxProperties: 600` on `grains`;
+the description states the full rule.
+
+### 13.6 Evidence that none of this rejects working blueprints
+
+The local ZeroTouch tree has grown since section 10.6 (528 spec2 files then).
+It was re-sanitized on 2026-10-14 one top-level directory at a time, because
+other work was writing to the tree and a whole-tree run tripped the
+sanitizer's input-hash check. The same 2,772 YAML files were then validated
+twice, by the pre-change `HEAD` (d9f88b6) and by this change:
+
+| | Before (d9f88b6) | After |
+|---|---|---|
+| spec2 files validated | 706 | 706 |
+| fully clean | 508 | 508 |
+| crashes | 0 | 0 |
+| findings | 1176 | 1142 |
+| NEW findings | **34** | **0** |
+
+The 34 NEW findings before the change were one cluster, `unknown key: 'any-of'`
+from the tree model — 34 real blueprints already use `any-of`, and the editor
+flagged every one of them. After the change they are gone, and none of the new
+rules (the four `any-of` conflicts, the mandatory `resource-selector`, the
+toleration conditionals, the workflow scope rules, the 600-grain limit) fires on
+any file: the remaining 1,142 findings are all KNOWN, in the same clusters as
+before.
+
+### 13.7 Checked, nothing to change — and one open item
+
+* `BlueprintFields.cs` gained only the two `any-of` constants; input types,
+  input styles, grain kinds, workflow events and the input-source override
+  names are unchanged since c0f49bd04d.
+* **Open:** the tree model types the selector-level `type`, `provider-type` and
+  `provider-name` (on both selector classes) as `ScalarNode`, which reports
+  "Variables are not allowed here" on a Liquid value. The server resolves those
+  fields as Liquid in a root blueprint (`TryResolveFieldValue`; only nested
+  blueprints refuse patterns there), and the schema's description says so. The
+  new `any-of` alternative node uses `TextNode` for the same fields; the
+  selector-level ones were left as they are, to keep this change to the
+  `any-of` alignment.

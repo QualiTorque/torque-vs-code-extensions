@@ -1,0 +1,19 @@
+# 'any-of' alternatives do not nest: an alternative takes the selector's
+# criteria, but not another 'any-of'.
+# expect-error: 'any-of' was unexpected
+spec_version: 2
+resources:
+  my-host:
+    selector:
+      any-of:
+        - type: my-resource-type
+          any-of:
+            - type: my-other-type
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

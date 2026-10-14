@@ -1,0 +1,51 @@
+# 'type', 'provider-type', 'provider-name' and 'any-provider-type' are each given
+# either at the selector's own level or inside the 'any-of' alternatives, never
+# at both - whatever the values, and in whichever alternative. One requirement
+# per field, plus a resource input to show that its selector follows the same
+# rule.
+# expect-error: should not be valid under {'required': ['type']}
+# expect-error: should not be valid under {'required': ['provider-type']}
+# expect-error: should not be valid under {'required': ['provider-name']}
+# expect-error: should not be valid under {'required': ['any-provider-type']}
+# expect-error: {'type': 'my-input-type'} should not be valid
+spec_version: 2
+resources:
+  type-conflict:
+    selector:
+      type: my-resource-type
+      any-of:
+        - provider-name: my-provider
+        - type: my-other-type
+  provider-type-conflict:
+    selector:
+      provider-type: vcenter
+      any-of:
+        - provider-type: aws
+  provider-name-conflict:
+    selector:
+      provider-name: my-provider
+      any-of:
+        - provider-name: my-provider
+  any-provider-type-conflict:
+    selector:
+      type: my-resource-type
+      any-provider-type: false
+      any-of:
+        - any-provider-type: false
+          attributes:
+            - model: example-model
+inputs:
+  my-resource:
+    type: resource
+    resource-selector:
+      type: my-resource-type
+      any-of:
+        - type: my-input-type
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

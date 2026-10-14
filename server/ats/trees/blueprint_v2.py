@@ -764,11 +764,46 @@ class TargetFiltersObject(ObjectNode):
 
 
 @dataclass
+class ResourceSelectorCriteriaObject(ObjectNode):
+    """One alternative of a resource selector's `any-of` list.
+
+    The same criteria a selector takes at its own level, minus `any-of` itself (no
+    nesting) and minus the selector-specific fields (`quantity`, `reservable-only`),
+    so all of those are reported as unknown keys here. The string fields are
+    resolved as Liquid patterns, hence `TextNode`.
+    """
+
+    type: TextNode = None
+    provider_type: TextNode = None
+    provider_name: TextNode = None
+    attributes: TextMappingSequence = None
+    any_provider_type: ScalarNode = None
+
+    def _get_field_mapping(self) -> Dict[str, str]:
+        mapping = super()._get_field_mapping()
+        mapping.update(
+            {
+                "provider-type": "provider_type",
+                "provider-name": "provider_name",
+                "any-provider-type": "any_provider_type",
+            }
+        )
+        return mapping
+
+
+@dataclass
+class ResourceSelectorCriteriaSequence(SequenceNode):
+    node_type = ResourceSelectorCriteriaObject
+
+
+@dataclass
 class InputResourceSelectorObject(ObjectNode):
     type: ScalarNode = None
     provider_type: ScalarNode = None
     provider_name: ScalarNode = None
     attributes: TextMappingSequence = None
+    any_provider_type: ScalarNode = None
+    any_of: ResourceSelectorCriteriaSequence = None
     reservable_only: ScalarNode = None
 
     def _get_field_mapping(self) -> Dict[str, str]:
@@ -777,6 +812,8 @@ class InputResourceSelectorObject(ObjectNode):
             {
                 "provider-type": "provider_type",
                 "provider-name": "provider_name",
+                "any-provider-type": "any_provider_type",
+                "any-of": "any_of",
                 "reservable-only": "reservable_only",
             }
         )
@@ -1015,6 +1052,8 @@ class ResourceSelectorObject(ObjectNode):
     provider_name: ScalarNode = None
     quantity: TextNode = None
     attributes: TextMappingSequence = None
+    any_provider_type: ScalarNode = None
+    any_of: ResourceSelectorCriteriaSequence = None
 
     def _get_field_mapping(self) -> Dict[str, str]:
         mapping = super()._get_field_mapping()
@@ -1022,6 +1061,8 @@ class ResourceSelectorObject(ObjectNode):
             {
                 "provider-type": "provider_type",
                 "provider-name": "provider_name",
+                "any-provider-type": "any_provider_type",
+                "any-of": "any_of",
             }
         )
         return mapping

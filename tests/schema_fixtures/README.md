@@ -17,7 +17,7 @@ Write `example`, `my-grain`, `My Input`, `scripts`, `modules/app`, `agent-1`,
 | `valid/<feature>.yaml` | must validate with **zero** errors |
 | `invalid/<defect>.yaml` | must produce **at least one** error, and every `# expect-error:` line must match some message |
 | `required-paths.txt` | all 232 paths listed — the key paths the real blueprints use — must be exercised by at least one `valid/` fixture |
-| the schema itself | every **property** (352), every **enum member** (115) and every **definition** (58) it declares must be exercised by at least one `valid/` fixture |
+| the schema itself | every **property** (364), every **enum member** (117) and every **definition** (59) it declares must be exercised by at least one `valid/` fixture |
 
 An `invalid/` fixture that produces no error at all is the failure this corpus
 exists to catch: the dead key that the schema accepts and the server then drops
@@ -33,7 +33,7 @@ fixture the same day, by name:
 ```text
 FAIL: test_every_declared_property_is_used (element='BlueprintInputObject.searchable')
 BlueprintInputObject.searchable is declared by the schema but no valid fixture
-uses it (1 of 352 properties uncovered).
+uses it (1 of 364 properties uncovered).
 ```
 
 Definition names come from the `$ref` a node was reached through, so a property

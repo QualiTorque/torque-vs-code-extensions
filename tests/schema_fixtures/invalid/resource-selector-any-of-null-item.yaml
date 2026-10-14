@@ -1,0 +1,19 @@
+# A bare dash in 'any-of' is a null alternative, which Torque reports as an empty
+# item in the collection - and stops validating the selector there.
+# expect-error: None is not of type 'object'
+spec_version: 2
+inputs:
+  my-resource:
+    type: resource
+    resource-selector:
+      any-of:
+        -
+        - type: my-resource-type
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

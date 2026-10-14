@@ -190,7 +190,7 @@
                         },
                         "resource-types": {
                             "type": "string",
-                            "description": "For 'env_resource' scope: the resource types the workflow applies to, in CSV format (e.g. aws_instance)."
+                            "description": "For 'env_resource' scope, where it (or its legacy alias 'label-selector') is required and must not be empty: the resource types the workflow applies to, in CSV format (e.g. aws_instance)."
                         },
                         "timeout": {
                             "anyOf": [
@@ -222,6 +222,71 @@
                             "description": "Enable or disable the workflow."
                         }
                     },
+                    "allOf": [
+                        {
+                            "$comment": "A workflow with scope 'env_resource' needs a non-empty 'resource-types' (or its legacy alias 'label-selector').",
+                            "if": {
+                                "properties": {
+                                    "scope": {
+                                        "const": "env_resource"
+                                    }
+                                },
+                                "required": [
+                                    "scope"
+                                ]
+                            },
+                            "then": {
+                                "anyOf": [
+                                    {
+                                        "properties": {
+                                            "resource-types": {
+                                                "minLength": 1
+                                            }
+                                        },
+                                        "required": [
+                                            "resource-types"
+                                        ]
+                                    },
+                                    {
+                                        "properties": {
+                                            "label-selector": {
+                                                "minLength": 1
+                                            }
+                                        },
+                                        "required": [
+                                            "label-selector"
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "$comment": "A workflow with scope 'space' is started manually only.",
+                            "if": {
+                                "properties": {
+                                    "scope": {
+                                        "const": "space"
+                                    }
+                                },
+                                "required": [
+                                    "scope"
+                                ]
+                            },
+                            "then": {
+                                "properties": {
+                                    "triggers": {
+                                        "items": {
+                                            "properties": {
+                                                "type": {
+                                                    "const": "manual"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ],
                     "title": "workflow metadata",
                     "description": "Marks this YAML as a workflow (a day-2 operation run on environments or their resources) and configures where it applies and when it triggers."
                 },
@@ -373,8 +438,9 @@
                         }
                     },
                     "additionalProperties": false,
+                    "maxProperties": 600,
                     "title": "Grains",
-                    "description": "Grains are the basic building blocks of a blueprint - each utilizes an infrastructure-as-code asset (Terraform module, Helm chart, shell script, nested blueprint...) or automation process to orchestrate part of the environment. Ordering is controlled with depends-on."
+                    "description": "Grains are the basic building blocks of a blueprint - each utilizes an infrastructure-as-code asset (Terraform module, Helm chart, shell script, nested blueprint...) or automation process to orchestrate part of the environment. Ordering is controlled with depends-on. An environment may have at most 600 grains, nested blueprints' grains included."
                 },
                 "customization": {
                     "$ref": "#/definitions/CustomizationObject",
@@ -467,6 +533,43 @@
             "required": [
                 "spec_version"
             ],
+            "if": {
+                "properties": {
+                    "workflow": {
+                        "properties": {
+                            "scope": {
+                                "const": "space"
+                            }
+                        },
+                        "required": [
+                            "scope"
+                        ]
+                    }
+                },
+                "required": [
+                    "workflow"
+                ]
+            },
+            "then": {
+                "properties": {
+                    "grains": {
+                        "additionalProperties": {
+                            "properties": {
+                                "spec": {
+                                    "properties": {
+                                        "built-in": {
+                                            "not": {
+                                                "const": true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "$comment": "A workflow with scope 'space' cannot have built-in action grains. 'additionalProperties' in the conditional covers every grain name, and its 'properties' leave a null grain entry alone.",
             "title": "Torque Blueprint Spec 2",
             "description": "A Torque environment blueprint (spec_version 2). Most values support Liquid templating: {{ .inputs.name }} or {{ .inputs.[\"Name With Spaces\"] }}, {{ .grains.<grain>.outputs.<output> }}, {{ .params.<param> }}, dynamic values like {{ envId }}, {{ environmentName }}, {{ ownerEmail }}, {{ spaceName }}, and filters such as {{ value | downcase }}."
         },
@@ -1147,7 +1250,7 @@
                 },
                 "built-in": {
                     "type": "boolean",
-                    "description": "Workflow blueprints: marks this grain as the workflow's built-in action grain. At most one grain per workflow may set it."
+                    "description": "Workflow blueprints: marks this grain as a built-in action grain of the workflow. Several grains may set it, but not in a workflow with scope 'space'."
                 },
                 "auto-retry": {
                     "type": "boolean",
@@ -1547,13 +1650,15 @@
                     "type": "string",
                     "enum": [
                         "Equal",
-                        "Exists"
+                        "Exists",
+                        "Gt",
+                        "Lt"
                     ],
-                    "description": "'Equal' matches the taint key to the given value, 'Exists' matches the key regardless of its value."
+                    "description": "How the toleration matches the taint: one of 'Equal', 'Exists', 'Gt' or 'Lt'. 'Equal' matches the taint key to the given value, 'Exists' matches the key regardless of its value."
                 },
                 "value": {
                     "type": "string",
-                    "description": "Taint value to match. Required when the operator is 'Equal'."
+                    "description": "Taint value to match. Must be left empty when the operator is 'Exists'."
                 },
                 "effect": {
                     "type": "string",
@@ -1566,25 +1671,49 @@
                 },
                 "toleration-seconds": {
                     "type": "integer",
-                    "description": "For a 'NoExecute' taint, how long the pod stays bound to the node after the taint is added."
+                    "description": "How long the pod stays bound to the node after a 'NoExecute' taint is added. Allowed only with effect 'NoExecute'."
                 }
             },
-            "if": {
-                "properties": {
-                    "operator": {
-                        "const": "Equal"
+            "allOf": [
+                {
+                    "$comment": "With the 'Exists' operator a value must not be given; an empty string is accepted.",
+                    "if": {
+                        "properties": {
+                            "operator": {
+                                "const": "Exists"
+                            }
+                        },
+                        "required": [
+                            "operator"
+                        ]
+                    },
+                    "then": {
+                        "properties": {
+                            "value": {
+                                "maxLength": 0
+                            }
+                        }
                     }
                 },
-                "required": [
-                    "operator"
-                ]
-            },
-            "then": {
-                "required": [
-                    "key",
-                    "value"
-                ]
-            },
+                {
+                    "$comment": "'toleration-seconds' applies only to the 'NoExecute' effect, so it requires that effect to be set.",
+                    "if": {
+                        "required": [
+                            "toleration-seconds"
+                        ]
+                    },
+                    "then": {
+                        "properties": {
+                            "effect": {
+                                "const": "NoExecute"
+                            }
+                        },
+                        "required": [
+                            "effect"
+                        ]
+                    }
+                }
+            ],
             "title": "Toleration"
         },
         "GrainInput": {
@@ -2078,25 +2207,46 @@
                 },
                 "resource-selector": {
                     "$ref": "#/definitions/BlueprintInputResourceSelectorObject",
-                    "description": "Optional selection criteria narrowing which inventory resources may be chosen for an input of type 'resource'; without it any resource may be chosen. Field values may use Liquid expressions."
+                    "description": "Required for an input of type 'resource': the selection criteria for the inventory resources that may be chosen. Field values may use Liquid expressions."
                 }
             },
-            "if": {
-                "properties": {
-                    "type": {
-                        "const": "parameter"
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "parameter"
+                            }
+                        },
+                        "required": [
+                            "type"
+                        ]
+                    },
+                    "then": {
+                        "required": [
+                            "parameter-name"
+                        ]
                     }
                 },
-                "required": [
-                    "type"
-                ]
-            },
-            "then": {
-                "required": [
-                    "parameter-name"
-                ]
-            },
-            "$comment": "Torque requires 'parameter-name' on every input of type 'parameter'.",
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "resource"
+                            }
+                        },
+                        "required": [
+                            "type"
+                        ]
+                    },
+                    "then": {
+                        "required": [
+                            "resource-selector"
+                        ]
+                    }
+                }
+            ],
+            "$comment": "Torque requires 'parameter-name' on every input of type 'parameter', and 'resource-selector' on every input of type 'resource'.",
             "description": "A launch-form input. Whether it is required is decided by 'optional', otherwise by 'default' and 'pattern' - see those fields."
         },
         "BlueprintOutputObject": {
@@ -2274,6 +2424,92 @@
                         "any-of"
                     ]
                 }
+            ],
+            "allOf": [
+                {
+                    "$comment": "'type' is given either at the selector level or inside the 'any-of' alternatives, never at both, whatever the values.",
+                    "if": {
+                        "required": [
+                            "type"
+                        ]
+                    },
+                    "then": {
+                        "properties": {
+                            "any-of": {
+                                "items": {
+                                    "not": {
+                                        "required": [
+                                            "type"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "$comment": "'provider-type' is given either at the selector level or inside the 'any-of' alternatives, never at both, whatever the values.",
+                    "if": {
+                        "required": [
+                            "provider-type"
+                        ]
+                    },
+                    "then": {
+                        "properties": {
+                            "any-of": {
+                                "items": {
+                                    "not": {
+                                        "required": [
+                                            "provider-type"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "$comment": "'provider-name' is given either at the selector level or inside the 'any-of' alternatives, never at both, whatever the values.",
+                    "if": {
+                        "required": [
+                            "provider-name"
+                        ]
+                    },
+                    "then": {
+                        "properties": {
+                            "any-of": {
+                                "items": {
+                                    "not": {
+                                        "required": [
+                                            "provider-name"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "$comment": "'any-provider-type' is given either at the selector level or inside the 'any-of' alternatives, never at both, even with the same value. 'attributes' may appear at both levels; that the attribute names must not repeat across the levels depends on the names themselves and is not checked here.",
+                    "if": {
+                        "required": [
+                            "any-provider-type"
+                        ]
+                    },
+                    "then": {
+                        "properties": {
+                            "any-of": {
+                                "items": {
+                                    "not": {
+                                        "required": [
+                                            "any-provider-type"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             ]
         },
         "ResourceSelectorAnyOfItemObject": {
@@ -2343,7 +2579,7 @@
             "title": "Blueprint Resource Selector"
         },
         "BlueprintInputResourceSelectorObject": {
-            "$comment": "Extends ResourceSelectorBaseObject, adding no fields of its own - notably no 'quantity', which is a resource-requirement concern. See the $comment on ResourceSelectorObject for why the inherited properties are re-listed with empty schemas ({}).",
+            "$comment": "Extends ResourceSelectorBaseObject with 'reservable-only' - notably not with 'quantity', which is a resource-requirement concern. See the $comment on ResourceSelectorObject for why the inherited properties are re-listed with empty schemas ({}).",
             "allOf": [
                 {
                     "$ref": "#/definitions/ResourceSelectorBaseObject"

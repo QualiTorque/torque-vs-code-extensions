@@ -1,6 +1,7 @@
 # The agent object in full: where the grain runs and how its runner pod is
-# built. Both toleration operators and all three taint effects appear, because
-# 'Equal' is the one that also demands a key and a value.
+# built. All four toleration operators and all three taint effects appear: an
+# 'Exists' toleration carries no value, and 'toleration-seconds' sits next to the
+# 'NoExecute' effect, the only one it is allowed with.
 spec_version: 2
 grains:
   app:
@@ -38,6 +39,12 @@ grains:
               operator: Exists
               effect: NoExecute
               toleration-seconds: 300
+            - key: my-numeric-taint
+              operator: Gt
+              value: '4'
+            - key: my-numeric-taint
+              operator: Lt
+              value: '16'
           permissions:
             destination-context-name: my-context
             secret-name: my-secret

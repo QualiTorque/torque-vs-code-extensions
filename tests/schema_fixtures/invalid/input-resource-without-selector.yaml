@@ -1,0 +1,15 @@
+# A 'resource' input must say which resources may be chosen: Torque reports a
+# resource input without a 'resource-selector' as a missing field.
+# expect-error: 'resource-selector' is a required property
+spec_version: 2
+inputs:
+  my-resource:
+    type: resource
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

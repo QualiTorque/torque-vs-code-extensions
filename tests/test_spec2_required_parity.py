@@ -1,5 +1,6 @@
 """Mandatory-field and conditional rules mirrored from the Torque server (cs2018
-origin/main c0f49bd04d), and the draft upgrade that makes them enforceable.
+origin/main c0f49bd04d, re-checked at c3635fcfd7 on 2026-10-14), and the draft
+upgrade that makes them enforceable.
 
 The schema used `if`/`then`/`else` (approval channels, tolerations) while
 declaring draft-06, where those keywords do not exist - every compliant
@@ -15,10 +16,16 @@ Rules, each with its server source:
 - BlueprintTemplateValidator: each placeholder needs `path`.
 - GrainConditionsValidator: an approval channel needs at least one approver of
   its kind (groups / users / names).
-- Toleration: operator Equal needs key and value (kubernetes semantics, already
-  written as if/then in the schema - now live).
-- BlueprintInputsValidator: a `parameter` input needs `parameter-name`
-  (FIELD_VALUE_MISSING_AT_PATH).
+- TolerationStructureValidator (TolerationValidation.cs; the same rules lived in
+  GrainHostValidatorBase at c0f49bd04d): operator is one of Equal / Exists / Gt /
+  Lt, effect one of NoSchedule / PreferNoSchedule / NoExecute; operator Exists
+  takes no value (TOLERATION_VALUE_NOT_ALLOWED_WITH_EXISTS_OPERATOR, an empty
+  string is fine); toleration-seconds needs effect NoExecute
+  (TOLERATION_SECONDS_NOT_ALLOWED_WITHOUT_NO_EXECUTE_EFFECT). The schema used to
+  require key and value for operator Equal - the server has no such rule, so it
+  was removed.
+- BlueprintInputsValidator: a `parameter` input needs `parameter-name`, and a
+  `resource` input needs `resource-selector` (both FIELD_VALUE_MISSING_AT_PATH).
 - CloudFormationGrainValidator + GrainAwsRegionValidator: a cloudformation grain
   needs `region` and either `authentication` or `agent`.
 - TerraformBackendValidator: `type` is mandatory; per type the server requires
@@ -159,23 +166,72 @@ class TestApprovalChannels(unittest.TestCase):
         self.assertTrue(errors(self.channel("account_channels", [])))
 
 
+def toleration(*lines):
+    """A terraform grain whose agent carries one toleration made of `lines`."""
+    entry = "".join(
+        ("      - %s\n" if i == 0 else "        %s\n") % line
+        for i, line in enumerate(lines)
+    )
+    return grain(
+        "terraform",
+        TF_SOURCE
+        + "agent:\n  name: agent-1\n  kubernetes:\n    tolerations:\n"
+        + entry,
+    )
+
+
 class TestTolerations(unittest.TestCase):
-    def test_equal_operator_needs_key_and_value(self):
-        base = (
-            TF_SOURCE
-            + "agent:\n  name: agent-1\n  kubernetes:\n    tolerations:\n      - operator: %s\n%s"
+    def test_every_server_operator_is_accepted(self):
+        for operator in ("Equal", "Exists", "Gt", "Lt"):
+            self.assertEqual(
+                [],
+                errors(toleration("key: my-taint", "operator: %s" % operator)),
+                operator,
+            )
+
+    def test_unknown_operator_is_rejected(self):
+        self.assertTrue(errors(toleration("key: my-taint", "operator: In")))
+
+    def test_equal_operator_needs_neither_key_nor_value(self):
+        # no such rule on the server: kubernetes defaults the operator to Equal, and
+        # Torque only checks key and value against label syntax once they resolve
+        self.assertEqual([], errors(toleration("operator: Equal")))
+        self.assertEqual([], errors(toleration("operator: Equal", "key: my-taint")))
+
+    def test_exists_operator_takes_no_value(self):
+        self.assertEqual([], errors(toleration("key: my-taint", "operator: Exists")))
+        self.assertEqual(
+            [], errors(toleration("key: my-taint", "operator: Exists", "value: ''"))
         )
+        self.assertTrue(
+            errors(toleration("key: my-taint", "operator: Exists", "value: gpu"))
+        )
+        # the value check is about the Exists operator only
+        self.assertEqual(
+            [], errors(toleration("key: my-taint", "operator: Equal", "value: gpu"))
+        )
+
+    def test_toleration_seconds_needs_the_no_execute_effect(self):
         self.assertEqual(
             [],
             errors(
-                grain(
-                    "terraform",
-                    base % ("Equal", "        key: dedicated\n        value: gpu\n"),
+                toleration(
+                    "key: my-taint", "effect: NoExecute", "toleration-seconds: 300"
                 )
             ),
         )
-        self.assertEqual([], errors(grain("terraform", base % ("Exists", ""))))
-        self.assertTrue(errors(grain("terraform", base % ("Equal", ""))))
+        self.assertTrue(
+            errors(
+                toleration(
+                    "key: my-taint", "effect: NoSchedule", "toleration-seconds: 300"
+                )
+            )
+        )
+        self.assertTrue(
+            errors(toleration("key: my-taint", "toleration-seconds: 300")),
+            "without an effect there is no NoExecute effect either",
+        )
+        self.assertEqual([], errors(toleration("key: my-taint", "effect: NoSchedule")))
 
 
 class TestParameterInput(unittest.TestCase):
@@ -183,6 +239,29 @@ class TestParameterInput(unittest.TestCase):
         doc = "spec_version: 2\ninputs:\n  Region:\n    type: parameter\n%s"
         self.assertEqual([], errors(doc % "    parameter-name: default-region\n"))
         self.assertTrue(errors(doc % ""))
+
+
+class TestResourceInput(unittest.TestCase):
+    DOC = "spec_version: 2\ninputs:\n  My Host:\n    type: %s\n%s"
+
+    def test_resource_input_needs_resource_selector(self):
+        self.assertEqual(
+            [],
+            errors(
+                self.DOC % ("resource", "    resource-selector:\n      type: my-type\n")
+            ),
+        )
+        self.assertTrue(errors(self.DOC % ("resource", "")))
+        self.assertTrue(
+            errors(self.DOC % ("resource", "    resource-selector:\n")),
+            "a null selector is a missing selector",
+        )
+
+    def test_other_input_types_do_not_need_it(self):
+        self.assertEqual([], errors(self.DOC % ("string", "")))
+        self.assertEqual(
+            [], errors(self.DOC % ("parameter", "    parameter-name: my-param\n"))
+        )
 
 
 class TestCloudFormation(unittest.TestCase):

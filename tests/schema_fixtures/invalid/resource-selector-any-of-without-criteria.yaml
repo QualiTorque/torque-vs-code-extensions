@@ -1,0 +1,19 @@
+# Every 'any-of' alternative needs a selection criterion of its own - type,
+# attributes, provider-type or provider-name. 'any-provider-type' only relaxes
+# how a type name is matched and selects nothing by itself.
+# expect-error: {'any-provider-type': True}
+spec_version: 2
+resources:
+  my-host:
+    selector:
+      any-of:
+        - type: my-resource-type
+        - any-provider-type: true
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

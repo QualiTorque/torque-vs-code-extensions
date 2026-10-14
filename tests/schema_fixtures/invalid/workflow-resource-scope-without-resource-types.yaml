@@ -1,0 +1,23 @@
+# A workflow scoped to resources has to say which resource types it applies to:
+# Torque reports an 'env_resource' workflow whose 'resource-types' (and legacy
+# 'label-selector') is missing or empty. 'labels-selector' does not count - it
+# picks blueprints by label, not resources by type.
+#
+# The empty value is pinned on the value itself: jsonschema words a
+# `minLength: 1` failure as "is too short" in 4.17 and "should be non-empty"
+# later.
+# expect-error: 'label-selector' is a required property
+# expect-error: ''
+spec_version: 2
+workflow:
+  scope: env_resource
+  labels-selector: tier=example
+  resource-types: ''
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

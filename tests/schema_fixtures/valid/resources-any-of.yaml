@@ -1,0 +1,45 @@
+# Resource selector alternatives, in both places a selector appears: a resource
+# requirement and a 'resource' input. A resource matches when it matches the
+# criteria at the selector's own level and at least one 'any-of' alternative;
+# each alternative takes every criterion the selector does except 'any-of'.
+# 'any-provider-type' is shown at the selector level and inside an alternative,
+# and 'attributes' at both levels with different names.
+spec_version: 2
+resources:
+  my-host:
+    selector:
+      quantity: 2
+      attributes:
+        - model: example-model
+      any-of:
+        - type: my-resource-type
+          provider-type: vcenter
+          provider-name: my-provider
+          any-provider-type: true
+          attributes:
+            - memory-gb: 64
+        - provider-type: aws
+  my-other-host:
+    selector:
+      type: my-resource-type
+      any-provider-type: true
+      any-of:
+        - provider-name: my-provider
+        - provider-name: my-other-provider
+inputs:
+  my-resource:
+    type: resource
+    resource-selector:
+      reservable-only: true
+      any-provider-type: false
+      any-of:
+        - type: my-resource-type
+        - type: my-other-type
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello
