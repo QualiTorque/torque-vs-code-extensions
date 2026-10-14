@@ -1,0 +1,22 @@
+# An 'Exists' toleration matches the taint key whatever its value, so it cannot
+# carry a value of its own - Torque reports it, and Kubernetes would reject the
+# pod. (An empty string is accepted.)
+#
+# Pinned on the offending value: jsonschema words a `maxLength: 0` failure as
+# "is too long" in 4.17 and "is expected to be empty" in later releases.
+# expect-error: 'gpu'
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      agent:
+        name: agent-1
+        kubernetes:
+          tolerations:
+            - key: my-taint
+              operator: Exists
+              value: gpu

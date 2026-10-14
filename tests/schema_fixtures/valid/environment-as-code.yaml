@@ -1,0 +1,32 @@
+# The `environment` section - the saved-environment metadata that only
+# Environment-as-Code files carry, never a catalog blueprint. Its three string
+# maps (tags, env_references_values, labels) are the only users of StringMap.
+# Also the one fixture written with the string spelling of spec_version.
+spec_version: '2'
+environment:
+  environment_name: my-environment
+  state: Active
+  owner_email: owner@example.invalid
+  description: A saved environment definition.
+  spaces:
+    - my-space
+  collaborators:
+    collaborators_emails:
+      - collaborator@example.invalid
+    collaborators_groups:
+      - my-group
+    all_space_members: false
+  tags:
+    my-tag: example
+  env_references_values:
+    my-reference: my-environment-id
+  labels:
+    my-label: example
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

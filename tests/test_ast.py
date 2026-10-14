@@ -1,19 +1,13 @@
 import os
 import unittest
-from posixpath import dirname
+from os.path import dirname
 
 from server.ats.parser import Parser, ParserError
 from server.ats.trees.app import AppTree
 from server.ats.trees.blueprint import BlueprintTree
 from server.ats.trees.common import BaseTree
 from server.ats.trees.service import ServiceTree
-from trees import (
-    azuresimple_bp_tree,
-    demoapp_tree,
-    no_child,
-    no_indent,
-    sleep_srv_tree,
-)
+from trees import azuresimple_bp_tree, demoapp_tree, no_child, no_indent, sleep_srv_tree
 
 
 class TestParser(unittest.TestCase):

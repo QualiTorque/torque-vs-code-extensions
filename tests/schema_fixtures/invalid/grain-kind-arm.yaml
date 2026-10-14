@@ -1,0 +1,10 @@
+# `arm` was removed from the grain `kind` enum.
+# expect-error: 'arm' is not one of
+spec_version: 2
+grains:
+  app:
+    kind: arm
+    spec:
+      source:
+        store: templates
+        path: templates/app.json

@@ -1,0 +1,18 @@
+# An entry of tfvars-files / opentofuvars-files / values-files / workspace-
+# directories is a wrapper around one `source` and nothing else. Writing the
+# path at the entry level instead of inside the source is the natural mistake,
+# and it leaves the list entry pointing at nothing.
+# expect-error: 'path' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      tfvars-files:
+        - source:
+            store: modules
+            path: modules/app/example.tfvars
+          path: modules/app/other.tfvars

@@ -1,0 +1,14 @@
+# A gcs backend is addressed by its bucket alone, so the bucket is the one key
+# it cannot do without.
+# expect-error: 'bucket' is a required property
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: gcs
+        key-prefix: environments/example

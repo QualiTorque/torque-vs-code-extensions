@@ -1,0 +1,13 @@
+# spec_version is the one required top-level key: without it nothing identifies
+# the document as a spec2 blueprint. This is the single fixture that deliberately
+# does not start with spec_version.
+# expect-error: 'spec_version' is a required property
+description: A blueprint that forgot to declare its version.
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

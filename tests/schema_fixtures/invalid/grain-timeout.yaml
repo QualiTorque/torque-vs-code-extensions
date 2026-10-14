@@ -1,0 +1,13 @@
+# A dead key at grain level. Timeouts are a workflow-level setting; a grain that
+# carries one runs without any.
+# expect-error: 'timeout' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: shell
+    timeout: 30
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

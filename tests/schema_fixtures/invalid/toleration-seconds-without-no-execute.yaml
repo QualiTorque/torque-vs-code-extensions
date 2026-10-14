@@ -1,0 +1,23 @@
+# 'toleration-seconds' only means something for a 'NoExecute' taint, so Torque
+# reports it with any other effect, and with no effect at all.
+# expect-error: 'NoExecute' was expected
+# expect-error: 'effect' is a required property
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      agent:
+        name: agent-1
+        kubernetes:
+          tolerations:
+            - key: my-taint
+              operator: Exists
+              effect: NoSchedule
+              toleration-seconds: 300
+            - key: my-other-taint
+              operator: Exists
+              toleration-seconds: 300

@@ -1,0 +1,23 @@
+# A workspace entry selects a workspace either by its exact name or by a
+# prefix. One that carries neither selects nothing, whatever else it sets.
+# expect-error: 'name' is a required property
+# expect-error: 'prefix' is a required property
+spec_version: 2
+inputs:
+  backend-token:
+    type: string
+    sensitive: true
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: remote
+        hostname: backend.example.invalid
+        organization: my-organization
+        token: '{{ .inputs.backend-token }}'
+        workspaces:
+          - project: my-project

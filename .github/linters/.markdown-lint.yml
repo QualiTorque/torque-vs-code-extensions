@@ -23,6 +23,7 @@ MD007:
   indent: 2                   # Unordered list indentation
 MD013:
   line_length: 400            # Line length 80 is far to short
+  tables: false               # A reference table's rows are as wide as the data
 MD024:                        # Multiple headings with the same content
   # Only check sibling headings
   allow_different_nesting: true
@@ -31,6 +32,10 @@ MD026:
 MD029: false                  # Ordered list item prefix
 MD033: false                  # Allow inline HTML
 MD036: false                  # Emphasis used instead of a heading
+MD049:
+  style: asterisk             # *italic* -- the style used across our docs
+MD050:
+  style: asterisk             # **bold** -- the style used across our docs
 
 #################
 # Rules by tags #

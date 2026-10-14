@@ -1,0 +1,57 @@
+# Every environment event a workflow can be triggered by, in both the
+# title-case and the lower-case spelling the schema accepts. The list is
+# `uniqueItems`, so one trigger can carry all of them - and it has to, because
+# an event quietly dropped from the enum is a workflow that stops firing.
+#
+# Also the deprecated `label-selector` (the one with the singular 'label'), the
+# integer form of `timeout`, and the group restriction on a manual trigger.
+spec_version: 2
+workflow:
+  scope: env
+  label-selector: tier=example
+  timeout: 30
+  enabled: true
+  triggers:
+    - type: event
+      event:
+        - Drift Detected
+        - Updates Detected
+        - Tag Updates Detected
+        - Parameter Updates Detected
+        - Approval Request Approved
+        - Approval Request Denied
+        - Approval Request Cancelled
+        - Environment Ended
+        - Environment Launched
+        - Environment Active With Error
+        - Environment Ending Failed
+        - Environment Force Ended
+        - Environment Extended
+        - Environment Idle
+        - Collaborator Added
+        - drift detected
+        - updates detected
+        - tag updates detected
+        - parameter updates detected
+        - approval request approved
+        - approval request denied
+        - approval request cancelled
+        - environment ended
+        - environment launched
+        - environment active with error
+        - environment ending failed
+        - environment force ended
+        - environment extended
+        - environment idle
+        - collaborator added
+    - type: manual
+      groups:
+        - my-group
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

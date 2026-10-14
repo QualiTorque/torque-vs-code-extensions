@@ -1,0 +1,23 @@
+# Blueprint outputs: the value expression plus the three presentation flags.
+spec_version: 2
+outputs:
+  endpoint:
+    value: '{{ .grains.app.outputs.endpoint }}'
+    kind: link
+    quick: true
+  password:
+    value: '{{ .grains.app.outputs.password }}'
+    kind: regular
+    sensitive: true
+    quick: false
+grains:
+  app:
+    kind: shell
+    spec:
+      outputs:
+        - endpoint
+        - password
+      activities:
+        deploy:
+          commands:
+            - echo hello

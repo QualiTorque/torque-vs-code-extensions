@@ -1,0 +1,15 @@
+# A dead key: the exclude lists live under customization.layout.exclude.
+# expect-error: 'exclude' was unexpected
+spec_version: 2
+customization:
+  exclude:
+    grains:
+      - helper
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

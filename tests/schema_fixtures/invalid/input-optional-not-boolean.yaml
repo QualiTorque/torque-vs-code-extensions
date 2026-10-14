@@ -1,0 +1,17 @@
+# `optional` is a boolean. Quoted 'yes' is a string in YAML 1.1 as loaded by
+# pyyaml's safe loader, and a string here is not the truthy value the author
+# meant.
+# expect-error: is not of type 'boolean'
+spec_version: 2
+inputs:
+  region:
+    type: string
+    optional: 'yes'
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

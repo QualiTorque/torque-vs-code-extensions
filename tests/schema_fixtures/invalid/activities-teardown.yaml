@@ -1,0 +1,12 @@
+# A dead key: the two activities are deploy and destroy. `teardown` is dropped,
+# so nothing runs when the environment ends.
+# expect-error: 'teardown' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        teardown:
+          commands:
+            - echo bye

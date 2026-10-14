@@ -1,0 +1,11 @@
+# A dead key for the same reason as teardown: there is no `run` activity.
+# expect-error: 'run' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        run:
+          commands:
+            - echo hello

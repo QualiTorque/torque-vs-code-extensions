@@ -1,0 +1,27 @@
+# A target input and its filters. A label filter carries either one `value` or a
+# list of `values` - never both - so both shapes get a fixture here.
+spec_version: 2
+inputs:
+  deployment-target:
+    type: target
+    target-filters:
+      cloud-providers:
+        - aws
+        - kubernetes
+      labels:
+        - key: tier
+          value: example
+        - key: region
+          values:
+            - example-region
+            - other-region
+grains:
+  app:
+    kind: shell
+    spec:
+      target:
+        name: '{{ .inputs.deployment-target }}'
+      activities:
+        deploy:
+          commands:
+            - echo hello

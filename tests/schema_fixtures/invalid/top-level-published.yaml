@@ -1,0 +1,13 @@
+# A dead top-level key. Publishing is an account/space action, not a property of
+# the blueprint document.
+# expect-error: 'published' was unexpected
+spec_version: 2
+published: true
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

@@ -1,0 +1,14 @@
+# A backend with no type says where the state goes without saying what goes
+# there. Nothing else in the object is enough to infer it, so it is required.
+# expect-error: 'type' is a required property
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        bucket: my-bucket
+        region: example-region

@@ -1,0 +1,16 @@
+# metadata.self-service is a boolean, a list of space names, or null. A number is
+# none of those, and the error for it only becomes readable after the oneOf
+# branches are drilled into - which is exactly what the fixture runner does.
+# expect-error: is not valid under any of the given schemas
+# expect-error: is not of type 'boolean'
+spec_version: 2
+metadata:
+  self-service: 5
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

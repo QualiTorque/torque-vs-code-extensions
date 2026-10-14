@@ -1,0 +1,22 @@
+# An empty 'any-of' list offers no alternative. With no other criterion the
+# selector selects nothing; next to other criteria the empty list is ignored by
+# Torque, and reporting it is a deliberate tightening (an empty list is always a
+# leftover).
+#
+# Pinned on the offending value: jsonschema words a `minItems` failure
+# differently across the versions CI runs.
+# expect-error: []
+spec_version: 2
+resources:
+  my-host:
+    selector:
+      type: my-resource-type
+      any-of: []
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

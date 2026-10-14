@@ -1,0 +1,38 @@
+# The two remote-execution state backends. They are the only ones with a
+# `workspaces` list, and a workspace is selected either by an exact name or by
+# a prefix - both forms are here, the prefixed one with its project and tags.
+spec_version: 2
+inputs:
+  backend-token:
+    type: string
+    sensitive: true
+grains:
+  remote-state:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: remote
+        hostname: backend.example.invalid
+        organization: my-organization
+        token: '{{ .inputs.backend-token }}'
+        workspaces:
+          - name: my-workspace
+  cloud-state:
+    kind: opentofu
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: cloud
+        hostname: backend.example.invalid
+        organization: my-organization
+        token: '{{ .inputs.backend-token }}'
+        workspaces:
+          - prefix: example-
+            project: my-project
+            tags:
+              my-tag: example

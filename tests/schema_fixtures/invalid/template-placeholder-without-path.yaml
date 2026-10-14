@@ -1,0 +1,15 @@
+# A placeholder is a YAML path the author has to fill in. A hint with no path
+# points at nothing, so the generator has nothing to prompt for.
+# expect-error: 'path' is a required property
+spec_version: 2
+template:
+  placeholders:
+    - hint: Path to the module directory.
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

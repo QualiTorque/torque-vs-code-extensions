@@ -1,0 +1,6 @@
+# Black configuration (TOML), passed to black as --config.
+# super-linter v4 ships TEMPLATES/.python-black empty, i.e. plain black
+# defaults; this file states those defaults explicitly so the line length the
+# formatter uses is visible next to the one flake8 enforces.
+[tool.black]
+line-length = 88

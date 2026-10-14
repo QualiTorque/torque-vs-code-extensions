@@ -1,0 +1,12 @@
+# Pins the '2-preview' spelling of spec_version - the one no corpus blueprint uses.
+# The other two spellings are pinned elsewhere: the string '2' by
+# environment-as-code.yaml, the integer 2 by every other valid fixture.
+spec_version: '2-preview'
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

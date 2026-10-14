@@ -1,0 +1,37 @@
+# The shell grain: which agent runs it, the files it needs delivered, and the
+# deploy/destroy activities. A command is either a bare string or an object with
+# a name and declared outputs - both forms appear here.
+spec_version: 2
+grains:
+  runner:
+    kind: shell
+    spec:
+      agent:
+        name: agent-1
+        use-storage: true
+      files:
+        - source: scripts
+          path: scripts/setup.sh
+        - source: scripts
+          path: scripts/teardown.sh
+      activities:
+        deploy:
+          commands:
+            - chmod +x scripts/setup.sh
+            - name: setup
+              command: ./scripts/setup.sh
+              outputs:
+                - endpoint
+        destroy:
+          commands:
+            - echo cleaning up
+            - name: teardown
+              command: ./scripts/teardown.sh
+              outputs:
+                - status
+  inline:
+    kind: cloudshell
+    spec:
+      commands:
+        - echo hello
+        - echo done

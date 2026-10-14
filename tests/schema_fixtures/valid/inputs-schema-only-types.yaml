@@ -1,0 +1,35 @@
+# Input types the schema accepts that the local corpus never uses. They are
+# pinned here so that a future tightening of the `type` enum cannot drop them
+# unnoticed.
+spec_version: 2
+inputs:
+  settings:
+    type: dictionary
+    default:
+      key: value
+  upload:
+    type: file
+    max-size-MB: 5
+    max-files: 1
+    allowed-formats:
+      - .txt
+  shared-parameter:
+    type: parameter
+    parameter-name: my-parameter
+  reserved-host:
+    type: resource
+    resource-selector:
+      type: my-resource-type
+      provider-type: vcenter
+      provider-name: my-provider
+      reservable-only: true
+      attributes:
+        - model: example-model
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

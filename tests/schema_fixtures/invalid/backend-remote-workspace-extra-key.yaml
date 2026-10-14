@@ -1,0 +1,23 @@
+# A workspace entry is closed: name, prefix, project, tags. Anything else is
+# dropped, and the workspace it was meant to pick is not the one used.
+# expect-error: 'workspace-id' was unexpected
+spec_version: 2
+inputs:
+  backend-token:
+    type: string
+    sensitive: true
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: remote
+        hostname: backend.example.invalid
+        organization: my-organization
+        token: '{{ .inputs.backend-token }}'
+        workspaces:
+          - name: my-workspace
+            workspace-id: ws-0000

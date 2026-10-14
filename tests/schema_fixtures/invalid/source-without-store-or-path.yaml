@@ -1,0 +1,14 @@
+# A source has to say where the asset comes from: the store, the path, or
+# both. One that only pins a branch identifies no asset at all - which is the
+# only way to get a source wrong, since either half alone is enough (a
+# store-only hook source is legal, and valid/grain-scripts-all-hooks.yaml has
+# one).
+# expect-error: 'store' is a required property
+# expect-error: 'path' is a required property
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        branch: main

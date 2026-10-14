@@ -1,0 +1,14 @@
+# The backend type is a closed list of the six Torque implements. A Terraform
+# backend that is not one of them cannot be configured, however valid it is to
+# Terraform itself.
+# expect-error: 'consul' is not one of
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: consul

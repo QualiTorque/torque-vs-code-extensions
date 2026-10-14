@@ -1,0 +1,42 @@
+# The catalog-metadata keys blueprint-metadata.yaml leaves out: the per-space
+# list form of self-service, the CCU estimate, a label that starts out as a
+# quick filter, and the plain-string label form. Plus the layout opt-out list,
+# which is the only reason `layout` is not just a source.
+spec_version: 2
+metadata:
+  display-name: My Blueprint
+  estimated-ccu: 5
+  self-service:
+    - my-space
+    - my-other-space
+  blueprint-labels:
+    - key: team
+      value: example
+      initial-quick-filter: true
+    - plain-label
+layout:
+  exclude-from-layout:
+    - helper
+  source:
+    store: docs
+    path: layout/default.yaml
+inputs:
+  lease:
+    type: string
+    style: duration
+    default: 2h
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello
+  helper:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo helper

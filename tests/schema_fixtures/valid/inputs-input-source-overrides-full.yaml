@@ -1,0 +1,46 @@
+# The rest of the input-source overrides - the object-storage and browsing
+# ones that inputs-input-source.yaml (which pins what the local corpus uses)
+# does not reach. The overrides object is closed, so an override the schema
+# forgets is an override the blueprint silently loses.
+spec_version: 2
+inputs:
+  bucket-object:
+    type: input-source
+    source-name: my-input-source
+    searchable: true
+    overrides:
+      - bucket_name: my-bucket
+        path_prefix: artifacts/
+        object_key: artifacts/example.json
+        filter: '*.json'
+        sort_by: name
+        sort_order: asc
+  blob-object:
+    type: input-source
+    source-name: my-input-source
+    overrides:
+      - storage_account_name: my-storage-account
+        container_name: my-container
+        blob_name: artifacts/example.json
+        expand_query: my-property
+  browsed-datastore:
+    type: input-source
+    source-name: my-input-source
+    overrides:
+      - datacenter_name: my-datacenter
+        datastore_name: my-datastore
+        browse_path: /example/folder
+        show_full_path: 'true'
+        show_datastore_space: 'true'
+        preliminary_wildcard_filter: 'example*'
+        filter_pattern: '^example'
+        show_default_option: 'true'
+        default_option_text: Select a datastore
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

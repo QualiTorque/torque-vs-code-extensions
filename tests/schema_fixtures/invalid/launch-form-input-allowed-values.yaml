@@ -1,0 +1,24 @@
+# A dead key: a launch-form input entry only re-presents an input that is
+# declared under `inputs`. Allowed values belong on the declaration.
+# expect-error: 'allowed-values' was unexpected
+spec_version: 2
+inputs:
+  size:
+    type: string
+customization:
+  launch-form:
+    sections:
+      - name: Sizing
+        inputs:
+          - name: size
+            allowed-values:
+              - small
+              - large
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

@@ -1,0 +1,12 @@
+# The blueprint document is closed. A misspelled or invented top-level section
+# has to be reported, not ignored.
+# expect-error: 'grainz' was unexpected
+spec_version: 2
+grainz:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

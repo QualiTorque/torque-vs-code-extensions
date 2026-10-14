@@ -1,0 +1,39 @@
+# Input-source inputs: the named source plus the per-blueprint overrides. The
+# overrides object is closed, so every key a real blueprint uses has to be
+# declared - these are the ones the corpus actually sets.
+spec_version: 2
+inputs:
+  cluster:
+    type: input-source
+    source-name: my-input-source
+    overrides:
+      - agent_name: agent-1
+        credential: my-credential
+        credential_name: my-credential
+        resource_type: my-resource-type
+        target_name: my-target
+  datastore:
+    type: input-source
+    source-name: my-input-source
+    depends-on: cluster
+    overrides:
+      - filter_datacenter: my-datacenter
+        filter_cluster: my-cluster
+        filter_query: name eq 'example'
+        select_query: name
+        query: example
+  artifact:
+    type: input-source
+    source-name: my-input-source
+    overrides:
+      - path: artifacts/example
+        json_path: $.items[*].name
+        display_json_path: $.items[*].label
+grains:
+  app:
+    kind: shell
+    spec:
+      activities:
+        deploy:
+          commands:
+            - echo hello

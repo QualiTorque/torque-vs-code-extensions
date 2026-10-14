@@ -1,0 +1,13 @@
+# A dead key: the execution host of a grain is `agent`.
+# expect-error: 'host' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: shell
+    spec:
+      host:
+        name: agent-1
+      activities:
+        deploy:
+          commands:
+            - echo hello

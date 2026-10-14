@@ -1,0 +1,49 @@
+# The grain-spec keys that decide how a grain is executed and what survives
+# teardown: all three lifecycle modes, both spellings of deployment-engine, the
+# terraform -target list, tagging opt-outs, manual plan approval and the
+# grain-level environment references.
+spec_version: 2
+env_references:
+  shared-network:
+    labels-selector: tier=example
+grains:
+  managed-module:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      mode: managed
+      auto-approve: false
+      target-resource:
+        - module.example
+      tags:
+        auto-tag: false
+        disable-tags-for:
+          - my-resource-type
+      env_references:
+        - shared-network: network_id
+      agent:
+        name: agent-1
+        use-storage: true
+  kept-module:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      mode: no-termination
+      binary: /usr/local/bin/terraform
+      deployment-engine: my-deployment-engine
+      env_configuration: true
+  gitops:
+    kind: argocd
+    spec:
+      source:
+        store: manifests
+        path: manifests/app
+      application: my-application
+      application-namespace: example
+      mode: data
+      deployment-engine:
+        name: my-deployment-engine

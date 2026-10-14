@@ -1,0 +1,30 @@
+[codespell]
+# Keep this file in sync with the `spellcheck` job in .github/workflows/ci.yml:
+# CI runs a bare `codespell` from the repo root, so the configuration has to
+# live here for local runs and CI to behave identically.
+#
+# Skipped on purpose:
+#   .git / node_modules / out / package-lock.json  - not our prose
+#   CHANGELOG.md                                   - shipped release history,
+#                                                    quoted verbatim elsewhere
+#   client/README.md, client/LICENSE,
+#   client/CHANGELOG.md                            - gitignored packaging
+#                                                    copies of the root files
+#                                                    (see .gitignore); absent
+#                                                    from a fresh checkout, so
+#                                                    skipping them is what makes
+#                                                    a local run match CI. The
+#                                                    originals ARE checked.
+#   *.vsix / *.svg / *.png                         - binary or generated
+# Everything else is walked, which is what covers client/schemas, docs,
+# README.md, server, tests and tools.
+skip = ./.git,./client/node_modules,./client/out,./client/package-lock.json,./CHANGELOG.md,./client/CHANGELOG.md,./client/README.md,./client/LICENSE,*.vsix,*.svg,*.png
+# No `ignore-words-list` on purpose, and note it cannot be set to an empty
+# value - codespell forwards the key as `-L <value>` and argparse rejects the
+# empty string, so the key has to be absent rather than blank. A word listed
+# there is a word codespell will never flag again anywhere in the repo: add a
+# term only when it is a *correct* spelling codespell does not know (a product
+# or tool name), never a real misspelling. A one-off false positive belongs on
+# its own line as `codespell:ignore <word>` instead (in Markdown, inside an
+# HTML comment at the end of that line).
+check-filenames = true

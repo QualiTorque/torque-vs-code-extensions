@@ -1,0 +1,21 @@
+# A space-scoped workflow runs against the space, not against an environment, so
+# it is started manually only and cannot have built-in action grains. Both are
+# reported by Torque.
+# expect-error: 'manual' was expected
+# expect-error: True should not be valid under {'const': True}
+spec_version: 2
+workflow:
+  scope: space
+  triggers:
+    - type: manual
+    - type: cron
+      cron: 0 3 * * *
+grains:
+  app:
+    kind: shell
+    spec:
+      built-in: true
+      activities:
+        deploy:
+          commands:
+            - echo hello

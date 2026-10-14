@@ -1,0 +1,20 @@
+# A remote backend runs against a workspace of the remote organization. With
+# the credentials but no workspace there is nothing to run against.
+# expect-error: 'workspaces' is a required property
+spec_version: 2
+inputs:
+  backend-token:
+    type: string
+    sensitive: true
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      backend:
+        type: remote
+        hostname: backend.example.invalid
+        organization: my-organization
+        token: '{{ .inputs.backend-token }}'

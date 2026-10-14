@@ -1,0 +1,72 @@
+# Every member of the three provider enums, in the three places they appear:
+# the credential providers a 'credentials' input may offer, the cloud providers
+# a 'target' input may be filtered by, and the inventory provider type a
+# 'resource' input may select from. A dropped member is a blueprint that stops
+# launching, which is why each list is spelled out in full.
+spec_version: 2
+inputs:
+  any-credential:
+    type: credentials
+    allowed-credential-providers:
+      - aws
+      - azure
+      - vsphere
+      - artifactory
+      - intersight
+      - redhat
+      - nexus_dashboard
+      - nvaie
+      - kubernetes
+      - sourceControl
+  any-target:
+    type: target
+    target-filters:
+      cloud-providers:
+        - aws
+        - azure
+        - vcenter
+        - intersight
+        - kubernetes
+        - openshift
+      cloud-identifiers:
+        - my-cloud-account
+  aws-resource:
+    type: resource
+    resource-selector:
+      provider-type: aws
+      type: my-resource-type
+  azure-resource:
+    type: resource
+    resource-selector:
+      provider-type: azure
+      type: my-resource-type
+  vcenter-resource:
+    type: resource
+    resource-selector:
+      provider-type: vcenter
+      type: my-resource-type
+  intersight-resource:
+    type: resource
+    resource-selector:
+      provider-type: intersight
+      type: my-resource-type
+  kubernetes-resource:
+    type: resource
+    resource-selector:
+      provider-type: kubernetes
+      type: my-resource-type
+  openshift-resource:
+    type: resource
+    resource-selector:
+      provider-type: openshift
+      type: my-resource-type
+grains:
+  app:
+    kind: shell
+    spec:
+      target:
+        name: '{{ .inputs.any-target }}'
+      activities:
+        deploy:
+          commands:
+            - echo hello

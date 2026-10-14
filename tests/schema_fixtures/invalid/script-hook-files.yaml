@@ -1,0 +1,21 @@
+# A script hook is `source` + `arguments` (+ `outputs` for the helm/aws-cdk
+# hooks). `files:` under a hook is dropped by the server, so the files it lists
+# are never delivered and the script fails for a reason nothing explains.
+# Thirteen corpus blueprints carry exactly this mistake.
+# expect-error: 'files' was unexpected
+spec_version: 2
+grains:
+  app:
+    kind: terraform
+    spec:
+      source:
+        store: modules
+        path: modules/app
+      scripts:
+        pre-tf-init:
+          source:
+            store: scripts
+            path: scripts/pre-init.sh
+          files:
+            - source: scripts
+              path: scripts/helper.py
