@@ -2233,7 +2233,19 @@
                             }
                         }
                     },
-                    "description": "name: value attributes the resources must have. Values may be Liquid (root blueprint only)."
+                    "description": "name: value attributes the resources must have. Values may be Liquid (root blueprint only). May be given both here and inside 'any-of' alternatives, as long as the same attribute name is not used at both levels."
+                },
+                "any-provider-type": {
+                    "type": "boolean",
+                    "description": "When true, a 'type' name that exists under more than one provider type is accepted instead of being reported as ambiguous (default false). Only meaningful when 'type' is given without 'provider-type' or 'provider-name'; otherwise it is ignored. Give it either here or inside the 'any-of' alternatives, not both."
+                },
+                "any-of": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/ResourceSelectorAnyOfItemObject"
+                    },
+                    "description": "Alternative criteria sets, OR-ed with each other: a resource matches the selector when it matches the criteria given at this level and at least one of the alternatives. Each alternative takes the same criteria as the selector itself, except 'any-of' (no nesting). 'type', 'provider-type', 'provider-name' and 'any-provider-type' go either at this level or inside the alternatives, not both; 'attributes' may appear at both levels as long as the names do not repeat."
                 }
             },
             "anyOf": [
@@ -2256,8 +2268,41 @@
                     "required": [
                         "provider-name"
                     ]
+                },
+                {
+                    "required": [
+                        "any-of"
+                    ]
                 }
             ]
+        },
+        "ResourceSelectorAnyOfItemObject": {
+            "$comment": "A single 'any-of' alternative - extends ResourceSelectorBaseObject with nothing. 'any-of' is deliberately not re-listed in 'properties', so 'additionalProperties': false rejects nesting it (and consequently, one of the other criteria is required by the base's 'anyOf'). See the $comment on ResourceSelectorObject for why the inherited properties are re-listed with empty schemas ({}).",
+            "allOf": [
+                {
+                    "$ref": "#/definitions/ResourceSelectorBaseObject"
+                }
+            ],
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "type": {
+                    "description": "Inventory resource type name (case-insensitive)."
+                },
+                "provider-name": {
+                    "description": "A specific inventory provider instance."
+                },
+                "provider-type": {
+                    "description": "Inventory provider type (e.g. vcenter, aws)."
+                },
+                "attributes": {
+                    "description": "name: value attributes the resources must have."
+                },
+                "any-provider-type": {
+                    "description": "Accept a 'type' name that exists under more than one provider type."
+                }
+            },
+            "title": "Blueprint Resource Selector Alternative"
         },
         "ResourceSelectorObject": {
             "$comment": "Extends ResourceSelectorBaseObject with 'quantity'. The inherited properties are re-listed here with empty schemas ({}) only so that 'additionalProperties': false does not reject them: 'additionalProperties' considers only the 'properties' declared in the same schema object and is blind to those coming from the $ref'd base. If this schema is ever moved to draft 2019-09 or later, delete these stubs and replace 'additionalProperties': false with 'unevaluatedProperties': false.",
@@ -2280,6 +2325,12 @@
                 },
                 "attributes": {
                     "description": "name: value attributes the resources must have."
+                },
+                "any-provider-type": {
+                    "description": "Accept a 'type' name that exists under more than one provider type."
+                },
+                "any-of": {
+                    "description": "Alternative criteria sets, OR-ed with each other."
                 },
                 "quantity": {
                     "type": [
@@ -2312,6 +2363,12 @@
                 },
                 "attributes": {
                     "description": "name: value attributes the resources must have."
+                },
+                "any-provider-type": {
+                    "description": "Accept a 'type' name that exists under more than one provider type."
+                },
+                "any-of": {
+                    "description": "Alternative criteria sets, OR-ed with each other."
                 },
                 "reservable-only": {
                     "type": "boolean",
